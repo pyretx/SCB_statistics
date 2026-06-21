@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.pxtools.net)",
+      "WebFetch(domain:api.scb.se)",
+      "PowerShell(pip install streamlit plotly -q)"
+    ]
+  }
+}
