@@ -663,7 +663,7 @@ with st.sidebar:
 
     all_years = [str(y) for y in range(2014, 2025)]
     yr_from, yr_to = st.select_slider(t["year_range"], options=all_years,
-                                      value=(all_years[0], all_years[-1]))
+                                      value=(all_years[-3], all_years[-1]))
     selected_years = tuple(y for y in all_years if yr_from <= y <= yr_to)
     # Descending year options for the breakdown tabs (respect the range)
     year_opts = [int(y) for y in reversed(selected_years)]
