@@ -866,6 +866,8 @@ with tab_pct:
                                         default=pct_order, key="pct_measures")
     if not shown_measures:
         shown_measures = pct_order
+    # Always display in the canonical order, regardless of click/re-add order
+    shown_measures = [m for m in pct_order if m in shown_measures]
     df_chart = df[df[year_col] == chart_year]
 
     # The average is not a percentile — plot it as a standalone marker, not on the line
