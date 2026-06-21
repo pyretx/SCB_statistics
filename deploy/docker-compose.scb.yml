@@ -1,0 +1,28 @@
+# SCB Salary Explorer — PRODUCTION
+# Runs as its own container, opts into the EXISTING Traefik (root_default network).
+# n8n's /root/docker-compose.yml is never touched by this file.
+#
+# Build context is the repo root (one level up from this deploy/ folder).
+# Run from the deploy/ directory with the shared env file:
+#   docker compose --env-file /root/.env -f docker-compose.scb.yml up -d --build
+
+services:
+  scb:
+    build: ..
+    image: scb-salaries:latest
+    container_name: scb-prod
+    restart: always
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.scb.rule=Host(`scb.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.scb.entrypoints=web,websecure"
+      - "traefik.http.routers.scb.tls=true"
+      - "traefik.http.routers.scb.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.scb.loadbalancer.server.port=8501"
+
+networks:
+  traefik:
+    external: true
+    name: root_default

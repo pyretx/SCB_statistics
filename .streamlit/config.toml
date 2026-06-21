@@ -1,0 +1,12 @@
+# Streamlit server config for running behind the Traefik reverse proxy.
+[server]
+headless = true
+address = "0.0.0.0"
+port = 8501
+# Traefik terminates TLS and serves a single origin per subdomain,
+# so CORS/XSRF browser-origin checks are unnecessary here.
+enableCORS = false
+enableXsrfProtection = false
+
+[browser]
+gatherUsageStats = false
