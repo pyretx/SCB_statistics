@@ -862,8 +862,12 @@ with tab_pct:
         available_years = sorted(df[year_col].unique(), reverse=True)
         chart_year = st.selectbox(t["chart_year"], options=available_years, index=0, key="pct_year")
     with c_meas:
+        def _sort_pct_measures():
+            cur = st.session_state.get("pct_measures", [])
+            st.session_state["pct_measures"] = [m for m in pct_order if m in cur]
         shown_measures = st.multiselect(t["measures_shown"], options=pct_order,
-                                        default=pct_order, key="pct_measures")
+                                        default=pct_order, key="pct_measures",
+                                        on_change=_sort_pct_measures)
     if not shown_measures:
         shown_measures = pct_order
     # Always display in the canonical order, regardless of click/re-add order
