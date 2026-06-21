@@ -1,0 +1,28 @@
+# SCB Salary Explorer — TEST / staging
+# Same pattern as production, unique router/container names so Traefik keeps them apart.
+# Deploy from a clone on the `test` branch:
+#   git clone -b test https://github.com/pyretx/SCB_statistics.git /srv/scb-test
+#   cd /srv/scb-test/deploy
+#   docker compose --env-file /root/.env -f docker-compose.scb-test.yml up -d --build
+# URL: https://scb-test.srv950186.hstgr.cloud
+
+services:
+  scb:
+    build: ..
+    image: scb-salaries:test
+    container_name: scb-test
+    restart: always
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.scb-test.rule=Host(`scb-test.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.scb-test.entrypoints=web,websecure"
+      - "traefik.http.routers.scb-test.tls=true"
+      - "traefik.http.routers.scb-test.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.scb-test.loadbalancer.server.port=8501"
+
+networks:
+  traefik:
+    external: true
+    name: root_default

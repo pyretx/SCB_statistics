@@ -1,0 +1,28 @@
+# SCB Salary Explorer — DEV
+# Same pattern as production, unique router/container names so Traefik keeps them apart.
+# Deploy from a clone on the `dev` branch:
+#   git clone -b dev https://github.com/pyretx/SCB_statistics.git /srv/scb-dev
+#   cd /srv/scb-dev/deploy
+#   docker compose --env-file /root/.env -f docker-compose.scb-dev.yml up -d --build
+# URL: https://scb-dev.srv950186.hstgr.cloud
+
+services:
+  scb:
+    build: ..
+    image: scb-salaries:dev
+    container_name: scb-dev
+    restart: always
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.scb-dev.rule=Host(`scb-dev.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.scb-dev.entrypoints=web,websecure"
+      - "traefik.http.routers.scb-dev.tls=true"
+      - "traefik.http.routers.scb-dev.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.scb-dev.loadbalancer.server.port=8501"
+
+networks:
+  traefik:
+    external: true
+    name: root_default
