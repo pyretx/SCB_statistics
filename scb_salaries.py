@@ -151,10 +151,23 @@ T = {
         "loading": "Loading…",
         "fetching_data": "Fetching salary data…",
         "tab_pct": "📈 Percentile distribution",
+        "tab_calc": "💰 Where do I stand?",
         "tab_age": "👤 By age",
         "tab_region": "🗺️ By region",
         "tab_edu": "🎓 By education",
         "tab_stats": "🔢 Basic statistics",
+        "calc_title": "Where does your salary stand?",
+        "calc_occ": "Occupation",
+        "calc_year": "Year",
+        "calc_input": "Your monthly salary (SEK)",
+        "calc_no_pct": "ℹ️ Percentile data isn't available for this occupation/year (SCB suppresses small samples). Try another year or occupation.",
+        "calc_rank": "Your percentile",
+        "calc_more_than": "You earn more than about **{p}%** of employees in this role — roughly the **top {top}%**.",
+        "calc_below": "Your salary is at or below the 10th percentile — among the lowest-paid ~10% for this role.",
+        "calc_above": "Your salary is at or above the 90th percentile — among the highest-paid ~10% for this role.",
+        "calc_you": "You",
+        "calc_context": "Based on **{occ}** · {sector} · {sex} · {year} (monthly salary).",
+        "calc_curve": "Salary by percentile",
         "stats_title": "Number of employees in the selection",
         "stat_total": "Total employees",
         "per_occ": "By occupation",
@@ -235,10 +248,23 @@ T = {
         "loading": "Laddar…",
         "fetching_data": "Hämtar lönedata…",
         "tab_pct": "📈 Lönespridning",
+        "tab_calc": "💰 Var ligger jag?",
         "tab_age": "👤 Efter ålder",
         "tab_region": "🗺️ Efter region",
         "tab_edu": "🎓 Efter utbildning",
         "tab_stats": "🔢 Grundstatistik",
+        "calc_title": "Var ligger din lön?",
+        "calc_occ": "Yrke",
+        "calc_year": "År",
+        "calc_input": "Din månadslön (SEK)",
+        "calc_no_pct": "ℹ️ Percentildata saknas för detta yrke/år (SCB döljer små urval). Prova ett annat år eller yrke.",
+        "calc_rank": "Din percentil",
+        "calc_more_than": "Du tjänar mer än cirka **{p}%** av de anställda i detta yrke — ungefär **topp {top}%**.",
+        "calc_below": "Din lön ligger på eller under 10:e percentilen — bland de ~10% lägst betalda i detta yrke.",
+        "calc_above": "Din lön ligger på eller över 90:e percentilen — bland de ~10% högst betalda i detta yrke.",
+        "calc_you": "Du",
+        "calc_context": "Baserat på **{occ}** · {sector} · {sex} · {year} (månadslön).",
+        "calc_curve": "Lön per percentil",
         "stats_title": "Antal anställda i urvalet",
         "stat_total": "Totalt antal anställda",
         "per_occ": "Per yrke",
@@ -847,8 +873,8 @@ def show_breakdown_raw(df_in, dim_col, dim_label, dim_map=None, sex_col=None):
         st.dataframe(out, use_container_width=True, hide_index=True)
 
 
-tab_pct, tab_age, tab_reg, tab_edu, tab_stats = st.tabs([
-    t["tab_pct"], t["tab_age"], t["tab_region"], t["tab_edu"], t["tab_stats"]
+tab_pct, tab_calc, tab_age, tab_reg, tab_edu, tab_stats = st.tabs([
+    t["tab_pct"], t["tab_calc"], t["tab_age"], t["tab_region"], t["tab_edu"], t["tab_stats"]
 ])
 
 # ── Tab 1: Percentile distribution ────────────────────────────────────────────
@@ -938,6 +964,96 @@ with tab_pct:
         for col in measure_labels:
             display_df[col] = display_df[col].map(lambda v: f"{int(v):,}" if pd.notna(v) else "–")
         st.dataframe(display_df[key_cols + shown_measures], use_container_width=True)
+
+# ── Tab: Where do I stand? (salary calculator) ────────────────────────────────
+PCT_POINTS = [("P10", 10), ("P25", 25), ("Median (P50)", 50), ("P75", 75), ("P90", 90)]
+
+with tab_calc:
+    st.subheader(t["calc_title"])
+
+    c1, c2 = st.columns(2)
+    with c1:
+        if len(display_codes) > 1:
+            calc_code = st.selectbox(t["calc_occ"], options=list(display_codes),
+                                     format_func=occ_name, key="calc_occ_sel")
+        else:
+            calc_code = display_codes[0]
+            st.markdown(f"**{occ_name(calc_code)}**")
+    with c2:
+        calc_years = sorted(df[year_col].unique(), reverse=True)
+        calc_year  = st.selectbox(t["calc_year"], options=calc_years, index=0, key="calc_year_sel")
+
+    # Pull this occupation/year's percentile points from the data already fetched
+    row_df = df[(df[occ_col].str.strip() == calc_code) & (df[year_col] == calc_year)]
+    points = []
+    if not row_df.empty:
+        r = row_df.iloc[0]
+        for label, lvl in PCT_POINTS:
+            if label in df.columns and pd.notna(r[label]):
+                points.append((lvl, float(r[label])))
+    points.sort(key=lambda p: p[0])
+
+    if len(points) < 2:
+        st.info(t["calc_no_pct"])
+    else:
+        levs = [lvl for lvl, _ in points]
+        vals = [val for _, val in points]
+        default_salary = int(round(vals[len(vals) // 2]))
+        salary = st.number_input(t["calc_input"], min_value=0, value=default_salary,
+                                 step=500, key="calc_salary")
+
+        sex_lbl    = {"1": t["men"], "2": t["women"],
+                      "1+2": "Total" if lang == "EN" else "Totalt"}.get(query_sex, query_sex)
+        sector_lbl = t["sectors"].get(query_sector, query_sector)
+        st.caption(t["calc_context"].format(occ=occ_name(calc_code), sector=sector_lbl,
+                                            sex=sex_lbl, year=calc_year))
+
+        # Estimate the percentile rank by piecewise-linear interpolation
+        if salary <= vals[0]:
+            est, pos = levs[0], "below"
+        elif salary >= vals[-1]:
+            est, pos = levs[-1], "above"
+        else:
+            est, pos = levs[-1], "in"
+            for i in range(len(points) - 1):
+                v0, v1 = vals[i], vals[i + 1]
+                if v0 <= salary <= v1:
+                    frac = (salary - v0) / (v1 - v0) if v1 > v0 else 0.0
+                    est  = levs[i] + frac * (levs[i + 1] - levs[i])
+                    break
+
+        m1, m2 = st.columns([1, 2])
+        with m1:
+            st.metric(t["calc_rank"], f"P{est:.0f}")
+        with m2:
+            if pos == "below":
+                st.warning(t["calc_below"])
+            elif pos == "above":
+                st.success(t["calc_above"])
+            else:
+                st.info(t["calc_more_than"].format(p=f"{est:.0f}", top=f"{100 - est:.0f}"))
+
+        # Percentile curve with the user's position marked
+        fig_c = go.Figure()
+        fig_c.add_trace(go.Scatter(
+            x=levs, y=vals, mode="lines+markers", name=t["calc_curve"],
+            line=dict(color="#4e79a7", width=2), marker=dict(size=8),
+        ))
+        fig_c.add_hline(y=salary, line=dict(color="#e15759", width=1, dash="dot"))
+        fig_c.add_trace(go.Scatter(
+            x=[est], y=[salary], mode="markers+text", text=[t["calc_you"]],
+            textposition="top center", textfont=dict(color="#e15759"),
+            marker=dict(size=16, symbol="star", color="#e15759",
+                        line=dict(width=1, color="white")),
+            showlegend=False,
+        ))
+        fig_c.update_layout(
+            xaxis_title=t["x_pct"], yaxis_title=t["y_salary"],
+            xaxis=dict(tickvals=levs, ticktext=[f"P{l:.0f}" for l in levs],
+                       range=[5, 95]),
+            height=380, margin=dict(t=40, b=40), showlegend=False,
+        )
+        st.plotly_chart(fig_c, use_container_width=True)
 
 # ── Tab 2: By age ──────────────────────────────────────────────────────────────
 with tab_age:
