@@ -65,8 +65,13 @@ Whenever new commits are pushed to GitHub:
 cd /srv/scb-prod
 git pull
 cd deploy
-docker compose --env-file /root/.env -f docker-compose.scb.yml up -d --build
+docker compose --env-file /root/.env -f docker-compose.scb.yml up -d --build --force-recreate
 ```
+
+> **Always include `--force-recreate` when redeploying.** Rebuilding with the same
+> image tag does not change Compose's config hash, so without this flag Compose
+> leaves the OLD container running and your new code never goes live (it prints
+> "Running" instead of "Recreated").
 
 (Or use `deploy.sh` — see below.)
 

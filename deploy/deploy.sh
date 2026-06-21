@@ -14,6 +14,9 @@ echo "==> Deploying '${ENV}' from ${DIR}"
 cd "$DIR"
 git pull --ff-only
 cd deploy
-docker compose --env-file /root/.env -f "$FILE" up -d --build
+# --force-recreate: rebuilding with the same image tag does NOT change Compose's
+# config hash, so without it Compose leaves the OLD container running and the new
+# code never goes live. Force the container swap on every deploy.
+docker compose --env-file /root/.env -f "$FILE" up -d --build --force-recreate
 echo "==> Done. Recent logs:"
 docker logs --tail 15 "scb-${ENV}"
