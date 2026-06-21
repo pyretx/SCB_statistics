@@ -6,6 +6,8 @@
 #   docker compose --env-file /root/.env -f docker-compose.scb-dev.yml up -d --build
 # URL: https://scb-dev.srv950186.hstgr.cloud
 
+name: scb-dev
+
 services:
   scb:
     build: ..

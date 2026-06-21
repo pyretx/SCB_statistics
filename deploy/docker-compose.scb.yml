@@ -6,6 +6,8 @@
 # Run from the deploy/ directory with the shared env file:
 #   docker compose --env-file /root/.env -f docker-compose.scb.yml up -d --build
 
+name: scb-prod
+
 services:
   scb:
     build: ..
