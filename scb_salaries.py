@@ -153,6 +153,7 @@ T = {
         "fetching_data": "Fetching salary data…",
         "tab_pct": "📈 Percentile distribution",
         "tab_calc": "💰 Where do I stand?",
+        "tab_lead": "🏆 Leaderboard",
         "tab_age": "👤 By age",
         "tab_region": "🗺️ By region",
         "tab_edu": "🎓 By education",
@@ -169,6 +170,34 @@ T = {
         "calc_you": "You",
         "calc_context": "Based on **{occ}** · {sector} · {sex} · {year} (monthly salary).",
         "calc_curve": "Salary by percentile",
+        "lead_title": "Occupation leaderboard",
+        "lead_intro": "Ranks {scope} in **{sector}**. Searched occupations are highlighted in red.",
+        "lead_all_occ": "all occupations",
+        "lead_metric": "Rank by",
+        "lead_m_median": "Median salary",
+        "lead_m_avg": "Average salary",
+        "lead_m_gap": "Gender pay gap",
+        "lead_m_growth": "Salary growth",
+        "lead_year": "Year",
+        "lead_from": "From year",
+        "lead_to": "To year",
+        "lead_topn": "How many to show",
+        "lead_order": "Order",
+        "lead_high": "Highest first",
+        "lead_low": "Lowest first",
+        "lead_gap_big": "Biggest gap first",
+        "lead_gap_small": "Most equal first",
+        "lead_grow_fast": "Fastest first",
+        "lead_grow_slow": "Slowest first",
+        "lead_rank": "Rank",
+        "lead_occ": "Occupation",
+        "lead_value": "Value",
+        "lead_gap_axis": "Women's salary (% of men's)",
+        "lead_growth_axis": "Salary change (%)",
+        "lead_your": "Your selection: **{name}** — #{rank} of {total} ({val})",
+        "lead_sex_note": "Salary figures shown for: **{sex}**. Gender gap always uses men vs women.",
+        "lead_table": "Full ranking",
+        "lead_need_two": "Pick two different years to compare growth.",
         "stats_title": "Number of employees in the selection",
         "stat_total": "Total employees",
         "per_occ": "By occupation",
@@ -251,6 +280,7 @@ T = {
         "fetching_data": "Hämtar lönedata…",
         "tab_pct": "📈 Lönespridning",
         "tab_calc": "💰 Var ligger jag?",
+        "tab_lead": "🏆 Topplista",
         "tab_age": "👤 Efter ålder",
         "tab_region": "🗺️ Efter region",
         "tab_edu": "🎓 Efter utbildning",
@@ -267,6 +297,34 @@ T = {
         "calc_you": "Du",
         "calc_context": "Baserat på **{occ}** · {sector} · {sex} · {year} (månadslön).",
         "calc_curve": "Lön per percentil",
+        "lead_title": "Yrkestopplista",
+        "lead_intro": "Rangordnar {scope} i **{sector}**. Sökta yrken markeras i rött.",
+        "lead_all_occ": "alla yrken",
+        "lead_metric": "Rangordna efter",
+        "lead_m_median": "Medianlön",
+        "lead_m_avg": "Genomsnittslön",
+        "lead_m_gap": "Lönegap mellan könen",
+        "lead_m_growth": "Löneökning",
+        "lead_year": "År",
+        "lead_from": "Från år",
+        "lead_to": "Till år",
+        "lead_topn": "Antal att visa",
+        "lead_order": "Ordning",
+        "lead_high": "Högst först",
+        "lead_low": "Lägst först",
+        "lead_gap_big": "Störst gap först",
+        "lead_gap_small": "Mest jämställt först",
+        "lead_grow_fast": "Snabbast först",
+        "lead_grow_slow": "Långsammast först",
+        "lead_rank": "Plats",
+        "lead_occ": "Yrke",
+        "lead_value": "Värde",
+        "lead_gap_axis": "Kvinnors lön (% av mäns)",
+        "lead_growth_axis": "Löneförändring (%)",
+        "lead_your": "Ditt val: **{name}** — plats {rank} av {total} ({val})",
+        "lead_sex_note": "Lönesiffror visas för: **{sex}**. Lönegapet använder alltid män mot kvinnor.",
+        "lead_table": "Hela rangordningen",
+        "lead_need_two": "Välj två olika år för att jämföra ökning.",
         "stats_title": "Antal anställda i urvalet",
         "stat_total": "Totalt antal anställda",
         "per_occ": "Per yrke",
@@ -605,6 +663,29 @@ def fetch_edu_total_count(sector, occ_codes, year, lang):
         ]
     return _merge_simple(EDU_TABLES, q, lang, [str(year)])
 
+
+# Average + Median ContentsCodes per percentile table (for the leaderboard).
+_LEAD_TABLES = [
+    ("LoneSpridSektorYrk4A", 2014, 2022, ["000000C5", "000000C6"]),
+    ("LoneSpridSektYrk4AN",  2023, 2024, ["000007CD", "000007CE"]),
+]
+
+
+@st.cache_data(show_spinner=False, persist="disk")
+def fetch_market_salaries(sector, years, lang):
+    """Median + average monthly salary for ALL occupations × sex (men/women/total),
+    across the selected years. One query powers every leaderboard ranking."""
+    def q(yr, codes):
+        return [
+            {"code": "Sektor",       "selection": {"filter": "item", "values": [sector]}},
+            {"code": "Yrke2012",     "selection": {"filter": "all",  "values": ["*"]}},
+            {"code": "Kon",          "selection": {"filter": "item", "values": ["1", "2", "1+2"]}},
+            {"code": "ContentsCode", "selection": {"filter": "item", "values": codes}},
+            {"code": "Tid",          "selection": {"filter": "item", "values": yr}},
+        ]
+    return _merge_tables(_LEAD_TABLES, q, lang, [str(y) for y in years], ("avg", "median"))
+
+
 AGG_CODE = "__agg__"  # synthetic occupation code for an aggregated group
 
 
@@ -791,12 +872,21 @@ with st.sidebar:
         else:
             # No drill-down at all — use "0000" (SCB aggregate for all occupations)
             codes = ("0000",)
+        # Group scope (used to limit the leaderboard to the drilled-into group)
+        if sub_digit:
+            scope_prefix, scope_label = sub_digit, sub_label
+        elif major_digit:
+            scope_prefix, scope_label = major_digit, major_label
+        else:
+            scope_prefix, scope_label = "", ""
         st.session_state["query"] = {
-            "sector":    sector_code,
-            "codes":     codes,
-            "sex":       sex_code,
-            "aggregate": aggregate,
-            "agg_name":  agg_name,
+            "sector":       sector_code,
+            "codes":        codes,
+            "sex":          sex_code,
+            "aggregate":    aggregate,
+            "agg_name":     agg_name,
+            "scope_prefix": scope_prefix,
+            "scope_label":  scope_label,
         }
 
     selected_occ_codes = st.session_state.get("query", {}).get("codes", ())
@@ -876,8 +966,9 @@ def show_breakdown_raw(df_in, dim_col, dim_label, dim_map=None, sex_col=None):
         st.dataframe(out, use_container_width=True, hide_index=True)
 
 
-tab_pct, tab_calc, tab_age, tab_reg, tab_edu, tab_stats = st.tabs([
-    t["tab_pct"], t["tab_calc"], t["tab_age"], t["tab_region"], t["tab_edu"], t["tab_stats"]
+tab_pct, tab_calc, tab_lead, tab_age, tab_reg, tab_edu, tab_stats = st.tabs([
+    t["tab_pct"], t["tab_calc"], t["tab_lead"], t["tab_age"], t["tab_region"],
+    t["tab_edu"], t["tab_stats"]
 ])
 
 # ── Tab 1: Percentile distribution ────────────────────────────────────────────
@@ -1057,6 +1148,134 @@ with tab_calc:
             height=380, margin=dict(t=40, b=40), showlegend=False,
         )
         st.plotly_chart(fig_c, use_container_width=True)
+
+# ── Tab: Leaderboard ──────────────────────────────────────────────────────────
+with tab_lead:
+    st.subheader(t["lead_title"])
+    sector_lbl   = t["sectors"].get(query_sector, query_sector)
+    scope_prefix = q.get("scope_prefix", "")
+    scope_label  = q.get("scope_label", "")
+    scope_disp   = scope_label if scope_prefix else t["lead_all_occ"]
+    st.caption(t["lead_intro"].format(scope=scope_disp, sector=sector_lbl))
+
+    with st.spinner(t["fetching_data"]):
+        dfm = fetch_market_salaries(query_sector, selected_years, lang)
+
+    if dfm.empty:
+        st.warning(t["no_data"])
+    else:
+        m_occ, m_sex, m_yr = dfm.columns[1], dfm.columns[2], dfm.columns[3]
+        dfm = dfm[dfm[m_occ].str.strip() != "0000"].copy()
+        dfm["code"] = dfm[m_occ].str.strip()
+        dfm["sx"]   = dfm[m_sex].str.strip()
+        # Limit the ranking to the major/sub-group the user drilled into
+        if scope_prefix:
+            dfm = dfm[dfm["code"].str.startswith(scope_prefix)]
+        lead_years  = sorted(dfm[m_yr].unique(), reverse=True)
+
+        metric_opts = {
+            "median": t["lead_m_median"], "avg": t["lead_m_avg"],
+            "gap":    t["lead_m_gap"],    "growth": t["lead_m_growth"],
+        }
+        c1, c2, c3 = st.columns([2, 1, 1])
+        with c1:
+            metric = st.selectbox(t["lead_metric"], list(metric_opts),
+                                  format_func=lambda k: metric_opts[k], key="lead_metric")
+        # Build the ranking frame -> columns: code, name, val
+        ranked, axis_title, value_fmt, valid = None, t["y_salary"], None, True
+
+        if metric in ("median", "avg"):
+            with c2:
+                ly = st.selectbox(t["lead_year"], lead_years, index=0, key="lead_year_ma")
+            with c3:
+                asc = st.selectbox(t["lead_order"], [t["lead_high"], t["lead_low"]],
+                                   key="lead_ord_ma") == t["lead_low"]
+            sub = dfm[(dfm[m_yr] == ly) & (dfm["sx"] == query_sex)].dropna(subset=[metric])
+            ranked = sub[["code", metric]].rename(columns={metric: "val"})
+            ranked = ranked.sort_values("val", ascending=asc)
+            value_fmt = lambda v: f"{int(round(v)):,} SEK"
+
+        elif metric == "gap":
+            with c2:
+                ly = st.selectbox(t["lead_year"], lead_years, index=0, key="lead_year_gap")
+            with c3:
+                asc = st.selectbox(t["lead_order"], [t["lead_gap_big"], t["lead_gap_small"]],
+                                   key="lead_ord_gap") == t["lead_gap_big"]
+            men   = dfm[(dfm[m_yr] == ly) & (dfm["sx"] == "1")][["code", "median"]]
+            women = dfm[(dfm[m_yr] == ly) & (dfm["sx"] == "2")][["code", "median"]]
+            g = men.merge(women, on="code", suffixes=("_m", "_w")).dropna()
+            g["val"] = (g["median_w"] / g["median_m"] * 100).round(1)
+            ranked = g[["code", "val"]].sort_values("val", ascending=asc)
+            axis_title = t["lead_gap_axis"]
+            value_fmt = lambda v: f"{v:.1f}%"
+
+        else:  # growth
+            with c2:
+                yf = st.selectbox(t["lead_from"], lead_years,
+                                  index=len(lead_years) - 1, key="lead_from_y")
+            with c3:
+                yt = st.selectbox(t["lead_to"], lead_years, index=0, key="lead_to_y")
+            order_fast = st.selectbox(t["lead_order"],
+                                      [t["lead_grow_fast"], t["lead_grow_slow"]],
+                                      key="lead_ord_grow") == t["lead_grow_slow"]
+            if yf == yt:
+                st.info(t["lead_need_two"]); valid = False
+            else:
+                base = dfm[(dfm[m_yr] == yf) & (dfm["sx"] == query_sex)][["code", "median"]]
+                comp = dfm[(dfm[m_yr] == yt) & (dfm["sx"] == query_sex)][["code", "median"]]
+                gr = base.merge(comp, on="code", suffixes=("_0", "_1")).dropna()
+                gr = gr[gr["median_0"] > 0]
+                gr["val"] = ((gr["median_1"] / gr["median_0"] - 1) * 100).round(1)
+                ranked = gr[["code", "val"]].sort_values("val", ascending=order_fast)
+                axis_title = t["lead_growth_axis"]
+                value_fmt = lambda v: f"{v:+.1f}%"
+
+        if valid and ranked is not None and not ranked.empty:
+            ranked = ranked.reset_index(drop=True)
+            ranked.insert(0, "rank", ranked.index + 1)
+            ranked["name"] = ranked["code"].map(lambda c: occupations.get(c, c))
+
+            sex_lbl = {"1": t["men"], "2": t["women"],
+                       "1+2": "Total" if lang == "EN" else "Totalt"}.get(query_sex, query_sex)
+            if metric != "gap":
+                st.caption(t["lead_sex_note"].format(sex=sex_lbl))
+
+            topn = st.slider(t["lead_topn"], 5, 40, 15, key="lead_topn")
+            show = ranked.head(topn).iloc[::-1]  # reversed so #1 is on top of the bar chart
+            user_codes = set(selected_occ_codes)
+            bar_colors = ["#e15759" if c in user_codes else "#4e79a7" for c in show["code"]]
+
+            fig_l = go.Figure(go.Bar(
+                x=show["val"], y=show["name"], orientation="h",
+                marker_color=bar_colors,
+                text=[value_fmt(v) for v in show["val"]], textposition="auto",
+            ))
+            fig_l.update_layout(
+                xaxis_title=axis_title, yaxis_title="",
+                height=max(360, 26 * len(show) + 80),
+                margin=dict(t=30, b=40, l=260),
+            )
+            st.plotly_chart(fig_l, use_container_width=True)
+
+            # Where do the user's searched occupations land?
+            if not agg_mode:
+                for c in selected_occ_codes:
+                    if c == "0000":
+                        continue
+                    r = ranked[ranked["code"] == c]
+                    if not r.empty:
+                        row = r.iloc[0]
+                        st.markdown(t["lead_your"].format(
+                            name=occupations.get(c, c), rank=int(row["rank"]),
+                            total=len(ranked), val=value_fmt(row["val"])))
+
+            with st.expander(t["lead_table"]):
+                tbl = ranked.copy()
+                tbl[t["lead_value"]] = tbl["val"].map(value_fmt)
+                tbl[t["lead_occ"]]   = tbl["name"] + "  (" + tbl["code"] + ")"
+                tbl = tbl.rename(columns={"rank": t["lead_rank"]})
+                st.dataframe(tbl[[t["lead_rank"], t["lead_occ"], t["lead_value"]]],
+                             use_container_width=True, hide_index=True)
 
 # ── Tab 2: By age ──────────────────────────────────────────────────────────────
 with tab_age:
