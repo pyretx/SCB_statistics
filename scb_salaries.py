@@ -137,6 +137,7 @@ T = {
         "occ_select": "3. Occupation(s)",
         "occ_search_ph": "Search occupations…",
         "no_match": "No occupations match.",
+        "found_n": "✓ {n} occupation(s) found",
         "select_prompt": "Select at least one occupation in the sidebar to get started.",
         "no_data": "No data returned for this combination. Try different filters.",
         "chart_title": "Salary distribution by percentile",
@@ -234,6 +235,7 @@ T = {
         "occ_select": "3. Yrke(n)",
         "occ_search_ph": "Sök yrken…",
         "no_match": "Inga yrken matchar.",
+        "found_n": "✓ {n} yrke(n) hittades",
         "select_prompt": "Välj minst ett yrke i sidofältet för att komma igång.",
         "no_data": "Inga data returnerades. Prova andra filter.",
         "chart_title": "Lönespridning per percentil",
@@ -740,6 +742,7 @@ with st.sidebar:
         s = search.strip().lower()
         pool = {k: v for k, v in occupations.items()
                 if k != "0000" and (s in v.lower() or s in k.lower())}
+        st.caption(t["found_n"].format(n=len(pool)) if pool else t["no_match"])
 
     occ_options = [f"{v}  ({k})" for k, v in pool.items()]
 
