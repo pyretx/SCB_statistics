@@ -388,23 +388,23 @@ TABLE_BASE = "AM/AM0110/AM0110A"
 PCT_TABLES = [
     ("LoneSpridSektorYrk4A", 2014, 2022,
      ["000000C5", "000000C6", "000000C7", "000000C8", "000000C9", "000000CA"]),
-    ("LoneSpridSektYrk4AN",  2023, 2024,
+    ("LoneSpridSektYrk4AN",  2023, 2025,
      ["000007CD", "000007CE", "000007CF", "000007CG", "000007CH", "000007CI"]),
 ]
 # Age tables
 AGE_TABLES = [
     ("LonYrkeAlder4A",  2014, 2022),
-    ("LonYrkeAlder4AN", 2023, 2024),
+    ("LonYrkeAlder4AN", 2023, 2025),
 ]
 # Region tables
 REG_TABLES = [
     ("LonYrkeRegion4A",  2014, 2022),
-    ("LonYrkeRegion4AN", 2023, 2024),
+    ("LonYrkeRegion4AN", 2023, 2025),
 ]
 # Education tables
 EDU_TABLES = [
     ("LonYrkeUtbildning4A",  2014, 2022),
-    ("LonYrkeUtbildning4AN", 2023, 2024),
+    ("LonYrkeUtbildning4AN", 2023, 2025),
 ]
 
 REGIONS = {
@@ -667,7 +667,7 @@ def fetch_edu_total_count(sector, occ_codes, year, lang):
 # Average + Median ContentsCodes per percentile table (for the leaderboard).
 _LEAD_TABLES = [
     ("LoneSpridSektorYrk4A", 2014, 2022, ["000000C5", "000000C6"]),
-    ("LoneSpridSektYrk4AN",  2023, 2024, ["000007CD", "000007CE"]),
+    ("LoneSpridSektYrk4AN",  2023, 2025, ["000007CD", "000007CE"]),
 ]
 
 
@@ -770,7 +770,7 @@ with st.sidebar:
         sex_labels.index(st.radio(t["sex"], sex_labels, horizontal=True, key="sex_sel"))
     ]
 
-    all_years = [str(y) for y in range(2014, 2025)]
+    all_years = [str(y) for y in range(2014, 2026)]
     yr_from, yr_to = st.select_slider(t["year_range"], options=all_years,
                                       value=(all_years[-3], all_years[-1]))
     selected_years = tuple(y for y in all_years if yr_from <= y <= yr_to)
