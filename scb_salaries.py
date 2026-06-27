@@ -199,6 +199,52 @@ T = {
         "lead_sex_note": "Salary figures shown for: **{sex}**. Gender gap always uses men vs women.",
         "lead_table": "Full ranking",
         "lead_need_two": "Pick two different years to compare growth.",
+        "tab_permit": "🛂 Work permit check",
+        "wp_title": "Swedish work permit — salary & SSYK check",
+        "wp_banner": "⚖️ Based on Migrationsverket rules as of **{as_of}**. Checked {today}. Figures are maintained manually — let us know when the rules change.",
+        "wp_median_ok": "✓ Configured median (SEK {cfg:,}) matches the latest SCB figure ({year}).",
+        "wp_median_warn": "⚠️ Configured median is SEK {cfg:,}, but the latest SCB median ({year}) is SEK {live:,}. The rule set may need updating.",
+        "wp_no_occ": "Select a specific occupation in the sidebar (not an aggregated group) to run a work-permit check.",
+        "wp_occ": "Occupation (SSYK)",
+        "wp_salary": "Proposed monthly salary (SEK, gross incl. fixed supplements)",
+        "wp_type": "Permit type",
+        "wp_type_regular": "Regular work permit",
+        "wp_type_blue": "EU Blue Card",
+        "wp_sector": "Compare market salary in sector",
+        "wp_transition": "Extension of a permit granted before 1 June 2026 (transition rule)",
+        "wp_app_date": "Application date",
+        "wp_h_elig": "1 · Eligibility",
+        "wp_h_floor": "2 · Salary floor",
+        "wp_h_market": "3 · Market / customary pay",
+        "wp_h_docs": "4 · Documentation & process",
+        "wp_banned_full": "❌ Regular work permits cannot be granted for this occupation (SSYK {code} — personal assistants).",
+        "wp_banned_partial": "⚠️ Part of SSYK {code} is banned: forest **berry pickers** cannot get a regular permit. Confirm the role is not berry-picking — other roles in this group are allowed (and exempt at 75%).",
+        "wp_elig_ok": "✅ No occupation-level ban for SSYK {code}.",
+        "wp_floor_pass": "✅ Proposed SEK {sal:,} meets the floor of SEK {floor:,} ({basis}). Margin +SEK {margin:,}.",
+        "wp_floor_fail": "❌ Proposed SEK {sal:,} is below the floor of SEK {floor:,} ({basis}). Short by SEK {gap:,}.",
+        "wp_basis_general": "90% of median",
+        "wp_basis_transition": "80% of median — transition rule",
+        "wp_basis_exempt": "75% of median — exempt occupation",
+        "wp_basis_blue": "EU Blue Card threshold",
+        "wp_market_none": "No SCB salary distribution for this occupation/sector/year — can't assess market position.",
+        "wp_market": "Proposed SEK {sal:,} sits at about **P{pct:.0f}** of the market range ({sector}, {year}). Range: P10 SEK {p10:,} · median SEK {p50:,} · P90 SEK {p90:,}.",
+        "wp_market_below": "⚠️ Below the occupation median — check it meets the collective agreement / customary level.",
+        "wp_market_ok": "✅ At or above the occupation median.",
+        "wp_market_note": "ℹ️ Market-data proxy only. The legal test is the collective agreement or customary salary — confirm against the relevant agreement.",
+        "wp_plot_proposed": "Proposed",
+        "wp_plot_floor": "Floor",
+        "wp_ref_lines": "Reference lines — % of this occupation's median (SEK {median:,}) for the selected sector:",
+        "wp_data_expander": "📊 Salary distribution data for this occupation",
+        "wp_exempt_header": "Exempt SSYK codes (75% floor):",
+        "wp_docs_note": "Not auto-checked — the employer must provide/confirm:",
+        "wp_docs_items": [
+            "Occupation **and SSYK code** in the application",
+            "Work duties, employment form, start date and scope",
+            "Salary and collective-agreement date",
+            "Insurance companies and job advertisement ID",
+            "Relevant **trade union given the opportunity to comment** on the terms",
+        ],
+        "wp_rules_expander": "Rule figures used",
         "stats_title": "Number of employees in the selection",
         "stat_total": "Total employees",
         "per_occ": "By occupation",
@@ -326,6 +372,52 @@ T = {
         "lead_sex_note": "Lönesiffror visas för: **{sex}**. Lönegapet använder alltid män mot kvinnor.",
         "lead_table": "Hela rangordningen",
         "lead_need_two": "Välj två olika år för att jämföra ökning.",
+        "tab_permit": "🛂 Arbetstillståndskoll",
+        "wp_title": "Svenskt arbetstillstånd — löne- & SSYK-kontroll",
+        "wp_banner": "⚖️ Baserat på Migrationsverkets regler per **{as_of}**. Kontrollerat {today}. Siffrorna underhålls manuellt — säg till när reglerna ändras.",
+        "wp_median_ok": "✓ Konfigurerad median (SEK {cfg:,}) matchar senaste SCB-siffran ({year}).",
+        "wp_median_warn": "⚠️ Konfigurerad median är SEK {cfg:,}, men senaste SCB-medianen ({year}) är SEK {live:,}. Regeluppsättningen kan behöva uppdateras.",
+        "wp_no_occ": "Välj ett specifikt yrke i sidofältet (inte en aggregerad grupp) för att köra en arbetstillståndskoll.",
+        "wp_occ": "Yrke (SSYK)",
+        "wp_salary": "Föreslagen månadslön (SEK, brutto inkl. fasta tillägg)",
+        "wp_type": "Typ av tillstånd",
+        "wp_type_regular": "Vanligt arbetstillstånd",
+        "wp_type_blue": "EU-blåkort",
+        "wp_sector": "Jämför marknadslön i sektor",
+        "wp_transition": "Förlängning av tillstånd beviljat före 1 juni 2026 (övergångsregel)",
+        "wp_app_date": "Ansökningsdatum",
+        "wp_h_elig": "1 · Behörighet",
+        "wp_h_floor": "2 · Lönegolv",
+        "wp_h_market": "3 · Marknads-/branschlön",
+        "wp_h_docs": "4 · Dokumentation & process",
+        "wp_banned_full": "❌ Vanligt arbetstillstånd kan inte beviljas för detta yrke (SSYK {code} — personliga assistenter).",
+        "wp_banned_partial": "⚠️ Del av SSYK {code} är förbjuden: skogs**bärplockare** kan inte få vanligt arbetstillstånd. Bekräfta att rollen inte är bärplockning — övriga roller i gruppen är tillåtna (och undantagna vid 75%).",
+        "wp_elig_ok": "✅ Inget yrkesförbud för SSYK {code}.",
+        "wp_floor_pass": "✅ Föreslagna SEK {sal:,} når golvet SEK {floor:,} ({basis}). Marginal +SEK {margin:,}.",
+        "wp_floor_fail": "❌ Föreslagna SEK {sal:,} är under golvet SEK {floor:,} ({basis}). Saknas SEK {gap:,}.",
+        "wp_basis_general": "90% av medianen",
+        "wp_basis_transition": "80% av medianen — övergångsregel",
+        "wp_basis_exempt": "75% av medianen — undantaget yrke",
+        "wp_basis_blue": "EU-blåkortets tröskel",
+        "wp_market_none": "Ingen SCB-lönefördelning för detta yrke/sektor/år — kan inte bedöma marknadsläget.",
+        "wp_market": "Föreslagna SEK {sal:,} ligger på cirka **P{pct:.0f}** av marknadsintervallet ({sector}, {year}). Intervall: P10 SEK {p10:,} · median SEK {p50:,} · P90 SEK {p90:,}.",
+        "wp_market_below": "⚠️ Under yrkets median — kontrollera att det når kollektivavtal / branschpraxis.",
+        "wp_market_ok": "✅ På eller över yrkets median.",
+        "wp_market_note": "ℹ️ Endast marknadsdata som riktmärke. Det rättsliga testet är kollektivavtal eller branschpraxis — stäm av mot relevant avtal.",
+        "wp_plot_proposed": "Föreslagen",
+        "wp_plot_floor": "Golv",
+        "wp_ref_lines": "Referenslinjer — % av yrkets median (SEK {median:,}) för vald sektor:",
+        "wp_data_expander": "📊 Lönefördelningsdata för detta yrke",
+        "wp_exempt_header": "Undantagna SSYK-koder (75%-golv):",
+        "wp_docs_note": "Kontrolleras inte automatiskt — arbetsgivaren måste ange/bekräfta:",
+        "wp_docs_items": [
+            "Yrke **och SSYK-kod** i ansökan",
+            "Arbetsuppgifter, anställningsform, startdatum och omfattning",
+            "Lön och kollektivavtalsdatum",
+            "Försäkringsbolag och annons-ID",
+            "Relevant **facklig organisation har fått yttra sig** om villkoren",
+        ],
+        "wp_rules_expander": "Regelsiffror som används",
         "stats_title": "Antal anställda i urvalet",
         "stat_total": "Totalt antal anställda",
         "per_occ": "Per yrke",
@@ -449,6 +541,55 @@ EDU_LEVELS = {
 }
 
 AGE_GROUPS = ["18-24", "25-34", "35-44", "45-54", "55-64", "65-68"]
+
+# ── Work-permit rule set (Migrationsverket) — MAINTAINED MANUALLY ──────────────
+# When the rules change, update the values below and bump WP_RULES_AS_OF.
+# (These are slated to become admin-editable later; kept together for that move.)
+WP_RULES_AS_OF     = "2026-06-16"   # date the rule figures below are valid from
+WP_MEDIAN_SALARY   = 38300          # official Migrationsverket median (SEK/month)
+WP_PCT_GENERAL     = 0.90           # general salary floor = 90% of median
+WP_PCT_TRANSITION  = 0.80           # transition (old "good living") = 80%
+WP_PCT_EXEMPT      = 0.75           # exempt occupations = 75%
+WP_BLUE_CARD_FLOOR = 52000          # EU Blue Card fixed threshold (SEK/month)
+WP_TRANSITION_END  = "2026-12-01"   # new 90% rule applies from 2 Dec 2026
+WP_BENCH_YEAR      = 2025           # SCB year used for the market-position check
+# 75%-exempt occupations — Utlänningsförordningen 2006:97, 5 kap. 6 § (SFS 2026:605)
+WP_EXEMPT_SSYK = {
+    "3115", "3215", "3511", "3512", "3513", "3514",
+    "5321", "5322", "5323", "5324", "5325", "5326", "5330",
+    "6121", "6129", "6130", "6210",
+    "7212", "7215", "7233", "7413", "7611",
+    "8161", "8169", "8199", "8341", "9210",
+}
+WP_BANNED_FULL    = {"5343"}        # personal assistants — regular permit impossible
+WP_BANNED_PARTIAL = {"9210"}        # forest berry pickers within 9210 — warn only
+
+
+def wp_floor(ssyk: str, permit_type: str, is_transition: bool, app_date_iso: str):
+    """Return (floor_sek, basis_key) for the applicable salary floor."""
+    if permit_type == "blue":
+        return WP_BLUE_CARD_FLOOR, "blue"
+    if is_transition and app_date_iso <= WP_TRANSITION_END:
+        return round(WP_MEDIAN_SALARY * WP_PCT_TRANSITION), "transition"
+    if ssyk in WP_EXEMPT_SSYK:
+        return round(WP_MEDIAN_SALARY * WP_PCT_EXEMPT), "exempt"
+    return round(WP_MEDIAN_SALARY * WP_PCT_GENERAL), "general"
+
+
+def interp_percentile(salary, points):
+    """points: sorted [(level, value)]. Returns (estimated_percentile, position)."""
+    levs = [lv for lv, _ in points]
+    vals = [v for _, v in points]
+    if salary <= vals[0]:
+        return levs[0], "below"
+    if salary >= vals[-1]:
+        return levs[-1], "above"
+    for i in range(len(points) - 1):
+        v0, v1 = vals[i], vals[i + 1]
+        if v0 <= salary <= v1:
+            frac = (salary - v0) / (v1 - v0) if v1 > v0 else 0.0
+            return levs[i] + frac * (levs[i + 1] - levs[i]), "in"
+    return levs[-1], "in"
 
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "occupations_cache.json")
 
@@ -670,6 +811,29 @@ _LEAD_TABLES = [
     ("LoneSpridSektorYrk4A", 2014, 2022, ["000000C5", "000000C6"]),
     ("LoneSpridSektYrk4AN",  2023, 2025, ["000007CD", "000007CE"]),
 ]
+
+
+@st.cache_data(show_spinner=False, persist="disk")
+def fetch_live_median(lang):
+    """Latest SCB national median (all sectors, all occupations, total) → (year, value)."""
+    tables = [("LoneSpridSektYrk4AN", 2023, 2025, ["000007CE"])]
+    def q(yr, codes):
+        return [
+            {"code": "Sektor",       "selection": {"filter": "item", "values": ["0"]}},
+            {"code": "Yrke2012",     "selection": {"filter": "item", "values": ["0000"]}},
+            {"code": "Kon",          "selection": {"filter": "item", "values": ["1+2"]}},
+            {"code": "ContentsCode", "selection": {"filter": "item", "values": codes}},
+            {"code": "Tid",          "selection": {"filter": "item", "values": yr}},
+        ]
+    df = _merge_tables(tables, q, lang, ["2023", "2024", "2025"], ("median",))
+    if df.empty:
+        return None, None
+    ycol = df.columns[-2]
+    df = df.dropna(subset=["median"])
+    if df.empty:
+        return None, None
+    latest = df.sort_values(ycol).iloc[-1]
+    return str(latest[ycol]).strip(), int(latest["median"])
 
 
 @st.cache_data(show_spinner=False, persist="disk")
@@ -1064,9 +1228,9 @@ def show_breakdown_raw(df_in, dim_col, dim_label, dim_map=None, sex_col=None):
         st.dataframe(out, use_container_width=True, hide_index=True)
 
 
-tab_pct, tab_calc, tab_lead, tab_age, tab_reg, tab_edu, tab_stats = st.tabs([
-    t["tab_pct"], t["tab_calc"], t["tab_lead"], t["tab_age"], t["tab_region"],
-    t["tab_edu"], t["tab_stats"]
+tab_pct, tab_calc, tab_permit, tab_lead, tab_age, tab_reg, tab_edu, tab_stats = st.tabs([
+    t["tab_pct"], t["tab_calc"], t["tab_permit"], t["tab_lead"], t["tab_age"],
+    t["tab_region"], t["tab_edu"], t["tab_stats"]
 ])
 
 # ── Tab 1: Percentile distribution ────────────────────────────────────────────
@@ -1246,6 +1410,192 @@ with tab_calc:
             height=380, margin=dict(t=40, b=40), showlegend=False,
         )
         st.plotly_chart(fig_c, use_container_width=True)
+
+# ── Tab: Work permit check ────────────────────────────────────────────────────
+with tab_permit:
+    st.subheader(t["wp_title"])
+    today_iso = datetime.now().strftime("%Y-%m-%d")
+    st.info(t["wp_banner"].format(as_of=WP_RULES_AS_OF, today=today_iso))
+
+    # Live cross-check of the manually-set median against SCB
+    ly, live_med = fetch_live_median(lang)
+    if live_med:
+        if live_med != WP_MEDIAN_SALARY:
+            st.warning(t["wp_median_warn"].format(cfg=WP_MEDIAN_SALARY, year=ly, live=live_med))
+        else:
+            st.caption(t["wp_median_ok"].format(cfg=WP_MEDIAN_SALARY, year=ly))
+
+    permit_codes = [c for c in selected_occ_codes if c != "0000"]
+    if not permit_codes:
+        st.info(t["wp_no_occ"])
+    else:
+        c1, c2 = st.columns(2)
+        with c1:
+            pcode = st.selectbox(t["wp_occ"], permit_codes,
+                                 format_func=lambda c: f"{c} – {occupations.get(c, c)}",
+                                 key="wp_occ")
+            wp_salary = st.number_input(t["wp_salary"], min_value=0, value=35000,
+                                        step=500, key="wp_salary")
+            ptype = st.radio(t["wp_type"], [t["wp_type_regular"], t["wp_type_blue"]],
+                             key="wp_type", horizontal=True)
+            permit_type = "blue" if ptype == t["wp_type_blue"] else "regular"
+        with c2:
+            sector_codes_list = list(t["sectors"].keys())
+            default_sec_idx = sector_codes_list.index(query_sector) \
+                if query_sector in sector_codes_list else 0
+            # Key scoped to the searched sector so it re-defaults when that changes,
+            # while still letting the user override within a given search.
+            wp_sector_label = st.selectbox(t["wp_sector"], sector_labels,
+                                           index=default_sec_idx,
+                                           key=f"wp_sector_{query_sector}")
+            wp_sector_code  = sector_codes_list[sector_labels.index(wp_sector_label)]
+            is_transition = st.checkbox(t["wp_transition"], key="wp_transition")
+            app_date = st.date_input(t["wp_app_date"], key="wp_app_date")
+        app_date_iso = app_date.strftime("%Y-%m-%d")
+
+        st.divider()
+
+        # 1 — Eligibility ------------------------------------------------------
+        st.markdown(f"**{t['wp_h_elig']}**")
+        hard_block = pcode in WP_BANNED_FULL
+        if hard_block:
+            st.error(t["wp_banned_full"].format(code=pcode))
+        elif pcode in WP_BANNED_PARTIAL:
+            st.warning(t["wp_banned_partial"].format(code=pcode))
+        else:
+            st.success(t["wp_elig_ok"].format(code=pcode))
+
+        # 2 — Salary floor -----------------------------------------------------
+        st.markdown(f"**{t['wp_h_floor']}**")
+        floor, basis = wp_floor(pcode, permit_type, is_transition, app_date_iso)
+        basis_txt = t[f"wp_basis_{basis}"]
+        if wp_salary >= floor:
+            st.success(t["wp_floor_pass"].format(sal=wp_salary, floor=floor,
+                       basis=basis_txt, margin=wp_salary - floor))
+        else:
+            st.error(t["wp_floor_fail"].format(sal=wp_salary, floor=floor,
+                     basis=basis_txt, gap=floor - wp_salary))
+
+        # 3 — Market / customary pay ------------------------------------------
+        st.markdown(f"**{t['wp_h_market']}**")
+        ctx = pd.DataFrame([{
+            t["occupation"]: f"{pcode} – {occupations.get(pcode, pcode)}",
+            t["sector"]:     wp_sector_label,
+            t["select_year"]: WP_BENCH_YEAR,
+        }])
+        st.dataframe(ctx, use_container_width=True, hide_index=True)
+        with st.spinner(t["fetching_data"]):
+            mdf = fetch_percentile_data(wp_sector_code, (pcode,), "1+2",
+                                        (str(WP_BENCH_YEAR),), lang,
+                                        measure_keys, measure_labels)
+        pts = []
+        if not mdf.empty:
+            mrow = mdf.iloc[0]
+            for label, lvl in [("P10", 10), ("P25", 25), ("Median (P50)", 50),
+                               ("P75", 75), ("P90", 90)]:
+                if label in mdf.columns and pd.notna(mrow.get(label)):
+                    pts.append((lvl, float(mrow[label])))
+        pts.sort(key=lambda p: p[0])
+        if len(pts) < 2:
+            st.info(t["wp_market_none"])
+        else:
+            est, _pos = interp_percentile(wp_salary, pts)
+            pv = {lvl: val for lvl, val in pts}
+            st.write(t["wp_market"].format(
+                sal=wp_salary, pct=est, sector=wp_sector_label, year=WP_BENCH_YEAR,
+                p10=int(pv.get(10, pts[0][1])), p50=int(pv.get(50, pts[len(pts)//2][1])),
+                p90=int(pv.get(90, pts[-1][1]))))
+            if 50 in pv and wp_salary < pv[50]:
+                st.warning(t["wp_market_below"])
+            else:
+                st.success(t["wp_market_ok"])
+
+            # Reference lines: % of THIS occupation's median (selected sector) —
+            # a feel for the salary level within the occupation, not the legal floor.
+            occ_median = pv.get(50) or pts[len(pts) // 2][1]
+            v90 = round(occ_median * WP_PCT_GENERAL)
+            v80 = round(occ_median * WP_PCT_TRANSITION)
+            v75 = round(occ_median * WP_PCT_EXEMPT)
+            st.caption(t["wp_ref_lines"].format(median=int(occ_median)))
+            rc1, rc2, rc3 = st.columns(3)
+            show90 = rc1.checkbox(f"90% ({v90:,})", key="wp_ref90")
+            show80 = rc2.checkbox(f"80% ({v80:,})", key="wp_ref80")
+            show75 = rc3.checkbox(f"75% ({v75:,})", key="wp_ref75")
+
+            # Plot: percentile curve + proposed salary (★) + salary floor line
+            levs = [lv for lv, _ in pts]
+            vals = [v for _, v in pts]
+            fig_wp = go.Figure()
+            fig_wp.add_trace(go.Scatter(
+                x=levs, y=vals, mode="lines+markers",
+                line=dict(color="#4e79a7", width=2), marker=dict(size=8)))
+            fig_wp.add_hline(y=floor, line=dict(color="#59a14f", width=1, dash="dash"),
+                             annotation_text=f"{t['wp_plot_floor']} {int(floor):,}",
+                             annotation_position="bottom left")
+            for show, val, col, lbl in [(show90, v90, "#b07aa1", "90%"),
+                                        (show80, v80, "#f28e2b", "80%"),
+                                        (show75, v75, "#76b7b2", "75%")]:
+                if show:
+                    fig_wp.add_hline(y=val, line=dict(color=col, width=1, dash="dot"),
+                                     annotation_text=f"{lbl} {int(val):,}",
+                                     annotation_position="top left")
+            fig_wp.add_hline(y=wp_salary, line=dict(color="#e15759", width=1, dash="dot"))
+            fig_wp.add_trace(go.Scatter(
+                x=[est], y=[wp_salary], mode="markers+text",
+                text=[f"{t['wp_plot_proposed']} ({int(wp_salary):,})"],
+                textposition="top center", textfont=dict(color="#e15759"),
+                marker=dict(size=16, symbol="star", color="#e15759",
+                            line=dict(width=1, color="white"))))
+            fig_wp.update_layout(
+                xaxis_title=t["x_pct"], yaxis_title=t["y_salary"],
+                xaxis=dict(tickvals=levs, ticktext=[f"P{lv}" for lv in levs], range=[5, 95]),
+                height=360, margin=dict(t=30, b=40), showlegend=False)
+            st.plotly_chart(fig_wp, use_container_width=True)
+            st.caption(t["wp_market_note"])
+
+        # 4 — Documentation & process -----------------------------------------
+        st.markdown(f"**{t['wp_h_docs']}**")
+        st.caption(t["wp_docs_note"])
+        for item in t["wp_docs_items"]:
+            st.checkbox(item, key=f"wp_doc_{item[:20]}")
+
+        with st.expander(t["wp_rules_expander"]):
+            st.markdown(
+                f"- Median: **SEK {WP_MEDIAN_SALARY:,}** (as of {WP_RULES_AS_OF})\n"
+                f"- General 90% → **SEK {round(WP_MEDIAN_SALARY*WP_PCT_GENERAL):,}**\n"
+                f"- Transition 80% → **SEK {round(WP_MEDIAN_SALARY*WP_PCT_TRANSITION):,}**\n"
+                f"- Exempt 75% → **SEK {round(WP_MEDIAN_SALARY*WP_PCT_EXEMPT):,}**\n"
+                f"- EU Blue Card → **SEK {WP_BLUE_CARD_FLOOR:,}**\n"
+                f"- Transition ends: **{WP_TRANSITION_END}**\n"
+                f"- Banned: 5343 (full), 9210 (berry pickers, partial)"
+            )
+            st.markdown(f"**{t['wp_exempt_header']}**")
+            exempt_tbl = pd.DataFrame(
+                [{"SSYK": c, t["occupation"]: occupations.get(c, "—")}
+                 for c in sorted(WP_EXEMPT_SSYK)])
+            st.dataframe(exempt_tbl, use_container_width=True, hide_index=True)
+
+        # Salary distribution data table for the selected occupation
+        with st.expander(t["wp_data_expander"]):
+            ddf = fetch_percentile_data(wp_sector_code, (pcode,), "1+2",
+                                        ("2023", "2024", "2025"), lang,
+                                        measure_keys, measure_labels)
+            if ddf.empty:
+                st.info(t["wp_market_none"])
+            else:
+                dcols = [c for c in ddf.columns if c not in measure_labels]
+                yrc = dcols[-1]
+                ddf = ddf[ddf[yrc] == ddf[yrc].max()]  # latest year only
+                order = [m for m in ["P10", "P25", "Median (P50)", "P75", "P90"]
+                         if m in ddf.columns]
+                avg = next((m for m in measure_labels
+                            if "average" in m.lower() or "genomsnitt" in m.lower()), None)
+                show_cols = order + ([avg] if avg else [])
+                out = pd.DataFrame()
+                out[t["select_year"]] = ddf[yrc]
+                for m in show_cols:
+                    out[m] = ddf[m].map(lambda v: f"{int(v):,}" if pd.notna(v) else "–")
+                st.dataframe(out, use_container_width=True, hide_index=True)
 
 # ── Tab: Leaderboard ──────────────────────────────────────────────────────────
 with tab_lead:
