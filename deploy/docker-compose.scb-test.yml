@@ -14,6 +14,9 @@ services:
     image: scb-salaries:test
     container_name: scb-test
     restart: always
+    # Supabase secrets live on the server only, never in git or the image.
+    volumes:
+      - /root/scb-secrets.toml:/app/.streamlit/secrets.toml:ro
     networks:
       - traefik
     labels:
