@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import json
 import os
 from datetime import datetime
+import auth
 
 # ── SSYK 2012 hierarchy labels ─────────────────────────────────────────────────
 
@@ -847,13 +848,6 @@ with st.sidebar:
     with col_clear:
         st.button(t["btn_clear"], use_container_width=True, on_click=_clear_all)
 
-    cache_ts = st.session_state.get("cache_ts", "")
-    if st.button(f"↻ Refresh SCB  ·  📦 {cache_ts}", use_container_width=True):
-        with st.spinner("Fetching from SCB API…"):
-            ts = refresh_cache()
-        st.success(f"Updated {ts}")
-        st.rerun()
-
     # Commit query to session_state only when Search is clicked
     if search_clicked:
         aggregate, agg_name = False, ""
@@ -891,10 +885,114 @@ with st.sidebar:
 
     selected_occ_codes = st.session_state.get("query", {}).get("codes", ())
 
+    # ── Authentication / Admin ────────────────────────────────────────────────
+    st.divider()
+    auth_user = st.session_state.get("auth_user")
+    if not auth.supabase_configured():
+        st.caption("🔒 Admin login not configured")
+    elif auth_user:
+        st.markdown(f"👤 **{auth_user['email']}** · _{auth_user['role']}_")
+        if st.button("Log out", use_container_width=True):
+            st.session_state.pop("auth_user", None)
+            st.rerun()
+        if auth_user["role"] in ("admin", "master"):
+            with st.expander("🔐 Admin", expanded=False):
+                cache_ts = st.session_state.get("cache_ts", "")
+                if st.button(f"↻ Refresh SCB codes · {cache_ts}", use_container_width=True):
+                    with st.spinner("Fetching from SCB API…"):
+                        ts = refresh_cache()
+                    st.success(f"Updated {ts}")
+                    st.rerun()
+                if st.button("👥 Manage users", use_container_width=True):
+                    st.session_state["show_user_mgmt"] = True
+                    st.rerun()
+    else:
+        with st.expander("🔐 Admin login", expanded=False):
+            le = st.text_input("Email", key="login_email")
+            lp = st.text_input("Password", type="password", key="login_pw")
+            if st.button("Log in", use_container_width=True):
+                user, err = auth.sign_in(le.strip(), lp)
+                if user:
+                    st.session_state["auth_user"] = user
+                    st.session_state.pop("login_pw", None)
+                    st.rerun()
+                else:
+                    st.error("Login failed — check email/password.")
+
+
+@st.dialog("User management", width="large")
+def _user_mgmt_dialog():
+    me = st.session_state.get("auth_user", {})
+    st.markdown("**Create user**")
+    c1, c2, c3 = st.columns([3, 2, 2])
+    ne = c1.text_input("Email", key="nu_email")
+    npw = c2.text_input("Password", type="password", key="nu_pw")
+    nr = c3.selectbox("Role", auth.ROLES, key="nu_role")
+    if st.button("Create user", type="primary"):
+        try:
+            auth.create_user(ne.strip(), npw, nr)
+            st.success(f"Created {ne}")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Could not create user: {e}")
+
+    st.divider()
+    st.markdown("**Existing users**")
+    try:
+        users = auth.list_users()
+    except Exception as e:
+        st.error(f"Could not list users: {e}")
+        users = []
+    for u in users:
+        c1, c2, c3, c4 = st.columns([4, 3, 1, 1])
+        c1.write(u["email"])
+        if u["role"] == "master":
+            c2.write("👑 master")
+        elif u["id"] == me.get("id"):
+            c2.write(f"{u['role']} (you)")
+        else:
+            nrole = c2.selectbox("role", auth.ROLES,
+                                 index=auth.ROLES.index(u["role"]) if u["role"] in auth.ROLES else 0,
+                                 key=f"role_{u['id']}", label_visibility="collapsed")
+            if nrole != u["role"]:
+                try:
+                    auth.set_role(u["id"], nrole)
+                    st.rerun()
+                except Exception as e:
+                    st.error(str(e))
+        # Password reset — available for every account (incl. your own / master)
+        with c3.popover("🔑", help="Set password"):
+            pw_label = "Your new password" if u["id"] == me.get("id") else f"New password for {u['email']}"
+            newpw = st.text_input(pw_label, type="password", key=f"pw_{u['id']}")
+            if st.button("Update password", key=f"pwbtn_{u['id']}"):
+                try:
+                    auth.set_password(u["id"], newpw)
+                    st.success("Password updated.")
+                except Exception as e:
+                    st.error(str(e))
+        # Delete — not allowed for master or yourself
+        if u["role"] != "master" and u["id"] != me.get("id"):
+            if c4.button("🗑", key=f"del_{u['id']}", help="Delete user"):
+                try:
+                    auth.delete_user(u["id"])
+                    st.rerun()
+                except Exception as e:
+                    st.error(str(e))
+
+    st.divider()
+    if st.button("Close"):
+        st.session_state["show_user_mgmt"] = False
+        st.rerun()
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 st.title(f"📊 {t['title']}")
 st.caption(t["caption"])
+
+# Admin user-management modal (open across reruns via a session flag)
+if st.session_state.get("show_user_mgmt") and \
+        st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
+    _user_mgmt_dialog()
 
 if not selected_occ_codes:
     st.info(t["select_prompt"])
