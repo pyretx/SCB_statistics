@@ -15,8 +15,10 @@ services:
     container_name: scb-test
     restart: always
     # Supabase secrets live on the server only, never in git or the image.
+    # Work-permit rules persist on the host so admin edits survive redeploys.
     volumes:
       - /root/scb-secrets.toml:/app/.streamlit/secrets.toml:ro
+      - /root/scb-wp-rules.json:/app/wp_rules.json:rw
     networks:
       - traefik
     labels:
