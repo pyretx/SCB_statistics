@@ -159,6 +159,26 @@ T = {
         "tab_region": "🗺️ By region",
         "tab_edu": "🎓 By education",
         "tab_stats": "🔢 Basic statistics",
+        "tab_browse": "📖 SSYK guide",
+        "ssyk_title": "Browse SSYK occupation codes",
+        "ssyk_intro": "Drill down the SSYK hierarchy to find the right code. Names match the SCB data; descriptions and alternative job titles come from SCB's SSYK-Sök.",
+        "ssyk_l1": "Major area (1-digit)",
+        "ssyk_l2": "Major group (2-digit)",
+        "ssyk_l3": "Minor group (3-digit)",
+        "ssyk_l4": "Occupation (4-digit)",
+        "ssyk_show3": "Show the 3-digit level (Minor group)",
+        "ssyk_desc": "Description",
+        "ssyk_syn": "Alternative job titles ({n})",
+        "ssyk_use": "Use this occupation →",
+        "ssyk_unavail": "SSYK reference data is not available.",
+        "ssyk_trans_warn": "⚠️ Auto-translated from Swedish — no official English version exists.",
+        "ssyk_no_desc": "No description available.",
+        "ssyk_edit": "✏️ Edit content (admin)",
+        "ssyk_edit_saved": "Saved.",
+        "ssyk_search": "🔍 Search codes, names, job titles, descriptions…",
+        "ssyk_results": "Results ({n})",
+        "ssyk_pick_prompt": "Pick a level on the left (or search above) to see its description.",
+        "ssyk_blank": "—",
         "calc_title": "Where does your salary stand?",
         "calc_occ": "Occupation",
         "calc_year": "Year",
@@ -332,6 +352,26 @@ T = {
         "tab_region": "🗺️ Efter region",
         "tab_edu": "🎓 Efter utbildning",
         "tab_stats": "🔢 Grundstatistik",
+        "tab_browse": "📖 SSYK-guide",
+        "ssyk_title": "Bläddra bland SSYK-yrkeskoder",
+        "ssyk_intro": "Borra ner i SSYK-hierarkin för att hitta rätt kod. Namnen matchar SCB-datan; beskrivningar och benämningar kommer från SCB:s SSYK-Sök.",
+        "ssyk_l1": "Yrkesområde (1 siffra)",
+        "ssyk_l2": "Huvudgrupp (2 siffror)",
+        "ssyk_l3": "Yrkesgrupp (3 siffror)",
+        "ssyk_l4": "Undergrupp (4 siffror)",
+        "ssyk_show3": "Visa 3-siffernivån (Yrkesgrupp)",
+        "ssyk_desc": "Beskrivning",
+        "ssyk_syn": "Benämningar ({n})",
+        "ssyk_use": "Använd detta yrke →",
+        "ssyk_unavail": "SSYK-referensdata saknas.",
+        "ssyk_trans_warn": "⚠️ Maskinöversatt från svenska — ingen officiell engelsk version finns.",
+        "ssyk_no_desc": "Ingen beskrivning tillgänglig.",
+        "ssyk_edit": "✏️ Redigera innehåll (admin)",
+        "ssyk_edit_saved": "Sparat.",
+        "ssyk_search": "🔍 Sök koder, namn, benämningar, beskrivningar…",
+        "ssyk_results": "Träffar ({n})",
+        "ssyk_pick_prompt": "Välj en nivå till vänster (eller sök ovan) för att se beskrivningen.",
+        "ssyk_blank": "—",
         "calc_title": "Var ligger din lön?",
         "calc_occ": "Yrke",
         "calc_year": "År",
@@ -583,6 +623,28 @@ def save_wp_rules(rules: dict):
         json.dump(rules, f, ensure_ascii=False, indent=2)
 
 
+# ── General app settings (admin-editable) ─────────────────────────────────────
+APP_SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                 "app_settings.json")
+APP_DEFAULTS = {"ssyk_show_3digit": True}
+
+
+def load_app_settings() -> dict:
+    s = dict(APP_DEFAULTS)
+    if os.path.exists(APP_SETTINGS_FILE):
+        try:
+            with open(APP_SETTINGS_FILE, encoding="utf-8") as f:
+                s.update(json.load(f))
+        except Exception:
+            pass
+    return s
+
+
+def save_app_settings(s: dict):
+    with open(APP_SETTINGS_FILE, "w", encoding="utf-8") as f:
+        json.dump(s, f, ensure_ascii=False, indent=2)
+
+
 # Derived module-level values (re-read from file on every Streamlit rerun).
 _wp = load_wp_rules()
 WP_RULES_AS_OF     = _wp["as_of"]
@@ -672,6 +734,76 @@ def load_occupations(lang: str) -> dict[str, str]:
     # No cache on disk — fetch and save
     refresh_cache()
     return st.session_state[key]
+
+
+# ── SSYK code browser data (scraped descriptions + synonyms) ──────────────────
+SSYK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ssyk_descriptions.json")
+SSYK_OVERRIDES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "ssyk_overrides.json")
+
+
+def load_ssyk_nodes() -> dict:
+    """SSYK nodes from disk, with admin overrides merged in. Cached per session."""
+    if "ssyk_nodes" in st.session_state:
+        return st.session_state["ssyk_nodes"]
+    nodes = {}
+    if os.path.exists(SSYK_FILE):
+        with open(SSYK_FILE, encoding="utf-8") as f:
+            nodes = json.load(f).get("nodes", {})
+    if os.path.exists(SSYK_OVERRIDES_FILE):
+        try:
+            with open(SSYK_OVERRIDES_FILE, encoding="utf-8") as f:
+                for code, ov in json.load(f).items():
+                    if code in nodes:
+                        nodes[code].update(ov)
+        except Exception:
+            pass
+    st.session_state["ssyk_nodes"] = nodes
+    return nodes
+
+
+def save_ssyk_override(code: str, fields: dict):
+    """Persist an admin edit for one code to ssyk_overrides.json, refresh cache."""
+    data = {}
+    if os.path.exists(SSYK_OVERRIDES_FILE):
+        try:
+            with open(SSYK_OVERRIDES_FILE, encoding="utf-8") as f:
+                data = json.load(f)
+        except Exception:
+            data = {}
+    data.setdefault(code, {}).update(fields)
+    with open(SSYK_OVERRIDES_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=1)
+    st.session_state.pop("ssyk_nodes", None)   # force reload with the override
+
+
+def ssyk_name(code: str, lang: str, nodes: dict) -> str:
+    """Display name: official API/standard names for 1/2/4-digit, translated
+    name for 3-digit (no API source exists there)."""
+    occ = st.session_state.get(f"occupations_{lang}", {})
+    n = nodes.get(code, {})
+    if len(code) == 4:
+        return occ.get(code, n.get("name_sv", code))
+    if len(code) == 1:
+        v = MAJOR_GROUPS[lang].get(code, "")
+        return v.split("–", 1)[-1].strip() if v else n.get("name_sv", code)
+    if len(code) == 2:
+        v = SUB_GROUPS[lang].get(code, "")
+        return v.split("–", 1)[-1].strip() if v else n.get("name_sv", code)
+    if len(code) == 3:
+        return (n.get("name_en") or n.get("name_sv", code)) if lang == "EN" \
+            else n.get("name_sv", code)
+    return code
+
+
+def ssyk_synonym_index() -> dict[str, str]:
+    """{4-digit code: lowercased joined synonym titles} for the occupation search."""
+    if "ssyk_syn_idx" in st.session_state:
+        return st.session_state["ssyk_syn_idx"]
+    idx = {code: " | ".join(v.get("synonyms", []) + v.get("synonyms_en", [])).lower()
+           for code, v in load_ssyk_nodes().items() if len(code) == 4}
+    st.session_state["ssyk_syn_idx"] = idx
+    return idx
 
 # ── Data fetching ──────────────────────────────────────────────────────────────
 
@@ -1017,10 +1149,11 @@ with st.sidebar:
     search = st.text_input("🔍", placeholder=t["occ_search_ph"],
                            label_visibility="collapsed", key="occ_search")
     if search:
-        # Search globally across ALL occupations (ignore group restriction)
+        # Search globally across ALL occupations (name, code, OR SSYK synonym title)
         s = search.strip().lower()
+        syn = ssyk_synonym_index()
         pool = {k: v for k, v in occupations.items()
-                if k != "0000" and (s in v.lower() or s in k.lower())}
+                if k != "0000" and (s in v.lower() or s in k.lower() or s in syn.get(k, ""))}
         st.caption(t["found_n"].format(n=len(pool)) if pool else t["no_match"])
 
     occ_options = [f"{v}  ({k})" for k, v in pool.items()]
@@ -1103,10 +1236,17 @@ with st.sidebar:
                 if st.button("👥 Manage users", use_container_width=True):
                     st.session_state["show_user_mgmt"] = True
                     st.session_state["show_wp_config"] = False
+                    st.session_state["show_app_settings"] = False
                     st.rerun()
                 if st.button("⚙️ Work permit rules", use_container_width=True):
                     st.session_state["show_wp_config"] = True
                     st.session_state["show_user_mgmt"] = False
+                    st.session_state["show_app_settings"] = False
+                    st.rerun()
+                if st.button("🎛️ App settings", use_container_width=True):
+                    st.session_state["show_app_settings"] = True
+                    st.session_state["show_user_mgmt"] = False
+                    st.session_state["show_wp_config"] = False
                     st.rerun()
     else:
         with st.expander("🔐 Admin login", expanded=False):
@@ -1298,6 +1438,139 @@ def render_wp_config():
         st.session_state["show_wp_config"] = False
         st.rerun()
 
+
+def render_app_settings():
+    """Admin editor for general app/display settings (saved to app_settings.json)."""
+    s = load_app_settings()
+    st.header("⚙️ App settings")
+    st.caption("Display options for all users. Saved values apply immediately.")
+    show3 = st.toggle("Show the 3-digit level (Minor group) in the SSYK guide",
+                      value=s.get("ssyk_show_3digit", True),
+                      help="When off, the SSYK guide drills 1 → 2 → 4 digits.")
+    if st.button("💾 Save settings", type="primary"):
+        save_app_settings({**s, "ssyk_show_3digit": show3})
+        st.success("Saved.")
+        st.rerun()
+    if st.button("← Back to app"):
+        st.session_state["show_app_settings"] = False
+        st.rerun()
+
+
+def render_ssyk_browser(prefix: str):
+    """Drill-down SSYK navigator. Labels use the official SCB/API names; the
+    3-digit level uses a (flagged) translation; descriptions/synonyms are scraped."""
+    nodes = load_ssyk_nodes()
+    if not nodes:
+        st.info(t["ssyk_unavail"])
+        return
+    st.caption(t["ssyk_intro"])
+    is_admin = st.session_state.get("auth_user", {}).get("role") in ("admin", "master")
+    BLANK = "__none__"
+
+    def fmt(code):
+        return f"{code} – {ssyk_name(code, lang, nodes)}"
+
+    def panel_for(cur):
+        if not cur:
+            st.info(t["ssyk_pick_prompt"])
+            return
+        node = nodes[cur]
+        st.markdown(f"#### {cur} · {ssyk_name(cur, lang, nodes)}")
+        desc = (node.get("desc_en") if lang == "EN" and node.get("desc_en")
+                else node.get("desc_sv", ""))
+        st.markdown(f"**{t['ssyk_desc']}**")
+        if desc:
+            st.write(desc)
+        else:
+            st.caption(t["ssyk_no_desc"])
+        if lang == "EN" and (desc or (len(cur) == 3 and node.get("name_en"))):
+            st.caption(t["ssyk_trans_warn"])
+        syns = (node.get("synonyms_en") if lang == "EN" and node.get("synonyms_en")
+                else node.get("synonyms", []))
+        if syns:
+            with st.expander(t["ssyk_syn"].format(n=len(syns))):
+                st.write(", ".join(syns))
+        if len(cur) == 4:
+            if st.button(t["ssyk_use"], key=prefix + "_use", type="primary"):
+                st.session_state["query"] = {
+                    "sector": sector_code, "codes": (cur,), "sex": sex_code,
+                    "aggregate": False, "agg_name": "",
+                    "scope_prefix": cur[:2],
+                    "scope_label": ssyk_name(cur[:2], lang, nodes),
+                }
+                st.rerun()
+        if is_admin:
+            with st.expander(t["ssyk_edit"]):
+                with st.form(f"{prefix}_edit_{cur}"):
+                    e_sv = st.text_area("desc_sv (Swedish)", node.get("desc_sv", ""))
+                    e_en = st.text_area("desc_en (English)", node.get("desc_en", ""))
+                    e_syn = st.text_area("Synonyms (comma-separated)",
+                                         ", ".join(node.get("synonyms", [])))
+                    e_name_en = st.text_input("name_en (3-digit only)",
+                                              node.get("name_en", "")) \
+                        if len(cur) == 3 else None
+                    if st.form_submit_button("💾 Save content"):
+                        fields = {
+                            "desc_sv": e_sv.strip(),
+                            "desc_en": e_en.strip(),
+                            "synonyms": [s.strip() for s in e_syn.split(",") if s.strip()],
+                        }
+                        if e_name_en is not None:
+                            fields["name_en"] = e_name_en.strip()
+                        save_ssyk_override(cur, fields)
+                        st.success(t["ssyk_edit_saved"])
+                        st.rerun()
+
+    # ── Global search across every field ──────────────────────────────────────
+    query = st.text_input(t["ssyk_search"], key=prefix + "_search",
+                          placeholder=t["ssyk_search"], label_visibility="collapsed")
+    if query.strip():
+        qs = query.strip().lower()
+        matches = []
+        for code, n in nodes.items():
+            if len(code) == 1 and not n.get("children"):
+                continue
+            hay = " ".join([
+                code, ssyk_name(code, lang, nodes),
+                n.get("name_sv", ""), n.get("name_en", ""),
+                n.get("desc_sv", ""), n.get("desc_en", ""),
+                " ".join(n.get("synonyms", [])), " ".join(n.get("synonyms_en", [])),
+            ]).lower()
+            if qs in hay:
+                matches.append(code)
+        matches.sort(key=lambda c: (len(c), c))
+        if not matches:
+            st.info(t["no_match"])
+            return
+        sel = st.selectbox(t["ssyk_results"].format(n=len(matches)), matches[:300],
+                           format_func=fmt, key=prefix + "_results")
+        panel_for(sel)
+        return
+
+    # ── Drill-down (blank-able; start empty) ──────────────────────────────────
+    show3 = load_app_settings().get("ssyk_show_3digit", True)  # admin-controlled
+    nav, panel = st.columns([1, 1.3])
+    with nav:
+        def pick(label, opts):
+            v = st.selectbox(label, [BLANK] + opts,
+                             format_func=lambda c: t["ssyk_blank"] if c == BLANK else fmt(c))
+            return None if v == BLANK else v
+        l1 = sorted(c for c in nodes if len(c) == 1 and nodes[c].get("children"))
+        s1 = pick(t["ssyk_l1"], l1)
+        s2 = pick(t["ssyk_l2"], sorted(nodes[s1]["children"])) if s1 else None
+        s3 = pick(t["ssyk_l3"], sorted(nodes[s2]["children"])) if (show3 and s2) else None
+        parent3 = s3 or s2
+        if parent3 and len(parent3) == 3:
+            l4 = sorted(nodes[parent3]["children"])
+        elif s2:
+            l4 = sorted(c for c in nodes if len(c) == 4 and c.startswith(s2))
+        else:
+            l4 = []
+        s4 = pick(t["ssyk_l4"], l4) if l4 else None
+        current = s4 or s3 or s2 or s1
+    with panel:
+        panel_for(current)
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 st.title(f"📊 {t['title']}")
@@ -1314,8 +1587,16 @@ if st.session_state.get("show_wp_config") and \
     render_wp_config()
     st.stop()
 
+# Admin app/display settings — full-page panel (gated to admin/master)
+if st.session_state.get("show_app_settings") and \
+        st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
+    render_app_settings()
+    st.stop()
+
 if not selected_occ_codes:
     st.info(t["select_prompt"])
+    st.markdown(f"### {t['ssyk_title']}")
+    render_ssyk_browser("landing")
     st.stop()
 
 # Use the values that were active when Search was clicked
@@ -1384,10 +1665,11 @@ def show_breakdown_raw(df_in, dim_col, dim_label, dim_map=None, sex_col=None):
         st.dataframe(out, use_container_width=True, hide_index=True)
 
 
-tab_pct, tab_calc, tab_permit, tab_lead, tab_age, tab_reg, tab_edu, tab_stats = st.tabs([
-    t["tab_pct"], t["tab_calc"], t["tab_permit"], t["tab_lead"], t["tab_age"],
-    t["tab_region"], t["tab_edu"], t["tab_stats"]
-])
+tab_pct, tab_calc, tab_permit, tab_lead, tab_age, tab_reg, tab_edu, tab_stats, tab_browse = \
+    st.tabs([
+        t["tab_pct"], t["tab_calc"], t["tab_permit"], t["tab_lead"], t["tab_age"],
+        t["tab_region"], t["tab_edu"], t["tab_stats"], t["tab_browse"]
+    ])
 
 # ── Tab 1: Percentile distribution ────────────────────────────────────────────
 with tab_pct:
@@ -2167,5 +2449,10 @@ with tab_stats:
                 t["stat_total"]: [f"{total:,}", f"{edu_total:,}"],
             })
             st.dataframe(comp, use_container_width=True, hide_index=True)
+
+# ── Tab: SSYK guide (code browser) ────────────────────────────────────────────
+with tab_browse:
+    st.subheader(t["ssyk_title"])
+    render_ssyk_browser("tab")
 
 st.caption(t["source"])

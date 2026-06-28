@@ -11,6 +11,12 @@ venv/
 # Runtime admin-edited work-permit rules (defaults live in code)
 wp_rules.json
 
+# Runtime admin-edited SSYK content overrides (base data is shipped)
+ssyk_overrides.json
+
+# Runtime admin-edited app/display settings (defaults live in code)
+app_settings.json
+
 # OS
 Thumbs.db
 .DS_Store

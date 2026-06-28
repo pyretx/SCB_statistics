@@ -19,6 +19,8 @@ services:
     volumes:
       - /root/scb-secrets.toml:/app/.streamlit/secrets.toml:ro
       - /root/scb-wp-rules.json:/app/wp_rules.json:rw
+      - /root/scb-ssyk-overrides.json:/app/ssyk_overrides.json:rw
+      - /root/scb-app-settings.json:/app/app_settings.json:rw
     networks:
       - traefik
     labels:

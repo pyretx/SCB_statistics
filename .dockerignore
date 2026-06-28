@@ -6,3 +6,5 @@ __pycache__
 .claude
 start.bat
 README*.md
+build_*.py
+_*.py
