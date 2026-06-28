@@ -542,27 +542,60 @@ EDU_LEVELS = {
 
 AGE_GROUPS = ["18-24", "25-34", "35-44", "45-54", "55-64", "65-68"]
 
-# ── Work-permit rule set (Migrationsverket) — MAINTAINED MANUALLY ──────────────
-# When the rules change, update the values below and bump WP_RULES_AS_OF.
-# (These are slated to become admin-editable later; kept together for that move.)
-WP_RULES_AS_OF     = "2026-06-16"   # date the rule figures below are valid from
-WP_MEDIAN_SALARY   = 38300          # official Migrationsverket median (SEK/month)
-WP_PCT_GENERAL     = 0.90           # general salary floor = 90% of median
-WP_PCT_TRANSITION  = 0.80           # transition (old "good living") = 80%
-WP_PCT_EXEMPT      = 0.75           # exempt occupations = 75%
-WP_BLUE_CARD_FLOOR = 52000          # EU Blue Card fixed threshold (SEK/month)
-WP_TRANSITION_END  = "2026-12-01"   # new 90% rule applies from 2 Dec 2026
-WP_BENCH_YEAR      = 2025           # SCB year used for the market-position check
-# 75%-exempt occupations — Utlänningsförordningen 2006:97, 5 kap. 6 § (SFS 2026:605)
-WP_EXEMPT_SSYK = {
-    "3115", "3215", "3511", "3512", "3513", "3514",
-    "5321", "5322", "5323", "5324", "5325", "5326", "5330",
-    "6121", "6129", "6130", "6210",
-    "7212", "7215", "7233", "7413", "7611",
-    "8161", "8169", "8199", "8341", "9210",
+# ── Work-permit rule set (Migrationsverket) — admin-editable ──────────────────
+# Defaults below; an admin can override them in-app (saved to wp_rules.json,
+# which takes precedence). Pure file IO so it can run at import time safely.
+WP_RULES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wp_rules.json")
+WP_DEFAULTS = {
+    "as_of": "2026-06-16",          # date the figures are valid from
+    "median": 38300,                # official Migrationsverket median (SEK/month)
+    "pct_general": 0.90,            # general salary floor = 90% of median
+    "pct_transition": 0.80,         # transition (old "good living") = 80%
+    "pct_exempt": 0.75,             # exempt occupations = 75%
+    "blue_card_floor": 52000,       # EU Blue Card fixed threshold (SEK/month)
+    "transition_end": "2026-12-01", # new 90% rule applies from 2 Dec 2026
+    "bench_year": 2025,             # SCB year used for the market-position check
+    # 75%-exempt occupations — Utlänningsförordningen 2006:97, 5 kap. 6 § (SFS 2026:605)
+    "exempt_ssyk": ["3115", "3215", "3511", "3512", "3513", "3514",
+                    "5321", "5322", "5323", "5324", "5325", "5326", "5330",
+                    "6121", "6129", "6130", "6210",
+                    "7212", "7215", "7233", "7413", "7611",
+                    "8161", "8169", "8199", "8341", "9210"],
+    "banned_full": ["5343"],        # personal assistants — regular permit impossible
+    "banned_partial": ["9210"],     # forest berry pickers within 9210 — warn only
 }
-WP_BANNED_FULL    = {"5343"}        # personal assistants — regular permit impossible
-WP_BANNED_PARTIAL = {"9210"}        # forest berry pickers within 9210 — warn only
+
+
+def load_wp_rules() -> dict:
+    """Active rule set: defaults overridden by wp_rules.json if present."""
+    rules = dict(WP_DEFAULTS)
+    if os.path.exists(WP_RULES_FILE):
+        try:
+            with open(WP_RULES_FILE, encoding="utf-8") as f:
+                rules.update(json.load(f))
+        except Exception:
+            pass
+    return rules
+
+
+def save_wp_rules(rules: dict):
+    with open(WP_RULES_FILE, "w", encoding="utf-8") as f:
+        json.dump(rules, f, ensure_ascii=False, indent=2)
+
+
+# Derived module-level values (re-read from file on every Streamlit rerun).
+_wp = load_wp_rules()
+WP_RULES_AS_OF     = _wp["as_of"]
+WP_MEDIAN_SALARY   = _wp["median"]
+WP_PCT_GENERAL     = _wp["pct_general"]
+WP_PCT_TRANSITION  = _wp["pct_transition"]
+WP_PCT_EXEMPT      = _wp["pct_exempt"]
+WP_BLUE_CARD_FLOOR = _wp["blue_card_floor"]
+WP_TRANSITION_END  = _wp["transition_end"]
+WP_BENCH_YEAR      = _wp["bench_year"]
+WP_EXEMPT_SSYK     = set(_wp["exempt_ssyk"])
+WP_BANNED_FULL     = set(_wp["banned_full"])
+WP_BANNED_PARTIAL  = set(_wp["banned_partial"])
 
 
 def wp_floor(ssyk: str, permit_type: str, is_transition: bool, app_date_iso: str):
@@ -1069,6 +1102,11 @@ with st.sidebar:
                     st.rerun()
                 if st.button("👥 Manage users", use_container_width=True):
                     st.session_state["show_user_mgmt"] = True
+                    st.session_state["show_wp_config"] = False
+                    st.rerun()
+                if st.button("⚙️ Work permit rules", use_container_width=True):
+                    st.session_state["show_wp_config"] = True
+                    st.session_state["show_user_mgmt"] = False
                     st.rerun()
     else:
         with st.expander("🔐 Admin login", expanded=False):
@@ -1148,6 +1186,118 @@ def _user_mgmt_dialog():
         st.session_state["show_user_mgmt"] = False
         st.rerun()
 
+
+def _wp_code_table(title, state_key, help_txt):
+    """Interactive SSYK-code list: row per code (name + 🗑), plus an add box."""
+    st.markdown(f"**{title}**")
+    st.caption(help_txt)
+    codes = st.session_state[state_key]
+    if codes:
+        for code in sorted(codes):
+            r1, r2, r3 = st.columns([2, 6, 1])
+            r1.write(code)
+            r2.write(occupations.get(code, "—"))
+            if r3.button("🗑", key=f"{state_key}_del_{code}", help="Remove"):
+                st.session_state[state_key] = [c for c in codes if c != code]
+                st.rerun()
+    else:
+        st.caption("— none —")
+    a1, a2 = st.columns([5, 1])
+    newc = a1.text_input("Add SSYK code", key=f"{state_key}_add_{len(codes)}",
+                         placeholder="e.g. 2512", label_visibility="collapsed")
+    if a2.button("➕ Add", key=f"{state_key}_addbtn"):
+        nc = newc.strip()
+        if nc and nc not in codes:
+            st.session_state[state_key] = codes + [nc]
+        st.rerun()
+
+
+def render_wp_config():
+    """Admin editor for the Work permit rule set (saved to wp_rules.json)."""
+    rules = load_wp_rules()
+    st.header("⚙️ Work permit rules")
+    st.caption("Edit the figures the Work permit check uses. Saved values override the "
+               "built-in defaults and apply immediately across the app.")
+
+    # Editable code lists held in session_state (initialised once per open)
+    for sk, src in [("wp_exempt", "exempt_ssyk"),
+                    ("wp_banned_full", "banned_full"),
+                    ("wp_banned_partial", "banned_partial")]:
+        if sk not in st.session_state:
+            st.session_state[sk] = list(rules[src])
+
+    # ── Numeric / date settings (batched in a form) ───────────────────────────
+    with st.form("wp_rules_form"):
+        c1, c2, c3 = st.columns(3)
+        as_of = c1.text_input("Rules valid from (YYYY-MM-DD)", rules["as_of"],
+                              help="Shown in the banner at the top of the Work permit tab.")
+        median = c2.number_input("National median salary (SEK)", value=int(rules["median"]),
+                                 step=100,
+                                 help="Migrationsverket's official median. Every % floor is "
+                                      "computed from this number.")
+        bench_year = c3.number_input("Market benchmark year", value=int(rules["bench_year"]),
+                                     step=1,
+                                     help="SCB year used for the occupation market-position chart.")
+        c4, c5, c6 = st.columns(3)
+        pct_general = c4.number_input("General floor (% of median)",
+                                      value=float(rules["pct_general"]) * 100, step=1.0,
+                                      help="Default 90%. The standard salary floor.")
+        pct_transition = c5.number_input("Transition floor (%)",
+                                         value=float(rules["pct_transition"]) * 100, step=1.0,
+                                         help="Default 80%. Applies to extensions of permits "
+                                              "granted before the reform, until the transition end date.")
+        pct_exempt = c6.number_input("Exempt floor (%)",
+                                     value=float(rules["pct_exempt"]) * 100, step=1.0,
+                                     help="Default 75%. Applies to the exempt SSYK list below.")
+        c7, c8 = st.columns(2)
+        blue = c7.number_input("EU Blue Card threshold (SEK)",
+                               value=int(rules["blue_card_floor"]), step=100,
+                               help="Fixed monthly threshold for the EU Blue Card route.")
+        transition_end = c8.text_input("Transition ends (YYYY-MM-DD)", rules["transition_end"],
+                                       help="From the day after this date the general floor "
+                                            "applies even to extensions.")
+        saved = st.form_submit_button("💾 Save rules", type="primary")
+
+    if saved:
+        new = dict(rules)
+        new.update({
+            "as_of": as_of.strip(),
+            "median": int(median),
+            "bench_year": int(bench_year),
+            "pct_general": round(pct_general / 100, 4),
+            "pct_transition": round(pct_transition / 100, 4),
+            "pct_exempt": round(pct_exempt / 100, 4),
+            "blue_card_floor": int(blue),
+            "transition_end": transition_end.strip(),
+            "exempt_ssyk": sorted(st.session_state["wp_exempt"]),
+            "banned_full": sorted(st.session_state["wp_banned_full"]),
+            "banned_partial": sorted(st.session_state["wp_banned_partial"]),
+        })
+        try:
+            save_wp_rules(new)
+            for k in ("wp_exempt", "wp_banned_full", "wp_banned_partial"):
+                st.session_state.pop(k, None)
+            st.success("Rules saved.")
+            st.rerun()
+        except Exception as e:
+            st.error(f"Could not save: {e}")
+
+    # ── SSYK code lists (interactive tables — add/remove apply on Save) ────────
+    st.divider()
+    _wp_code_table("Exempt SSYK codes — 75% floor", "wp_exempt",
+                   "Occupations that use the 75% floor. Add/remove here, then **Save rules**.")
+    _wp_code_table("Banned — full (hard block)", "wp_banned_full",
+                   "Cannot get a regular permit at all (e.g. 5343).")
+    _wp_code_table("Banned — partial (warning)", "wp_banned_partial",
+                   "Partly banned — shows a warning (e.g. 9210 berry pickers).")
+
+    st.divider()
+    if st.button("← Back to app"):
+        for k in ("wp_exempt", "wp_banned_full", "wp_banned_partial"):
+            st.session_state.pop(k, None)
+        st.session_state["show_wp_config"] = False
+        st.rerun()
+
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 st.title(f"📊 {t['title']}")
@@ -1157,6 +1307,12 @@ st.caption(t["caption"])
 if st.session_state.get("show_user_mgmt") and \
         st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
     _user_mgmt_dialog()
+
+# Admin work-permit rules editor — full-page panel (gated to admin/master)
+if st.session_state.get("show_wp_config") and \
+        st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
+    render_wp_config()
+    st.stop()
 
 if not selected_occ_codes:
     st.info(t["select_prompt"])
