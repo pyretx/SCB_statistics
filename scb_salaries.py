@@ -144,6 +144,16 @@ T = {
         "chart_title": "Salary distribution by percentile",
         "chart_year": "Chart year",
         "trend_title": "Salary trend over time",
+        "trend_view": "View",
+        "trend_nominal": "Nominal (kr)",
+        "trend_growth": "Growth vs inflation",
+        "trend_real": "Real (constant kr)",
+        "trend_sal_growth": "Salary growth",
+        "trend_infl": "Inflation (CPI)",
+        "trend_growth_axis": "Change from {base} (%)",
+        "trend_real_axis": "Real monthly salary ({base} prices, SEK)",
+        "trend_no_cpi": "ℹ️ Inflation data unavailable — showing nominal only.",
+        "trend_summary": "**{base}→{last}:** salary {sal:+.0f}% · inflation {infl:+.0f}% → **real {real:+.0f}%**",
         "measure": "Measure",
         "x_pct": "Percentile",
         "y_salary": "Monthly salary (SEK)",
@@ -337,6 +347,16 @@ T = {
         "chart_title": "Lönespridning per percentil",
         "chart_year": "Visningsår",
         "trend_title": "Löneutveckling över tid",
+        "trend_view": "Vy",
+        "trend_nominal": "Nominell (kr)",
+        "trend_growth": "Tillväxt vs inflation",
+        "trend_real": "Real (fasta kr)",
+        "trend_sal_growth": "Löneökning",
+        "trend_infl": "Inflation (KPI)",
+        "trend_growth_axis": "Förändring från {base} (%)",
+        "trend_real_axis": "Real månadslön ({base} års priser, SEK)",
+        "trend_no_cpi": "ℹ️ Inflationsdata saknas — visar endast nominellt.",
+        "trend_summary": "**{base}→{last}:** lön {sal:+.0f}% · inflation {infl:+.0f}% → **real {real:+.0f}%**",
         "measure": "Mått",
         "x_pct": "Percentil",
         "y_salary": "Månadslön (SEK)",
@@ -1127,6 +1147,30 @@ def fetch_live_median(lang):
         return None, None
     latest = df.sort_values(ycol).iloc[-1]
     return str(latest[ycol]).strip(), int(latest["median"])
+
+
+@st.cache_data(show_spinner=False, persist="disk", ttl=86400)
+def fetch_cpi_annual(end_year: int = 2025):
+    """Annual-average Swedish CPI index (2020=100) → {year: index}.
+    Uses SCB KPI2020M Shadow Index (00000807), averaged across the 12 months."""
+    url = "https://api.scb.se/OV0104/v1/doris/en/ssd/PR/PR0101/PR0101A/KPI2020M"
+    months = [f"{y}M{m:02d}" for y in range(2014, end_year + 1) for m in range(1, 13)]
+    body = {"query": [
+        {"code": "ContentsCode", "selection": {"filter": "item", "values": ["00000807"]}},
+        {"code": "Tid",          "selection": {"filter": "item", "values": months}},
+    ], "response": {"format": "json"}}
+    try:
+        r = requests.post(url, json=body, timeout=30)
+        r.raise_for_status()
+        raw = r.json()
+    except Exception:
+        return {}
+    by_year = {}
+    for item in raw.get("data", []):
+        v = item["values"][0]
+        if v not in ("..", "", None):
+            by_year.setdefault(item["key"][0][:4], []).append(float(v))
+    return {yr: sum(vs) / len(vs) for yr, vs in by_year.items() if vs}
 
 
 @st.cache_data(show_spinner=False, persist="disk")
@@ -1945,19 +1989,71 @@ with tab_pct:
     # Trend (single occupation or aggregated group)
     if len(display_codes) == 1:
         st.subheader(t["trend_title"])
-        trend_measure = st.selectbox(t["measure"], pct_order, index=2)
+        tc1, tc2 = st.columns([2, 3])
+        with tc1:
+            trend_measure = st.selectbox(t["measure"], pct_order, index=2, key="trend_measure")
+        with tc2:
+            view = st.radio(t["trend_view"],
+                            [t["trend_nominal"], t["trend_growth"], t["trend_real"]],
+                            horizontal=True, key="trend_view")
         code     = display_codes[0]
         df_trend = df[df[occ_col].str.strip() == code].sort_values(year_col)
-        fig2 = go.Figure()
-        fig2.add_trace(go.Scatter(
-            x=df_trend[year_col], y=df_trend[trend_measure],
-            mode="lines+markers", name=trend_measure,
-            line=dict(color="#4e79a7", width=2), marker=dict(size=7),
-        ))
-        fig2.update_layout(xaxis_title=t["x_year"], yaxis_title=t["y_salary"],
-                           xaxis=dict(type="category"),
-                           height=320, margin=dict(t=40, b=40))
-        st.plotly_chart(fig2, use_container_width=True)
+        pairs = [(str(y).strip(), float(s))
+                 for y, s in zip(df_trend[year_col],
+                                 pd.to_numeric(df_trend[trend_measure], errors="coerce"))
+                 if pd.notna(s)]
+        if not pairs:
+            st.info(t["no_data"])
+        else:
+            base_y, base_s = pairs[0]
+            cpi = fetch_cpi_annual(int(pairs[-1][0]))
+            cpi_base = cpi.get(base_y)
+            years = [y for y, _ in pairs]
+            fig2 = go.Figure()
+            yaxis = t["y_salary"]
+
+            if view == t["trend_growth"] and cpi_base:
+                fig2.add_trace(go.Scatter(
+                    x=years, y=[(s / base_s - 1) * 100 for _, s in pairs],
+                    mode="lines+markers", name=t["trend_sal_growth"],
+                    line=dict(color="#4e79a7", width=2), marker=dict(size=7)))
+                fig2.add_trace(go.Scatter(
+                    x=years, y=[(cpi[y] / cpi_base - 1) * 100 if cpi.get(y) else None
+                                for y in years],
+                    mode="lines+markers", name=t["trend_infl"],
+                    line=dict(color="#f28e2b", width=2, dash="dash"), marker=dict(size=6)))
+                yaxis = t["trend_growth_axis"].format(base=base_y)
+            elif view == t["trend_real"] and cpi_base:
+                fig2.add_trace(go.Scatter(
+                    x=years,
+                    y=[s * cpi_base / cpi[y] if cpi.get(y) else None for y, s in pairs],
+                    mode="lines+markers", name=t["trend_real"],
+                    line=dict(color="#59a14f", width=2), marker=dict(size=7)))
+                yaxis = t["trend_real_axis"].format(base=base_y)
+            else:
+                if view != t["trend_nominal"] and not cpi_base:
+                    st.caption(t["trend_no_cpi"])
+                fig2.add_trace(go.Scatter(
+                    x=years, y=[s for _, s in pairs], mode="lines+markers",
+                    name=trend_measure,
+                    line=dict(color="#4e79a7", width=2), marker=dict(size=7)))
+
+            fig2.update_layout(xaxis_title=t["x_year"], yaxis_title=yaxis,
+                               xaxis=dict(type="category"), height=340,
+                               margin=dict(t=40, b=40),
+                               legend=dict(orientation="h", yanchor="bottom", y=1.02,
+                                           xanchor="left", x=0))
+            st.plotly_chart(fig2, use_container_width=True)
+
+            # Summary of salary vs inflation over the shown span
+            if cpi_base and len(pairs) > 1:
+                last_y, last_s = pairs[-1]
+                if cpi.get(last_y):
+                    sal_chg = (last_s / base_s - 1) * 100
+                    infl_chg = (cpi[last_y] / cpi_base - 1) * 100
+                    real_chg = ((1 + sal_chg / 100) / (1 + infl_chg / 100) - 1) * 100
+                    st.caption(t["trend_summary"].format(
+                        base=base_y, last=last_y, sal=sal_chg, infl=infl_chg, real=real_chg))
 
     with st.expander(t["raw_data"]):
         display_df = df.copy()
