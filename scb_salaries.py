@@ -1218,6 +1218,10 @@ st.set_page_config(page_title="Swedish Salary Explorer", page_icon=_ICON_PNG, la
 if os.path.exists(_ICON_SVG):
     st.logo(_ICON_SVG, size="large")
 
+# Hide Streamlit's default top "decoration" gradient bar.
+st.markdown("<style>[data-testid='stDecoration']{display:none;}</style>",
+            unsafe_allow_html=True)
+
 # Full-page / modal panels are mutually exclusive — opening one closes the rest.
 _PANEL_FLAGS = ("show_user_mgmt", "show_wp_config", "show_app_settings",
                 "show_guide_edit", "show_user_guide", "show_ssyk_guide")
