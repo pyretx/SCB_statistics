@@ -10,3 +10,7 @@ enableXsrfProtection = false
 
 [browser]
 gatherUsageStats = false
+
+[theme]
+# Salary-bar blue as the app's primary colour (buttons, sliders, toggles, radios).
+primaryColor = "#006AA7"

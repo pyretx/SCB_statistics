@@ -17,6 +17,9 @@ ssyk_overrides.json
 # Runtime admin-edited app/display settings (defaults live in code)
 app_settings.json
 
+# Runtime admin-edited user guide (defaults live in code)
+guide.json
+
 # OS
 Thumbs.db
 .DS_Store

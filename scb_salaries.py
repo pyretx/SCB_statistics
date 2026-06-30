@@ -127,7 +127,7 @@ SUB_GROUPS = {
 
 T = {
     "EN": {
-        "title": "SCB Salary Explorer",
+        "title": "Swedish Salary Explorer",
         "caption": "Data: Statistics Sweden (SCB) – Wage Structure Statistics, entire economy",
         "filters": "Filters",
         "sector": "Sector",
@@ -320,7 +320,7 @@ T = {
         },
     },
     "SV": {
-        "title": "SCB Lönestatistik",
+        "title": "Svensk lönestatistik",
         "caption": "Data: Statistiska centralbyrån (SCB) – Lönestrukturstatistik, hela ekonomin",
         "filters": "Filter",
         "sector": "Sektor",
@@ -643,6 +643,134 @@ def load_app_settings() -> dict:
 def save_app_settings(s: dict):
     with open(APP_SETTINGS_FILE, "w", encoding="utf-8") as f:
         json.dump(s, f, ensure_ascii=False, indent=2)
+
+
+# ── User guide (markdown, admin-editable) ─────────────────────────────────────
+GUIDE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "guide.json")
+GUIDE_DEFAULTS = {
+    "en": """# 👋 Welcome to the SCB Salary Explorer
+
+This tool lets you look up **Swedish salaries** by occupation and check **work-permit salary requirements** — using official data from Statistics Sweden (SCB). No technical knowledge needed.
+
+## 🚀 Getting started — 3 steps
+1. **Choose your filters** in the left sidebar: sector, sex, year range and an occupation.
+2. Click **🔍 Search**.
+3. **Read the results** in the tabs that appear.
+
+Change any filter and click Search again to update.
+
+## 🔎 Finding the right occupation
+- Type in the **"Search occupations"** box in the sidebar — it matches job titles, codes and common alternative titles (e.g. type *"borgarråd"* to find *Politician*).
+- Or drill down with **Major group → Sub-group**.
+- Not sure of the code? Open the **📖 SSYK guide** tab to browse every occupation with a description and a search box.
+
+## 📈 Reading the salary charts
+Salaries are shown as **percentiles**:
+- **P10** — 10% earn less than this (the lower end).
+- **P50 (Median)** — the middle salary; half earn more, half less.
+- **P90** — only 10% earn more (the top end).
+- **Average** — shown as a separate ♦ marker.
+
+A wide gap between P10 and P90 means salaries vary a lot in that job.
+
+## 💰 "Where do I stand?"
+Enter a monthly salary and an occupation, and the tool tells you **which percentile it falls in** — e.g. *"higher than ~68% of people in this role"*.
+
+## 🛂 Work permit check
+Enter the proposed salary and occupation. The tool checks:
+- whether it meets the **salary floor** (a % of the national median),
+- where it sits in the **occupation's own pay range**,
+- whether the occupation is **exempt or restricted**.
+
+Each check shows ✅ pass, ⚠️ caution or ❌ fail with the numbers. *Always confirm against the relevant collective agreement.*
+
+## 🏆 Leaderboard
+Ranks the occupations in your selected group by pay, gender pay gap or salary growth.
+
+## 👤 🗺️ 🎓 Age, region & education
+These tabs break the salary down by **age group**, **region** and **education level**, with an optional women-vs-men comparison.
+
+## 🌐 Language
+Use the **English / Svenska** switch at the top of the sidebar — it changes both the interface and the data labels.
+
+## 🔐 For administrators
+Logged-in admins get an **Admin** section to refresh SCB data, manage users, edit the work-permit rules, change display settings and edit this guide.
+
+## ❓ Good to know
+- Data comes from **SCB Wage Structure Statistics** and currently covers up to **2025**.
+- Some small occupations show "–" — SCB hides figures for very small groups.
+- SSYK descriptions are **auto-translated** from Swedish where no official English version exists.
+""",
+    "sv": """# 👋 Välkommen till SCB Lönestatistik
+
+Med det här verktyget kan du slå upp **svenska löner** per yrke och kontrollera **lönekrav för arbetstillstånd** — med officiell data från Statistiska centralbyrån (SCB). Inga tekniska kunskaper behövs.
+
+## 🚀 Kom igång — 3 steg
+1. **Välj dina filter** i sidofältet till vänster: sektor, kön, årsintervall och ett yrke.
+2. Klicka på **🔍 Sök**.
+3. **Läs resultaten** i flikarna som visas.
+
+Ändra valfritt filter och klicka på Sök igen för att uppdatera.
+
+## 🔎 Hitta rätt yrke
+- Skriv i rutan **"Sök yrken"** i sidofältet — den matchar yrkestitlar, koder och vanliga benämningar (skriv t.ex. *"borgarråd"* för att hitta *Politiker*).
+- Eller borra ner med **Huvudgrupp → Undergrupp**.
+- Osäker på koden? Öppna fliken **📖 SSYK-guide** för att bläddra bland alla yrken med beskrivning och en sökruta.
+
+## 📈 Läsa lönediagrammen
+Löner visas som **percentiler**:
+- **P10** — 10% tjänar mindre än så här (nedre delen).
+- **P50 (Median)** — mittenlönen; hälften tjänar mer, hälften mindre.
+- **P90** — bara 10% tjänar mer (övre delen).
+- **Genomsnitt** — visas som en separat ♦-markör.
+
+Ett stort gap mellan P10 och P90 betyder att lönerna varierar mycket i yrket.
+
+## 💰 "Var ligger jag?"
+Ange en månadslön och ett yrke, så visar verktyget **vilken percentil den hamnar i** — t.ex. *"högre än ca 68% i detta yrke"*.
+
+## 🛂 Arbetstillståndskoll
+Ange föreslagen lön och yrke. Verktyget kontrollerar:
+- om den når **lönegolvet** (en % av nationella medianen),
+- var den ligger i **yrkets eget löneintervall**,
+- om yrket är **undantaget eller begränsat**.
+
+Varje kontroll visar ✅ godkänt, ⚠️ varning eller ❌ ej godkänt med siffror. *Stäm alltid av mot relevant kollektivavtal.*
+
+## 🏆 Topplista
+Rangordnar yrkena i din valda grupp efter lön, lönegap mellan könen eller löneökning.
+
+## 👤 🗺️ 🎓 Ålder, region & utbildning
+Dessa flikar delar upp lönen efter **åldersgrupp**, **region** och **utbildningsnivå**, med valfri jämförelse kvinnor mot män.
+
+## 🌐 Språk
+Använd **English / Svenska**-väljaren högst upp i sidofältet — den ändrar både gränssnittet och dataetiketterna.
+
+## 🔐 För administratörer
+Inloggade administratörer får en **Admin**-sektion för att uppdatera SCB-data, hantera användare, redigera reglerna för arbetstillstånd, ändra visningsinställningar och redigera den här guiden.
+
+## ❓ Bra att veta
+- Data kommer från **SCB:s lönestrukturstatistik** och omfattar för närvarande till och med **2025**.
+- Vissa små yrken visar "–" — SCB döljer siffror för mycket små grupper.
+- Beskrivningar i SSYK-guiden är **maskinöversatta** från svenska där officiell engelsk version saknas.
+""",
+}
+
+
+def load_guide() -> dict:
+    g = dict(GUIDE_DEFAULTS)
+    if os.path.exists(GUIDE_FILE):
+        try:
+            with open(GUIDE_FILE, encoding="utf-8") as f:
+                g.update(json.load(f))
+        except Exception:
+            pass
+    return g
+
+
+def save_guide(g: dict):
+    with open(GUIDE_FILE, "w", encoding="utf-8") as f:
+        json.dump(g, f, ensure_ascii=False, indent=2)
 
 
 # Derived module-level values (re-read from file on every Streamlit rerun).
@@ -1082,13 +1210,38 @@ def collapse_df(df, occ_col, salary_cols, weight_col=None, ext_weights=None,
 
 # ── App layout ─────────────────────────────────────────────────────────────────
 
-st.set_page_config(page_title="SCB Salary Explorer", page_icon="📊", layout="wide")
+_ASSETS   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+_ICON_PNG = os.path.join(_ASSETS, "logo.png")
+_ICON_SVG = os.path.join(_ASSETS, "logo.svg")
+
+st.set_page_config(page_title="Swedish Salary Explorer", page_icon=_ICON_PNG, layout="wide")
+if os.path.exists(_ICON_SVG):
+    st.logo(_ICON_SVG, size="large")
+
+# Full-page / modal panels are mutually exclusive — opening one closes the rest.
+_PANEL_FLAGS = ("show_user_mgmt", "show_wp_config", "show_app_settings",
+                "show_guide_edit", "show_user_guide", "show_ssyk_guide")
+
+
+def _open_panel(name):
+    for k in _PANEL_FLAGS:
+        st.session_state[k] = (k == name)
+    st.rerun()
+
 
 with st.sidebar:
     lang = st.radio("🌐 Language / Språk", ["EN", "SV"],
                     format_func=lambda k: {"EN": "English", "SV": "Svenska"}[k],
                     horizontal=True)
     t = T[lang]
+
+    gc1, gc2 = st.columns(2)
+    if gc1.button("❓ User guide" if lang == "EN" else "❓ Användarguide",
+                  use_container_width=True):
+        _open_panel("show_user_guide")
+    if gc2.button("📖 SSYK guide" if lang == "EN" else "📖 SSYK-guide",
+                  use_container_width=True):
+        _open_panel("show_ssyk_guide")
 
     sector_labels = list(t["sectors"].values())
     sector_code   = list(t["sectors"].keys())[
@@ -1234,20 +1387,13 @@ with st.sidebar:
                     st.success(f"Updated {ts}")
                     st.rerun()
                 if st.button("👥 Manage users", use_container_width=True):
-                    st.session_state["show_user_mgmt"] = True
-                    st.session_state["show_wp_config"] = False
-                    st.session_state["show_app_settings"] = False
-                    st.rerun()
+                    _open_panel("show_user_mgmt")
                 if st.button("⚙️ Work permit rules", use_container_width=True):
-                    st.session_state["show_wp_config"] = True
-                    st.session_state["show_user_mgmt"] = False
-                    st.session_state["show_app_settings"] = False
-                    st.rerun()
+                    _open_panel("show_wp_config")
                 if st.button("🎛️ App settings", use_container_width=True):
-                    st.session_state["show_app_settings"] = True
-                    st.session_state["show_user_mgmt"] = False
-                    st.session_state["show_wp_config"] = False
-                    st.rerun()
+                    _open_panel("show_app_settings")
+                if st.button("📝 Edit user guide", use_container_width=True):
+                    _open_panel("show_guide_edit")
     else:
         with st.expander("🔐 Admin login", expanded=False):
             le = st.text_input("Email", key="login_email")
@@ -1456,6 +1602,41 @@ def render_app_settings():
         st.rerun()
 
 
+def render_user_guide():
+    """Full-page user guide (markdown), visible to everyone."""
+    g = load_guide()
+    st.markdown(g.get("sv" if lang == "SV" else "en", ""))
+    st.divider()
+    if st.button("← Back to app", key="guide_back"):
+        st.session_state["show_user_guide"] = False
+        st.rerun()
+
+
+def render_guide_edit():
+    """Admin editor for the user guide (markdown, EN + SV) with live preview."""
+    g = load_guide()
+    st.header("📝 Edit user guide")
+    st.caption("Plain Markdown. Use # for headings, ** for bold, - for bullet lists. "
+               "Saved values apply immediately for everyone.")
+    en_tab, sv_tab = st.tabs(["🇬🇧 English", "🇸🇪 Svenska"])
+    with en_tab:
+        en = st.text_area("Markdown (English)", g.get("en", ""), height=420, key="guide_en")
+        with st.expander("👁 Preview"):
+            st.markdown(en)
+    with sv_tab:
+        sv = st.text_area("Markdown (Svenska)", g.get("sv", ""), height=420, key="guide_sv")
+        with st.expander("👁 Preview"):
+            st.markdown(sv)
+    c1, c2 = st.columns(2)
+    if c1.button("💾 Save guide", type="primary"):
+        save_guide({"en": en, "sv": sv})
+        st.success("Saved.")
+        st.rerun()
+    if c2.button("← Back to app"):
+        st.session_state["show_guide_edit"] = False
+        st.rerun()
+
+
 def render_ssyk_browser(prefix: str):
     """Drill-down SSYK navigator. Labels use the official SCB/API names; the
     3-digit level uses a (flagged) translation; descriptions/synonyms are scraped."""
@@ -1573,7 +1754,11 @@ def render_ssyk_browser(prefix: str):
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
-st.title(f"📊 {t['title']}")
+c_logo, c_title = st.columns([1, 12], vertical_alignment="center")
+with c_logo:
+    st.image(_ICON_PNG, width=56)
+with c_title:
+    st.title(t["title"])
 st.caption(t["caption"])
 
 # Admin user-management modal (open across reruns via a session flag)
@@ -1591,6 +1776,27 @@ if st.session_state.get("show_wp_config") and \
 if st.session_state.get("show_app_settings") and \
         st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
     render_app_settings()
+    st.stop()
+
+# User guide — full-page, visible to everyone (no login needed)
+if st.session_state.get("show_user_guide"):
+    render_user_guide()
+    st.stop()
+
+# SSYK guide — full-page, visible to everyone (no login needed)
+if st.session_state.get("show_ssyk_guide"):
+    st.subheader(t["ssyk_title"])
+    render_ssyk_browser("page")
+    st.divider()
+    if st.button("← Back to app", key="ssyk_back"):
+        st.session_state["show_ssyk_guide"] = False
+        st.rerun()
+    st.stop()
+
+# Admin user-guide editor — full-page panel (gated to admin/master)
+if st.session_state.get("show_guide_edit") and \
+        st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
+    render_guide_edit()
     st.stop()
 
 if not selected_occ_codes:
@@ -1665,10 +1871,10 @@ def show_breakdown_raw(df_in, dim_col, dim_label, dim_map=None, sex_col=None):
         st.dataframe(out, use_container_width=True, hide_index=True)
 
 
-tab_pct, tab_calc, tab_permit, tab_lead, tab_age, tab_reg, tab_edu, tab_stats, tab_browse = \
+tab_pct, tab_calc, tab_permit, tab_lead, tab_age, tab_reg, tab_edu, tab_stats = \
     st.tabs([
         t["tab_pct"], t["tab_calc"], t["tab_permit"], t["tab_lead"], t["tab_age"],
-        t["tab_region"], t["tab_edu"], t["tab_stats"], t["tab_browse"]
+        t["tab_region"], t["tab_edu"], t["tab_stats"]
     ])
 
 # ── Tab 1: Percentile distribution ────────────────────────────────────────────
@@ -2449,10 +2655,5 @@ with tab_stats:
                 t["stat_total"]: [f"{total:,}", f"{edu_total:,}"],
             })
             st.dataframe(comp, use_container_width=True, hide_index=True)
-
-# ── Tab: SSYK guide (code browser) ────────────────────────────────────────────
-with tab_browse:
-    st.subheader(t["ssyk_title"])
-    render_ssyk_browser("tab")
 
 st.caption(t["source"])

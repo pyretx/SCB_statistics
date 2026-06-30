@@ -21,6 +21,7 @@ services:
       - /root/scb-wp-rules.json:/app/wp_rules.json:rw
       - /root/scb-ssyk-overrides.json:/app/ssyk_overrides.json:rw
       - /root/scb-app-settings.json:/app/app_settings.json:rw
+      - /root/scb-guide.json:/app/guide.json:rw
     networks:
       - traefik
     labels:
