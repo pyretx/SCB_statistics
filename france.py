@@ -35,9 +35,12 @@ T = {
         "all_cats": "— Toutes les catégories —",
         "occ": "3. Profession(s)",
         "search_ph": "Rechercher une profession…",
+        "search_label": "🔍 Rechercher une profession",
         "found_n": "{n} profession(s) trouvée(s)",
         "no_match": "Aucune profession ne correspond.",
         "clear": "✕ Tout effacer",
+        "btn_search": "🔍 Rechercher",
+        "select_prompt": "Sélectionnez une ou plusieurs professions puis appuyez sur 🔍 Rechercher — ou explorez les codes PCS ci-dessous.",
         "explorer_title": "Professions ({n})",
         "explorer_hint": "Sélectionnez une ou plusieurs professions à gauche pour le détail par âge et par sexe — ou explorez le tableau.",
         "col_code": "Code",
@@ -64,6 +67,15 @@ T = {
         "tab_explorer": "🔎 Explorateur",
         "tab_dist": "📊 Distribution des salaires",
         "tab_trend": "📈 Évolution",
+        "tab_pct": "📊 Distribution par centile",
+        "tab_calc": "💰 Où je me situe ?",
+        "tab_lead": "🏆 Classement",
+        "tab_age": "👤 Par âge",
+        "show_high_pct": "Afficher P95 / P99",
+        "trend_title": "Évolution des salaires dans le temps",
+        "lead_title": "Classement — salaire moyen",
+        "lead_hint": "Toutes les professions du secteur, classées par salaire moyen.",
+        "age_select_prompt": "Sélectionnez une profession (menu de gauche ou 📖 Codes PCS) pour voir le détail par âge et par sexe.",
         "dist_title": "Distribution des salaires — ensemble des salariés",
         "dist_caption": "Salaire net mensuel EQTP en euros constants {base} · {sector}",
         "dist_year": "Année",
@@ -130,9 +142,12 @@ T = {
         "all_cats": "— All categories —",
         "occ": "3. Occupation(s)",
         "search_ph": "Search occupations…",
+        "search_label": "🔍 Search occupation",
         "found_n": "{n} occupation(s) found",
         "no_match": "No occupation matches.",
         "clear": "✕ Clear all",
+        "btn_search": "🔍 Search",
+        "select_prompt": "Select one or more occupations then press 🔍 Search — or explore the PCS codes below.",
         "explorer_title": "Occupations ({n})",
         "explorer_hint": "Pick one or more occupations on the left for the age/sex detail — or explore the table.",
         "col_code": "Code",
@@ -159,6 +174,15 @@ T = {
         "tab_explorer": "🔎 Explorer",
         "tab_dist": "📊 Wage distribution",
         "tab_trend": "📈 Trend",
+        "tab_pct": "📊 Percentile distribution",
+        "tab_calc": "💰 Where do I stand?",
+        "tab_lead": "🏆 Leaderboard",
+        "tab_age": "👤 By age",
+        "show_high_pct": "Show P95 / P99",
+        "trend_title": "Salary trend over time",
+        "lead_title": "Leaderboard — mean salary",
+        "lead_hint": "All occupations in the sector, ranked by mean salary.",
+        "age_select_prompt": "Select an occupation (left menu or 📖 PCS guide) to see the age and sex breakdown.",
         "dist_title": "Wage distribution — all employees",
         "dist_caption": "Net monthly FTE salary in constant {base} euros · {sector}",
         "dist_year": "Year",
@@ -250,35 +274,79 @@ with st.sidebar:
     lang = "EN" if lang == "English" else "FR"
     t = T[lang]
 
-    # Browse-codes guide button, placed at the top like Sweden's SSYK guide.
+    # Browse-codes guide button, at the top like Sweden's SSYK guide.
     if st.button(t["browse_btn"], use_container_width=True, key="fr_browse_open"):
+        for k in ("fr_group", "fr_cat", "fr_search"):
+            st.session_state.pop(k, None)
         st.session_state["fr_show_browser"] = True
         st.rerun()
 
-    sector_label = st.selectbox(
-        t["sector"], list(t["sectors"].values()), key="fr_sector")
-    sector = [k for k, v in t["sectors"].items() if v == sector_label][0]
+    # Store the sector KEY (not its localized label) so switching language never
+    # leaves a stale value that isn't in the options.
+    sector = st.selectbox(t["sector"], list(t["sectors"].keys()),
+                          format_func=lambda k: t["sectors"][k], key="fr_sector")
+    sector_label = t["sectors"][sector]
 
     labels = fd.load_pcs_labels()
 
-    # Drill-down: group (1 char) → category (2 chars) → professions (4 chars)
-    groups = {c: v["fr"] for c, v in labels.items() if len(c) == 1}
-    g_opts = [t["all_groups"]] + [f"{c} – {n}" for c, n in sorted(groups.items())]
-    g_sel  = st.selectbox(t["group"], g_opts, key="fr_group")
-    g_code = None if g_sel == t["all_groups"] else g_sel.split(" – ")[0]
+    # Drill-down: group (1) → category (2) → professions (4). Options are CODES;
+    # format_func renders the localized name (labels follow the language and the
+    # stored value stays valid across a switch).
+    group_codes = sorted(c for c in labels if len(c) == 1)
+    g_code = st.selectbox(
+        t["group"], [None] + group_codes, key="fr_group",
+        format_func=lambda c: t["all_groups"] if c is None
+        else f"{c} – {fd.pcs_name(c, lang)}")
 
     c_code = None
     if g_code:
-        cats = {c: v["fr"] for c, v in labels.items()
-                if len(c) == 2 and c.startswith(g_code)}
-        c_opts = [t["all_cats"]] + [f"{c} – {n}" for c, n in sorted(cats.items())]
-        c_sel  = st.selectbox(t["category"], c_opts, key="fr_cat")
-        c_code = None if c_sel == t["all_cats"] else c_sel.split(" – ")[0]
+        cat_codes = sorted(c for c in labels if len(c) == 2 and c.startswith(g_code))
+        c_code = st.selectbox(
+            t["category"], [None] + cat_codes, key="fr_cat",
+            format_func=lambda c: t["all_cats"] if c is None
+            else f"{c} – {fd.pcs_name(c, lang)}")
 
-    search = st.text_input("🔍", placeholder=t["search_ph"],
-                           label_visibility="collapsed", key="fr_search")
+    # Occupation pool comes from the LABELS file (not the salary data) — like
+    # Sweden's cached occupations list — so nothing is fetched to build the menu.
+    prefix = c_code or g_code or ""
+    pool_codes = sorted(c for c in labels if len(c) == 4 and c.startswith(prefix))
+    search = st.text_input(t["search_label"], placeholder=t["search_ph"],
+                           key="fr_search")
+    if search.strip():
+        s = search.strip().lower()
+        pool_codes = [c for c in pool_codes
+                      if s in fd.pcs_name(c, lang).lower() or s in c.lower()]
+        st.caption(t["found_n"].format(n=len(pool_codes)) if pool_codes
+                   else t["no_match"])
 
-# ── Data (one cached pull per sector) ─────────────────────────────────────────
+    occ_opts = [f"{fd.pcs_name(c, lang)}  ({c})" for c in pool_codes]
+    sel_labels = st.multiselect(t["occ"], occ_opts, max_selections=6, key="fr_occ")
+    sel_codes = [l.rsplit("(", 1)[-1].rstrip(")") for l in sel_labels]
+
+    def _fr_clear():
+        for k in ("fr_group", "fr_cat", "fr_search", "fr_occ", "fr_query"):
+            st.session_state.pop(k, None)
+        st.session_state["fr_show_browser"] = True
+
+    c_search, c_clear = st.columns(2)
+    with c_search:
+        search_clicked = st.button(t["btn_search"], type="primary",
+                                   use_container_width=True, key="fr_do_search")
+    with c_clear:
+        st.button(t["clear"], use_container_width=True, on_click=_fr_clear)
+
+# ── Commit the query on Search — the right side renders ONLY from this ───────
+# Exactly like Sweden: nothing on the right loads until Search commits a query.
+if search_clicked and sel_codes:
+    st.session_state["fr_query"] = {"sector": sector, "codes": tuple(sel_codes)}
+    st.session_state["fr_show_browser"] = False
+
+_q = st.session_state.get("fr_query", {})
+query_codes  = _q.get("codes", ())
+query_sector = _q.get("sector", sector)
+query_sector_label = t["sectors"].get(query_sector, sector_label)
+
+# ── Header ───────────────────────────────────────────────────────────────────
 _c_logo, _c_title = st.columns([1, 12], vertical_alignment="center")
 with _c_logo:
     st.image(_FR_LOGO, width=56)
@@ -286,88 +354,11 @@ with _c_title:
     st.title(t["title"])
 st.caption(t["caption"])
 
-try:
-    with st.spinner("INSEE…"):
-        df = fd.fetch_detail_salaries(sector)
-except Exception:
-    st.error(t["err_api"])
-    st.stop()
-
-year = df["year"].max()
-det  = df[df["pcs"].str.len() == 4]
-
-# Occupation pool after drill-down + search
-prefix = c_code or g_code or ""
-pool_codes = sorted({c for c in det["pcs"].unique() if c.startswith(prefix)})
-if search.strip():
-    s = search.strip().lower()
-    pool_codes = [c for c in pool_codes
-                  if s in fd.pcs_name(c, lang).lower() or s in c.lower()]
-    st.sidebar.caption(t["found_n"].format(n=len(pool_codes)) if pool_codes
-                       else t["no_match"])
-
-with st.sidebar:
-    occ_opts = [f"{fd.pcs_name(c, lang)}  ({c})" for c in pool_codes]
-    sel_labels = st.multiselect(t["occ"], occ_opts, max_selections=6,
-                                key="fr_occ")
-    sel_codes = [l.rsplit("(", 1)[-1].rstrip(")") for l in sel_labels]
-
-    def _fr_clear():
-        for k in ("fr_group", "fr_cat", "fr_search", "fr_occ"):
-            st.session_state.pop(k, None)
-    st.button(t["clear"], use_container_width=True, on_click=_fr_clear)
-
-st.caption(t["detail_year"].format(year=year) + f" · {sector_label}")
-
-# Convenience frames
-tot = det[(det["sex"] == "_T") & (det["age"] == "_T")].set_index("pcs")
-
-
-def _gap_pct(code: str):
-    """Women vs men mean-salary gap in % for one occupation (all ages)."""
-    rows = det[(det["pcs"] == code) & (det["age"] == "_T")]
-    f = rows[rows["sex"] == "F"]["mean_salary"]
-    m = rows[rows["sex"] == "M"]["mean_salary"]
-    if len(f) and len(m) and pd.notna(f.iloc[0]) and pd.notna(m.iloc[0]) and m.iloc[0]:
-        return (f.iloc[0] / m.iloc[0] - 1) * 100
-    return None
-
-
-def _num(v):
-    return f"{v:,.0f}".replace(",", " ") if v is not None and pd.notna(v) else "–"
-
-
-def _ranked_table(codes) -> pd.DataFrame:
-    """Ranked occupation table (mean salary desc) for a list of 4-digit PCS
-    codes. Shared by the Explorer tab and the code browser."""
-    rows = []
-    for c in codes:
-        if c not in tot.index:
-            continue
-        r = tot.loc[c]
-        gap = _gap_pct(c)
-        rows.append({
-            t["col_code"]:  c,
-            t["col_name"]:  fd.pcs_name(c, lang),
-            t["col_mean"]:  round(r["mean_salary"]) if pd.notna(r["mean_salary"]) else None,
-            t["col_count"]: round(r["headcount"]) if pd.notna(r["headcount"]) else None,
-            t["col_gap"]:   round(gap, 1) if gap is not None else None,
-        })
-    if not rows:
-        return pd.DataFrame()
-    return pd.DataFrame(rows).sort_values(t["col_mean"], ascending=False,
-                                          na_position="last")
-
-
-# ── Browse PCS codes — full-page drill-down reference ─────────────────────────
-# Mirrors Sweden's SSYK guide: cascading dropdowns + global search + a detail
-# panel. PCS has no descriptions, so the panel shows the occupation's own wage
-# snapshot instead. Full-page (st.stop) so it replaces the tabs while open.
-# Shown by default on a fresh session (the "start page"), like Sweden's landing;
-# "Back to app" dismisses it and the top guide button re-opens it.
-st.session_state.setdefault("fr_show_browser", True)
-if st.session_state.get("fr_show_browser"):
-    labels = fd.load_pcs_labels()
+# ── Landing: the code browser (no data loaded) until a query is committed ────
+# Mirrors Sweden's SSYK guide/landing: cascading dropdowns + global search + a
+# detail panel — built purely from the labels file, so nothing is fetched. Pick
+# an occupation and "Use this occupation" commits the query (like Sweden).
+if st.session_state.get("fr_show_browser") or not query_codes:
     st.subheader(t["browse_title"])
     st.caption(t["browse_intro"])
 
@@ -385,26 +376,21 @@ if st.session_state.get("fr_show_browser"):
         if crumbs:
             st.caption(f"**{t['browse_hierarchy']}:** "
                        + " › ".join(fd.pcs_name(c, lang) for c in crumbs))
-        if len(code) == 4 and code in tot.index and pd.notna(tot.loc[code, "mean_salary"]):
-            rows_t = det[(det["pcs"] == code) & (det["age"] == "_T")]
-            mf = rows_t[rows_t["sex"] == "F"]["mean_salary"]
-            mm = rows_t[rows_t["sex"] == "M"]["mean_salary"]
-            gap = _gap_pct(code)
-            st.markdown(f"**{t['browse_snapshot'].format(year=year)}**")
-            c1, c2, c3 = st.columns(3)
-            c1.metric(t["m_mean"] + " (€)",  _num(tot.loc[code, "mean_salary"]))
-            c2.metric(t["m_women"] + " (€)", _num(mf.iloc[0] if len(mf) else None))
-            c3.metric(t["m_men"] + " (€)",   _num(mm.iloc[0] if len(mm) else None))
-            c4, c5, _ = st.columns(3)
-            c4.metric(t["m_gap"],   f"{gap:+.1f} %" if gap is not None else "–")
-            c5.metric(t["m_count"], _num(tot.loc[code, "headcount"]))
-        elif len(code) < 4:
+        if len(code) < 4:
             st.caption(t["browse_no_salary"])
 
-    all4 = sorted(det["pcs"].unique())
+    def _fr_use_occupation(code, sctr, language):
+        # on_click callback (runs before widgets are instantiated): commit the
+        # query and reflect the pick in the sidebar multiselect.
+        st.session_state["fr_query"] = {"sector": sctr, "codes": (code,)}
+        st.session_state["fr_show_browser"] = False
+        for k in ("fr_group", "fr_cat", "fr_search"):
+            st.session_state.pop(k, None)
+        st.session_state["fr_occ"] = [f"{fd.pcs_name(code, language)}  ({code})"]
+
     q = st.text_input(t["browse_search"], key="fr_br_search",
                       placeholder=t["browse_search"], label_visibility="collapsed")
-    use_code = None   # the 4-digit occupation the "Use this occupation" button acts on
+    use_code = None
     if q.strip():
         qs = q.strip().lower()
         matches = [c for c, v in labels.items()
@@ -415,11 +401,9 @@ if st.session_state.get("fr_show_browser"):
             sel = st.selectbox(t["browse_results"].format(n=len(matches)),
                                matches[:300], format_func=_br_fmt, key="fr_br_res")
             _br_panel(sel)
-            use_code = sel if (len(sel) == 4 and sel in all4) else None
-            tcodes = [c for c in matches if len(c) == 4]
+            use_code = sel if len(sel) == 4 else None
         else:
             st.info(t["no_match"])
-            tcodes = []
     else:
         BLANK = "__none__"
 
@@ -440,40 +424,60 @@ if st.session_state.get("fr_show_browser"):
             current = s4 or s2 or s1
         with panel:
             _br_panel(current)
-        use_code = s4 if (s4 and s4 in all4) else None
-        # Table filters to the deepest level chosen: group → category → occupation.
-        level = s4 or s2 or s1
-        if not level:
-            tcodes = all4
-        elif len(level) == 4:
-            tcodes = [level]
-        else:
-            tcodes = [c for c in all4 if c.startswith(level)]
-
-    # ── Filtered occupation table (updates with the drill-down / search) ──────
-    st.divider()
-    br_tbl = _ranked_table(tcodes)
-    st.markdown(f"**{t['explorer_title'].format(n=len(br_tbl))}**")
-    if not br_tbl.empty:
-        st.dataframe(br_tbl, use_container_width=True, hide_index=True, height=360)
+        use_code = s4
 
     st.divider()
-    b_back, b_use = st.columns(2)
-    with b_back:
-        if st.button(t["browse_back"], key="fr_br_back", use_container_width=True):
-            st.session_state["fr_show_browser"] = False
-            st.rerun()
-    with b_use:
-        if st.button(t["browse_use"], key="fr_br_use", type="primary",
-                     use_container_width=True, disabled=use_code is None):
-            # Seed the explorer's occupation multiselect and leave the browser.
-            # Clear the sidebar drill-down first so the picked label is in options.
-            st.session_state["fr_occ"] = [f"{fd.pcs_name(use_code, lang)}  ({use_code})"]
-            for k in ("fr_group", "fr_cat", "fr_search"):
-                st.session_state.pop(k, None)
-            st.session_state["fr_show_browser"] = False
-            st.rerun()
+    st.button(t["browse_use"], key="fr_br_use", type="primary",
+              use_container_width=True, disabled=use_code is None,
+              on_click=_fr_use_occupation, args=(use_code, sector, lang))
     st.stop()
+
+# ── Data — fetched ONLY now, after Search committed a query ──────────────────
+try:
+    with st.spinner("INSEE…"):
+        df = fd.fetch_detail_salaries(query_sector)
+except Exception:
+    st.error(t["err_api"])
+    st.stop()
+year = df["year"].max()
+det  = df[df["pcs"].str.len() == 4]
+tot  = det[(det["sex"] == "_T") & (det["age"] == "_T")].set_index("pcs")
+st.caption(t["detail_year"].format(year=year) + f" · {query_sector_label}")
+
+
+def _gap_pct(code: str):
+    """Women vs men mean-salary gap in % for one occupation (all ages)."""
+    rows = det[(det["pcs"] == code) & (det["age"] == "_T")]
+    f = rows[rows["sex"] == "F"]["mean_salary"]
+    m = rows[rows["sex"] == "M"]["mean_salary"]
+    if len(f) and len(m) and pd.notna(f.iloc[0]) and pd.notna(m.iloc[0]) and m.iloc[0]:
+        return (f.iloc[0] / m.iloc[0] - 1) * 100
+    return None
+
+
+def _num(v):
+    return f"{v:,.0f}".replace(",", " ") if v is not None and pd.notna(v) else "–"
+
+
+def _ranked_table(codes) -> pd.DataFrame:
+    """Ranked occupation table (mean salary desc) for a list of 4-digit PCS codes."""
+    rows = []
+    for c in codes:
+        if c not in tot.index:
+            continue
+        r = tot.loc[c]
+        gap = _gap_pct(c)
+        rows.append({
+            t["col_code"]:  c,
+            t["col_name"]:  fd.pcs_name(c, lang),
+            t["col_mean"]:  round(r["mean_salary"]) if pd.notna(r["mean_salary"]) else None,
+            t["col_count"]: round(r["headcount"]) if pd.notna(r["headcount"]) else None,
+            t["col_gap"]:   round(gap, 1) if gap is not None else None,
+        })
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows).sort_values(t["col_mean"], ascending=False,
+                                          na_position="last")
 
 
 def _sex_radio(label_key: str, widget_key: str) -> str:
@@ -501,108 +505,47 @@ def _pos_on_curve(salary: float, pts: list[tuple[int, float]]):
     return "high"
 
 
-# Distribution + trend share the long-series pull (lazy, cached, may fail alone)
+# The distribution, calculator and trend all use the long-series pull; the
+# derived centile frame is computed once here.
 try:
     sl = fd.fetch_series_longues(sector)
     sl_error = False
 except Exception:
     sl, sl_error = None, True
+if not sl_error:
+    dist = sl[sl["centile"].map(fd.centile_pct).notna()].copy()
+    dist["pct"] = dist["centile"].map(fd.centile_pct)
+    dist_years = sorted(dist["year"].unique(), reverse=True)
+    dist_base = dist_years[0] if dist_years else year
 
-tab_exp, tab_dist, tab_trend, tab_reg = st.tabs(
-    [t["tab_explorer"], t["tab_dist"], t["tab_trend"], t["tab_regions"]])
+# Tabs mirror the Swedish page as closely as the French data allows. The code
+# browser is reached from the sidebar (📖 PCS guide), so there is no explorer tab.
+tab_pct, tab_calc, tab_lead, tab_age, tab_reg = st.tabs(
+    [t["tab_pct"], t["tab_calc"], t["tab_lead"], t["tab_age"], t["tab_regions"]])
 
-# ── Tab 1: occupation explorer ────────────────────────────────────────────────
-with tab_exp:
-    if not sel_codes:
-        st.subheader(t["explorer_title"].format(n=len(pool_codes)))
-        st.caption(t["explorer_hint"])
-        st.dataframe(_ranked_table(pool_codes), use_container_width=True,
-                     hide_index=True, height=560)
-    else:
-        for code in sel_codes:
-            st.subheader(f"{fd.pcs_name(code, lang)}  ({code})")
-            rows_t = det[(det["pcs"] == code) & (det["age"] == "_T")]
-            mean_t  = rows_t[rows_t["sex"] == "_T"]["mean_salary"]
-            count_t = rows_t[rows_t["sex"] == "_T"]["headcount"]
-            mean_f  = rows_t[rows_t["sex"] == "F"]["mean_salary"]
-            mean_m  = rows_t[rows_t["sex"] == "M"]["mean_salary"]
-            gap = _gap_pct(code)
-
-            c1, c2, c3 = st.columns(3)
-            c1.metric(t["m_mean"] + " (€)",  _num(mean_t.iloc[0] if len(mean_t) else None))
-            c2.metric(t["m_women"] + " (€)", _num(mean_f.iloc[0] if len(mean_f) else None))
-            c3.metric(t["m_men"] + " (€)",   _num(mean_m.iloc[0] if len(mean_m) else None))
-            c4, c5, _ = st.columns(3)
-            c4.metric(t["m_gap"],   f"{gap:+.1f} %" if gap is not None else "–")
-            c5.metric(t["m_count"], _num(count_t.iloc[0] if len(count_t) else None))
-
-            # Mean salary by age band × sex
-            by_age = det[(det["pcs"] == code) & (det["age"] != "_T")]
-            if not by_age.empty:
-                bands = sorted(by_age["age"].unique(), key=_age_sort_key)
-                fig = go.Figure()
-                for sex in SEX_ORDER:
-                    sub = by_age[by_age["sex"] == sex].set_index("age")
-                    ys = [sub["mean_salary"].get(b) for b in bands]
-                    if all(pd.isna(y) for y in ys):
-                        continue
-                    fig.add_trace(go.Bar(
-                        x=[_age_label(b, t) for b in bands], y=ys,
-                        name={"_T": t["sex_total"], "F": t["sex_f"], "M": t["sex_m"]}[sex],
-                        marker_color=SEX_COLORS[sex]))
-                fig.update_layout(
-                    title=t["age_title"], barmode="group", height=320,
-                    xaxis_title=t["age_axis"], yaxis_title=t["sal_axis"],
-                    margin=dict(t=50, b=40),
-                    legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
-                st.plotly_chart(fig, use_container_width=True,
-                                key=f"fr_age_chart_{code}")
-
-        # Comparison chart when several occupations are selected
-        if len(sel_codes) > 1:
-            st.subheader(t["cmp_title"])
-            cmp_rows = [(fd.pcs_name(c, lang), tot.loc[c, "mean_salary"])
-                        for c in sel_codes if c in tot.index]
-            cmp_rows.sort(key=lambda r: (pd.isna(r[1]), r[1]))
-            fig = go.Figure(go.Bar(
-                x=[v for _, v in cmp_rows], y=[n for n, _ in cmp_rows],
-                orientation="h", marker_color="#4e79a7"))
-            fig.update_layout(height=90 + 45 * len(cmp_rows),
-                              xaxis_title=t["sal_axis"], margin=dict(t=20, b=40))
-            st.plotly_chart(fig, use_container_width=True, key="fr_cmp_chart")
-
-        with st.expander(t["raw"]):
-            show = det[det["pcs"].isin(sel_codes)].copy()
-            show.insert(1, t["col_name"], show["pcs"].map(lambda c: fd.pcs_name(c, lang)))
-            show["age"] = show["age"].map(lambda a: _age_label(a, t))
-            show["sex"] = show["sex"].map(
-                {"_T": t["sex_total"], "F": t["sex_f"], "M": t["sex_m"]})
-            st.dataframe(show, use_container_width=True, hide_index=True)
-
-# ── Tab 2: wage distribution (all employees) ──────────────────────────────────
-with tab_dist:
+# ── Tab 1: percentile distribution + salary trend (mirrors Sweden's tab 1) ────
+with tab_pct:
     if sl_error:
         st.error(t["err_api"])
     else:
-        dist = sl[sl["centile"].map(fd.centile_pct).notna()].copy()
-        dist["pct"] = dist["centile"].map(fd.centile_pct)
-        d_years = sorted(dist["year"].unique(), reverse=True)
-        base_yr = d_years[0] if d_years else year
-
         st.subheader(t["dist_title"])
-        st.caption(t["dist_caption"].format(base=base_yr, sector=sector_label))
-        c1, c2, c3 = st.columns([1, 2, 2])
+        st.caption(t["dist_caption"].format(base=dist_base, sector=query_sector_label))
+        c1, c2, c3, c4 = st.columns([1, 2, 2, 2])
         with c1:
-            d_year = st.selectbox(t["dist_year"], d_years, key="fr_dist_year")
+            d_year = st.selectbox(t["dist_year"], dist_years, key="fr_dist_year")
         with c2:
             d_sex = _sex_radio("sex_label", "fr_dist_sex")
         with c3:
             d_wk = _wk_radio("fr_dist_wk")
+        with c4:
+            show_high = st.checkbox(t["show_high_pct"], value=False, key="fr_dist_high")
 
         sub = dist[(dist["year"] == d_year) & (dist["sex"] == d_sex)
                    & (dist["wktime"] == d_wk)].sort_values("pct")
         pts = [(int(p), float(v)) for p, v in
                zip(sub["pct"], sub["salary_const_eur"]) if pd.notna(v)]
+        if not show_high:                       # hide P95 / P99 by default
+            pts = [pv for pv in pts if pv[0] <= 90]
         if not pts:
             st.info(t["no_dist"])
         else:
@@ -610,10 +553,9 @@ with tab_dist:
                 x=[p for p, _ in pts], y=[v for _, v in pts],
                 mode="lines+markers", name=t["dist_curve"],
                 line=dict(color="#4e79a7", width=2), marker=dict(size=7)))
-            # Selected occupations' means as ★ markers (comparable on the
-            # latest year only — detail means are current-euro latest-year).
-            if d_year == base_yr:
-                for code in sel_codes:
+            # Selected occupations' means as ★ markers (latest year only).
+            if d_year == dist_base:
+                for code in query_codes:
                     if code not in tot.index or pd.isna(tot.loc[code, "mean_salary"]):
                         continue
                     mv  = float(tot.loc[code, "mean_salary"])
@@ -627,34 +569,17 @@ with tab_dist:
                         marker=dict(size=1, color="#e15759")))
             fig.update_layout(
                 height=380, xaxis_title=t["x_pct"],
-                yaxis_title=t["y_const"].format(base=base_yr),
+                yaxis_title=t["y_const"].format(base=dist_base),
                 xaxis=dict(tickmode="array", tickvals=[p for p, _ in pts]),
                 margin=dict(t=30, b=40),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
             st.plotly_chart(fig, use_container_width=True, key="fr_dist_chart")
-            if d_year == base_yr and sel_codes:
-                st.caption(t["marker_note"].format(year=base_yr))
+            if d_year == dist_base and query_codes:
+                st.caption(t["marker_note"].format(year=dist_base))
 
-            # Where do I stand?
-            st.subheader(t["whereami"])
-            my = st.number_input(t["my_salary"], min_value=0, step=50,
-                                 key="fr_my_salary")
-            if my:
-                pos = _pos_on_curve(float(my), pts)
-                if pos == "low":
-                    st.info(t["whereami_low"])
-                elif pos == "high":
-                    st.success(t["whereami_high"])
-                else:
-                    st.success(t["whereami_result"].format(
-                        p=f"{pos:.0f}", scope=sector_label.lower()))
-                st.caption(t["whereami_note"].format(year=d_year))
-
-# ── Tab 3: long-series trend (constant euros) ─────────────────────────────────
-with tab_trend:
-    if sl_error:
-        st.error(t["err_api"])
-    else:
+        # ── Salary trend over time (below the distribution, like Sweden) ──────
+        st.divider()
+        st.subheader(t["trend_title"])
         modes = [t["trend_dist"]]
         has_groups = (sl["pcs"] != "_T").any()
         if has_groups:
@@ -677,6 +602,8 @@ with tab_trend:
             base = sl[(sl["centile"] != "_T") & (sl["sex"] == tr_sex)
                       & (sl["wktime"] == tr_wk)].copy()
             base["pct"] = base["centile"].map(fd.centile_pct)
+            if not show_high:                   # match the distribution default
+                base = base[base["pct"] <= 90]
             series = [(f"P{int(p)}", base[base["pct"] == p])
                       for p in sorted(base["pct"].dropna().unique())]
         else:
@@ -695,17 +622,17 @@ with tab_trend:
             y0, y1 = st.select_slider(t["trend_range"], options=yrs_all,
                                       value=(yrs_all[0], yrs_all[-1]),
                                       key="fr_tr_range")
-            base_yr = yrs_all[-1]
+            tbase_yr = yrs_all[-1]
 
-            # Nominal view: constant euros are expressed in latest-year prices,
-            # so nominal(y) = const(y) × CPI(y)/CPI(latest). Needs the IPC.
+            # Nominal view: constant euros are in latest-year prices, so
+            # nominal(y) = const(y) × CPI(y)/CPI(latest). Needs the IPC.
             nominal, cpi, cpi_base = tr_unit == t["unit_nominal"], {}, None
             if nominal:
                 try:
                     cpi = fd.fetch_cpi_annual()
                 except Exception:
                     cpi = {}
-                cpi_base = cpi.get(base_yr)
+                cpi_base = cpi.get(tbase_yr)
                 if not cpi_base:
                     nominal = False
                     st.caption(t["no_cpi"])
@@ -731,11 +658,115 @@ with tab_trend:
             fig.update_layout(
                 height=420, xaxis_title="",
                 yaxis_title=(t["y_nominal"] if nominal
-                             else t["y_const"].format(base=base_yr)),
+                             else t["y_const"].format(base=tbase_yr)),
                 margin=dict(t=30, b=40), hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
             st.plotly_chart(fig, use_container_width=True, key="fr_tr_chart")
             st.caption(t["trend_caption_nom"] if nominal else t["trend_caption"])
+
+# ── Tab 2: where do I stand? (mirrors Sweden's calculator) ────────────────────
+with tab_calc:
+    if sl_error:
+        st.error(t["err_api"])
+    else:
+        st.subheader(t["whereami"])
+        st.caption(t["dist_caption"].format(base=dist_base, sector=query_sector_label))
+        c1, c2, c3 = st.columns([1, 2, 2])
+        with c1:
+            w_year = st.selectbox(t["dist_year"], dist_years, key="fr_w_year")
+        with c2:
+            w_sex = _sex_radio("sex_label", "fr_w_sex")
+        with c3:
+            w_wk = _wk_radio("fr_w_wk")
+        wsub = dist[(dist["year"] == w_year) & (dist["sex"] == w_sex)
+                    & (dist["wktime"] == w_wk)].sort_values("pct")
+        wpts = [(int(p), float(v)) for p, v in
+                zip(wsub["pct"], wsub["salary_const_eur"]) if pd.notna(v)]
+        if not wpts:
+            st.info(t["no_dist"])
+        else:
+            my = st.number_input(t["my_salary"], min_value=0, step=50,
+                                 key="fr_my_salary")
+            if my:
+                pos = _pos_on_curve(float(my), wpts)
+                if pos == "low":
+                    st.info(t["whereami_low"])
+                elif pos == "high":
+                    st.success(t["whereami_high"])
+                else:
+                    st.success(t["whereami_result"].format(
+                        p=f"{pos:.0f}", scope=query_sector_label.lower()))
+                st.caption(t["whereami_note"].format(year=w_year))
+
+# ── Tab 3: leaderboard (ranked mean salary — mirrors Sweden's leaderboard) ────
+with tab_lead:
+    st.subheader(t["lead_title"])
+    st.caption(t["lead_hint"])
+    st.dataframe(_ranked_table(sorted(det["pcs"].unique())),
+                 use_container_width=True, hide_index=True, height=560)
+
+# ── Tab 4: by age (occupation detail — mirrors Sweden's "By age") ─────────────
+with tab_age:
+    if not query_codes:
+        st.info(t["age_select_prompt"])
+    else:
+        for code in query_codes:
+            st.subheader(f"{fd.pcs_name(code, lang)}  ({code})")
+            rows_t = det[(det["pcs"] == code) & (det["age"] == "_T")]
+            mean_t  = rows_t[rows_t["sex"] == "_T"]["mean_salary"]
+            count_t = rows_t[rows_t["sex"] == "_T"]["headcount"]
+            mean_f  = rows_t[rows_t["sex"] == "F"]["mean_salary"]
+            mean_m  = rows_t[rows_t["sex"] == "M"]["mean_salary"]
+            gap = _gap_pct(code)
+
+            c1, c2, c3 = st.columns(3)
+            c1.metric(t["m_mean"] + " (€)",  _num(mean_t.iloc[0] if len(mean_t) else None))
+            c2.metric(t["m_women"] + " (€)", _num(mean_f.iloc[0] if len(mean_f) else None))
+            c3.metric(t["m_men"] + " (€)",   _num(mean_m.iloc[0] if len(mean_m) else None))
+            c4, c5, _ = st.columns(3)
+            c4.metric(t["m_gap"],   f"{gap:+.1f} %" if gap is not None else "–")
+            c5.metric(t["m_count"], _num(count_t.iloc[0] if len(count_t) else None))
+
+            by_age = det[(det["pcs"] == code) & (det["age"] != "_T")]
+            if not by_age.empty:
+                bands = sorted(by_age["age"].unique(), key=_age_sort_key)
+                fig = go.Figure()
+                for sex in SEX_ORDER:
+                    sub = by_age[by_age["sex"] == sex].set_index("age")
+                    ys = [sub["mean_salary"].get(b) for b in bands]
+                    if all(pd.isna(y) for y in ys):
+                        continue
+                    fig.add_trace(go.Bar(
+                        x=[_age_label(b, t) for b in bands], y=ys,
+                        name={"_T": t["sex_total"], "F": t["sex_f"], "M": t["sex_m"]}[sex],
+                        marker_color=SEX_COLORS[sex]))
+                fig.update_layout(
+                    title=t["age_title"], barmode="group", height=320,
+                    xaxis_title=t["age_axis"], yaxis_title=t["sal_axis"],
+                    margin=dict(t=50, b=40),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
+                st.plotly_chart(fig, use_container_width=True,
+                                key=f"fr_age_chart_{code}")
+
+        if len(query_codes) > 1:
+            st.subheader(t["cmp_title"])
+            cmp_rows = [(fd.pcs_name(c, lang), tot.loc[c, "mean_salary"])
+                        for c in query_codes if c in tot.index]
+            cmp_rows.sort(key=lambda r: (pd.isna(r[1]), r[1]))
+            fig = go.Figure(go.Bar(
+                x=[v for _, v in cmp_rows], y=[n for n, _ in cmp_rows],
+                orientation="h", marker_color="#4e79a7"))
+            fig.update_layout(height=90 + 45 * len(cmp_rows),
+                              xaxis_title=t["sal_axis"], margin=dict(t=20, b=40))
+            st.plotly_chart(fig, use_container_width=True, key="fr_cmp_chart")
+
+        with st.expander(t["raw"]):
+            show = det[det["pcs"].isin(query_codes)].copy()
+            show.insert(1, t["col_name"], show["pcs"].map(lambda c: fd.pcs_name(c, lang)))
+            show["age"] = show["age"].map(lambda a: _age_label(a, t))
+            show["sex"] = show["sex"].map(
+                {"_T": t["sex_total"], "F": t["sex_f"], "M": t["sex_m"]})
+            st.dataframe(show, use_container_width=True, hide_index=True)
 
 # ── Tab 4: mean salary by région (private sector, BTS local data) ─────────────
 with tab_reg:

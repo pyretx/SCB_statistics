@@ -90,13 +90,13 @@ def _value(o: dict) -> float | None:
     return None
 
 
-# ttl on the persistent caches: INSEE publishes a new vintage roughly yearly;
-# a weekly refresh means the app picks the new year up automatically (the UI
-# derives the reference year from the data, nothing is hardcoded).
-_WEEK = 7 * 86400
+# No TTL on the data caches: they persist on disk and NEVER auto-refresh. A new
+# INSEE vintage is picked up only when the cache is explicitly cleared (admin
+# action / redeploy) — the app must not silently change data under the user.
+# (Streamlit ignores ttl together with persist="disk" anyway.)
 
 
-@st.cache_data(show_spinner=False, persist="disk", ttl=_WEEK)
+@st.cache_data(show_spinner=False, persist="disk")
 def fetch_detail_salaries(sector: str = "private") -> pd.DataFrame:
     """Mean net FTE monthly salary + FTE headcount per detailed PCS occupation.
 
@@ -123,7 +123,7 @@ def fetch_detail_salaries(sector: str = "private") -> pd.DataFrame:
     return df
 
 
-@st.cache_data(show_spinner=False, persist="disk", ttl=_WEEK)
+@st.cache_data(show_spinner=False, persist="disk")
 def fetch_series_longues(sector: str = "private") -> pd.DataFrame:
     """Constant-euro long series (1951→): means per broad PCS group × sex, plus
     the all-employee wage distribution (centile != _T only where pcs == '_T').
@@ -147,7 +147,7 @@ def fetch_series_longues(sector: str = "private") -> pd.DataFrame:
     return df.sort_values("year", ignore_index=True)
 
 
-@st.cache_data(show_spinner=False, persist="disk", ttl=86400)
+@st.cache_data(show_spinner=False, persist="disk")
 def fetch_cpi_annual() -> dict[str, float]:
     """Annual all-items CPI index → {year: index}. Used for nominal/real views."""
     obs = _get_observations("DS_IPC_PRINC", {
@@ -182,7 +182,7 @@ REGIONS_FR = {
 GEO_FRANCE = "2025-FRANCE-F"
 
 
-@st.cache_data(show_spinner=False, persist="disk", ttl=_WEEK)
+@st.cache_data(show_spinner=False, persist="disk")
 def fetch_regional_salaries() -> pd.DataFrame:
     """Mean net FTE monthly salary by région × sex × PCS group (BTS local
     dataset — PRIVATE sector only; groups are _T / 1T3 / 4 / 5 / 6).
