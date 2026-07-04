@@ -1327,15 +1327,9 @@ def collapse_df(df, occ_col, salary_cols, weight_col=None, ext_weights=None,
 
 _ASSETS   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 _ICON_PNG = os.path.join(_ASSETS, "logo.png")
-_ICON_SVG = os.path.join(_ASSETS, "logo.svg")
 
-st.set_page_config(page_title="Swedish Salary Explorer", page_icon=_ICON_PNG, layout="wide")
-if os.path.exists(_ICON_SVG):
-    st.logo(_ICON_SVG, size="large")
-
-# Hide Streamlit's default top "decoration" gradient bar.
-st.markdown("<style>[data-testid='stDecoration']{display:none;}</style>",
-            unsafe_allow_html=True)
+# NOTE: st.set_page_config / st.logo / global CSS now live in app.py — this file
+# runs as a page inside the multi-country st.navigation app (see app.py).
 
 # Full-page / modal panels are mutually exclusive — opening one closes the rest.
 _PANEL_FLAGS = ("show_user_mgmt", "show_wp_config", "show_app_settings",
