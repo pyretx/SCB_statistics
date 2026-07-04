@@ -1,0 +1,1862 @@
+{
+ "built_at": "2026-07-04",
+ "source": "https://www.insee.fr/fr/statistiques/fichier/2912545/PCS-ESE_2017_Liste.xls",
+ "labels": {
+  "1": {
+   "fr": "Agriculteurs",
+   "en": null
+  },
+  "10": {
+   "fr": "Agriculteurs (salariés de leur exploitation)",
+   "en": null
+  },
+  "100X": {
+   "fr": "Agriculteurs et éleveurs, salariés de leur exploitation",
+   "en": null
+  },
+  "2": {
+   "fr": "Artisans, commerçants et chefs d'entreprises",
+   "en": null
+  },
+  "21": {
+   "fr": "Artisans (salariés de leur entreprise)",
+   "en": null
+  },
+  "210X": {
+   "fr": "Artisans salariés de leur entreprise",
+   "en": null
+  },
+  "22": {
+   "fr": "Commerçants et assimilés (salariés de leur entreprise)",
+   "en": null
+  },
+  "220X": {
+   "fr": "Commerçants et assimilés, salariés de leur entreprise",
+   "en": null
+  },
+  "23": {
+   "fr": "Chefs d'entreprise de 10 salariés ou plus (salariés de leur entreprise)",
+   "en": null
+  },
+  "231A": {
+   "fr": "Chefs de grande entreprise de 500 salariés et plus",
+   "en": null
+  },
+  "232A": {
+   "fr": "Chefs de moyenne entreprise, de 50 à 499 salariés",
+   "en": null
+  },
+  "233A": {
+   "fr": "Chefs d'entreprise du bâtiment et des travaux publics, de 10 à 49 salariés",
+   "en": null
+  },
+  "233B": {
+   "fr": "Chefs d'entreprise de l'industrie ou des transports, de 10 à 49 salariés",
+   "en": null
+  },
+  "233C": {
+   "fr": "Chefs d'entreprise commerciale, de 10 à 49 salariés",
+   "en": null
+  },
+  "233D": {
+   "fr": "Chefs d'entreprise de services, de 10 à 49 salariés",
+   "en": null
+  },
+  "3": {
+   "fr": "Cadres et professions intellectuelles supérieures",
+   "en": null
+  },
+  "31": {
+   "fr": "Professions libérales (exercées sous statut de salarié)",
+   "en": null
+  },
+  "311C": {
+   "fr": "Chirurgiens dentistes",
+   "en": null
+  },
+  "311D": {
+   "fr": "Psychologues, psychanalystes, psychothérapeutes (non médecins)",
+   "en": null
+  },
+  "311E": {
+   "fr": "Vétérinaires",
+   "en": null
+  },
+  "312A": {
+   "fr": "Avocats",
+   "en": null
+  },
+  "331A": {
+   "fr": "Personnels de direction de la fonction publique (Etat, collectivités locales, hôpitaux)",
+   "en": null
+  },
+  "33": {
+   "fr": "Cadres de la fonction publique",
+   "en": null
+  },
+  "332A": {
+   "fr": "Ingénieurs de l'Etat (y.c. ingénieurs militaires) et assimilés",
+   "en": null
+  },
+  "332B": {
+   "fr": "Ingénieurs des collectivités locales et des hôpitaux",
+   "en": null
+  },
+  "333A": {
+   "fr": "Magistrats*",
+   "en": null
+  },
+  "333B": {
+   "fr": "Inspecteurs et autres personnels de catégorie A des Impôts, du Trésor et des Douanes",
+   "en": null
+  },
+  "333C": {
+   "fr": "Cadres de la Poste*",
+   "en": null
+  },
+  "333D": {
+   "fr": "Cadres administratifs de France Télécom (statut public)",
+   "en": null
+  },
+  "333E": {
+   "fr": "Autres personnels administratifs de catégorie A de l'Etat (hors Enseignement, Patrimoine, Impôts, Trésor, Douanes)",
+   "en": null
+  },
+  "333F": {
+   "fr": "Personnels administratifs de catégorie A des collectivités locales et hôpitaux publics (hors Enseignement, Patrimoine)",
+   "en": null
+  },
+  "334A": {
+   "fr": "Officiers des Armées et de la Gendarmerie (sauf officiers généraux)*",
+   "en": null
+  },
+  "335A": {
+   "fr": "Personnes exerçant un mandat politique ou syndical*",
+   "en": null
+  },
+  "34": {
+   "fr": "Professeurs, professions scientifiques",
+   "en": null
+  },
+  "341A": {
+   "fr": "Professeurs agrégés et certifiés de l'enseignement secondaire",
+   "en": null
+  },
+  "341B": {
+   "fr": "Chefs d'établissement de l'enseignement secondaire et inspecteurs",
+   "en": null
+  },
+  "342B": {
+   "fr": "Professeurs et maîtres de conférences",
+   "en": null
+  },
+  "342C": {
+   "fr": "Professeurs agrégés et certifiés en fonction dans l'enseignement supérieur",
+   "en": null
+  },
+  "342D": {
+   "fr": "Personnel enseignant temporaire de l'enseignement supérieur",
+   "en": null
+  },
+  "342F": {
+   "fr": "Directeurs et chargés de recherche de la recherche publique",
+   "en": null
+  },
+  "342G": {
+   "fr": "Ingénieurs d'étude et de recherche de la recherche publique",
+   "en": null
+  },
+  "342H": {
+   "fr": "Allocataires de la recherche publique",
+   "en": null
+  },
+  "343A": {
+   "fr": "Psychologues spécialistes de l'orientation scolaire et professionnelle",
+   "en": null
+  },
+  "344A": {
+   "fr": "Médecins hospitaliers sans activité libérale",
+   "en": null
+  },
+  "344B": {
+   "fr": "Médecins salariés non hospitaliers",
+   "en": null
+  },
+  "344C": {
+   "fr": "Internes en médecine, odontologie et pharmacie",
+   "en": null
+  },
+  "344D": {
+   "fr": "Pharmaciens salariés",
+   "en": null
+  },
+  "35": {
+   "fr": "Professions de l'information, des arts et des spectacles",
+   "en": null
+  },
+  "351A": {
+   "fr": "Bibliothécaires, archivistes, conservateurs et autres cadres du patrimoine",
+   "en": null
+  },
+  "352A": {
+   "fr": "Journalistes (y c. rédacteurs en chef)",
+   "en": null
+  },
+  "352B": {
+   "fr": "Auteurs littéraires, scénaristes, dialoguistes",
+   "en": null
+  },
+  "353A": {
+   "fr": "Directeurs de journaux, administrateurs de presse, directeurs d'éditions (littéraire, musicale, audiovisuelle et multimédia)",
+   "en": null
+  },
+  "353B": {
+   "fr": "Directeurs, responsables de programmation et de production de l'audiovisuel et des spectacles",
+   "en": null
+  },
+  "353C": {
+   "fr": "Cadres artistiques et technico-artistiques de la réalisation de l'audiovisuel et des spectacles",
+   "en": null
+  },
+  "354A": {
+   "fr": "Artistes plasticiens",
+   "en": null
+  },
+  "354B": {
+   "fr": "Artistes de la musique et du chant",
+   "en": null
+  },
+  "354C": {
+   "fr": "Artistes dramatiques",
+   "en": null
+  },
+  "354E": {
+   "fr": "Artistes de la danse",
+   "en": null
+  },
+  "354F": {
+   "fr": "Artistes du cirque et des spectacles divers",
+   "en": null
+  },
+  "354G": {
+   "fr": "Professeurs d'art (hors établissements scolaires)",
+   "en": null
+  },
+  "37": {
+   "fr": "Cadres administratifs et commerciaux d'entreprises",
+   "en": null
+  },
+  "371A": {
+   "fr": "Cadres d'état-major administratifs, financiers, commerciaux des grandes entreprises",
+   "en": null
+  },
+  "372A": {
+   "fr": "Cadres chargés d'études économiques, financières, commerciales",
+   "en": null
+  },
+  "372B": {
+   "fr": "Cadres de l'organisation ou du contrôle des services administratifs et financiers",
+   "en": null
+  },
+  "372C": {
+   "fr": "Cadres spécialistes des ressources humaines et du recrutement",
+   "en": null
+  },
+  "372D": {
+   "fr": "Cadres spécialistes de la formation",
+   "en": null
+  },
+  "372E": {
+   "fr": "Juristes",
+   "en": null
+  },
+  "372F": {
+   "fr": "Cadres de la documentation, de l'archivage (hors fonction publique)",
+   "en": null
+  },
+  "373A": {
+   "fr": "Cadres des services financiers ou comptables des grandes entreprises",
+   "en": null
+  },
+  "373B": {
+   "fr": "Cadres des autres services administratifs des grandes entreprises",
+   "en": null
+  },
+  "373C": {
+   "fr": "Cadres des services financiers ou comptables des petites et moyennes entreprises",
+   "en": null
+  },
+  "373D": {
+   "fr": "Cadres des autres services administratifs des petites et moyennes entreprises",
+   "en": null
+  },
+  "374A": {
+   "fr": "Cadres de l'exploitation des magasins de vente du commerce de détail",
+   "en": null
+  },
+  "374B": {
+   "fr": "Chefs de produits, acheteurs du commerce et autres cadres de la mercatique",
+   "en": null
+  },
+  "374C": {
+   "fr": "Cadres commerciaux des grandes entreprises (hors commerce de détail)",
+   "en": null
+  },
+  "374D": {
+   "fr": "Cadres commerciaux des petites et moyennes entreprises (hors commerce de détail)",
+   "en": null
+  },
+  "375A": {
+   "fr": "Cadres de la publicité",
+   "en": null
+  },
+  "375B": {
+   "fr": "Cadres des relations publiques et de la communication",
+   "en": null
+  },
+  "376A": {
+   "fr": "Cadres des marchés financiers",
+   "en": null
+  },
+  "376B": {
+   "fr": "Cadres des opérations bancaires",
+   "en": null
+  },
+  "376C": {
+   "fr": "Cadres commerciaux de la banque",
+   "en": null
+  },
+  "376D": {
+   "fr": "Chefs d'établissements et responsables de l'exploitation bancaire",
+   "en": null
+  },
+  "376E": {
+   "fr": "Cadres des services techniques des assurances",
+   "en": null
+  },
+  "376F": {
+   "fr": "Cadres des services techniques des organismes de sécurité sociale et assimilés",
+   "en": null
+  },
+  "376G": {
+   "fr": "Cadres de l'immobilier",
+   "en": null
+  },
+  "377A": {
+   "fr": "Cadres de l'hôtellerie et de la restauration",
+   "en": null
+  },
+  "38": {
+   "fr": "Ingénieurs et cadres techniques d'entreprises",
+   "en": null
+  },
+  "380A": {
+   "fr": "Directeurs techniques des grandes entreprises",
+   "en": null
+  },
+  "381B": {
+   "fr": "Ingénieurs et cadres d'étude et développement de l'agriculture, la pêche, les eaux et forêts",
+   "en": null
+  },
+  "381C": {
+   "fr": "Ingénieurs et cadres de production et d'exploitation de l'agriculture, la pêche, les eaux et forêts",
+   "en": null
+  },
+  "382A": {
+   "fr": "Ingénieurs et cadres d'étude du bâtiment et des travaux publics",
+   "en": null
+  },
+  "382B": {
+   "fr": "Architectes salariés",
+   "en": null
+  },
+  "382C": {
+   "fr": "Ingénieurs, cadres de chantier et conducteurs de travaux (cadres) du bâtiment et des travaux publics",
+   "en": null
+  },
+  "382D": {
+   "fr": "Ingénieurs et cadres technico-commerciaux en bâtiment, travaux publics",
+   "en": null
+  },
+  "383A": {
+   "fr": "Ingénieurs et cadres d'étude, recherche et développement en électricité, électronique",
+   "en": null
+  },
+  "383B": {
+   "fr": "Ingénieurs et cadres de fabrication en matériel électrique, électronique",
+   "en": null
+  },
+  "383C": {
+   "fr": "Ingénieurs et cadres technico-commerciaux en matériel électrique ou électronique professionnel",
+   "en": null
+  },
+  "384A": {
+   "fr": "Ingénieurs et cadres d'étude, recherche et développement en mécanique et travail des métaux",
+   "en": null
+  },
+  "384B": {
+   "fr": "Ingénieurs et cadres de fabrication en mécanique et travail des métaux",
+   "en": null
+  },
+  "384C": {
+   "fr": "Ingénieurs et cadres technico-commerciaux en matériel mécanique professionnel",
+   "en": null
+  },
+  "385A": {
+   "fr": "Ingénieurs et cadres d'étude, recherche et développement des industries de transformation (agroalimentaire, chimie, métallurgie, matériaux lourds)",
+   "en": null
+  },
+  "385B": {
+   "fr": "Ingénieurs et cadres de fabrication des industries de transformation (agroalimentaire, chimie, métallurgie, matériaux lourds)",
+   "en": null
+  },
+  "385C": {
+   "fr": "Ingénieurs et cadres technico-commerciaux des industries de transformations (biens intermédiaires)",
+   "en": null
+  },
+  "386B": {
+   "fr": "Ingénieurs et cadres d'étude, recherche et développement de la distribution d'énergie, eau",
+   "en": null
+  },
+  "386C": {
+   "fr": "Ingénieurs et cadres d'étude, recherche et développement des autres industries (imprimerie, matériaux souples, ameublement et bois)",
+   "en": null
+  },
+  "386D": {
+   "fr": "Ingénieurs et cadres de la production et de la distribution d'énergie, eau",
+   "en": null
+  },
+  "386E": {
+   "fr": "Ingénieurs et cadres de fabrication des autres industries (imprimerie, matériaux souples, ameublement et bois)",
+   "en": null
+  },
+  "387A": {
+   "fr": "Ingénieurs et cadres des achats et approvisionnements industriels",
+   "en": null
+  },
+  "387B": {
+   "fr": "Ingénieurs et cadres de la logistique, du planning et de l'ordonnancement",
+   "en": null
+  },
+  "387C": {
+   "fr": "Ingénieurs et cadres des méthodes de production",
+   "en": null
+  },
+  "387D": {
+   "fr": "Ingénieurs et cadres du contrôle-qualité",
+   "en": null
+  },
+  "387E": {
+   "fr": "Ingénieurs et cadres de la maintenance, de l'entretien et des travaux neufs",
+   "en": null
+  },
+  "387F": {
+   "fr": "Ingénieurs et cadres techniques de l'environnement",
+   "en": null
+  },
+  "388A": {
+   "fr": "Ingénieurs et cadres d'étude, recherche et développement en informatique",
+   "en": null
+  },
+  "388B": {
+   "fr": "Ingénieurs et cadres d'administration, maintenance, support et services aux utilisateurs en informatique",
+   "en": null
+  },
+  "388C": {
+   "fr": "Chefs de projets informatiques, responsables informatiques",
+   "en": null
+  },
+  "388D": {
+   "fr": "Ingénieurs et cadres technico-commerciaux en informatique et télécommunications",
+   "en": null
+  },
+  "388E": {
+   "fr": "Ingénieurs et cadres spécialistes des télécommunications",
+   "en": null
+  },
+  "389A": {
+   "fr": "Ingénieurs et cadres techniques de l'exploitation des transports",
+   "en": null
+  },
+  "389B": {
+   "fr": "Officiers et cadres navigants techniques et commerciaux de l'aviation civile",
+   "en": null
+  },
+  "389C": {
+   "fr": "Officiers et cadres navigants techniques de la marine marchande",
+   "en": null
+  },
+  "4": {
+   "fr": "Professions intermédiaires",
+   "en": null
+  },
+  "42": {
+   "fr": "Professeurs des écoles, instituteurs et professions assimilées",
+   "en": null
+  },
+  "421A": {
+   "fr": "Instituteurs",
+   "en": null
+  },
+  "421B": {
+   "fr": "Professeurs des écoles",
+   "en": null
+  },
+  "422A": {
+   "fr": "Professeurs d'enseignement général des collèges",
+   "en": null
+  },
+  "422B": {
+   "fr": "Professeurs de lycée professionnel",
+   "en": null
+  },
+  "422C": {
+   "fr": "Maîtres auxiliaires et professeurs contractuels de l'enseignement secondaire",
+   "en": null
+  },
+  "422D": {
+   "fr": "Conseillers principaux d'éducation",
+   "en": null
+  },
+  "422E": {
+   "fr": "Surveillants et aides-éducateurs des établissements d'enseignement",
+   "en": null
+  },
+  "423A": {
+   "fr": "Moniteurs d'école de conduite",
+   "en": null
+  },
+  "423B": {
+   "fr": "Formateurs et animateurs de formation continue",
+   "en": null
+  },
+  "424A": {
+   "fr": "Moniteurs et éducateurs sportifs, sportifs professionnels",
+   "en": null
+  },
+  "425A": {
+   "fr": "Sous-bibliothécaires, cadres intermédiaires du patrimoine",
+   "en": null
+  },
+  "43": {
+   "fr": "Professions intermédiaires de la santé et du travail social",
+   "en": null
+  },
+  "431A": {
+   "fr": "Cadres infirmiers et assimilés",
+   "en": null
+  },
+  "431B": {
+   "fr": "Infirmiers psychiatriques",
+   "en": null
+  },
+  "431C": {
+   "fr": "Puéricultrices",
+   "en": null
+  },
+  "431D": {
+   "fr": "Infirmiers spécialisés (autres qu'infirmiers psychiatriques et puéricultrices)",
+   "en": null
+  },
+  "431E": {
+   "fr": "Sages-femmes salariées",
+   "en": null
+  },
+  "431F": {
+   "fr": "Infirmiers en soins généraux, salariés",
+   "en": null
+  },
+  "432B": {
+   "fr": "Masseurs-kinésithérapeutes rééducateurs, salariés",
+   "en": null
+  },
+  "432D": {
+   "fr": "Autres spécialistes de la rééducation, salariés",
+   "en": null
+  },
+  "433A": {
+   "fr": "Techniciens médicaux",
+   "en": null
+  },
+  "433B": {
+   "fr": "Opticiens lunetiers et audioprothésistes salariés",
+   "en": null
+  },
+  "433C": {
+   "fr": "Autres spécialistes de l'appareillage médical salariés",
+   "en": null
+  },
+  "433D": {
+   "fr": "Préparateurs en pharmacie",
+   "en": null
+  },
+  "434A": {
+   "fr": "Cadres de l'intervention socio-éducative",
+   "en": null
+  },
+  "434B": {
+   "fr": "Assistants de service social",
+   "en": null
+  },
+  "434C": {
+   "fr": "Conseillers en économie sociale familiale",
+   "en": null
+  },
+  "434D": {
+   "fr": "Educateurs spécialisés",
+   "en": null
+  },
+  "434E": {
+   "fr": "Moniteurs éducateurs",
+   "en": null
+  },
+  "434F": {
+   "fr": "Educateurs techniques spécialisés, moniteurs d'atelier",
+   "en": null
+  },
+  "434G": {
+   "fr": "Educateurs de jeunes enfants",
+   "en": null
+  },
+  "435A": {
+   "fr": "Directeurs de centres socioculturels et de loisirs",
+   "en": null
+  },
+  "435B": {
+   "fr": "Animateurs socioculturels et de loisirs",
+   "en": null
+  },
+  "44": {
+   "fr": "Clergé, religieux",
+   "en": null
+  },
+  "441A": {
+   "fr": "Clergé séculier",
+   "en": null
+  },
+  "441B": {
+   "fr": "Clergé régulier",
+   "en": null
+  },
+  "45": {
+   "fr": "Professions intermédiaires administratives de la fonction publique",
+   "en": null
+  },
+  "451A": {
+   "fr": "Professions intermédiaires de la Poste",
+   "en": null
+  },
+  "451B": {
+   "fr": "Professions intermédiaires administratives de France Télécom (statut public)",
+   "en": null
+  },
+  "451C": {
+   "fr": "Contrôleurs des Impôts, du Trésor, des Douanes et assimilés*",
+   "en": null
+  },
+  "451D": {
+   "fr": "Ingénieurs du contrôle de la navigation aérienne*",
+   "en": null
+  },
+  "451E": {
+   "fr": "Autres personnels administratifs de catégorie B de l'Etat (hors Enseignement, Patrimoine, Impôts, Trésor, Douanes)",
+   "en": null
+  },
+  "451G": {
+   "fr": "Professions intermédiaires administratives des collectivités locales",
+   "en": null
+  },
+  "451H": {
+   "fr": "Professions intermédiaires administratives des hôpitaux",
+   "en": null
+  },
+  "452A": {
+   "fr": "Inspecteurs et officiers de police*",
+   "en": null
+  },
+  "452B": {
+   "fr": "Adjudants-chefs, adjudants et sous-officiers de rang supérieur de l'Armée et de la Gendarmerie*",
+   "en": null
+  },
+  "46": {
+   "fr": "Professions intermédiaires administratives et commerciales des entreprises",
+   "en": null
+  },
+  "461B": {
+   "fr": "Secrétaires de direction, assistants de direction (non cadres)",
+   "en": null
+  },
+  "461C": {
+   "fr": "Secrétaires de niveau supérieur (non cadres, hors secrétaires de direction)",
+   "en": null
+  },
+  "461D": {
+   "fr": "Maîtrise et techniciens des services financiers ou comptables",
+   "en": null
+  },
+  "461E": {
+   "fr": "Maîtrise et techniciens administratifs des services juridiques ou du personnel",
+   "en": null
+  },
+  "461F": {
+   "fr": "Maîtrise et techniciens administratifs des autres services administratifs",
+   "en": null
+  },
+  "462A": {
+   "fr": "Chefs de petites surfaces de vente",
+   "en": null
+  },
+  "462B": {
+   "fr": "Maîtrise de l'exploitation des magasins de vente",
+   "en": null
+  },
+  "462C": {
+   "fr": "Acheteurs non classés cadres, aides-acheteurs",
+   "en": null
+  },
+  "462D": {
+   "fr": "Animateurs commerciaux des magasins de vente, marchandiseurs (non cadres)",
+   "en": null
+  },
+  "462E": {
+   "fr": "Autres professions intermédiaires commerciales (sauf techniciens des forces de vente)",
+   "en": null
+  },
+  "463A": {
+   "fr": "Techniciens commerciaux et technico-commerciaux, représentants en informatique",
+   "en": null
+  },
+  "463B": {
+   "fr": "Techniciens commerciaux et technico-commerciaux, représentants en biens d'équipement, en biens intermédiaires, commerce interindustriel (hors informatique)",
+   "en": null
+  },
+  "463C": {
+   "fr": "Techniciens commerciaux et technico-commerciaux, représentants en biens de consommation auprès d'entreprises",
+   "en": null
+  },
+  "463D": {
+   "fr": "Techniciens commerciaux et technico-commerciaux, représentants en services auprès d'entreprises ou de professionnels (hors banque, assurance, informatique)",
+   "en": null
+  },
+  "463E": {
+   "fr": "Techniciens commerciaux et technico-commerciaux, représentants auprès de particuliers (hors banque, assurance, informatique)",
+   "en": null
+  },
+  "464A": {
+   "fr": "Assistants de la publicité, des relations publiques",
+   "en": null
+  },
+  "464B": {
+   "fr": "Interprètes, traducteurs",
+   "en": null
+  },
+  "465A": {
+   "fr": "Concepteurs et assistants techniques des arts graphiques, de la mode et de la décoration salariés",
+   "en": null
+  },
+  "465B": {
+   "fr": "Assistants techniques de la réalisation des spectacles vivants et audiovisuels salariés",
+   "en": null
+  },
+  "465C": {
+   "fr": "Photographes",
+   "en": null
+  },
+  "466A": {
+   "fr": "Responsables commerciaux et administratifs des transports de voyageurs et du tourisme (non cadres)",
+   "en": null
+  },
+  "466B": {
+   "fr": "Responsables commerciaux et administratifs des transports de marchandises (non cadres)",
+   "en": null
+  },
+  "466C": {
+   "fr": "Responsables d'exploitation des transports de voyageurs et de marchandises (non cadres)",
+   "en": null
+  },
+  "467A": {
+   "fr": "Chargés de clientèle bancaire",
+   "en": null
+  },
+  "467B": {
+   "fr": "Techniciens des opérations bancaires",
+   "en": null
+  },
+  "467C": {
+   "fr": "Professions intermédiaires techniques et commerciales des assurances",
+   "en": null
+  },
+  "467D": {
+   "fr": "Professions intermédiaires techniques des organismes de sécurité sociale",
+   "en": null
+  },
+  "468A": {
+   "fr": "Maîtrise de restauration : salle et service",
+   "en": null
+  },
+  "468B": {
+   "fr": "Maîtrise de l'hébergement : hall et étages",
+   "en": null
+  },
+  "47": {
+   "fr": "Techniciens (sauf techniciens tertiaires)",
+   "en": null
+  },
+  "471A": {
+   "fr": "Techniciens d'étude et de conseil en agriculture, eaux et forêt",
+   "en": null
+  },
+  "471B": {
+   "fr": "Techniciens d'exploitation et de contrôle de la production en agriculture, eaux et forêt",
+   "en": null
+  },
+  "472A": {
+   "fr": "Dessinateurs en bâtiment, travaux publics",
+   "en": null
+  },
+  "472B": {
+   "fr": "Géomètres, topographes",
+   "en": null
+  },
+  "472C": {
+   "fr": "Métreurs et techniciens divers du bâtiment et des travaux publics",
+   "en": null
+  },
+  "472D": {
+   "fr": "Techniciens des travaux publics de l'Etat et des collectivités locales",
+   "en": null
+  },
+  "473A": {
+   "fr": "Dessinateurs en électricité, électromécanique et électronique",
+   "en": null
+  },
+  "473B": {
+   "fr": "Techniciens de recherche-développement et des méthodes de fabrication en électricité, électromécanique et électronique",
+   "en": null
+  },
+  "473C": {
+   "fr": "Techniciens de fabrication et de contrôle-qualité en électricité, électromécanique et électronique",
+   "en": null
+  },
+  "474A": {
+   "fr": "Dessinateurs en construction mécanique et travail des métaux",
+   "en": null
+  },
+  "474B": {
+   "fr": "Techniciens de recherche-développement et des méthodes de fabrication en construction mécanique et travail des métaux",
+   "en": null
+  },
+  "474C": {
+   "fr": "Techniciens de fabrication et de contrôle-qualité en construction mécanique et travail des métaux",
+   "en": null
+  },
+  "475A": {
+   "fr": "Techniciens de recherche-développement et des méthodes de production des industries de transformation",
+   "en": null
+  },
+  "475B": {
+   "fr": "Techniciens de production et de contrôle-qualité des industries de transformation",
+   "en": null
+  },
+  "476A": {
+   "fr": "Assistants techniques, techniciens de l'imprimerie et de l'édition",
+   "en": null
+  },
+  "476B": {
+   "fr": "Techniciens de l'industrie des matériaux souples, de l'ameublement et du bois",
+   "en": null
+  },
+  "477A": {
+   "fr": "Techniciens de la logistique, du planning et de l'ordonnancement",
+   "en": null
+  },
+  "477B": {
+   "fr": "Techniciens d'installation et de maintenance des équipements industriels (électriques, électromécaniques, mécaniques, hors informatique)",
+   "en": null
+  },
+  "477C": {
+   "fr": "Techniciens d'installation et de maintenance des équipements non industriels (hors informatique et télécommunications)",
+   "en": null
+  },
+  "477D": {
+   "fr": "Techniciens de l'environnement et du traitement des pollutions",
+   "en": null
+  },
+  "478A": {
+   "fr": "Techniciens d'étude et de développement en informatique",
+   "en": null
+  },
+  "478B": {
+   "fr": "Techniciens de production, d'exploitation en informatique",
+   "en": null
+  },
+  "478C": {
+   "fr": "Techniciens d'installation, de maintenance, support et services aux utilisateurs en informatique",
+   "en": null
+  },
+  "478D": {
+   "fr": "Techniciens des télécommunications et de l'informatique des réseaux",
+   "en": null
+  },
+  "479A": {
+   "fr": "Techniciens des laboratoires de recherche publique ou de l'enseignement",
+   "en": null
+  },
+  "479B": {
+   "fr": "Experts salariés de niveau technicien, techniciens divers",
+   "en": null
+  },
+  "48": {
+   "fr": "Contremaîtres, agents de maîtrise (maîtrise administrative exclue)",
+   "en": null
+  },
+  "480A": {
+   "fr": "Contremaîtres et agents d'encadrement (non cadres) en agriculture, sylviculture",
+   "en": null
+  },
+  "480B": {
+   "fr": "Maîtres d'équipage de la marine marchande et de la pêche",
+   "en": null
+  },
+  "481A": {
+   "fr": "Conducteurs de travaux (non cadres)",
+   "en": null
+  },
+  "481B": {
+   "fr": "Chefs de chantier (non cadres)",
+   "en": null
+  },
+  "482A": {
+   "fr": "Agents de maîtrise en fabrication de matériel électrique, électronique",
+   "en": null
+  },
+  "483A": {
+   "fr": "Agents de maîtrise en construction mécanique, travail des métaux",
+   "en": null
+  },
+  "484A": {
+   "fr": "Agents de maîtrise en fabrication : agroalimentaire, chimie, plasturgie, pharmacie.",
+   "en": null
+  },
+  "484B": {
+   "fr": "Agents de maîtrise en fabrication : métallurgie, matériaux lourds et autres industries de transformation",
+   "en": null
+  },
+  "485A": {
+   "fr": "Agents de maîtrise et techniciens en production et distribution d'énergie, eau, chauffage",
+   "en": null
+  },
+  "485B": {
+   "fr": "Agents de maîtrise en fabrication des autres industries (imprimerie, matériaux souples, ameublement et bois)",
+   "en": null
+  },
+  "486B": {
+   "fr": "Agents de maîtrise en maintenance, installation en électricité et électronique",
+   "en": null
+  },
+  "486C": {
+   "fr": "Agents de maîtrise en maintenance, installation en électromécanique",
+   "en": null
+  },
+  "486D": {
+   "fr": "Agents de maîtrise en maintenance, installation en mécanique",
+   "en": null
+  },
+  "486E": {
+   "fr": "Agents de maîtrise en entretien général, installation, travaux neufs (hors mécanique, électromécanique, électronique)",
+   "en": null
+  },
+  "487A": {
+   "fr": "Responsables d'entrepôt, de magasinage",
+   "en": null
+  },
+  "487B": {
+   "fr": "Responsables du tri, de l'emballage, de l'expédition et autres responsables de la manutention",
+   "en": null
+  },
+  "488A": {
+   "fr": "Maîtrise de restauration  : cuisine/production",
+   "en": null
+  },
+  "488B": {
+   "fr": "Maîtrise de restauration  : gestion d'établissement",
+   "en": null
+  },
+  "5": {
+   "fr": "Employés",
+   "en": null
+  },
+  "52": {
+   "fr": "Employés civils et agents de service de la fonction publique",
+   "en": null
+  },
+  "521A": {
+   "fr": "Employés de la Poste",
+   "en": null
+  },
+  "521B": {
+   "fr": "Employés de France Télécom (statut public)",
+   "en": null
+  },
+  "522A": {
+   "fr": "Agents de constatation ou de recouvrement des Impôts, du Trésor, des Douanes*",
+   "en": null
+  },
+  "523A": {
+   "fr": "Adjoints administratifs de la fonction publique (y c. enseignement)*",
+   "en": null
+  },
+  "523B": {
+   "fr": "Adjoints administratifs de l'Etat et assimilés (sauf Poste, France Télécom)",
+   "en": null
+  },
+  "523C": {
+   "fr": "Adjoints administratifs des collectivités locales",
+   "en": null
+  },
+  "523D": {
+   "fr": "Adjoints administratifs des hôpitaux publics",
+   "en": null
+  },
+  "524A": {
+   "fr": "Agents administratifs de la fonction publique (y c. enseignement)*",
+   "en": null
+  },
+  "524B": {
+   "fr": "Agents administratifs de l'Etat et assimilés (sauf Poste, France Télécom)",
+   "en": null
+  },
+  "524C": {
+   "fr": "Agents administratifs des collectivités locales",
+   "en": null
+  },
+  "524D": {
+   "fr": "Agents administratifs des hôpitaux publics",
+   "en": null
+  },
+  "525A": {
+   "fr": "Agents de service des établissements primaires",
+   "en": null
+  },
+  "525B": {
+   "fr": "Agents de service des autres établissements d'enseignement",
+   "en": null
+  },
+  "525C": {
+   "fr": "Agents de service de la fonction publique (sauf écoles, hôpitaux)",
+   "en": null
+  },
+  "525D": {
+   "fr": "Agents de service hospitaliers",
+   "en": null
+  },
+  "526A": {
+   "fr": "Aides-soignants",
+   "en": null
+  },
+  "526B": {
+   "fr": "Assistants dentaires, médicaux et vétérinaires, aides de techniciens médicaux",
+   "en": null
+  },
+  "526C": {
+   "fr": "Auxiliaires de puériculture",
+   "en": null
+  },
+  "526D": {
+   "fr": "Aides médico-psychologiques",
+   "en": null
+  },
+  "526E": {
+   "fr": "Ambulanciers salariés",
+   "en": null
+  },
+  "53": {
+   "fr": "Policiers, militaires et agents de surveillance",
+   "en": null
+  },
+  "531A": {
+   "fr": "Agents de police de l'Etat*",
+   "en": null
+  },
+  "531B": {
+   "fr": "Agents des polices municipales*",
+   "en": null
+  },
+  "531C": {
+   "fr": "Surveillants de l'administration pénitentiaire*",
+   "en": null
+  },
+  "532A": {
+   "fr": "Gendarmes (de grade inférieur à adjudant)*",
+   "en": null
+  },
+  "532B": {
+   "fr": "Sergents et sous-officiers de grade équivalent des Armées (sauf pompiers militaires)*",
+   "en": null
+  },
+  "532C": {
+   "fr": "Hommes du rang (sauf pompiers militaires)*",
+   "en": null
+  },
+  "533A": {
+   "fr": "Pompiers (y.c. pompiers militaires)",
+   "en": null
+  },
+  "533B": {
+   "fr": "Agents techniques forestiers, gardes des espaces naturels",
+   "en": null
+  },
+  "533C": {
+   "fr": "Agents de surveillance du patrimoine et des administrations",
+   "en": null
+  },
+  "534A": {
+   "fr": "Agents civils de sécurité et de surveillance",
+   "en": null
+  },
+  "534B": {
+   "fr": "Convoyeurs de fonds, gardes du corps, enquêteurs privés et métiers assimilés (salariés)",
+   "en": null
+  },
+  "54": {
+   "fr": "Employés administratifs d'entreprise",
+   "en": null
+  },
+  "541B": {
+   "fr": "Agents d'accueil qualifiés, hôtesses d'accueil et d'information",
+   "en": null
+  },
+  "541C": {
+   "fr": "Agents d'accueil non qualifiés",
+   "en": null
+  },
+  "541D": {
+   "fr": "Standardistes, téléphonistes",
+   "en": null
+  },
+  "542A": {
+   "fr": "Secrétaires",
+   "en": null
+  },
+  "542B": {
+   "fr": "Dactylos, sténodactylos (sans secrétariat), opérateurs de traitement de texte",
+   "en": null
+  },
+  "543B": {
+   "fr": "Employés qualifiés des services comptables ou financiers",
+   "en": null
+  },
+  "543C": {
+   "fr": "Employés non qualifiés des services comptables ou financiers",
+   "en": null
+  },
+  "543E": {
+   "fr": "Employés qualifiés des services du personnel et des services juridiques",
+   "en": null
+  },
+  "543F": {
+   "fr": "Employés qualifiés des services commerciaux des entreprises (hors vente)",
+   "en": null
+  },
+  "543G": {
+   "fr": "Employés administratifs qualifiés des autres services des entreprises",
+   "en": null
+  },
+  "543H": {
+   "fr": "Employés administratifs non qualifiés",
+   "en": null
+  },
+  "544A": {
+   "fr": "Employés et opérateurs d'exploitation en informatique",
+   "en": null
+  },
+  "545A": {
+   "fr": "Employés administratifs des services techniques de la banque",
+   "en": null
+  },
+  "545B": {
+   "fr": "Employés des services commerciaux de la banque",
+   "en": null
+  },
+  "545C": {
+   "fr": "Employés des services techniques des assurances",
+   "en": null
+  },
+  "545D": {
+   "fr": "Employés des services techniques des organismes de sécurité sociale et assimilés",
+   "en": null
+  },
+  "546A": {
+   "fr": "Contrôleurs des transports (personnels roulants)",
+   "en": null
+  },
+  "546B": {
+   "fr": "Agents des services commerciaux des transports de voyageurs et du tourisme",
+   "en": null
+  },
+  "546C": {
+   "fr": "Employés administratifs d'exploitation des transports de marchandises",
+   "en": null
+  },
+  "546D": {
+   "fr": "Hôtesses de l'air et stewards",
+   "en": null
+  },
+  "546E": {
+   "fr": "Autres agents et hôtesses d'accompagnement (transports, tourisme)",
+   "en": null
+  },
+  "55": {
+   "fr": "Employés de commerce",
+   "en": null
+  },
+  "551A": {
+   "fr": "Employés de libre service du commerce et magasiniers",
+   "en": null
+  },
+  "552A": {
+   "fr": "Caissiers de magasin",
+   "en": null
+  },
+  "553B": {
+   "fr": "Vendeurs polyvalents des grands magasins",
+   "en": null
+  },
+  "553C": {
+   "fr": "Autres vendeurs non spécialisés",
+   "en": null
+  },
+  "554A": {
+   "fr": "Vendeurs en alimentation",
+   "en": null
+  },
+  "554B": {
+   "fr": "Vendeurs en ameublement, décor, équipement du foyer",
+   "en": null
+  },
+  "554C": {
+   "fr": "Vendeurs en droguerie, bazar, quincaillerie, bricolage",
+   "en": null
+  },
+  "554D": {
+   "fr": "Vendeurs du commerce de fleurs",
+   "en": null
+  },
+  "554E": {
+   "fr": "Vendeurs en habillement et articles de sport",
+   "en": null
+  },
+  "554F": {
+   "fr": "Vendeurs en produits de beauté, de luxe (hors biens culturels) et optique",
+   "en": null
+  },
+  "554G": {
+   "fr": "Vendeurs de biens culturels (livres, disques, multimédia, objets d'art)",
+   "en": null
+  },
+  "554H": {
+   "fr": "Vendeurs de tabac, presse et articles divers",
+   "en": null
+  },
+  "554J": {
+   "fr": "Pompistes et gérants de station-service (salariés ou mandataires)",
+   "en": null
+  },
+  "555A": {
+   "fr": "Vendeurs par correspondance, télévendeurs",
+   "en": null
+  },
+  "56": {
+   "fr": "Personnels des services directs aux particuliers",
+   "en": null
+  },
+  "556A": {
+   "fr": "Vendeurs en gros de biens d'équipement, biens intermédiaires",
+   "en": null
+  },
+  "561B": {
+   "fr": "Serveurs, commis de restaurant, garçons qualifiés",
+   "en": null
+  },
+  "561C": {
+   "fr": "Serveurs, commis de restaurant, garçons non qualifiés",
+   "en": null
+  },
+  "561D": {
+   "fr": "Aides de cuisine, apprentis de cuisine et employés polyvalents de la restauration",
+   "en": null
+  },
+  "561E": {
+   "fr": "Employés de l'hôtellerie : réception et hall",
+   "en": null
+  },
+  "561F": {
+   "fr": "Employés d'étage et employés polyvalents de l'hôtellerie",
+   "en": null
+  },
+  "562A": {
+   "fr": "Manucures, esthéticiens",
+   "en": null
+  },
+  "562B": {
+   "fr": "Coiffeurs salariés",
+   "en": null
+  },
+  "563A": {
+   "fr": "Assistantes maternelles, gardiennes d'enfants, familles d'accueil",
+   "en": null
+  },
+  "563B": {
+   "fr": "Aides à domicile, aides ménagères, travailleuses familiales",
+   "en": null
+  },
+  "563C": {
+   "fr": "Employés de maison et personnels de ménage chez des particuliers",
+   "en": null
+  },
+  "564A": {
+   "fr": "Concierges, gardiens d'immeubles",
+   "en": null
+  },
+  "564B": {
+   "fr": "Employés des services divers",
+   "en": null
+  },
+  "6": {
+   "fr": "Ouvriers",
+   "en": null
+  },
+  "62": {
+   "fr": "Ouvriers qualifiés de type industriel",
+   "en": null
+  },
+  "621A": {
+   "fr": "Chefs d'équipe du gros oeuvre et des travaux publics",
+   "en": null
+  },
+  "621B": {
+   "fr": "Ouvriers qualifiés du travail du béton",
+   "en": null
+  },
+  "621C": {
+   "fr": "Conducteurs qualifiés d'engins de chantiers du bâtiment et des travaux publics",
+   "en": null
+  },
+  "621D": {
+   "fr": "Ouvriers des travaux publics en installations électriques et de télécommunications",
+   "en": null
+  },
+  "621E": {
+   "fr": "Autres ouvriers qualifiés des travaux publics",
+   "en": null
+  },
+  "621F": {
+   "fr": "Ouvriers qualifiés des travaux publics (salariés de l'Etat et des collectivités locales)",
+   "en": null
+  },
+  "621G": {
+   "fr": "Mineurs de fond qualifiés et autres ouvriers qualifiés des industries d'extraction (carrières, pétrole, gaz...)",
+   "en": null
+  },
+  "622A": {
+   "fr": "Opérateurs qualifiés sur machines automatiques en production électrique ou électronique",
+   "en": null
+  },
+  "622C": {
+   "fr": "Monteurs câbleurs qualifiés en électricité",
+   "en": null
+  },
+  "622D": {
+   "fr": "Câbleurs qualifiés en électronique (prototype, unité, petite série)",
+   "en": null
+  },
+  "622E": {
+   "fr": "Autres monteurs câbleurs en électronique",
+   "en": null
+  },
+  "622F": {
+   "fr": "Bobiniers qualifiés",
+   "en": null
+  },
+  "622G": {
+   "fr": "Plateformistes, contrôleurs qualifiés de matériel électrique ou électronique",
+   "en": null
+  },
+  "623A": {
+   "fr": "Chaudronniers-tôliers industriels, opérateurs qualifiés du travail en forge, conducteurs qualifiés d'équipement de formage, traceurs qualifiés",
+   "en": null
+  },
+  "623B": {
+   "fr": "Tuyauteurs industriels qualifiés",
+   "en": null
+  },
+  "623D": {
+   "fr": "Opérateurs qualifiés sur machine de soudage",
+   "en": null
+  },
+  "623E": {
+   "fr": "Soudeurs manuels",
+   "en": null
+  },
+  "623F": {
+   "fr": "Opérateurs qualifiés d'usinage des métaux travaillant à l'unité ou en petite série, moulistes qualifiés",
+   "en": null
+  },
+  "623G": {
+   "fr": "Opérateurs qualifiés d'usinage des métaux sur autres machines (sauf moulistes)",
+   "en": null
+  },
+  "624B": {
+   "fr": "Monteurs, metteurs au point très qualifiés d'ensembles mécaniques travaillant à l'unité ou en petite série",
+   "en": null
+  },
+  "624C": {
+   "fr": "Monteurs qualifiés d'ensembles mécaniques travaillant en moyenne ou en grande série",
+   "en": null
+  },
+  "624D": {
+   "fr": "Monteurs qualifiés en structures métalliques",
+   "en": null
+  },
+  "624E": {
+   "fr": "Ouvriers qualifiés de contrôle et d'essais en mécanique",
+   "en": null
+  },
+  "624F": {
+   "fr": "Ouvriers qualifiés des traitements thermiques et de surface sur métaux",
+   "en": null
+  },
+  "624G": {
+   "fr": "Autres mécaniciens ou ajusteurs qualifiés (ou spécialité non reconnue)",
+   "en": null
+  },
+  "625A": {
+   "fr": "Pilotes d'installation lourde des industries de transformation : agroalimentaire, chimie, plasturgie, énergie",
+   "en": null
+  },
+  "625B": {
+   "fr": "Ouvriers qualifiés et agents qualifiés de laboratoire : agroalimentaire, chimie, biologie, pharmacie",
+   "en": null
+  },
+  "625C": {
+   "fr": "Autres opérateurs et ouvriers qualifiés de la chimie (y.c. pharmacie) et de la plasturgie",
+   "en": null
+  },
+  "625D": {
+   "fr": "Opérateurs de la transformation des viandes",
+   "en": null
+  },
+  "625F": {
+   "fr": "Autres opérateurs travaillant sur installations ou machines : industrie agroalimentaire (hors transformation des viandes)",
+   "en": null
+  },
+  "625G": {
+   "fr": "Autres ouvriers de production qualifiés ne travaillant pas sur machine : industrie agroalimentaire (hors transformation des viandes)",
+   "en": null
+  },
+  "625H": {
+   "fr": "Ouvriers qualifiés des autres industries (eau, gaz, énergie, chauffage)",
+   "en": null
+  },
+  "626A": {
+   "fr": "Pilotes d'installation lourde des industries de transformation : métallurgie, production verrière, matériaux de construction",
+   "en": null
+  },
+  "626B": {
+   "fr": "Autres opérateurs et ouvriers qualifiés : métallurgie, production verrière, matériaux de construction",
+   "en": null
+  },
+  "626C": {
+   "fr": "Opérateurs et ouvriers qualifiés des industries lourdes du bois et de la fabrication du papier-carton",
+   "en": null
+  },
+  "627A": {
+   "fr": "Opérateurs qualifiés du textile et de la mégisserie",
+   "en": null
+  },
+  "627B": {
+   "fr": "Ouvriers qualifiés de la coupe des vêtements et de l'habillement, autres opérateurs de confection qualifiés",
+   "en": null
+  },
+  "627C": {
+   "fr": "Ouvriers qualifiés du travail industriel du cuir",
+   "en": null
+  },
+  "627D": {
+   "fr": "Ouvriers qualifiés de scierie, de la menuiserie industrielle et de l'ameublement",
+   "en": null
+  },
+  "627E": {
+   "fr": "Ouvriers de la photogravure et des laboratoires photographiques et cinématographiques",
+   "en": null
+  },
+  "627F": {
+   "fr": "Ouvriers de la composition et de l'impression, ouvriers qualifiés de la brochure, de la reliure et du façonnage du papier-carton",
+   "en": null
+  },
+  "628A": {
+   "fr": "Mécaniciens qualifiés de maintenance, entretien : équipements industriels",
+   "en": null
+  },
+  "628B": {
+   "fr": "Electromécaniciens, électriciens qualifiés d'entretien : équipements industriels",
+   "en": null
+  },
+  "628C": {
+   "fr": "Régleurs qualifiés d'équipements de fabrication (travail des métaux, mécanique)",
+   "en": null
+  },
+  "628D": {
+   "fr": "Régleurs qualifiés d'équipements de fabrication (hors travail des métaux et mécanique)",
+   "en": null
+  },
+  "628E": {
+   "fr": "Ouvriers qualifiés de l'assainissement et du traitement des déchets",
+   "en": null
+  },
+  "628F": {
+   "fr": "Agents qualifiés de laboratoire (sauf chimie, santé)",
+   "en": null
+  },
+  "628G": {
+   "fr": "Ouvriers qualifiés divers de type industriel",
+   "en": null
+  },
+  "63": {
+   "fr": "Ouvriers qualifiés de type artisanal",
+   "en": null
+  },
+  "631A": {
+   "fr": "Jardiniers",
+   "en": null
+  },
+  "632A": {
+   "fr": "Maçons qualifiés",
+   "en": null
+  },
+  "632B": {
+   "fr": "Ouvriers qualifiés du travail de la pierre",
+   "en": null
+  },
+  "632C": {
+   "fr": "Charpentiers en bois qualifiés",
+   "en": null
+  },
+  "632D": {
+   "fr": "Menuisiers qualifiés du bâtiment",
+   "en": null
+  },
+  "632E": {
+   "fr": "Couvreurs qualifiés",
+   "en": null
+  },
+  "632F": {
+   "fr": "Plombiers et chauffagistes qualifiés",
+   "en": null
+  },
+  "632G": {
+   "fr": "Peintres et ouvriers qualifiés de pose de revêtements sur supports verticaux",
+   "en": null
+  },
+  "632H": {
+   "fr": "Soliers moquetteurs et ouvriers qualifiés de pose de revêtements souples sur supports horizontaux",
+   "en": null
+  },
+  "632J": {
+   "fr": "Monteurs qualifiés en agencement, isolation",
+   "en": null
+  },
+  "632K": {
+   "fr": "Ouvriers qualifiés d'entretien général des bâtiments",
+   "en": null
+  },
+  "633A": {
+   "fr": "Electriciens qualifiés de type artisanal (y.c. bâtiment)",
+   "en": null
+  },
+  "633B": {
+   "fr": "Dépanneurs qualifiés en radiotélévision, électroménager, matériel électronique (salariés)",
+   "en": null
+  },
+  "633C": {
+   "fr": "Electriciens, électroniciens qualifiés en maintenance entretien, réparation : automobile",
+   "en": null
+  },
+  "633D": {
+   "fr": "Electriciens, électroniciens qualifiés en maintenance, entretien : équipements non industriels",
+   "en": null
+  },
+  "634A": {
+   "fr": "Carrossiers d'automobiles qualifiés",
+   "en": null
+  },
+  "634B": {
+   "fr": "Métalliers, serruriers qualifiés",
+   "en": null
+  },
+  "634C": {
+   "fr": "Mécaniciens qualifiés en maintenance, entretien, réparation : automobile",
+   "en": null
+  },
+  "634D": {
+   "fr": "Mécaniciens qualifiés de maintenance, entretien : équipements non industriels",
+   "en": null
+  },
+  "635A": {
+   "fr": "Tailleurs et couturières qualifiés, ouvriers qualifiés du travail des étoffes (sauf fabrication de vêtements), ouvriers qualifiés de type artisanal du travail du cuir",
+   "en": null
+  },
+  "636A": {
+   "fr": "Bouchers (sauf industrie de la viande)",
+   "en": null
+  },
+  "636B": {
+   "fr": "Charcutiers (sauf industrie de la viande)",
+   "en": null
+  },
+  "636C": {
+   "fr": "Boulangers, pâtissiers (sauf activité industrielle)",
+   "en": null
+  },
+  "636D": {
+   "fr": "Cuisiniers et commis de cuisine",
+   "en": null
+  },
+  "637A": {
+   "fr": "Modeleurs (sauf modeleurs de métal), mouleurs-noyauteurs à la main, ouvriers qualifiés du travail du verre ou de la céramique à la main",
+   "en": null
+  },
+  "637B": {
+   "fr": "Ouvriers d'art",
+   "en": null
+  },
+  "637C": {
+   "fr": "Ouvriers et techniciens des spectacles vivants et audiovisuels",
+   "en": null
+  },
+  "637D": {
+   "fr": "Ouvriers qualifiés divers de type artisanal",
+   "en": null
+  },
+  "64": {
+   "fr": "Chauffeurs",
+   "en": null
+  },
+  "641A": {
+   "fr": "Conducteurs routiers et grands routiers",
+   "en": null
+  },
+  "641B": {
+   "fr": "Conducteurs de véhicule routier de transport en commun",
+   "en": null
+  },
+  "642A": {
+   "fr": "Conducteurs de taxi",
+   "en": null
+  },
+  "642B": {
+   "fr": "Conducteurs de voiture particulière",
+   "en": null
+  },
+  "643A": {
+   "fr": "Conducteurs livreurs, coursiers",
+   "en": null
+  },
+  "644A": {
+   "fr": "Conducteurs de véhicule de ramassage des ordures ménagères",
+   "en": null
+  },
+  "65": {
+   "fr": "Ouvriers qualifiés de la manutention, du magasinage et du transport",
+   "en": null
+  },
+  "651A": {
+   "fr": "Conducteurs d'engin lourd de levage",
+   "en": null
+  },
+  "651B": {
+   "fr": "Conducteurs d'engin lourd de manoeuvre",
+   "en": null
+  },
+  "652A": {
+   "fr": "Ouvriers qualifiés de la manutention, conducteurs de chariots élévateurs, caristes",
+   "en": null
+  },
+  "652B": {
+   "fr": "Dockers",
+   "en": null
+  },
+  "653A": {
+   "fr": "Magasiniers qualifiés",
+   "en": null
+  },
+  "654B": {
+   "fr": "Conducteurs qualifiés d'engins de transport guidés (sauf remontées mécaniques)",
+   "en": null
+  },
+  "654C": {
+   "fr": "Conducteurs qualifiés de systèmes de remontées mécaniques",
+   "en": null
+  },
+  "655A": {
+   "fr": "Autres agents et ouvriers qualifiés (sédentaires) des services d'exploitation des transports",
+   "en": null
+  },
+  "656B": {
+   "fr": "Matelots de la marine marchande",
+   "en": null
+  },
+  "656C": {
+   "fr": "Capitaines et matelots timoniers de la navigation fluviale",
+   "en": null
+  },
+  "67": {
+   "fr": "Ouvriers non qualifiés de type industriel",
+   "en": null
+  },
+  "671A": {
+   "fr": "Ouvriers non qualifiés des travaux publics de l'Etat et des collectivités locales",
+   "en": null
+  },
+  "671C": {
+   "fr": "Ouvriers non qualifiés des travaux publics et du travail du béton",
+   "en": null
+  },
+  "671D": {
+   "fr": "Aides-mineurs, ouvriers non qualifiés de l'extraction",
+   "en": null
+  },
+  "672A": {
+   "fr": "Ouvriers non qualifiés de l'électricité et de l'électronique",
+   "en": null
+  },
+  "673A": {
+   "fr": "Ouvriers de production non qualifiés travaillant par enlèvement de métal",
+   "en": null
+  },
+  "673B": {
+   "fr": "Ouvriers de production non qualifiés travaillant par formage de métal",
+   "en": null
+  },
+  "673C": {
+   "fr": "Ouvriers non qualifiés de montage, contrôle en mécanique et travail des métaux",
+   "en": null
+  },
+  "674A": {
+   "fr": "Ouvriers de production non qualifiés : chimie, pharmacie, plasturgie",
+   "en": null
+  },
+  "674B": {
+   "fr": "Ouvriers de production non qualifiés de la transformation des viandes",
+   "en": null
+  },
+  "674C": {
+   "fr": "Autres ouvriers de production non qualifiés : industrie agroalimentaire",
+   "en": null
+  },
+  "674D": {
+   "fr": "Ouvriers de production non qualifiés : métallurgie, production verrière, céramique, matériaux de construction",
+   "en": null
+  },
+  "674E": {
+   "fr": "Ouvriers de production non qualifiés : industrie lourde du bois, fabrication des papiers et cartons",
+   "en": null
+  },
+  "675A": {
+   "fr": "Ouvriers de production non qualifiés du textile et de la confection, de la tannerie-mégisserie et du travail du cuir",
+   "en": null
+  },
+  "675B": {
+   "fr": "Ouvriers de production non qualifiés du travail du bois et de l'ameublement",
+   "en": null
+  },
+  "675C": {
+   "fr": "Ouvriers de production non qualifiés de l'imprimerie, presse, édition",
+   "en": null
+  },
+  "676A": {
+   "fr": "Manutentionnaires non qualifiés",
+   "en": null
+  },
+  "676B": {
+   "fr": "Déménageurs (hors chauffeurs-déménageurs), non qualifiés",
+   "en": null
+  },
+  "676C": {
+   "fr": "Ouvriers du tri, de l'emballage, de l'expédition, non qualifiés",
+   "en": null
+  },
+  "676D": {
+   "fr": "Agents non qualifiés des services d'exploitation des transports",
+   "en": null
+  },
+  "676E": {
+   "fr": "Ouvriers non qualifiés divers de type industriel",
+   "en": null
+  },
+  "68": {
+   "fr": "Ouvriers non qualifiés de type artisanal",
+   "en": null
+  },
+  "681A": {
+   "fr": "Ouvriers non qualifiés du gros oeuvre du bâtiment",
+   "en": null
+  },
+  "681B": {
+   "fr": "Ouvriers non qualifiés du second oeuvre du bâtiment",
+   "en": null
+  },
+  "682A": {
+   "fr": "Métalliers, serruriers, réparateurs en mécanique non qualifiés",
+   "en": null
+  },
+  "683A": {
+   "fr": "Apprentis boulangers, bouchers, charcutiers",
+   "en": null
+  },
+  "684A": {
+   "fr": "Nettoyeurs",
+   "en": null
+  },
+  "684B": {
+   "fr": "Ouvriers non qualifiés de l'assainissement et du traitement des déchets",
+   "en": null
+  },
+  "685A": {
+   "fr": "Ouvriers non qualifiés divers de type artisanal",
+   "en": null
+  },
+  "69": {
+   "fr": "Ouvriers agricoles et assimilés",
+   "en": null
+  },
+  "691A": {
+   "fr": "Conducteurs d'engin agricole ou forestier",
+   "en": null
+  },
+  "691B": {
+   "fr": "Ouvriers de l'élevage",
+   "en": null
+  },
+  "691C": {
+   "fr": "Ouvriers du maraîchage ou de l'horticulture",
+   "en": null
+  },
+  "691D": {
+   "fr": "Ouvriers de la viticulture ou de l'arboriculture fruitière",
+   "en": null
+  },
+  "691E": {
+   "fr": "Ouvriers agricoles sans spécialisation particulière",
+   "en": null
+  },
+  "691F": {
+   "fr": "Ouvriers de l'exploitation forestière ou de la sylviculture",
+   "en": null
+  },
+  "692A": {
+   "fr": "Marins-pêcheurs et ouvriers de l'aquaculture",
+   "en": null
+  }
+ }
+}
