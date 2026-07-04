@@ -145,6 +145,15 @@ T = {
         "chart_year": "Chart year",
         "trend_title": "Salary trend over time",
         "trend_view": "View",
+        "trend_view_help": (
+            "**Nominal (kr)** — the actual monthly salary in kronor as reported each year, "
+            "not adjusted for inflation.\n\n"
+            "**Growth vs inflation** — salary growth and consumer-price inflation (CPI), both "
+            "indexed to the first year shown (0 %). If the salary line stays above the inflation "
+            "line, pay has outpaced rising prices.\n\n"
+            "**Real (constant kr)** — the salary expressed in the first year's purchasing power, "
+            "i.e. adjusted for inflation. A rising line means real purchasing power has grown."
+        ),
         "trend_nominal": "Nominal (kr)",
         "trend_growth": "Growth vs inflation",
         "trend_real": "Real (constant kr)",
@@ -154,6 +163,11 @@ T = {
         "trend_real_axis": "Real monthly salary ({base} prices, SEK)",
         "trend_no_cpi": "ℹ️ Inflation data unavailable — showing nominal only.",
         "trend_summary": "**{base}→{last}:** salary {sal:+.0f}% · inflation {infl:+.0f}% → **real {real:+.0f}%**",
+        "trend_table_title": "Trend data (nominal · growth · real)",
+        "trend_col_nominal": "Nominal salary (kr)",
+        "trend_col_growth": "Salary growth (%)",
+        "trend_col_real": "Real salary ({base} kr)",
+        "trend_download": "⬇ Download trend data (CSV)",
         "measure": "Measure",
         "x_pct": "Percentile",
         "y_salary": "Monthly salary (SEK)",
@@ -348,6 +362,15 @@ T = {
         "chart_year": "Visningsår",
         "trend_title": "Löneutveckling över tid",
         "trend_view": "Vy",
+        "trend_view_help": (
+            "**Nominell (kr)** — den faktiska månadslönen i kronor som rapporterats varje år, "
+            "utan justering för inflation.\n\n"
+            "**Tillväxt vs inflation** — löneökning och konsumentprisinflation (KPI), båda "
+            "indexerade till det första året som visas (0 %). Om lönelinjen ligger över "
+            "inflationslinjen har lönen ökat snabbare än priserna.\n\n"
+            "**Real (fasta kr)** — lönen uttryckt i det första årets köpkraft, dvs. justerad "
+            "för inflation. En stigande linje betyder att den reala köpkraften har ökat."
+        ),
         "trend_nominal": "Nominell (kr)",
         "trend_growth": "Tillväxt vs inflation",
         "trend_real": "Real (fasta kr)",
@@ -357,6 +380,11 @@ T = {
         "trend_real_axis": "Real månadslön ({base} års priser, SEK)",
         "trend_no_cpi": "ℹ️ Inflationsdata saknas — visar endast nominellt.",
         "trend_summary": "**{base}→{last}:** lön {sal:+.0f}% · inflation {infl:+.0f}% → **real {real:+.0f}%**",
+        "trend_table_title": "Trenddata (nominell · tillväxt · real)",
+        "trend_col_nominal": "Nominell lön (kr)",
+        "trend_col_growth": "Löneökning (%)",
+        "trend_col_real": "Real lön ({base} kr)",
+        "trend_download": "⬇ Ladda ner trenddata (CSV)",
         "measure": "Mått",
         "x_pct": "Percentil",
         "y_salary": "Månadslön (SEK)",
@@ -1381,6 +1409,10 @@ with st.sidebar:
 
     # Commit query to session_state only when Search is clicked
     if search_clicked:
+        # Close any open full-page panel (user guide, SSYK guide, admin panels)
+        # so results render instead of the panel stopping the run early.
+        for _pf in _PANEL_FLAGS:
+            st.session_state[_pf] = False
         aggregate, agg_name = False, ""
         if selected_labels:
             # Specific occupations chosen — show each individually
@@ -1995,7 +2027,8 @@ with tab_pct:
         with tc2:
             view = st.radio(t["trend_view"],
                             [t["trend_nominal"], t["trend_growth"], t["trend_real"]],
-                            horizontal=True, key="trend_view")
+                            horizontal=True, key="trend_view",
+                            help=t["trend_view_help"])
         code     = display_codes[0]
         df_trend = df[df[occ_col].str.strip() == code].sort_values(year_col)
         pairs = [(str(y).strip(), float(s))
@@ -2064,6 +2097,35 @@ with tab_pct:
         for col in measure_labels:
             display_df[col] = display_df[col].map(lambda v: f"{int(v):,}" if pd.notna(v) else "–")
         st.dataframe(display_df[key_cols + shown_measures], use_container_width=True)
+
+    # Extractable per-year trend table: nominal, growth vs inflation, and real
+    # in one table (single occupation / aggregated group only).
+    if len(display_codes) == 1 and pairs:
+        with st.expander(t["trend_table_title"]):
+            growth_col = t["trend_col_growth"]
+            infl_col   = t["trend_infl"] + " (%)"
+            real_col   = t["trend_col_real"].format(base=base_y)
+            rows = []
+            for y, s in pairs:
+                has_cpi = bool(cpi_base) and cpi.get(y) is not None
+                infl = (cpi[y] / cpi_base - 1) * 100 if has_cpi else None
+                real = s * cpi_base / cpi[y] if has_cpi else None
+                rows.append({
+                    t["x_year"]:            y,
+                    t["trend_col_nominal"]: round(s),
+                    growth_col:             round((s / base_s - 1) * 100, 1),
+                    infl_col:               round(infl, 1) if infl is not None else None,
+                    real_col:               round(real) if real is not None else None,
+                })
+            trend_tbl = pd.DataFrame(rows)
+            st.dataframe(trend_tbl, use_container_width=True, hide_index=True)
+            st.download_button(
+                t["trend_download"],
+                trend_tbl.to_csv(index=False).encode("utf-8-sig"),
+                file_name=f"salary_trend_{code}.csv",
+                mime="text/csv",
+                key="trend_csv_dl",
+            )
 
 # ── Tab: Where do I stand? (salary calculator) ────────────────────────────────
 PCT_POINTS = [("P10", 10), ("P25", 25), ("Median (P50)", 50), ("P75", 75), ("P90", 90)]
