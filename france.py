@@ -40,6 +40,8 @@ T = {
         "no_match": "Aucune profession ne correspond.",
         "clear": "✕ Tout effacer",
         "btn_search": "🔍 Rechercher",
+        "year_range": "Plage d'années",
+        "year_range_note": "Détermine les années affichées dans la distribution et l'évolution des salaires. Le salaire moyen par profession n'est publié que pour {year}.",
         "select_prompt": "Sélectionnez une ou plusieurs professions puis appuyez sur 🔍 Rechercher — ou explorez les codes PCS ci-dessous.",
         "explorer_title": "Professions ({n})",
         "explorer_hint": "Sélectionnez une ou plusieurs professions à gauche pour le détail par âge et par sexe — ou explorez le tableau.",
@@ -76,8 +78,10 @@ T = {
         "lead_title": "Classement — salaire moyen",
         "lead_hint": "Toutes les professions du secteur, classées par salaire moyen.",
         "age_select_prompt": "Sélectionnez une profession (menu de gauche ou 📖 Codes PCS) pour voir le détail par âge et par sexe.",
-        "dist_title": "Distribution des salaires — ensemble des salariés",
+        "dist_title": "Distribution des salaires par percentile",
         "dist_caption": "Salaire net mensuel EQTP en euros constants {base} · {sector}",
+        "dist_scope_note": "Cette courbe montre la distribution pour **l'ensemble des salariés** ({sector}) — l'INSEE ne publie pas de percentiles de salaire par profession détaillée. Les ★ indiquent où se situe le salaire **moyen** de chaque profession sélectionnée dans cette distribution.",
+        "measures_shown": "Percentiles affichés",
         "dist_year": "Année",
         "sex_label": "Sexe",
         "wktime_label": "Temps de travail",
@@ -93,6 +97,17 @@ T = {
         "whereami_high": "Votre salaire dépasse le dernier centile publié (top 1 %).",
         "whereami_note": "Position estimée par interpolation entre les centiles publiés — année {year}.",
         "marker_note": "★ = salaire moyen des professions sélectionnées (année {year}).",
+        "show_own_dist": "Afficher la distribution propre de la profession (estimation, micro-données {year})",
+        "own_dist_name": "{name} (estimation {year})",
+        "own_dist_help": (
+            "Estimation à partir des micro-données anonymisées de l'INSEE ({year}), en tranches de "
+            "rémunération annuelle interpolées linéairement (technique standard pour des données "
+            "groupées). Limitée au temps complet, quasi-année pleine. Les tranches supérieures les "
+            "plus hautes sont plafonnées par la source (« 50 000 € et plus ») : au-delà de ce seuil, "
+            "aucune valeur fiable ne peut être calculée et le point n'est pas affiché."
+        ),
+        "own_dist_censored": "ℹ️ {n} percentile(s) au-delà du seuil de tranche ouverte (~4 170 €/mois) ne peuvent pas être estimés pour cette profession et ne sont pas affichés.",
+        "own_dist_none": "Aucune estimation disponible pour cette profession (échantillon trop restreint dans les micro-données).",
         "trend_mode": "Séries",
         "trend_dist": "Distribution (ensemble)",
         "trend_groups": "Groupes socioprofessionnels (moyennes)",
@@ -100,6 +115,22 @@ T = {
         "trend_range": "Période",
         "no_dist": "Distribution indisponible pour cette sélection.",
         "groups_private_only": "Les séries par groupe ne sont publiées que pour le secteur privé.",
+        "measure_label": "Mesure",
+        "unit_growth": "Croissance vs inflation",
+        "unit_view_help": (
+            "**Nominal (€ courants)** — le salaire tel qu'il était exprimé chaque année, "
+            "sans correction de l'inflation.\n\n"
+            "**Croissance vs inflation** — croissance du salaire et inflation (IPC), toutes deux "
+            "indexées sur la première année affichée (0 %). Si la ligne du salaire reste au-dessus "
+            "de celle de l'inflation, le pouvoir d'achat a progressé.\n\n"
+            "**Réel (€ constants)** — le salaire corrigé de l'inflation, en euros constants."
+        ),
+        "sal_growth_label": "Croissance du salaire",
+        "cpi_label": "Inflation (IPC)",
+        "growth_axis": "Évolution depuis {base} (%)",
+        "fr_trend_summary": "**{base}→{last}:** salaire {sal:+.0f}% · inflation {infl:+.0f}% → **réel {real:+.0f}%**",
+        "own_group_note": "Évolution du groupe socioprofessionnel **{name}** — la profession sélectionnée en fait partie. L'INSEE ne publie pas d'historique de salaire par profession détaillée.",
+        "ensemble": "Ensemble",
         "unit_label": "Unité",
         "unit_real": "Réel (€ constants)",
         "unit_nominal": "Nominal (€ courants)",
@@ -147,6 +178,8 @@ T = {
         "no_match": "No occupation matches.",
         "clear": "✕ Clear all",
         "btn_search": "🔍 Search",
+        "year_range": "Year range",
+        "year_range_note": "Sets the years shown in the distribution and salary trend. Mean salary per occupation is only published for {year}.",
         "select_prompt": "Select one or more occupations then press 🔍 Search — or explore the PCS codes below.",
         "explorer_title": "Occupations ({n})",
         "explorer_hint": "Pick one or more occupations on the left for the age/sex detail — or explore the table.",
@@ -183,8 +216,10 @@ T = {
         "lead_title": "Leaderboard — mean salary",
         "lead_hint": "All occupations in the sector, ranked by mean salary.",
         "age_select_prompt": "Select an occupation (left menu or 📖 PCS guide) to see the age and sex breakdown.",
-        "dist_title": "Wage distribution — all employees",
+        "dist_title": "Salary distribution by percentile",
         "dist_caption": "Net monthly FTE salary in constant {base} euros · {sector}",
+        "dist_scope_note": "This curve shows the distribution for **all employees** ({sector}) — INSEE does not publish salary percentiles per detailed occupation. The ★ marks show where each selected occupation's **mean** salary falls within that distribution.",
+        "measures_shown": "Percentiles shown",
         "dist_year": "Year",
         "sex_label": "Sex",
         "wktime_label": "Working time",
@@ -200,6 +235,17 @@ T = {
         "whereami_high": "Your salary is above the highest published centile (top 1%).",
         "whereami_note": "Position estimated by interpolating between published centiles — year {year}.",
         "marker_note": "★ = mean salary of the selected occupations (year {year}).",
+        "show_own_dist": "Show the occupation's own distribution (estimate, {year} microdata)",
+        "own_dist_name": "{name} ({year} estimate)",
+        "own_dist_help": (
+            "Estimated from INSEE's anonymized microdata ({year}), linearly interpolated within "
+            "annual pay bands (a standard technique for grouped data). Limited to full-time, "
+            "near-full-year workers. The highest pay bands are capped by the source itself "
+            "(\"€50,000 and above\") — beyond that threshold no reliable value can be computed, "
+            "so the point is simply not shown."
+        ),
+        "own_dist_censored": "ℹ️ {n} percentile(s) above the open-band threshold (~€4,170/month) cannot be estimated for this occupation and are not shown.",
+        "own_dist_none": "No estimate available for this occupation (sample too small in the microdata).",
         "trend_mode": "Series",
         "trend_dist": "Distribution (all employees)",
         "trend_groups": "Socio-professional groups (means)",
@@ -207,6 +253,22 @@ T = {
         "trend_range": "Period",
         "no_dist": "No distribution available for this selection.",
         "groups_private_only": "Group series are only published for the private sector.",
+        "measure_label": "Measure",
+        "unit_growth": "Growth vs inflation",
+        "unit_view_help": (
+            "**Nominal (current €)** — the salary as it was reported each year, "
+            "not adjusted for inflation.\n\n"
+            "**Growth vs inflation** — salary growth and consumer-price inflation (IPC), both "
+            "indexed to the first year shown (0 %). If the salary line stays above the inflation "
+            "line, pay has outpaced rising prices.\n\n"
+            "**Real (constant €)** — the salary adjusted for inflation, in constant euros."
+        ),
+        "sal_growth_label": "Salary growth",
+        "cpi_label": "Inflation (CPI)",
+        "growth_axis": "Change from {base} (%)",
+        "fr_trend_summary": "**{base}→{last}:** salary {sal:+.0f}% · inflation {infl:+.0f}% → **real {real:+.0f}%**",
+        "own_group_note": "Trend for the **{name}** socio-professional group — the selected occupation belongs to it. INSEE does not publish salary history per detailed occupation.",
+        "ensemble": "All employees",
         "unit_label": "Unit",
         "unit_real": "Real (constant €)",
         "unit_nominal": "Nominal (current €)",
@@ -241,6 +303,11 @@ T = {
 
 SEX_ORDER  = ["_T", "F", "M"]
 SEX_COLORS = {"_T": "#4e79a7", "F": "#e15759", "M": "#76b7b2"}
+
+# Years the long-series (distribution/trend) datasets are known to cover.
+# Static like Sweden's own year bound — building the sidebar slider must not
+# fetch anything (nothing loads before Search), so this can't be data-derived.
+FR_YEARS = [str(y) for y in range(1996, 2025)]
 
 
 def _age_label(code: str, t: dict) -> str:
@@ -286,6 +353,14 @@ with st.sidebar:
     sector = st.selectbox(t["sector"], list(t["sectors"].keys()),
                           format_func=lambda k: t["sectors"][k], key="fr_sector")
     sector_label = t["sectors"][sector]
+
+    # Year range — defines what data to pull for the distribution/trend charts,
+    # like Sweden's slider. Default: last 3 years (matches Sweden's default).
+    yr_from, yr_to = st.select_slider(t["year_range"], options=FR_YEARS,
+                                      value=(FR_YEARS[-3], FR_YEARS[-1]),
+                                      key="fr_year_range")
+    selected_years_fr = tuple(y for y in FR_YEARS if yr_from <= y <= yr_to)
+    st.caption(t["year_range_note"].format(year=FR_YEARS[-1]))
 
     labels = fd.load_pcs_labels()
 
@@ -506,13 +581,23 @@ def _pos_on_curve(salary: float, pts: list[tuple[int, float]]):
 
 
 # The distribution, calculator and trend all use the long-series pull; the
-# derived centile frame is computed once here.
+# derived centile frame is computed once here. The sidebar Year range is a
+# hard filter for the Trend and "Where do I stand?" tabs — exactly like Sweden.
+# The Percentile Distribution SNAPSHOT (with the occupation ★ marker) is
+# pinned to its own latest year instead: it must match the occupation's mean
+# (single-year data), so it stays fixed regardless of the slicer.
 try:
-    sl = fd.fetch_series_longues(sector)
+    sl_full = fd.fetch_series_longues(sector)
+    sl = sl_full[sl_full["year"].isin(selected_years_fr)]
     sl_error = False
 except Exception:
-    sl, sl_error = None, True
+    sl_full, sl, sl_error = None, None, True
 if not sl_error:
+    dist_all = sl_full[sl_full["centile"].map(fd.centile_pct).notna()].copy()
+    dist_all["pct"] = dist_all["centile"].map(fd.centile_pct)
+    snapshot_years = sorted(dist_all["year"].unique(), reverse=True)
+    snapshot_year = snapshot_years[0] if snapshot_years else year
+
     dist = sl[sl["centile"].map(fd.centile_pct).notna()].copy()
     dist["pct"] = dist["centile"].map(fd.centile_pct)
     dist_years = sorted(dist["year"].unique(), reverse=True)
@@ -523,29 +608,61 @@ if not sl_error:
 tab_pct, tab_calc, tab_lead, tab_age, tab_reg = st.tabs(
     [t["tab_pct"], t["tab_calc"], t["tab_lead"], t["tab_age"], t["tab_regions"]])
 
+# Canonical percentile order — P95/P99 available but NOT shown by default,
+# and re-adding a removed chip always snaps back to this order (Sweden's fix).
+PCT_ORDER = [10, 25, 50, 75, 90, 95, 99]
+
+
+def _pct_label(p: int, lang: str) -> str:
+    if p == 50:
+        return "Médiane (P50)" if lang == "FR" else "Median (P50)"
+    return f"P{p}"
+
+
 # ── Tab 1: percentile distribution + salary trend (mirrors Sweden's tab 1) ────
 with tab_pct:
     if sl_error:
         st.error(t["err_api"])
     else:
         st.subheader(t["dist_title"])
-        st.caption(t["dist_caption"].format(base=dist_base, sector=query_sector_label))
-        c1, c2, c3, c4 = st.columns([1, 2, 2, 2])
-        with c1:
-            d_year = st.selectbox(t["dist_year"], dist_years, key="fr_dist_year")
+        st.caption(t["dist_caption"].format(base=snapshot_year, sector=query_sector_label))
+        # No Year selector here: this snapshot must match the occupation's mean
+        # (which INSEE only publishes for one year), so it's pinned to that year
+        # regardless of the sidebar Year range — unlike the Trend section below.
+        c2, c3 = st.columns(2)
         with c2:
             d_sex = _sex_radio("sex_label", "fr_dist_sex")
         with c3:
             d_wk = _wk_radio("fr_dist_wk")
-        with c4:
-            show_high = st.checkbox(t["show_high_pct"], value=False, key="fr_dist_high")
 
-        sub = dist[(dist["year"] == d_year) & (dist["sex"] == d_sex)
-                   & (dist["wktime"] == d_wk)].sort_values("pct")
+        # Chip multiselect, canonical order enforced on every change — mirrors
+        # Sweden's "Measures shown" fix so re-adding a chip restores its slot.
+        pct_opts = [_pct_label(p, lang) for p in PCT_ORDER]
+        pct_default = [_pct_label(p, lang) for p in PCT_ORDER if p <= 90]
+
+        def _sort_pct_chips():
+            cur = st.session_state.get("fr_pct_measures", [])
+            order = {lbl: i for i, lbl in enumerate(pct_opts)}
+            st.session_state["fr_pct_measures"] = sorted(cur, key=lambda m: order.get(m, 99))
+
+        shown = st.multiselect(t["measures_shown"], options=pct_opts,
+                               default=pct_default, key="fr_pct_measures",
+                               on_change=_sort_pct_chips)
+        shown = [lbl for lbl in pct_opts if lbl in (shown or pct_opts)]
+        shown_pcts = [PCT_ORDER[pct_opts.index(lbl)] for lbl in shown]
+
+        micro_pcts = fd.load_microdata_percentiles()
+        micro_occs = micro_pcts.get("occupations", {})
+        micro_year = micro_pcts.get("year", "2023")
+        show_own = st.checkbox(t["show_own_dist"].format(year=micro_year),
+                               value=True, key="fr_show_own_dist",
+                               help=t["own_dist_help"].format(year=micro_year))
+
+        sub = dist_all[(dist_all["year"] == snapshot_year) & (dist_all["sex"] == d_sex)
+                       & (dist_all["wktime"] == d_wk)].sort_values("pct")
         pts = [(int(p), float(v)) for p, v in
                zip(sub["pct"], sub["salary_const_eur"]) if pd.notna(v)]
-        if not show_high:                       # hide P95 / P99 by default
-            pts = [pv for pv in pts if pv[0] <= 90]
+        pts = [pv for pv in pts if pv[0] in shown_pcts]
         if not pts:
             st.info(t["no_dist"])
         else:
@@ -553,116 +670,188 @@ with tab_pct:
                 x=[p for p, _ in pts], y=[v for _, v in pts],
                 mode="lines+markers", name=t["dist_curve"],
                 line=dict(color="#4e79a7", width=2), marker=dict(size=7)))
-            # Selected occupations' means as ★ markers (latest year only).
-            if d_year == dist_base:
-                for code in query_codes:
-                    if code not in tot.index or pd.isna(tot.loc[code, "mean_salary"]):
-                        continue
+            # Selected occupations' means: a red star + a dashed horizontal
+            # reference line spanning the chart, so the level is easy to read
+            # against the curve even when it falls outside the P10–P90 range.
+            markers_added = False
+            n_censored = 0
+            any_own_dist = False
+            for code in query_codes:
+                if code in tot.index and pd.notna(tot.loc[code, "mean_salary"]):
                     mv  = float(tot.loc[code, "mean_salary"])
                     pos = _pos_on_curve(mv, pts)
                     px  = {"low": pts[0][0], "high": pts[-1][0]}.get(pos, pos)
+                    fig.add_hline(y=mv, line=dict(color="#e15759", width=1.5, dash="dot"))
                     fig.add_trace(go.Scatter(
-                        x=[px], y=[mv], mode="markers+text",
+                        x=[px], y=[mv], mode="markers",
                         name=t["occ_marker"].format(name=fd.pcs_name(code, lang)[:40]),
-                        text=["★"], textfont=dict(size=16, color="#e15759"),
-                        textposition="middle center",
-                        marker=dict(size=1, color="#e15759")))
+                        marker=dict(symbol="star", size=16, color="#e15759",
+                                   line=dict(width=1, color="#9a2f33"))))
+                    markers_added = True
+
+                # Toggleable layer: the occupation's OWN estimated distribution
+                # (band-interpolated microdata) — real per-occupation points,
+                # not the all-employee curve. Only uncensored percentiles plot.
+                if show_own:
+                    entry = micro_occs.get(code)
+                    if entry:
+                        any_own_dist = True
+                        own_pts = [(p, v) for p, v in
+                                   ((int(k), val) for k, val in entry["pct"].items())
+                                   if v is not None and p in shown_pcts]
+                        n_censored += sum(1 for p in shown_pcts
+                                          if entry["pct"].get(str(p)) is None)
+                        if own_pts:
+                            own_pts.sort()
+                            fig.add_trace(go.Scatter(
+                                x=[p for p, _ in own_pts], y=[v for _, v in own_pts],
+                                mode="lines+markers",
+                                name=t["own_dist_name"].format(
+                                    name=fd.pcs_name(code, lang)[:35], year=micro_year),
+                                line=dict(color="#59a14f", width=2, dash="dash"),
+                                marker=dict(size=7, symbol="diamond")))
+            if show_own and query_codes and not any_own_dist:
+                st.caption(t["own_dist_none"])
+            elif show_own and n_censored:
+                st.caption(t["own_dist_censored"].format(n=n_censored))
             fig.update_layout(
                 height=380, xaxis_title=t["x_pct"],
-                yaxis_title=t["y_const"].format(base=dist_base),
+                yaxis_title=t["y_const"].format(base=snapshot_year),
                 xaxis=dict(tickmode="array", tickvals=[p for p, _ in pts]),
                 margin=dict(t=30, b=40),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
             st.plotly_chart(fig, use_container_width=True, key="fr_dist_chart")
-            if d_year == dist_base and query_codes:
-                st.caption(t["marker_note"].format(year=dist_base))
+            if markers_added:
+                st.caption(t["marker_note"].format(year=snapshot_year))
+        st.caption(t["dist_scope_note"].format(sector=query_sector_label.lower()))
 
         # ── Salary trend over time (below the distribution, like Sweden) ──────
         st.divider()
         st.subheader(t["trend_title"])
-        modes = [t["trend_dist"]]
         has_groups = (sl["pcs"] != "_T").any()
-        if has_groups:
-            modes.append(t["trend_groups"])
-        c1, c2, c3, c4 = st.columns([2, 2, 1, 2])
+        series_opts = [t["trend_dist"]] + ([t["trend_groups"]] if has_groups else [])
+
+        occ_group = query_codes[0][:1] if query_codes else None
+
+        tc1, tc2 = st.columns([2, 3])
+        with tc1:
+            tr_series = st.radio(t["trend_mode"], series_opts, key="fr_tr_series")
+        with tc2:
+            tr_view = st.radio(t["unit_label"],
+                               [t["unit_nominal"], t["unit_growth"], t["unit_real"]],
+                               horizontal=True, key="fr_tr_view",
+                               help=t["unit_view_help"])
+        c1, c2, c3 = st.columns([2, 2, 1])
         with c1:
-            tr_mode = st.radio(t["trend_mode"], modes, key="fr_tr_mode")
+            if tr_series == t["trend_dist"]:
+                tr_measure = st.selectbox(
+                    t["measure_label"], PCT_ORDER, index=PCT_ORDER.index(50),
+                    format_func=lambda p: _pct_label(p, lang), key="fr_tr_pct")
+            else:
+                grp_opts = [p for p in ("3", "4", "5", "6") if p in set(sl["pcs"])]
+                grp_default = occ_group if occ_group in grp_opts else None
+                tr_group = st.selectbox(
+                    t["measure_label"], ["_T"] + grp_opts,
+                    index=(["_T"] + grp_opts).index(grp_default) if grp_default else 0,
+                    format_func=lambda p: t["ensemble"] if p == "_T"
+                    else fd.pcs_name(p, lang), key="fr_tr_grp")
+                if tr_group != "_T" and tr_group == occ_group:
+                    st.caption(t["own_group_note"].format(name=fd.pcs_name(tr_group, lang)))
         with c2:
             tr_sex = _sex_radio("sex_label", "fr_tr_sex")
         with c3:
             tr_wk = _wk_radio("fr_tr_wk")
-        with c4:
-            tr_unit = st.radio(t["unit_label"],
-                               [t["unit_real"], t["unit_nominal"]],
-                               key="fr_tr_unit")
         if not has_groups:
             st.caption(t["groups_private_only"])
 
-        if tr_mode == t["trend_dist"]:
-            base = sl[(sl["centile"] != "_T") & (sl["sex"] == tr_sex)
-                      & (sl["wktime"] == tr_wk)].copy()
-            base["pct"] = base["centile"].map(fd.centile_pct)
-            if not show_high:                   # match the distribution default
-                base = base[base["pct"] <= 90]
-            series = [(f"P{int(p)}", base[base["pct"] == p])
-                      for p in sorted(base["pct"].dropna().unique())]
+        if tr_series == t["trend_dist"]:
+            sdf = sl[(sl["centile"] != "_T") & (sl["sex"] == tr_sex)
+                     & (sl["wktime"] == tr_wk)].copy()
+            sdf["pct"] = sdf["centile"].map(fd.centile_pct)
+            sdf = sdf[sdf["pct"] == tr_measure]
         else:
-            base = sl[(sl["centile"] == "_T") & (sl["sex"] == tr_sex)
-                      & (sl["wktime"] == tr_wk)]
-            order = [p for p in ("_T", "3", "4", "5", "6")
-                     if p in set(base["pcs"])]
-            ens = t["sex_total"] if lang == "EN" else "Ensemble"
-            series = [(ens if p == "_T" else fd.pcs_name(p, lang)[:40],
-                       base[base["pcs"] == p]) for p in order]
+            sdf = sl[(sl["centile"] == "_T") & (sl["sex"] == tr_sex)
+                     & (sl["wktime"] == tr_wk) & (sl["pcs"] == tr_group)]
+        sdf = sdf.dropna(subset=["salary_const_eur"]).sort_values("year")
 
-        yrs_all = sorted(base["year"].unique())
+        yrs_all = sorted(sdf["year"].unique())
         if not yrs_all:
             st.info(t["no_dist"])
         else:
             y0, y1 = st.select_slider(t["trend_range"], options=yrs_all,
                                       value=(yrs_all[0], yrs_all[-1]),
                                       key="fr_tr_range")
-            tbase_yr = yrs_all[-1]
+            tbase_yr = yrs_all[-1]   # year the "constant euros" series is priced in
+            pairs = [(y, v) for y, v in zip(sdf["year"], sdf["salary_const_eur"])
+                     if y0 <= y <= y1]
 
-            # Nominal view: constant euros are in latest-year prices, so
-            # nominal(y) = const(y) × CPI(y)/CPI(latest). Needs the IPC.
-            nominal, cpi, cpi_base = tr_unit == t["unit_nominal"], {}, None
-            if nominal:
+            cpi = {}
+            if tr_view in (t["unit_nominal"], t["unit_growth"]):
                 try:
                     cpi = fd.fetch_cpi_annual()
                 except Exception:
                     cpi = {}
-                cpi_base = cpi.get(tbase_yr)
-                if not cpi_base:
-                    nominal = False
-                    st.caption(t["no_cpi"])
+            cpi_ref = cpi.get(tbase_yr)
 
-            BLUES = ["#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5",
-                     "#08519c", "#083b7a", "#0a2f63", "#081d58"]
             fig = go.Figure()
-            for i, (name, sdf) in enumerate(series):
-                sdf = sdf[(sdf["year"] >= y0) & (sdf["year"] <= y1)]
-                sdf = sdf.dropna(subset=["salary_const_eur"]).sort_values("year")
-                if nominal:
-                    sdf = sdf[sdf["year"].isin(cpi)]
-                if sdf.empty:
-                    continue
-                ys = (sdf["salary_const_eur"] if not nominal else
-                      [v * cpi[y] / cpi_base
-                       for y, v in zip(sdf["year"], sdf["salary_const_eur"])])
-                color = ("#e15759" if name in ("P50",)
-                         else BLUES[min(i, len(BLUES) - 1)])
+            if tr_view == t["unit_growth"] and cpi_ref and len(pairs) > 1:
+                base_y, base_const = pairs[0]
+                base_nominal = base_const * cpi.get(base_y, cpi_ref) / cpi_ref
+                years  = [y for y, _ in pairs]
+                salary_growth = []
+                infl_growth = []
+                for y, c in pairs:
+                    if cpi.get(y):
+                        nom = c * cpi[y] / cpi_ref
+                        salary_growth.append((nom / base_nominal - 1) * 100)
+                        infl_growth.append((cpi[y] / cpi.get(base_y, cpi_ref) - 1) * 100)
+                    else:
+                        salary_growth.append(None)
+                        infl_growth.append(None)
                 fig.add_trace(go.Scatter(
-                    x=sdf["year"], y=ys,
-                    mode="lines", name=name, line=dict(color=color, width=2)))
+                    x=years, y=salary_growth, mode="lines+markers",
+                    name=t["sal_growth_label"],
+                    line=dict(color="#4e79a7", width=2), marker=dict(size=6)))
+                fig.add_trace(go.Scatter(
+                    x=years, y=infl_growth, mode="lines+markers",
+                    name=t["cpi_label"],
+                    line=dict(color="#f28e2b", width=2, dash="dash"), marker=dict(size=6)))
+                yaxis = t["growth_axis"].format(base=base_y)
+                last_y, last_c = pairs[-1]
+                if cpi.get(last_y):
+                    sal_chg  = salary_growth[-1]
+                    infl_chg = infl_growth[-1]
+                    real_chg = ((1 + sal_chg / 100) / (1 + infl_chg / 100) - 1) * 100
+                    summary = t["fr_trend_summary"].format(
+                        base=base_y, last=last_y, sal=sal_chg, infl=infl_chg, real=real_chg)
+                else:
+                    summary = None
+            else:
+                if tr_view == t["unit_nominal"] and not cpi_ref:
+                    st.caption(t["no_cpi"])
+                    tr_view = t["unit_real"]
+                if tr_view == t["unit_nominal"]:
+                    years = [y for y, _ in pairs if cpi.get(y)]
+                    ys    = [c * cpi[y] / cpi_ref for y, c in pairs if cpi.get(y)]
+                    yaxis = t["y_nominal"]
+                else:
+                    years = [y for y, _ in pairs]
+                    ys    = [c for _, c in pairs]
+                    yaxis = t["y_const"].format(base=tbase_yr)
+                fig.add_trace(go.Scatter(
+                    x=years, y=ys, mode="lines+markers",
+                    name=(tr_measure if tr_series == t["trend_dist"] else
+                          (t["ensemble"] if tr_group == "_T" else fd.pcs_name(tr_group, lang))),
+                    line=dict(color="#4e79a7", width=2), marker=dict(size=6)))
+                summary = None
+
             fig.update_layout(
-                height=420, xaxis_title="",
-                yaxis_title=(t["y_nominal"] if nominal
-                             else t["y_const"].format(base=tbase_yr)),
+                height=380, xaxis_title="", yaxis_title=yaxis,
                 margin=dict(t=30, b=40), hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
             st.plotly_chart(fig, use_container_width=True, key="fr_tr_chart")
-            st.caption(t["trend_caption_nom"] if nominal else t["trend_caption"])
+            if summary:
+                st.caption(summary)
 
 # ── Tab 2: where do I stand? (mirrors Sweden's calculator) ────────────────────
 with tab_calc:

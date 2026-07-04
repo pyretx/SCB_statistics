@@ -226,6 +226,24 @@ def pcs_name(code: str, lang: str = "FR") -> str:
     return entry.get("fr", code)
 
 
+_MICRODATA_PCT_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                   "pcs_microdata_percentiles.json")
+
+
+@st.cache_data(show_spinner=False)
+def load_microdata_percentiles() -> dict:
+    """Per-occupation P10/P25/P50/P75/P90 estimated from INSEE's 2023 anonymized
+    microdata (band-interpolated; None where censored by the open top band).
+    See build_pcs_microdata_percentiles.py for the method. Melodi never
+    publishes real percentiles per detailed occupation — this is the only
+    occupation-level distribution estimate available, and it's approximate."""
+    try:
+        with open(_MICRODATA_PCT_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 @st.cache_data(show_spinner=False, ttl=86400)
 def fetch_available_year(sector: str = "private") -> int | None:
     """Newest reference year of the detailed annual dataset (for the admin
