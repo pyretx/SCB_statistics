@@ -1326,7 +1326,7 @@ def collapse_df(df, occ_col, salary_cols, weight_col=None, ext_weights=None,
 # ── App layout ─────────────────────────────────────────────────────────────────
 
 _ASSETS   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
-_ICON_PNG = os.path.join(_ASSETS, "logo.png")
+_ICON_PNG = os.path.join(_ASSETS, "logo_sweden.png")   # blue-yellow-blue bars
 
 # NOTE: st.set_page_config / st.logo / global CSS now live in app.py — this file
 # runs as a page inside the multi-country st.navigation app (see app.py).

@@ -23,8 +23,8 @@ st.markdown("<style>[data-testid='stDecoration']{display:none;}</style>",
             unsafe_allow_html=True)
 
 pg = st.navigation([
-    st.Page("landing.py",      title="Home",       default=True),
-    st.Page("scb_salaries.py", title="🇸🇪 Sweden",  url_path="sweden"),
-    st.Page("france.py",       title="🇫🇷 France",  url_path="france"),
+    st.Page("landing.py",      title="Home",   default=True),
+    st.Page("scb_salaries.py", title="Sweden", url_path="sweden"),
+    st.Page("france.py",       title="France", url_path="france"),
 ])
 pg.run()

@@ -1,5 +1,12 @@
-<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Swedish Salary Explorer">
-  <rect x="28"  y="130" width="52" height="90"  rx="10" fill="#006AA7"/>
-  <rect x="102" y="90"  width="52" height="130" rx="10" fill="#006AA7"/>
-  <rect x="176" y="40"  width="52" height="180" rx="10" fill="#FECC00"/>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Salary Explorer">
+  <circle cx="128" cy="128" r="100" fill="#006AA7"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="4">
+    <circle cx="128" cy="128" r="100"/>
+    <ellipse cx="128" cy="128" rx="60" ry="100"/>
+    <ellipse cx="128" cy="128" rx="26" ry="100"/>
+    <line x1="128" y1="28" x2="128" y2="228"/>
+    <line x1="39" y1="83" x2="217" y2="83"/>
+    <line x1="39" y1="173" x2="217" y2="173"/>
+  </g>
+  <line x1="28" y1="128" x2="228" y2="128" stroke="#FECC00" stroke-width="6"/>
 </svg>

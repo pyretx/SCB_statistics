@@ -1,0 +1,5 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="France">
+  <rect x="28"  y="130" width="52" height="90"  rx="10" fill="#0055A4"/>
+  <rect x="102" y="90"  width="52" height="130" rx="10" fill="#FFFFFF" stroke="#C8CCD4" stroke-width="3"/>
+  <rect x="176" y="40"  width="52" height="180" rx="10" fill="#EF4135"/>
+</svg>
