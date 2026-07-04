@@ -96,6 +96,21 @@ T = {
         "reg_france": "France entière",
         "grp_1t3": "Cadres et indépendants salariés (groupes 1–3)",
         "reg_axis": "Salaire net mensuel moyen (€ EQTP)",
+        "browse_btn": "🗂️ Parcourir les codes PCS",
+        "browse_title": "Parcourir les codes PCS (professions)",
+        "browse_intro": "Descendez la hiérarchie PCS pour trouver un code. Les libellés proviennent de la nomenclature officielle INSEE PCS-ESE 2017.",
+        "browse_search": "🔍 Rechercher un code, une profession…",
+        "browse_results": "{n} résultat(s)",
+        "browse_l1": "Groupe socioprofessionnel (1 chiffre)",
+        "browse_l2": "Catégorie (2 chiffres)",
+        "browse_l4": "Profession (4 chiffres)",
+        "browse_blank": "—",
+        "browse_pick_prompt": "Choisissez un niveau à gauche (ou cherchez ci-dessus) pour voir le détail.",
+        "browse_back": "← Retour à l'application",
+        "browse_hierarchy": "Position dans la hiérarchie",
+        "browse_snapshot": "Salaire moyen · {year}",
+        "browse_no_salary": "Niveau d'agrégation — pas de salaire détaillé (voir les professions à 4 chiffres).",
+        "browse_en_note": "⚠️ Traduit automatiquement du français — la nomenclature officielle est en français.",
     },
     "EN": {
         "title": "Salary Explorer — France",
@@ -175,6 +190,21 @@ T = {
         "reg_france": "Whole of France",
         "grp_1t3": "Managers, professionals & self-employed (groups 1–3)",
         "reg_axis": "Mean net monthly salary (€ FTE)",
+        "browse_btn": "🗂️ Browse PCS codes",
+        "browse_title": "Browse PCS occupation codes",
+        "browse_intro": "Drill down the PCS hierarchy to find a code. Labels are the official INSEE PCS-ESE 2017 nomenclature.",
+        "browse_search": "🔍 Search codes, occupations…",
+        "browse_results": "{n} result(s)",
+        "browse_l1": "Socio-professional group (1-digit)",
+        "browse_l2": "Category (2-digit)",
+        "browse_l4": "Occupation (4-digit)",
+        "browse_blank": "—",
+        "browse_pick_prompt": "Pick a level on the left (or search above) to see the detail.",
+        "browse_back": "← Back to app",
+        "browse_hierarchy": "Position in the hierarchy",
+        "browse_snapshot": "Mean salary · {year}",
+        "browse_no_salary": "Aggregation level — no detailed salary (see the 4-digit occupations).",
+        "browse_en_note": "⚠️ Auto-translated from French — the official nomenclature is in French.",
     },
 }
 
@@ -271,6 +301,11 @@ with st.sidebar:
             st.session_state.pop(k, None)
     st.button(t["clear"], use_container_width=True, on_click=_fr_clear)
 
+    st.divider()
+    if st.button(t["browse_btn"], use_container_width=True, key="fr_browse_open"):
+        st.session_state["fr_show_browser"] = True
+        st.rerun()
+
 st.caption(t["detail_year"].format(year=year) + f" · {sector_label}")
 
 # Convenience frames
@@ -289,6 +324,87 @@ def _gap_pct(code: str):
 
 def _num(v):
     return f"{v:,.0f}".replace(",", " ") if v is not None and pd.notna(v) else "–"
+
+
+# ── Browse PCS codes — full-page drill-down reference (opened from sidebar) ────
+# Mirrors Sweden's SSYK guide: cascading dropdowns + global search + a detail
+# panel. PCS has no descriptions, so the panel shows the occupation's own wage
+# snapshot instead. Full-page (st.stop) so it replaces the tabs while open.
+if st.session_state.get("fr_show_browser"):
+    labels = fd.load_pcs_labels()
+    st.subheader(t["browse_title"])
+    st.caption(t["browse_intro"])
+
+    def _br_fmt(code):
+        return f"{code} · {fd.pcs_name(code, lang)}"
+
+    def _br_panel(code):
+        if not code:
+            st.info(t["browse_pick_prompt"])
+            return
+        st.markdown(f"#### {code} · {fd.pcs_name(code, lang)}")
+        if lang == "EN":
+            st.caption(t["browse_en_note"])
+        crumbs = [c for c in (code[:1], code[:2]) if c in labels and c != code]
+        if crumbs:
+            st.caption(f"**{t['browse_hierarchy']}:** "
+                       + " › ".join(fd.pcs_name(c, lang) for c in crumbs))
+        if len(code) == 4 and code in tot.index and pd.notna(tot.loc[code, "mean_salary"]):
+            rows_t = det[(det["pcs"] == code) & (det["age"] == "_T")]
+            mf = rows_t[rows_t["sex"] == "F"]["mean_salary"]
+            mm = rows_t[rows_t["sex"] == "M"]["mean_salary"]
+            gap = _gap_pct(code)
+            st.markdown(f"**{t['browse_snapshot'].format(year=year)}**")
+            c1, c2, c3 = st.columns(3)
+            c1.metric(t["m_mean"] + " (€)",  _num(tot.loc[code, "mean_salary"]))
+            c2.metric(t["m_women"] + " (€)", _num(mf.iloc[0] if len(mf) else None))
+            c3.metric(t["m_men"] + " (€)",   _num(mm.iloc[0] if len(mm) else None))
+            c4, c5, _ = st.columns(3)
+            c4.metric(t["m_gap"],   f"{gap:+.1f} %" if gap is not None else "–")
+            c5.metric(t["m_count"], _num(tot.loc[code, "headcount"]))
+        elif len(code) < 4:
+            st.caption(t["browse_no_salary"])
+
+    q = st.text_input(t["browse_search"], key="fr_br_search",
+                      placeholder=t["browse_search"], label_visibility="collapsed")
+    if q.strip():
+        qs = q.strip().lower()
+        matches = [c for c, v in labels.items()
+                   if qs in c.lower() or qs in v.get("fr", "").lower()
+                   or qs in (v.get("en") or "").lower()]
+        matches.sort(key=lambda c: (len(c), c))
+        if matches:
+            sel = st.selectbox(t["browse_results"].format(n=len(matches)),
+                               matches[:300], format_func=_br_fmt, key="fr_br_res")
+            _br_panel(sel)
+        else:
+            st.info(t["no_match"])
+    else:
+        BLANK = "__none__"
+
+        def _br_pick(label, opts, key):
+            v = st.selectbox(label, [BLANK] + opts, key=key,
+                             format_func=lambda c: t["browse_blank"] if c == BLANK
+                             else _br_fmt(c))
+            return None if v == BLANK else v
+
+        nav, panel = st.columns([1, 1.3])
+        with nav:
+            l1 = sorted(c for c in labels if len(c) == 1)
+            s1 = _br_pick(t["browse_l1"], l1, "fr_br_l1")
+            l2 = sorted(c for c in labels if len(c) == 2 and c.startswith(s1)) if s1 else []
+            s2 = _br_pick(t["browse_l2"], l2, "fr_br_l2") if s1 else None
+            l4 = sorted(c for c in labels if len(c) == 4 and c.startswith(s2)) if s2 else []
+            s4 = _br_pick(t["browse_l4"], l4, "fr_br_l4") if s2 else None
+            current = s4 or s2 or s1
+        with panel:
+            _br_panel(current)
+
+    st.divider()
+    if st.button(t["browse_back"], key="fr_br_back"):
+        st.session_state["fr_show_browser"] = False
+        st.rerun()
+    st.stop()
 
 
 def _sex_radio(label_key: str, widget_key: str) -> str:
