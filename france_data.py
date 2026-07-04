@@ -67,10 +67,12 @@ _DETAIL_TOTALS = {
 
 def _get_observations(dataset: str, params: dict) -> list[dict]:
     """GET all observations for a Melodi dataset, following &page=N pagination.
+    A list/tuple param value is sent as repeated k=v pairs (Melodi ORs them).
     Raises on HTTP/network errors so st.cache_data never caches a bad result."""
     out, page = [], 1
     while True:
-        q = "&".join(f"{k}={v}" for k, v in params.items())
+        q = "&".join(f"{k}={x}" for k, v in params.items()
+                     for x in (v if isinstance(v, (list, tuple)) else [v]))
         url = f"{MELODI_BASE}/data/{dataset}?{q}&maxResult=10000&page={page}"
         r = requests.get(url, timeout=120, headers=_HEADERS)
         r.raise_for_status()
@@ -88,7 +90,13 @@ def _value(o: dict) -> float | None:
     return None
 
 
-@st.cache_data(show_spinner=False, persist="disk")
+# ttl on the persistent caches: INSEE publishes a new vintage roughly yearly;
+# a weekly refresh means the app picks the new year up automatically (the UI
+# derives the reference year from the data, nothing is hardcoded).
+_WEEK = 7 * 86400
+
+
+@st.cache_data(show_spinner=False, persist="disk", ttl=_WEEK)
 def fetch_detail_salaries(sector: str = "private") -> pd.DataFrame:
     """Mean net FTE monthly salary + FTE headcount per detailed PCS occupation.
 
@@ -115,7 +123,7 @@ def fetch_detail_salaries(sector: str = "private") -> pd.DataFrame:
     return df
 
 
-@st.cache_data(show_spinner=False, persist="disk")
+@st.cache_data(show_spinner=False, persist="disk", ttl=_WEEK)
 def fetch_series_longues(sector: str = "private") -> pd.DataFrame:
     """Constant-euro long series (1951→): means per broad PCS group × sex, plus
     the all-employee wage distribution (centile != _T only where pcs == '_T').
@@ -156,6 +164,43 @@ def fetch_cpi_annual() -> dict[str, float]:
             if v is not None:
                 out[d["TIME_PERIOD"]] = float(v)
     return out
+
+
+# French régions — official INSEE codes; Melodi GEO = "2025-REG-{code}".
+# 13 metropolitan + 5 overseas (DOM). Names are identical FR/EN.
+REGIONS_FR = {
+    "11": "Île-de-France",          "24": "Centre-Val de Loire",
+    "27": "Bourgogne-Franche-Comté", "28": "Normandie",
+    "32": "Hauts-de-France",         "44": "Grand Est",
+    "52": "Pays de la Loire",        "53": "Bretagne",
+    "75": "Nouvelle-Aquitaine",      "76": "Occitanie",
+    "84": "Auvergne-Rhône-Alpes",    "93": "Provence-Alpes-Côte d'Azur",
+    "94": "Corse",
+    "01": "Guadeloupe", "02": "Martinique", "03": "Guyane",
+    "04": "La Réunion", "06": "Mayotte",
+}
+GEO_FRANCE = "2025-FRANCE-F"
+
+
+@st.cache_data(show_spinner=False, persist="disk", ttl=_WEEK)
+def fetch_regional_salaries() -> pd.DataFrame:
+    """Mean net FTE monthly salary by région × sex × PCS group (BTS local
+    dataset — PRIVATE sector only; groups are _T / 1T3 / 4 / 5 / 6).
+
+    Returns tidy columns: region ('FR' or région code), sex, pcs_group, year,
+    mean_salary. One request — Melodi ORs repeated GEO params."""
+    geos = [f"2025-REG-{c}" for c in REGIONS_FR] + [GEO_FRANCE]
+    obs = _get_observations("DS_BTS_SAL_EQTP_SEX_PCS", {"GEO": geos})
+    df = pd.DataFrame([{
+        "region":    ("FR" if o["dimensions"]["GEO"] == GEO_FRANCE
+                      else o["dimensions"]["GEO"].rsplit("-", 1)[-1]),
+        "sex":       o["dimensions"].get("SEX", "_T"),
+        "pcs_group": o["dimensions"].get("PCS_ESE", "_T"),
+        "year":      o["dimensions"]["TIME_PERIOD"],
+        "mean_salary": _value(o),
+    } for o in obs])
+    df["mean_salary"] = pd.to_numeric(df["mean_salary"], errors="coerce")
+    return df
 
 
 _PCS_LABELS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),

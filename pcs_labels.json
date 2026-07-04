@@ -4,1859 +4,1859 @@
  "labels": {
   "1": {
    "fr": "Agriculteurs",
-   "en": null
+   "en": "Farmers"
   },
   "10": {
    "fr": "Agriculteurs (salariés de leur exploitation)",
-   "en": null
+   "en": "Salaried farmers"
   },
   "100X": {
    "fr": "Agriculteurs et éleveurs, salariés de leur exploitation",
-   "en": null
+   "en": "Salaried farmers and livestock breeders"
   },
   "2": {
    "fr": "Artisans, commerçants et chefs d'entreprises",
-   "en": null
+   "en": "Craft workers, traders and business owners"
   },
   "21": {
    "fr": "Artisans (salariés de leur entreprise)",
-   "en": null
+   "en": "Salaried craft workers"
   },
   "210X": {
    "fr": "Artisans salariés de leur entreprise",
-   "en": null
+   "en": "Salaried craft workers"
   },
   "22": {
    "fr": "Commerçants et assimilés (salariés de leur entreprise)",
-   "en": null
+   "en": "Salaried traders and related occupations"
   },
   "220X": {
    "fr": "Commerçants et assimilés, salariés de leur entreprise",
-   "en": null
+   "en": "Salaried traders and related occupations"
   },
   "23": {
    "fr": "Chefs d'entreprise de 10 salariés ou plus (salariés de leur entreprise)",
-   "en": null
+   "en": "Business owners with 10+ employees"
   },
   "231A": {
    "fr": "Chefs de grande entreprise de 500 salariés et plus",
-   "en": null
+   "en": "Large enterprise managers (500+ employees)"
   },
   "232A": {
    "fr": "Chefs de moyenne entreprise, de 50 à 499 salariés",
-   "en": null
+   "en": "Medium enterprise managers (50-499 employees)"
   },
   "233A": {
    "fr": "Chefs d'entreprise du bâtiment et des travaux publics, de 10 à 49 salariés",
-   "en": null
+   "en": "Construction and public works enterprise managers (10-49 employees)"
   },
   "233B": {
    "fr": "Chefs d'entreprise de l'industrie ou des transports, de 10 à 49 salariés",
-   "en": null
+   "en": "Industrial and transport enterprise managers (10-49 employees)"
   },
   "233C": {
    "fr": "Chefs d'entreprise commerciale, de 10 à 49 salariés",
-   "en": null
+   "en": "Commercial enterprise managers (10-49 employees)"
   },
   "233D": {
    "fr": "Chefs d'entreprise de services, de 10 à 49 salariés",
-   "en": null
+   "en": "Service enterprise managers (10-49 employees)"
   },
   "3": {
    "fr": "Cadres et professions intellectuelles supérieures",
-   "en": null
+   "en": "Senior managers and intellectual professions"
   },
   "31": {
    "fr": "Professions libérales (exercées sous statut de salarié)",
-   "en": null
+   "en": "Liberal professionals (salaried status)"
   },
   "311C": {
    "fr": "Chirurgiens dentistes",
-   "en": null
+   "en": "Dentists"
   },
   "311D": {
    "fr": "Psychologues, psychanalystes, psychothérapeutes (non médecins)",
-   "en": null
+   "en": "Psychologists, psychoanalysts, psychotherapists (non-medical)"
   },
   "311E": {
    "fr": "Vétérinaires",
-   "en": null
+   "en": "Veterinarians"
   },
   "312A": {
    "fr": "Avocats",
-   "en": null
+   "en": "Lawyers"
   },
   "331A": {
    "fr": "Personnels de direction de la fonction publique (Etat, collectivités locales, hôpitaux)",
-   "en": null
+   "en": "Senior public sector managers (state, local authorities, hospitals)"
   },
   "33": {
    "fr": "Cadres de la fonction publique",
-   "en": null
+   "en": "Public sector managers"
   },
   "332A": {
    "fr": "Ingénieurs de l'Etat (y.c. ingénieurs militaires) et assimilés",
-   "en": null
+   "en": "State engineers (including military engineers) and equivalent"
   },
   "332B": {
    "fr": "Ingénieurs des collectivités locales et des hôpitaux",
-   "en": null
+   "en": "Local authority and hospital engineers"
   },
   "333A": {
    "fr": "Magistrats*",
-   "en": null
+   "en": "Judges"
   },
   "333B": {
    "fr": "Inspecteurs et autres personnels de catégorie A des Impôts, du Trésor et des Douanes",
-   "en": null
+   "en": "Tax, Treasury and Customs senior inspectors and staff"
   },
   "333C": {
    "fr": "Cadres de la Poste*",
-   "en": null
+   "en": "Senior postal managers"
   },
   "333D": {
    "fr": "Cadres administratifs de France Télécom (statut public)",
-   "en": null
+   "en": "Senior France Télécom managers (public sector)"
   },
   "333E": {
    "fr": "Autres personnels administratifs de catégorie A de l'Etat (hors Enseignement, Patrimoine, Impôts, Trésor, Douanes)",
-   "en": null
+   "en": "State senior administrative staff (excluding education, heritage, tax, treasury, customs)"
   },
   "333F": {
    "fr": "Personnels administratifs de catégorie A des collectivités locales et hôpitaux publics (hors Enseignement, Patrimoine)",
-   "en": null
+   "en": "Local authority and hospital senior administrative staff (excluding education, heritage)"
   },
   "334A": {
    "fr": "Officiers des Armées et de la Gendarmerie (sauf officiers généraux)*",
-   "en": null
+   "en": "Armed Forces and Gendarmerie officers (excluding senior officers)"
   },
   "335A": {
    "fr": "Personnes exerçant un mandat politique ou syndical*",
-   "en": null
+   "en": "Elected officials and union representatives"
   },
   "34": {
    "fr": "Professeurs, professions scientifiques",
-   "en": null
+   "en": "Teachers and scientific professions"
   },
   "341A": {
    "fr": "Professeurs agrégés et certifiés de l'enseignement secondaire",
-   "en": null
+   "en": "Secondary teachers (agrégé and certified)"
   },
   "341B": {
    "fr": "Chefs d'établissement de l'enseignement secondaire et inspecteurs",
-   "en": null
+   "en": "Secondary school heads and inspectors"
   },
   "342B": {
    "fr": "Professeurs et maîtres de conférences",
-   "en": null
+   "en": "Lecturers and associate professors"
   },
   "342C": {
    "fr": "Professeurs agrégés et certifiés en fonction dans l'enseignement supérieur",
-   "en": null
+   "en": "University teachers (agrégé and certified)"
   },
   "342D": {
    "fr": "Personnel enseignant temporaire de l'enseignement supérieur",
-   "en": null
+   "en": "Temporary higher education teaching staff"
   },
   "342F": {
    "fr": "Directeurs et chargés de recherche de la recherche publique",
-   "en": null
+   "en": "Research directors and senior researchers"
   },
   "342G": {
    "fr": "Ingénieurs d'étude et de recherche de la recherche publique",
-   "en": null
+   "en": "Research engineers, public research"
   },
   "342H": {
    "fr": "Allocataires de la recherche publique",
-   "en": null
+   "en": "Research fellows, public research"
   },
   "343A": {
    "fr": "Psychologues spécialistes de l'orientation scolaire et professionnelle",
-   "en": null
+   "en": "Educational and vocational guidance psychologists"
   },
   "344A": {
    "fr": "Médecins hospitaliers sans activité libérale",
-   "en": null
+   "en": "Hospital physicians without private practice"
   },
   "344B": {
    "fr": "Médecins salariés non hospitaliers",
-   "en": null
+   "en": "Salaried physicians, non-hospital"
   },
   "344C": {
    "fr": "Internes en médecine, odontologie et pharmacie",
-   "en": null
+   "en": "Medical, dental and pharmacy interns"
   },
   "344D": {
    "fr": "Pharmaciens salariés",
-   "en": null
+   "en": "Salaried pharmacists"
   },
   "35": {
    "fr": "Professions de l'information, des arts et des spectacles",
-   "en": null
+   "en": "Information, arts and entertainment professions"
   },
   "351A": {
    "fr": "Bibliothécaires, archivistes, conservateurs et autres cadres du patrimoine",
-   "en": null
+   "en": "Librarians, archivists, curators and heritage managers"
   },
   "352A": {
    "fr": "Journalistes (y c. rédacteurs en chef)",
-   "en": null
+   "en": "Journalists (including editors-in-chief)"
   },
   "352B": {
    "fr": "Auteurs littéraires, scénaristes, dialoguistes",
-   "en": null
+   "en": "Literary authors, screenwriters, dialogue writers"
   },
   "353A": {
    "fr": "Directeurs de journaux, administrateurs de presse, directeurs d'éditions (littéraire, musicale, audiovisuelle et multimédia)",
-   "en": null
+   "en": "Newspaper editors, press administrators, publishing directors"
   },
   "353B": {
    "fr": "Directeurs, responsables de programmation et de production de l'audiovisuel et des spectacles",
-   "en": null
+   "en": "Audiovisual and entertainment directors, programming and production managers"
   },
   "353C": {
    "fr": "Cadres artistiques et technico-artistiques de la réalisation de l'audiovisuel et des spectacles",
-   "en": null
+   "en": "Artistic and technical production managers, audiovisual and entertainment"
   },
   "354A": {
    "fr": "Artistes plasticiens",
-   "en": null
+   "en": "Visual artists"
   },
   "354B": {
    "fr": "Artistes de la musique et du chant",
-   "en": null
+   "en": "Musicians and singers"
   },
   "354C": {
    "fr": "Artistes dramatiques",
-   "en": null
+   "en": "Dramatic artists"
   },
   "354E": {
    "fr": "Artistes de la danse",
-   "en": null
+   "en": "Dancers"
   },
   "354F": {
    "fr": "Artistes du cirque et des spectacles divers",
-   "en": null
+   "en": "Circus and variety performers"
   },
   "354G": {
    "fr": "Professeurs d'art (hors établissements scolaires)",
-   "en": null
+   "en": "Art teachers (outside schools)"
   },
   "37": {
    "fr": "Cadres administratifs et commerciaux d'entreprises",
-   "en": null
+   "en": "Administrative and commercial managers"
   },
   "371A": {
    "fr": "Cadres d'état-major administratifs, financiers, commerciaux des grandes entreprises",
-   "en": null
+   "en": "Senior administrative, financial and commercial managers, large enterprises"
   },
   "372A": {
    "fr": "Cadres chargés d'études économiques, financières, commerciales",
-   "en": null
+   "en": "Economic, financial and commercial research managers"
   },
   "372B": {
    "fr": "Cadres de l'organisation ou du contrôle des services administratifs et financiers",
-   "en": null
+   "en": "Administrative and financial services organization and control managers"
   },
   "372C": {
    "fr": "Cadres spécialistes des ressources humaines et du recrutement",
-   "en": null
+   "en": "Human resources and recruitment specialists"
   },
   "372D": {
    "fr": "Cadres spécialistes de la formation",
-   "en": null
+   "en": "Training specialists"
   },
   "372E": {
    "fr": "Juristes",
-   "en": null
+   "en": "Legal specialists"
   },
   "372F": {
    "fr": "Cadres de la documentation, de l'archivage (hors fonction publique)",
-   "en": null
+   "en": "Documentation and archiving managers (private sector)"
   },
   "373A": {
    "fr": "Cadres des services financiers ou comptables des grandes entreprises",
-   "en": null
+   "en": "Financial and accounting managers, large enterprises"
   },
   "373B": {
    "fr": "Cadres des autres services administratifs des grandes entreprises",
-   "en": null
+   "en": "Administrative services managers, large enterprises"
   },
   "373C": {
    "fr": "Cadres des services financiers ou comptables des petites et moyennes entreprises",
-   "en": null
+   "en": "Financial and accounting managers, small and medium enterprises"
   },
   "373D": {
    "fr": "Cadres des autres services administratifs des petites et moyennes entreprises",
-   "en": null
+   "en": "Administrative services managers, small and medium enterprises"
   },
   "374A": {
    "fr": "Cadres de l'exploitation des magasins de vente du commerce de détail",
-   "en": null
+   "en": "Retail store managers"
   },
   "374B": {
    "fr": "Chefs de produits, acheteurs du commerce et autres cadres de la mercatique",
-   "en": null
+   "en": "Product managers, purchasing officers and marketing managers"
   },
   "374C": {
    "fr": "Cadres commerciaux des grandes entreprises (hors commerce de détail)",
-   "en": null
+   "en": "Commercial managers, large enterprises (non-retail)"
   },
   "374D": {
    "fr": "Cadres commerciaux des petites et moyennes entreprises (hors commerce de détail)",
-   "en": null
+   "en": "Commercial managers, small and medium enterprises (non-retail)"
   },
   "375A": {
    "fr": "Cadres de la publicité",
-   "en": null
+   "en": "Advertising managers"
   },
   "375B": {
    "fr": "Cadres des relations publiques et de la communication",
-   "en": null
+   "en": "Public relations and communications managers"
   },
   "376A": {
    "fr": "Cadres des marchés financiers",
-   "en": null
+   "en": "Financial markets managers"
   },
   "376B": {
    "fr": "Cadres des opérations bancaires",
-   "en": null
+   "en": "Banking operations managers"
   },
   "376C": {
    "fr": "Cadres commerciaux de la banque",
-   "en": null
+   "en": "Bank commercial managers"
   },
   "376D": {
    "fr": "Chefs d'établissements et responsables de l'exploitation bancaire",
-   "en": null
+   "en": "Bank branch managers and operations directors"
   },
   "376E": {
    "fr": "Cadres des services techniques des assurances",
-   "en": null
+   "en": "Insurance technical services managers"
   },
   "376F": {
    "fr": "Cadres des services techniques des organismes de sécurité sociale et assimilés",
-   "en": null
+   "en": "Social security and related bodies technical services managers"
   },
   "376G": {
    "fr": "Cadres de l'immobilier",
-   "en": null
+   "en": "Real estate managers"
   },
   "377A": {
    "fr": "Cadres de l'hôtellerie et de la restauration",
-   "en": null
+   "en": "Hotel and catering managers"
   },
   "38": {
    "fr": "Ingénieurs et cadres techniques d'entreprises",
-   "en": null
+   "en": "Engineers and technical managers in enterprises"
   },
   "380A": {
    "fr": "Directeurs techniques des grandes entreprises",
-   "en": null
+   "en": "Technical directors of large enterprises"
   },
   "381B": {
    "fr": "Ingénieurs et cadres d'étude et développement de l'agriculture, la pêche, les eaux et forêts",
-   "en": null
+   "en": "Engineers and managers in research and development for agriculture, fishing, water and forestry"
   },
   "381C": {
    "fr": "Ingénieurs et cadres de production et d'exploitation de l'agriculture, la pêche, les eaux et forêts",
-   "en": null
+   "en": "Engineers and managers in production and operations for agriculture, fishing, water and forestry"
   },
   "382A": {
    "fr": "Ingénieurs et cadres d'étude du bâtiment et des travaux publics",
-   "en": null
+   "en": "Engineers and managers in building and civil engineering research"
   },
   "382B": {
    "fr": "Architectes salariés",
-   "en": null
+   "en": "Salaried architects"
   },
   "382C": {
    "fr": "Ingénieurs, cadres de chantier et conducteurs de travaux (cadres) du bâtiment et des travaux publics",
-   "en": null
+   "en": "Engineers, site managers and works supervisors in building and civil engineering"
   },
   "382D": {
    "fr": "Ingénieurs et cadres technico-commerciaux en bâtiment, travaux publics",
-   "en": null
+   "en": "Technical and commercial engineers in building and civil engineering"
   },
   "383A": {
    "fr": "Ingénieurs et cadres d'étude, recherche et développement en électricité, électronique",
-   "en": null
+   "en": "Engineers and managers in research and development for electrical and electronic equipment"
   },
   "383B": {
    "fr": "Ingénieurs et cadres de fabrication en matériel électrique, électronique",
-   "en": null
+   "en": "Engineers and production managers for electrical and electronic equipment"
   },
   "383C": {
    "fr": "Ingénieurs et cadres technico-commerciaux en matériel électrique ou électronique professionnel",
-   "en": null
+   "en": "Technical and commercial engineers for professional electrical and electronic equipment"
   },
   "384A": {
    "fr": "Ingénieurs et cadres d'étude, recherche et développement en mécanique et travail des métaux",
-   "en": null
+   "en": "Engineers and managers in research and development for mechanical engineering and metalworking"
   },
   "384B": {
    "fr": "Ingénieurs et cadres de fabrication en mécanique et travail des métaux",
-   "en": null
+   "en": "Engineers and production managers for mechanical engineering and metalworking"
   },
   "384C": {
    "fr": "Ingénieurs et cadres technico-commerciaux en matériel mécanique professionnel",
-   "en": null
+   "en": "Technical and commercial engineers for professional mechanical equipment"
   },
   "385A": {
    "fr": "Ingénieurs et cadres d'étude, recherche et développement des industries de transformation (agroalimentaire, chimie, métallurgie, matériaux lourds)",
-   "en": null
+   "en": "Engineers and managers in research and development for processing industries"
   },
   "385B": {
    "fr": "Ingénieurs et cadres de fabrication des industries de transformation (agroalimentaire, chimie, métallurgie, matériaux lourds)",
-   "en": null
+   "en": "Engineers and production managers for processing industries"
   },
   "385C": {
    "fr": "Ingénieurs et cadres technico-commerciaux des industries de transformations (biens intermédiaires)",
-   "en": null
+   "en": "Technical and commercial engineers for processing industries"
   },
   "386B": {
    "fr": "Ingénieurs et cadres d'étude, recherche et développement de la distribution d'énergie, eau",
-   "en": null
+   "en": "Engineers and managers in research and development for energy and water distribution"
   },
   "386C": {
    "fr": "Ingénieurs et cadres d'étude, recherche et développement des autres industries (imprimerie, matériaux souples, ameublement et bois)",
-   "en": null
+   "en": "Engineers and managers in research and development for other industries"
   },
   "386D": {
    "fr": "Ingénieurs et cadres de la production et de la distribution d'énergie, eau",
-   "en": null
+   "en": "Engineers and managers in energy and water production and distribution"
   },
   "386E": {
    "fr": "Ingénieurs et cadres de fabrication des autres industries (imprimerie, matériaux souples, ameublement et bois)",
-   "en": null
+   "en": "Engineers and production managers for other industries"
   },
   "387A": {
    "fr": "Ingénieurs et cadres des achats et approvisionnements industriels",
-   "en": null
+   "en": "Engineers and procurement managers"
   },
   "387B": {
    "fr": "Ingénieurs et cadres de la logistique, du planning et de l'ordonnancement",
-   "en": null
+   "en": "Engineers and logistics, planning and scheduling managers"
   },
   "387C": {
    "fr": "Ingénieurs et cadres des méthodes de production",
-   "en": null
+   "en": "Engineers and production methods managers"
   },
   "387D": {
    "fr": "Ingénieurs et cadres du contrôle-qualité",
-   "en": null
+   "en": "Engineers and quality control managers"
   },
   "387E": {
    "fr": "Ingénieurs et cadres de la maintenance, de l'entretien et des travaux neufs",
-   "en": null
+   "en": "Engineers and maintenance and engineering managers"
   },
   "387F": {
    "fr": "Ingénieurs et cadres techniques de l'environnement",
-   "en": null
+   "en": "Engineers and environmental technical managers"
   },
   "388A": {
    "fr": "Ingénieurs et cadres d'étude, recherche et développement en informatique",
-   "en": null
+   "en": "Engineers and managers in software and IT research and development"
   },
   "388B": {
    "fr": "Ingénieurs et cadres d'administration, maintenance, support et services aux utilisateurs en informatique",
-   "en": null
+   "en": "Engineers and managers in IT administration, maintenance and user support"
   },
   "388C": {
    "fr": "Chefs de projets informatiques, responsables informatiques",
-   "en": null
+   "en": "IT project managers and IT directors"
   },
   "388D": {
    "fr": "Ingénieurs et cadres technico-commerciaux en informatique et télécommunications",
-   "en": null
+   "en": "Technical and commercial engineers for IT and telecommunications"
   },
   "388E": {
    "fr": "Ingénieurs et cadres spécialistes des télécommunications",
-   "en": null
+   "en": "Engineers and telecommunications specialists"
   },
   "389A": {
    "fr": "Ingénieurs et cadres techniques de l'exploitation des transports",
-   "en": null
+   "en": "Engineers and technical transport operations managers"
   },
   "389B": {
    "fr": "Officiers et cadres navigants techniques et commerciaux de l'aviation civile",
-   "en": null
+   "en": "Pilots, technical and commercial flight crew for civil aviation"
   },
   "389C": {
    "fr": "Officiers et cadres navigants techniques de la marine marchande",
-   "en": null
+   "en": "Merchant marine officers and technical navigation personnel"
   },
   "4": {
    "fr": "Professions intermédiaires",
-   "en": null
+   "en": "Intermediate professions"
   },
   "42": {
    "fr": "Professeurs des écoles, instituteurs et professions assimilées",
-   "en": null
+   "en": "Primary school teachers and assimilated professions"
   },
   "421A": {
    "fr": "Instituteurs",
-   "en": null
+   "en": "Primary school teachers (institutional)"
   },
   "421B": {
    "fr": "Professeurs des écoles",
-   "en": null
+   "en": "Primary school teachers"
   },
   "422A": {
    "fr": "Professeurs d'enseignement général des collèges",
-   "en": null
+   "en": "Secondary school general education teachers"
   },
   "422B": {
    "fr": "Professeurs de lycée professionnel",
-   "en": null
+   "en": "Vocational secondary school teachers"
   },
   "422C": {
    "fr": "Maîtres auxiliaires et professeurs contractuels de l'enseignement secondaire",
-   "en": null
+   "en": "Substitute and contract secondary school teachers"
   },
   "422D": {
    "fr": "Conseillers principaux d'éducation",
-   "en": null
+   "en": "Head of student services"
   },
   "422E": {
    "fr": "Surveillants et aides-éducateurs des établissements d'enseignement",
-   "en": null
+   "en": "School monitors and education assistants"
   },
   "423A": {
    "fr": "Moniteurs d'école de conduite",
-   "en": null
+   "en": "Driving school instructors"
   },
   "423B": {
    "fr": "Formateurs et animateurs de formation continue",
-   "en": null
+   "en": "Trainers and continuing education coordinators"
   },
   "424A": {
    "fr": "Moniteurs et éducateurs sportifs, sportifs professionnels",
-   "en": null
+   "en": "Sports instructors, coaches and professional athletes"
   },
   "425A": {
    "fr": "Sous-bibliothécaires, cadres intermédiaires du patrimoine",
-   "en": null
+   "en": "Assistant librarians and heritage intermediate managers"
   },
   "43": {
    "fr": "Professions intermédiaires de la santé et du travail social",
-   "en": null
+   "en": "Healthcare and social work intermediate professions"
   },
   "431A": {
    "fr": "Cadres infirmiers et assimilés",
-   "en": null
+   "en": "Nursing managers and senior nurses"
   },
   "431B": {
    "fr": "Infirmiers psychiatriques",
-   "en": null
+   "en": "Psychiatric nurses"
   },
   "431C": {
    "fr": "Puéricultrices",
-   "en": null
+   "en": "Childcare nurses"
   },
   "431D": {
    "fr": "Infirmiers spécialisés (autres qu'infirmiers psychiatriques et puéricultrices)",
-   "en": null
+   "en": "Specialist nurses (excluding psychiatric nurses and childcare nurses)"
   },
   "431E": {
    "fr": "Sages-femmes salariées",
-   "en": null
+   "en": "Employed midwives"
   },
   "431F": {
    "fr": "Infirmiers en soins généraux, salariés",
-   "en": null
+   "en": "Employed general nurses"
   },
   "432B": {
    "fr": "Masseurs-kinésithérapeutes rééducateurs, salariés",
-   "en": null
+   "en": "Employed physiotherapists and rehabilitation specialists"
   },
   "432D": {
    "fr": "Autres spécialistes de la rééducation, salariés",
-   "en": null
+   "en": "Employed rehabilitation specialists (other)"
   },
   "433A": {
    "fr": "Techniciens médicaux",
-   "en": null
+   "en": "Medical technicians"
   },
   "433B": {
    "fr": "Opticiens lunetiers et audioprothésistes salariés",
-   "en": null
+   "en": "Employed opticians and audiologists"
   },
   "433C": {
    "fr": "Autres spécialistes de l'appareillage médical salariés",
-   "en": null
+   "en": "Employed medical device specialists (other)"
   },
   "433D": {
    "fr": "Préparateurs en pharmacie",
-   "en": null
+   "en": "Pharmacy technicians"
   },
   "434A": {
    "fr": "Cadres de l'intervention socio-éducative",
-   "en": null
+   "en": "Socio-educational intervention managers"
   },
   "434B": {
    "fr": "Assistants de service social",
-   "en": null
+   "en": "Social workers"
   },
   "434C": {
    "fr": "Conseillers en économie sociale familiale",
-   "en": null
+   "en": "Family economic counsellors"
   },
   "434D": {
    "fr": "Educateurs spécialisés",
-   "en": null
+   "en": "Specialist educators"
   },
   "434E": {
    "fr": "Moniteurs éducateurs",
-   "en": null
+   "en": "Education monitors"
   },
   "434F": {
    "fr": "Educateurs techniques spécialisés, moniteurs d'atelier",
-   "en": null
+   "en": "Specialist technical educators and workshop supervisors"
   },
   "434G": {
    "fr": "Educateurs de jeunes enfants",
-   "en": null
+   "en": "Early childhood educators"
   },
   "435A": {
    "fr": "Directeurs de centres socioculturels et de loisirs",
-   "en": null
+   "en": "Sociocultural and leisure centre directors"
   },
   "435B": {
    "fr": "Animateurs socioculturels et de loisirs",
-   "en": null
+   "en": "Sociocultural and leisure animators"
   },
   "44": {
    "fr": "Clergé, religieux",
-   "en": null
+   "en": "Clergy and religious"
   },
   "441A": {
    "fr": "Clergé séculier",
-   "en": null
+   "en": "Secular clergy"
   },
   "441B": {
    "fr": "Clergé régulier",
-   "en": null
+   "en": "Regular clergy"
   },
   "45": {
    "fr": "Professions intermédiaires administratives de la fonction publique",
-   "en": null
+   "en": "Civil service administrative intermediate professions"
   },
   "451A": {
    "fr": "Professions intermédiaires de la Poste",
-   "en": null
+   "en": "Intermediate administrative professionals - Post Office"
   },
   "451B": {
    "fr": "Professions intermédiaires administratives de France Télécom (statut public)",
-   "en": null
+   "en": "Intermediate administrative professionals - France Télécom (public sector)"
   },
   "451C": {
    "fr": "Contrôleurs des Impôts, du Trésor, des Douanes et assimilés*",
-   "en": null
+   "en": "Tax, Treasury, Customs inspectors and equivalent"
   },
   "451D": {
    "fr": "Ingénieurs du contrôle de la navigation aérienne*",
-   "en": null
+   "en": "Air navigation control engineers"
   },
   "451E": {
    "fr": "Autres personnels administratifs de catégorie B de l'Etat (hors Enseignement, Patrimoine, Impôts, Trésor, Douanes)",
-   "en": null
+   "en": "Other State administrative staff category B (excluding Education, Heritage, Tax, Treasury, Customs)"
   },
   "451G": {
    "fr": "Professions intermédiaires administratives des collectivités locales",
-   "en": null
+   "en": "Intermediate administrative professionals - Local government"
   },
   "451H": {
    "fr": "Professions intermédiaires administratives des hôpitaux",
-   "en": null
+   "en": "Intermediate administrative professionals - Hospitals"
   },
   "452A": {
    "fr": "Inspecteurs et officiers de police*",
-   "en": null
+   "en": "Police inspectors and officers"
   },
   "452B": {
    "fr": "Adjudants-chefs, adjudants et sous-officiers de rang supérieur de l'Armée et de la Gendarmerie*",
-   "en": null
+   "en": "Senior non-commissioned officers - Armed Forces and Gendarmerie"
   },
   "46": {
    "fr": "Professions intermédiaires administratives et commerciales des entreprises",
-   "en": null
+   "en": "Intermediate administrative and commercial professionals - Private enterprises"
   },
   "461B": {
    "fr": "Secrétaires de direction, assistants de direction (non cadres)",
-   "en": null
+   "en": "Executive secretaries and executive assistants (non-management)"
   },
   "461C": {
    "fr": "Secrétaires de niveau supérieur (non cadres, hors secrétaires de direction)",
-   "en": null
+   "en": "Senior secretaries (non-management, excluding executive secretaries)"
   },
   "461D": {
    "fr": "Maîtrise et techniciens des services financiers ou comptables",
-   "en": null
+   "en": "Supervisory and technical staff - Finance and accounting services"
   },
   "461E": {
    "fr": "Maîtrise et techniciens administratifs des services juridiques ou du personnel",
-   "en": null
+   "en": "Supervisory and technical staff - Legal and personnel services"
   },
   "461F": {
    "fr": "Maîtrise et techniciens administratifs des autres services administratifs",
-   "en": null
+   "en": "Supervisory and technical staff - Other administrative services"
   },
   "462A": {
    "fr": "Chefs de petites surfaces de vente",
-   "en": null
+   "en": "Small retail store managers"
   },
   "462B": {
    "fr": "Maîtrise de l'exploitation des magasins de vente",
-   "en": null
+   "en": "Retail store operations supervisors"
   },
   "462C": {
    "fr": "Acheteurs non classés cadres, aides-acheteurs",
-   "en": null
+   "en": "Non-management buyers and assistant buyers"
   },
   "462D": {
    "fr": "Animateurs commerciaux des magasins de vente, marchandiseurs (non cadres)",
-   "en": null
+   "en": "Retail merchandisers and commercial coordinators (non-management)"
   },
   "462E": {
    "fr": "Autres professions intermédiaires commerciales (sauf techniciens des forces de vente)",
-   "en": null
+   "en": "Other intermediate commercial professionals (except sales force technicians)"
   },
   "463A": {
    "fr": "Techniciens commerciaux et technico-commerciaux, représentants en informatique",
-   "en": null
+   "en": "Commercial and technical sales representatives - IT"
   },
   "463B": {
    "fr": "Techniciens commerciaux et technico-commerciaux, représentants en biens d'équipement, en biens intermédiaires, commerce interindustriel (hors informatique)",
-   "en": null
+   "en": "Commercial and technical sales representatives - Capital goods, intermediate goods, inter-industrial trade (excluding IT)"
   },
   "463C": {
    "fr": "Techniciens commerciaux et technico-commerciaux, représentants en biens de consommation auprès d'entreprises",
-   "en": null
+   "en": "Commercial and technical sales representatives - Consumer goods to businesses"
   },
   "463D": {
    "fr": "Techniciens commerciaux et technico-commerciaux, représentants en services auprès d'entreprises ou de professionnels (hors banque, assurance, informatique)",
-   "en": null
+   "en": "Commercial and technical sales representatives - Services to businesses or professionals (excluding banking, insurance, IT)"
   },
   "463E": {
    "fr": "Techniciens commerciaux et technico-commerciaux, représentants auprès de particuliers (hors banque, assurance, informatique)",
-   "en": null
+   "en": "Commercial and technical sales representatives - Direct to consumers (excluding banking, insurance, IT)"
   },
   "464A": {
    "fr": "Assistants de la publicité, des relations publiques",
-   "en": null
+   "en": "Advertising and public relations assistants"
   },
   "464B": {
    "fr": "Interprètes, traducteurs",
-   "en": null
+   "en": "Interpreters and translators"
   },
   "465A": {
    "fr": "Concepteurs et assistants techniques des arts graphiques, de la mode et de la décoration salariés",
-   "en": null
+   "en": "Designers and technical assistants - Graphic arts, fashion and decoration (employed)"
   },
   "465B": {
    "fr": "Assistants techniques de la réalisation des spectacles vivants et audiovisuels salariés",
-   "en": null
+   "en": "Technical assistants - Live performance and audiovisual production (employed)"
   },
   "465C": {
    "fr": "Photographes",
-   "en": null
+   "en": "Photographers"
   },
   "466A": {
    "fr": "Responsables commerciaux et administratifs des transports de voyageurs et du tourisme (non cadres)",
-   "en": null
+   "en": "Commercial and administrative managers - Passenger transport and tourism (non-management)"
   },
   "466B": {
    "fr": "Responsables commerciaux et administratifs des transports de marchandises (non cadres)",
-   "en": null
+   "en": "Commercial and administrative managers - Freight transport (non-management)"
   },
   "466C": {
    "fr": "Responsables d'exploitation des transports de voyageurs et de marchandises (non cadres)",
-   "en": null
+   "en": "Operations managers - Passenger and freight transport (non-management)"
   },
   "467A": {
    "fr": "Chargés de clientèle bancaire",
-   "en": null
+   "en": "Bank customer account managers"
   },
   "467B": {
    "fr": "Techniciens des opérations bancaires",
-   "en": null
+   "en": "Banking operations technicians"
   },
   "467C": {
    "fr": "Professions intermédiaires techniques et commerciales des assurances",
-   "en": null
+   "en": "Intermediate technical and commercial professionals - Insurance"
   },
   "467D": {
    "fr": "Professions intermédiaires techniques des organismes de sécurité sociale",
-   "en": null
+   "en": "Intermediate technical professionals - Social security organisations"
   },
   "468A": {
    "fr": "Maîtrise de restauration : salle et service",
-   "en": null
+   "en": "Hospitality supervisors - Service and dining room"
   },
   "468B": {
    "fr": "Maîtrise de l'hébergement : hall et étages",
-   "en": null
+   "en": "Hospitality supervisors - Front desk and housekeeping"
   },
   "47": {
    "fr": "Techniciens (sauf techniciens tertiaires)",
-   "en": null
+   "en": "Technicians (excluding office technicians)"
   },
   "471A": {
    "fr": "Techniciens d'étude et de conseil en agriculture, eaux et forêt",
-   "en": null
+   "en": "Agricultural, water and forestry research and advisory technicians"
   },
   "471B": {
    "fr": "Techniciens d'exploitation et de contrôle de la production en agriculture, eaux et forêt",
-   "en": null
+   "en": "Agricultural, water and forestry production and control technicians"
   },
   "472A": {
    "fr": "Dessinateurs en bâtiment, travaux publics",
-   "en": null
+   "en": "Building and civil engineering draughtsmen"
   },
   "472B": {
    "fr": "Géomètres, topographes",
-   "en": null
+   "en": "Surveyors and topographers"
   },
   "472C": {
    "fr": "Métreurs et techniciens divers du bâtiment et des travaux publics",
-   "en": null
+   "en": "Quantity surveyors and building and civil engineering technicians"
   },
   "472D": {
    "fr": "Techniciens des travaux publics de l'Etat et des collectivités locales",
-   "en": null
+   "en": "Civil engineering technicians (public authorities and local government)"
   },
   "473A": {
    "fr": "Dessinateurs en électricité, électromécanique et électronique",
-   "en": null
+   "en": "Electrical, electromechanical and electronics draughtsmen"
   },
   "473B": {
    "fr": "Techniciens de recherche-développement et des méthodes de fabrication en électricité, électromécanique et électronique",
-   "en": null
+   "en": "Research, development and manufacturing methods technicians (electrical, electromechanical, electronics)"
   },
   "473C": {
    "fr": "Techniciens de fabrication et de contrôle-qualité en électricité, électromécanique et électronique",
-   "en": null
+   "en": "Manufacturing and quality control technicians (electrical, electromechanical, electronics)"
   },
   "474A": {
    "fr": "Dessinateurs en construction mécanique et travail des métaux",
-   "en": null
+   "en": "Mechanical engineering and metalworking draughtsmen"
   },
   "474B": {
    "fr": "Techniciens de recherche-développement et des méthodes de fabrication en construction mécanique et travail des métaux",
-   "en": null
+   "en": "Research, development and manufacturing methods technicians (mechanical engineering, metalworking)"
   },
   "474C": {
    "fr": "Techniciens de fabrication et de contrôle-qualité en construction mécanique et travail des métaux",
-   "en": null
+   "en": "Manufacturing and quality control technicians (mechanical engineering, metalworking)"
   },
   "475A": {
    "fr": "Techniciens de recherche-développement et des méthodes de production des industries de transformation",
-   "en": null
+   "en": "Research, development and production methods technicians (processing industries)"
   },
   "475B": {
    "fr": "Techniciens de production et de contrôle-qualité des industries de transformation",
-   "en": null
+   "en": "Production and quality control technicians (processing industries)"
   },
   "476A": {
    "fr": "Assistants techniques, techniciens de l'imprimerie et de l'édition",
-   "en": null
+   "en": "Technical assistants and printing and publishing technicians"
   },
   "476B": {
    "fr": "Techniciens de l'industrie des matériaux souples, de l'ameublement et du bois",
-   "en": null
+   "en": "Soft materials, furniture and timber industry technicians"
   },
   "477A": {
    "fr": "Techniciens de la logistique, du planning et de l'ordonnancement",
-   "en": null
+   "en": "Logistics, planning and scheduling technicians"
   },
   "477B": {
    "fr": "Techniciens d'installation et de maintenance des équipements industriels (électriques, électromécaniques, mécaniques, hors informatique)",
-   "en": null
+   "en": "Industrial equipment installation and maintenance technicians (electrical, electromechanical, mechanical, non-IT)"
   },
   "477C": {
    "fr": "Techniciens d'installation et de maintenance des équipements non industriels (hors informatique et télécommunications)",
-   "en": null
+   "en": "Non-industrial equipment installation and maintenance technicians (non-IT, non-telecommunications)"
   },
   "477D": {
    "fr": "Techniciens de l'environnement et du traitement des pollutions",
-   "en": null
+   "en": "Environmental and pollution control technicians"
   },
   "478A": {
    "fr": "Techniciens d'étude et de développement en informatique",
-   "en": null
+   "en": "IT research and development technicians"
   },
   "478B": {
    "fr": "Techniciens de production, d'exploitation en informatique",
-   "en": null
+   "en": "IT production and operations technicians"
   },
   "478C": {
    "fr": "Techniciens d'installation, de maintenance, support et services aux utilisateurs en informatique",
-   "en": null
+   "en": "IT installation, maintenance, support and user services technicians"
   },
   "478D": {
    "fr": "Techniciens des télécommunications et de l'informatique des réseaux",
-   "en": null
+   "en": "Telecommunications and IT network technicians"
   },
   "479A": {
    "fr": "Techniciens des laboratoires de recherche publique ou de l'enseignement",
-   "en": null
+   "en": "Public research and teaching laboratory technicians"
   },
   "479B": {
    "fr": "Experts salariés de niveau technicien, techniciens divers",
-   "en": null
+   "en": "Salaried technician-level experts and miscellaneous technicians"
   },
   "48": {
    "fr": "Contremaîtres, agents de maîtrise (maîtrise administrative exclue)",
-   "en": null
+   "en": "Supervisors and non-managerial supervisory staff"
   },
   "480A": {
    "fr": "Contremaîtres et agents d'encadrement (non cadres) en agriculture, sylviculture",
-   "en": null
+   "en": "Supervisory staff (agriculture, forestry)"
   },
   "480B": {
    "fr": "Maîtres d'équipage de la marine marchande et de la pêche",
-   "en": null
+   "en": "Merchant marine and fishing crew leaders"
   },
   "481A": {
    "fr": "Conducteurs de travaux (non cadres)",
-   "en": null
+   "en": "Works supervisors (non-managerial)"
   },
   "481B": {
    "fr": "Chefs de chantier (non cadres)",
-   "en": null
+   "en": "Site managers (non-managerial)"
   },
   "482A": {
    "fr": "Agents de maîtrise en fabrication de matériel électrique, électronique",
-   "en": null
+   "en": "Supervisory staff (electrical and electronic equipment manufacturing)"
   },
   "483A": {
    "fr": "Agents de maîtrise en construction mécanique, travail des métaux",
-   "en": null
+   "en": "Supervisory staff (mechanical engineering, metalworking)"
   },
   "484A": {
    "fr": "Agents de maîtrise en fabrication : agroalimentaire, chimie, plasturgie, pharmacie.",
-   "en": null
+   "en": "Supervisory staff (food processing, chemicals, plastics, pharmaceuticals)"
   },
   "484B": {
    "fr": "Agents de maîtrise en fabrication : métallurgie, matériaux lourds et autres industries de transformation",
-   "en": null
+   "en": "Supervisory staff (metallurgy, heavy materials and other processing industries)"
   },
   "485A": {
    "fr": "Agents de maîtrise et techniciens en production et distribution d'énergie, eau, chauffage",
-   "en": null
+   "en": "Supervisory staff and technicians (energy, water, heating production and distribution)"
   },
   "485B": {
    "fr": "Agents de maîtrise en fabrication des autres industries (imprimerie, matériaux souples, ameublement et bois)",
-   "en": null
+   "en": "Supervisory staff (printing, soft materials, furniture and timber)"
   },
   "486B": {
    "fr": "Agents de maîtrise en maintenance, installation en électricité et électronique",
-   "en": null
+   "en": "Supervisory staff (electrical and electronics maintenance and installation)"
   },
   "486C": {
    "fr": "Agents de maîtrise en maintenance, installation en électromécanique",
-   "en": null
+   "en": "Supervisory staff (electromechanical maintenance and installation)"
   },
   "486D": {
    "fr": "Agents de maîtrise en maintenance, installation en mécanique",
-   "en": null
+   "en": "Supervisory staff (mechanical maintenance and installation)"
   },
   "486E": {
    "fr": "Agents de maîtrise en entretien général, installation, travaux neufs (hors mécanique, électromécanique, électronique)",
-   "en": null
+   "en": "Supervisors in general maintenance, installation, new construction (excluding mechanical, electromechanical, electronic)"
   },
   "487A": {
    "fr": "Responsables d'entrepôt, de magasinage",
-   "en": null
+   "en": "Warehouse and storage managers"
   },
   "487B": {
    "fr": "Responsables du tri, de l'emballage, de l'expédition et autres responsables de la manutention",
-   "en": null
+   "en": "Sorting, packaging, shipping and materials handling managers"
   },
   "488A": {
    "fr": "Maîtrise de restauration  : cuisine/production",
-   "en": null
+   "en": "Food service supervisors: kitchen/production"
   },
   "488B": {
    "fr": "Maîtrise de restauration  : gestion d'établissement",
-   "en": null
+   "en": "Food service supervisors: establishment management"
   },
   "5": {
    "fr": "Employés",
-   "en": null
+   "en": "Employees"
   },
   "52": {
    "fr": "Employés civils et agents de service de la fonction publique",
-   "en": null
+   "en": "Civil service employees and service agents"
   },
   "521A": {
    "fr": "Employés de la Poste",
-   "en": null
+   "en": "Post office employees"
   },
   "521B": {
    "fr": "Employés de France Télécom (statut public)",
-   "en": null
+   "en": "France Télécom employees (public status)"
   },
   "522A": {
    "fr": "Agents de constatation ou de recouvrement des Impôts, du Trésor, des Douanes*",
-   "en": null
+   "en": "Tax, treasury and customs officers"
   },
   "523A": {
    "fr": "Adjoints administratifs de la fonction publique (y c. enseignement)*",
-   "en": null
+   "en": "Administrative assistants in public service (including education)"
   },
   "523B": {
    "fr": "Adjoints administratifs de l'Etat et assimilés (sauf Poste, France Télécom)",
-   "en": null
+   "en": "Administrative assistants in state administration (excluding Post, France Télécom)"
   },
   "523C": {
    "fr": "Adjoints administratifs des collectivités locales",
-   "en": null
+   "en": "Administrative assistants in local government"
   },
   "523D": {
    "fr": "Adjoints administratifs des hôpitaux publics",
-   "en": null
+   "en": "Administrative assistants in public hospitals"
   },
   "524A": {
    "fr": "Agents administratifs de la fonction publique (y c. enseignement)*",
-   "en": null
+   "en": "Administrative agents in public service (including education)"
   },
   "524B": {
    "fr": "Agents administratifs de l'Etat et assimilés (sauf Poste, France Télécom)",
-   "en": null
+   "en": "Administrative agents in state administration (excluding Post, France Télécom)"
   },
   "524C": {
    "fr": "Agents administratifs des collectivités locales",
-   "en": null
+   "en": "Administrative agents in local government"
   },
   "524D": {
    "fr": "Agents administratifs des hôpitaux publics",
-   "en": null
+   "en": "Administrative agents in public hospitals"
   },
   "525A": {
    "fr": "Agents de service des établissements primaires",
-   "en": null
+   "en": "Service agents in primary schools"
   },
   "525B": {
    "fr": "Agents de service des autres établissements d'enseignement",
-   "en": null
+   "en": "Service agents in other educational establishments"
   },
   "525C": {
    "fr": "Agents de service de la fonction publique (sauf écoles, hôpitaux)",
-   "en": null
+   "en": "Service agents in public administration (excluding schools, hospitals)"
   },
   "525D": {
    "fr": "Agents de service hospitaliers",
-   "en": null
+   "en": "Hospital service agents"
   },
   "526A": {
    "fr": "Aides-soignants",
-   "en": null
+   "en": "Nursing assistants"
   },
   "526B": {
    "fr": "Assistants dentaires, médicaux et vétérinaires, aides de techniciens médicaux",
-   "en": null
+   "en": "Dental, medical and veterinary assistants, medical technician aides"
   },
   "526C": {
    "fr": "Auxiliaires de puériculture",
-   "en": null
+   "en": "Childcare auxiliaries"
   },
   "526D": {
    "fr": "Aides médico-psychologiques",
-   "en": null
+   "en": "Care assistants for persons with mental health needs"
   },
   "526E": {
    "fr": "Ambulanciers salariés",
-   "en": null
+   "en": "Salaried ambulance drivers"
   },
   "53": {
    "fr": "Policiers, militaires et agents de surveillance",
-   "en": null
+   "en": "Police, military and security agents"
   },
   "531A": {
    "fr": "Agents de police de l'Etat*",
-   "en": null
+   "en": "State police officers"
   },
   "531B": {
    "fr": "Agents des polices municipales*",
-   "en": null
+   "en": "Municipal police officers"
   },
   "531C": {
    "fr": "Surveillants de l'administration pénitentiaire*",
-   "en": null
+   "en": "Prison service surveillance officers"
   },
   "532A": {
    "fr": "Gendarmes (de grade inférieur à adjudant)*",
-   "en": null
+   "en": "Non-commissioned gendarmes"
   },
   "532B": {
    "fr": "Sergents et sous-officiers de grade équivalent des Armées (sauf pompiers militaires)*",
-   "en": null
+   "en": "Military non-commissioned officers (excluding military firefighters)"
   },
   "532C": {
    "fr": "Hommes du rang (sauf pompiers militaires)*",
-   "en": null
+   "en": "Military ranks (excluding military firefighters)"
   },
   "533A": {
    "fr": "Pompiers (y.c. pompiers militaires)",
-   "en": null
+   "en": "Firefighters (including military firefighters)"
   },
   "533B": {
    "fr": "Agents techniques forestiers, gardes des espaces naturels",
-   "en": null
+   "en": "Forest technicians and nature reserve wardens"
   },
   "533C": {
    "fr": "Agents de surveillance du patrimoine et des administrations",
-   "en": null
+   "en": "Heritage and administration surveillance agents"
   },
   "534A": {
    "fr": "Agents civils de sécurité et de surveillance",
-   "en": null
+   "en": "Civil security and surveillance agents"
   },
   "534B": {
    "fr": "Convoyeurs de fonds, gardes du corps, enquêteurs privés et métiers assimilés (salariés)",
-   "en": null
+   "en": "Cash couriers, bodyguards, private investigators and related occupations (salaried)"
   },
   "54": {
    "fr": "Employés administratifs d'entreprise",
-   "en": null
+   "en": "Business administrative employees"
   },
   "541B": {
    "fr": "Agents d'accueil qualifiés, hôtesses d'accueil et d'information",
-   "en": null
+   "en": "Qualified reception agents, receptionists and information officers"
   },
   "541C": {
    "fr": "Agents d'accueil non qualifiés",
-   "en": null
+   "en": "Unqualified reception agents"
   },
   "541D": {
    "fr": "Standardistes, téléphonistes",
-   "en": null
+   "en": "Switchboard operators, telephone operators"
   },
   "542A": {
    "fr": "Secrétaires",
-   "en": null
+   "en": "Secretaries"
   },
   "542B": {
    "fr": "Dactylos, sténodactylos (sans secrétariat), opérateurs de traitement de texte",
-   "en": null
+   "en": "Typists, stenotypists (non-secretarial), word processor operators"
   },
   "543B": {
    "fr": "Employés qualifiés des services comptables ou financiers",
-   "en": null
+   "en": "Qualified accounting and financial services employees"
   },
   "543C": {
    "fr": "Employés non qualifiés des services comptables ou financiers",
-   "en": null
+   "en": "Unqualified accounting and financial services employees"
   },
   "543E": {
    "fr": "Employés qualifiés des services du personnel et des services juridiques",
-   "en": null
+   "en": "Qualified human resources and legal services employees"
   },
   "543F": {
    "fr": "Employés qualifiés des services commerciaux des entreprises (hors vente)",
-   "en": null
+   "en": "Qualified commercial services employees (non-sales)"
   },
   "543G": {
    "fr": "Employés administratifs qualifiés des autres services des entreprises",
-   "en": null
+   "en": "Qualified administrative employees in other business services"
   },
   "543H": {
    "fr": "Employés administratifs non qualifiés",
-   "en": null
+   "en": "Unqualified administrative employees"
   },
   "544A": {
    "fr": "Employés et opérateurs d'exploitation en informatique",
-   "en": null
+   "en": "IT operations employees and operators"
   },
   "545A": {
    "fr": "Employés administratifs des services techniques de la banque",
-   "en": null
+   "en": "Administrative employees in bank technical services"
   },
   "545B": {
    "fr": "Employés des services commerciaux de la banque",
-   "en": null
+   "en": "Employees in bank commercial services"
   },
   "545C": {
    "fr": "Employés des services techniques des assurances",
-   "en": null
+   "en": "Employees in insurance technical services"
   },
   "545D": {
    "fr": "Employés des services techniques des organismes de sécurité sociale et assimilés",
-   "en": null
+   "en": "Employees in social security and related organisations technical services"
   },
   "546A": {
    "fr": "Contrôleurs des transports (personnels roulants)",
-   "en": null
+   "en": "Transport supervisors (mobile staff)"
   },
   "546B": {
    "fr": "Agents des services commerciaux des transports de voyageurs et du tourisme",
-   "en": null
+   "en": "Employees in passenger transport and tourism commercial services"
   },
   "546C": {
    "fr": "Employés administratifs d'exploitation des transports de marchandises",
-   "en": null
+   "en": "Administrative employees in freight transport operations"
   },
   "546D": {
    "fr": "Hôtesses de l'air et stewards",
-   "en": null
+   "en": "Flight attendants and stewards"
   },
   "546E": {
    "fr": "Autres agents et hôtesses d'accompagnement (transports, tourisme)",
-   "en": null
+   "en": "Other accompanying agents and hostesses (transport, tourism)"
   },
   "55": {
    "fr": "Employés de commerce",
-   "en": null
+   "en": "Retail trade employees"
   },
   "551A": {
    "fr": "Employés de libre service du commerce et magasiniers",
-   "en": null
+   "en": "Self-service and warehouse employees"
   },
   "552A": {
    "fr": "Caissiers de magasin",
-   "en": null
+   "en": "Shop cashiers"
   },
   "553B": {
    "fr": "Vendeurs polyvalents des grands magasins",
-   "en": null
+   "en": "Versatile sales assistants in department stores"
   },
   "553C": {
    "fr": "Autres vendeurs non spécialisés",
-   "en": null
+   "en": "Other non-specialist sales assistants"
   },
   "554A": {
    "fr": "Vendeurs en alimentation",
-   "en": null
+   "en": "Food sales assistants"
   },
   "554B": {
    "fr": "Vendeurs en ameublement, décor, équipement du foyer",
-   "en": null
+   "en": "Furniture, home décor and equipment sales assistants"
   },
   "554C": {
    "fr": "Vendeurs en droguerie, bazar, quincaillerie, bricolage",
-   "en": null
+   "en": "Hardware, DIY and general goods sales assistants"
   },
   "554D": {
    "fr": "Vendeurs du commerce de fleurs",
-   "en": null
+   "en": "Florists"
   },
   "554E": {
    "fr": "Vendeurs en habillement et articles de sport",
-   "en": null
+   "en": "Clothing and sports goods sales assistants"
   },
   "554F": {
    "fr": "Vendeurs en produits de beauté, de luxe (hors biens culturels) et optique",
-   "en": null
+   "en": "Beauty, luxury and optical goods sales assistants"
   },
   "554G": {
    "fr": "Vendeurs de biens culturels (livres, disques, multimédia, objets d'art)",
-   "en": null
+   "en": "Cultural goods sales assistants (books, records, multimedia, art)"
   },
   "554H": {
    "fr": "Vendeurs de tabac, presse et articles divers",
-   "en": null
+   "en": "Tobacco, press and miscellaneous goods sales assistants"
   },
   "554J": {
    "fr": "Pompistes et gérants de station-service (salariés ou mandataires)",
-   "en": null
+   "en": "Petrol station attendants and managers (salaried or self-employed)"
   },
   "555A": {
    "fr": "Vendeurs par correspondance, télévendeurs",
-   "en": null
+   "en": "Mail order and telemarketing sales staff"
   },
   "56": {
    "fr": "Personnels des services directs aux particuliers",
-   "en": null
+   "en": "Personal services employees"
   },
   "556A": {
    "fr": "Vendeurs en gros de biens d'équipement, biens intermédiaires",
-   "en": null
+   "en": "Wholesale sales staff for equipment and intermediate goods"
   },
   "561B": {
    "fr": "Serveurs, commis de restaurant, garçons qualifiés",
-   "en": null
+   "en": "Qualified waiters and restaurant staff"
   },
   "561C": {
    "fr": "Serveurs, commis de restaurant, garçons non qualifiés",
-   "en": null
+   "en": "Unqualified waiters and restaurant staff"
   },
   "561D": {
    "fr": "Aides de cuisine, apprentis de cuisine et employés polyvalents de la restauration",
-   "en": null
+   "en": "Kitchen assistants, apprentice cooks and multi-skilled restaurant employees"
   },
   "561E": {
    "fr": "Employés de l'hôtellerie : réception et hall",
-   "en": null
+   "en": "Hotel reception and front-of-house staff"
   },
   "561F": {
    "fr": "Employés d'étage et employés polyvalents de l'hôtellerie",
-   "en": null
+   "en": "Housekeeping and multi-skilled hotel employees"
   },
   "562A": {
    "fr": "Manucures, esthéticiens",
-   "en": null
+   "en": "Manicurists and beauticians"
   },
   "562B": {
    "fr": "Coiffeurs salariés",
-   "en": null
+   "en": "Employed hairdressers"
   },
   "563A": {
    "fr": "Assistantes maternelles, gardiennes d'enfants, familles d'accueil",
-   "en": null
+   "en": "Childminders, nannies and family foster carers"
   },
   "563B": {
    "fr": "Aides à domicile, aides ménagères, travailleuses familiales",
-   "en": null
+   "en": "Home care aides and domestic helpers"
   },
   "563C": {
    "fr": "Employés de maison et personnels de ménage chez des particuliers",
-   "en": null
+   "en": "Domestic staff and cleaners in private households"
   },
   "564A": {
    "fr": "Concierges, gardiens d'immeubles",
-   "en": null
+   "en": "Concierges and building caretakers"
   },
   "564B": {
    "fr": "Employés des services divers",
-   "en": null
+   "en": "Miscellaneous service employees"
   },
   "6": {
    "fr": "Ouvriers",
-   "en": null
+   "en": "Manual workers"
   },
   "62": {
    "fr": "Ouvriers qualifiés de type industriel",
-   "en": null
+   "en": "Skilled industrial manual workers"
   },
   "621A": {
    "fr": "Chefs d'équipe du gros oeuvre et des travaux publics",
-   "en": null
+   "en": "Team leaders in building and civil engineering"
   },
   "621B": {
    "fr": "Ouvriers qualifiés du travail du béton",
-   "en": null
+   "en": "Skilled concrete workers"
   },
   "621C": {
    "fr": "Conducteurs qualifiés d'engins de chantiers du bâtiment et des travaux publics",
-   "en": null
+   "en": "Skilled operators of building and civil engineering machinery"
   },
   "621D": {
    "fr": "Ouvriers des travaux publics en installations électriques et de télécommunications",
-   "en": null
+   "en": "Skilled workers in public works electrical and telecommunications installation"
   },
   "621E": {
    "fr": "Autres ouvriers qualifiés des travaux publics",
-   "en": null
+   "en": "Other skilled public works workers"
   },
   "621F": {
    "fr": "Ouvriers qualifiés des travaux publics (salariés de l'Etat et des collectivités locales)",
-   "en": null
+   "en": "Skilled public works workers (state and local government employees)"
   },
   "621G": {
    "fr": "Mineurs de fond qualifiés et autres ouvriers qualifiés des industries d'extraction (carrières, pétrole, gaz...)",
-   "en": null
+   "en": "Skilled miners and other skilled workers in extraction industries"
   },
   "622A": {
    "fr": "Opérateurs qualifiés sur machines automatiques en production électrique ou électronique",
-   "en": null
+   "en": "Skilled operators on automated electrical and electronic production machinery"
   },
   "622C": {
    "fr": "Monteurs câbleurs qualifiés en électricité",
-   "en": null
+   "en": "Skilled electrical assembly and wiring technicians"
   },
   "622D": {
    "fr": "Câbleurs qualifiés en électronique (prototype, unité, petite série)",
-   "en": null
+   "en": "Skilled electronics assemblers and cable technicians"
   },
   "622E": {
    "fr": "Autres monteurs câbleurs en électronique",
-   "en": null
+   "en": "Other electronics assemblers and cable technicians"
   },
   "622F": {
    "fr": "Bobiniers qualifiés",
-   "en": null
+   "en": "Skilled coil winders"
   },
   "622G": {
    "fr": "Plateformistes, contrôleurs qualifiés de matériel électrique ou électronique",
-   "en": null
+   "en": "Skilled electrical and electronic equipment assemblers and inspectors"
   },
   "623A": {
    "fr": "Chaudronniers-tôliers industriels, opérateurs qualifiés du travail en forge, conducteurs qualifiés d'équipement de formage, traceurs qualifiés",
-   "en": null
+   "en": "Industrial sheet metal workers, skilled forging operators, skilled forming equipment operators, skilled layout technicians"
   },
   "623B": {
    "fr": "Tuyauteurs industriels qualifiés",
-   "en": null
+   "en": "Skilled industrial pipe fitters"
   },
   "623D": {
    "fr": "Opérateurs qualifiés sur machine de soudage",
-   "en": null
+   "en": "Skilled welding machine operators"
   },
   "623E": {
    "fr": "Soudeurs manuels",
-   "en": null
+   "en": "Manual welders"
   },
   "623F": {
    "fr": "Opérateurs qualifiés d'usinage des métaux travaillant à l'unité ou en petite série, moulistes qualifiés",
-   "en": null
+   "en": "Skilled metal machinists and skilled tool makers"
   },
   "623G": {
    "fr": "Opérateurs qualifiés d'usinage des métaux sur autres machines (sauf moulistes)",
-   "en": null
+   "en": "Skilled metal machine operators"
   },
   "624B": {
    "fr": "Monteurs, metteurs au point très qualifiés d'ensembles mécaniques travaillant à l'unité ou en petite série",
-   "en": null
+   "en": "Highly skilled mechanical assembly and adjusters for unit or small batch production"
   },
   "624C": {
    "fr": "Monteurs qualifiés d'ensembles mécaniques travaillant en moyenne ou en grande série",
-   "en": null
+   "en": "Skilled mechanical assembly workers for medium or large batch production"
   },
   "624D": {
    "fr": "Monteurs qualifiés en structures métalliques",
-   "en": null
+   "en": "Skilled metal structure assemblers"
   },
   "624E": {
    "fr": "Ouvriers qualifiés de contrôle et d'essais en mécanique",
-   "en": null
+   "en": "Skilled mechanical inspection and testing workers"
   },
   "624F": {
    "fr": "Ouvriers qualifiés des traitements thermiques et de surface sur métaux",
-   "en": null
+   "en": "Skilled workers in heat treatment and metal surface finishing"
   },
   "624G": {
    "fr": "Autres mécaniciens ou ajusteurs qualifiés (ou spécialité non reconnue)",
-   "en": null
+   "en": "Other skilled mechanics or fitters"
   },
   "625A": {
    "fr": "Pilotes d'installation lourde des industries de transformation : agroalimentaire, chimie, plasturgie, énergie",
-   "en": null
+   "en": "Plant operators in food processing, chemicals, plastics and energy industries"
   },
   "625B": {
    "fr": "Ouvriers qualifiés et agents qualifiés de laboratoire : agroalimentaire, chimie, biologie, pharmacie",
-   "en": null
+   "en": "Skilled laboratory workers in food, chemistry, biology and pharmaceuticals"
   },
   "625C": {
    "fr": "Autres opérateurs et ouvriers qualifiés de la chimie (y.c. pharmacie) et de la plasturgie",
-   "en": null
+   "en": "Other skilled operators and workers in chemistry, pharmaceuticals and plastics"
   },
   "625D": {
    "fr": "Opérateurs de la transformation des viandes",
-   "en": null
+   "en": "Meat processing operators"
   },
   "625F": {
    "fr": "Autres opérateurs travaillant sur installations ou machines : industrie agroalimentaire (hors transformation des viandes)",
-   "en": null
+   "en": "Food processing machine and plant operators (excluding meat)"
   },
   "625G": {
    "fr": "Autres ouvriers de production qualifiés ne travaillant pas sur machine : industrie agroalimentaire (hors transformation des viandes)",
-   "en": null
+   "en": "Skilled food production workers not on machines (excluding meat)"
   },
   "625H": {
    "fr": "Ouvriers qualifiés des autres industries (eau, gaz, énergie, chauffage)",
-   "en": null
+   "en": "Skilled workers in other industries (water, gas, energy, heating)"
   },
   "626A": {
    "fr": "Pilotes d'installation lourde des industries de transformation : métallurgie, production verrière, matériaux de construction",
-   "en": null
+   "en": "Heavy plant operators in metal, glass and building materials production"
   },
   "626B": {
    "fr": "Autres opérateurs et ouvriers qualifiés : métallurgie, production verrière, matériaux de construction",
-   "en": null
+   "en": "Other skilled operators and workers in metal, glass and building materials"
   },
   "626C": {
    "fr": "Opérateurs et ouvriers qualifiés des industries lourdes du bois et de la fabrication du papier-carton",
-   "en": null
+   "en": "Skilled operators and workers in heavy wood and paper-cardboard production"
   },
   "627A": {
    "fr": "Opérateurs qualifiés du textile et de la mégisserie",
-   "en": null
+   "en": "Skilled textile and leather dressing operators"
   },
   "627B": {
    "fr": "Ouvriers qualifiés de la coupe des vêtements et de l'habillement, autres opérateurs de confection qualifiés",
-   "en": null
+   "en": "Skilled clothing cutters and other qualified sewing workers"
   },
   "627C": {
    "fr": "Ouvriers qualifiés du travail industriel du cuir",
-   "en": null
+   "en": "Skilled industrial leather workers"
   },
   "627D": {
    "fr": "Ouvriers qualifiés de scierie, de la menuiserie industrielle et de l'ameublement",
-   "en": null
+   "en": "Skilled sawmill, industrial joinery and furniture workers"
   },
   "627E": {
    "fr": "Ouvriers de la photogravure et des laboratoires photographiques et cinématographiques",
-   "en": null
+   "en": "Photogravure and photographic and cinematographic laboratory workers"
   },
   "627F": {
    "fr": "Ouvriers de la composition et de l'impression, ouvriers qualifiés de la brochure, de la reliure et du façonnage du papier-carton",
-   "en": null
+   "en": "Composition and printing workers, skilled booklet binding and paper-cardboard finishing workers"
   },
   "628A": {
    "fr": "Mécaniciens qualifiés de maintenance, entretien : équipements industriels",
-   "en": null
+   "en": "Skilled maintenance mechanics for industrial equipment"
   },
   "628B": {
    "fr": "Electromécaniciens, électriciens qualifiés d'entretien : équipements industriels",
-   "en": null
+   "en": "Skilled electromechanics and electricians for industrial equipment maintenance"
   },
   "628C": {
    "fr": "Régleurs qualifiés d'équipements de fabrication (travail des métaux, mécanique)",
-   "en": null
+   "en": "Skilled metal work and mechanical equipment setup workers"
   },
   "628D": {
    "fr": "Régleurs qualifiés d'équipements de fabrication (hors travail des métaux et mécanique)",
-   "en": null
+   "en": "Skilled equipment setup workers (excluding metal work and mechanics)"
   },
   "628E": {
    "fr": "Ouvriers qualifiés de l'assainissement et du traitement des déchets",
-   "en": null
+   "en": "Skilled sanitation and waste treatment workers"
   },
   "628F": {
    "fr": "Agents qualifiés de laboratoire (sauf chimie, santé)",
-   "en": null
+   "en": "Skilled laboratory technicians (excluding chemistry and health)"
   },
   "628G": {
    "fr": "Ouvriers qualifiés divers de type industriel",
-   "en": null
+   "en": "Other skilled industrial workers"
   },
   "63": {
    "fr": "Ouvriers qualifiés de type artisanal",
-   "en": null
+   "en": "Skilled craft workers"
   },
   "631A": {
    "fr": "Jardiniers",
-   "en": null
+   "en": "Gardeners"
   },
   "632A": {
    "fr": "Maçons qualifiés",
-   "en": null
+   "en": "Skilled masons"
   },
   "632B": {
    "fr": "Ouvriers qualifiés du travail de la pierre",
-   "en": null
+   "en": "Skilled stone workers"
   },
   "632C": {
    "fr": "Charpentiers en bois qualifiés",
-   "en": null
+   "en": "Skilled timber carpenters"
   },
   "632D": {
    "fr": "Menuisiers qualifiés du bâtiment",
-   "en": null
+   "en": "Skilled building joiners"
   },
   "632E": {
    "fr": "Couvreurs qualifiés",
-   "en": null
+   "en": "Skilled roofers"
   },
   "632F": {
    "fr": "Plombiers et chauffagistes qualifiés",
-   "en": null
+   "en": "Skilled plumbers and heating engineers"
   },
   "632G": {
    "fr": "Peintres et ouvriers qualifiés de pose de revêtements sur supports verticaux",
-   "en": null
+   "en": "Skilled painters and wall covering installers"
   },
   "632H": {
    "fr": "Soliers moquetteurs et ouvriers qualifiés de pose de revêtements souples sur supports horizontaux",
-   "en": null
+   "en": "Skilled carpet and soft floor covering installers"
   },
   "632J": {
    "fr": "Monteurs qualifiés en agencement, isolation",
-   "en": null
+   "en": "Skilled interior fit-out and insulation workers"
   },
   "632K": {
    "fr": "Ouvriers qualifiés d'entretien général des bâtiments",
-   "en": null
+   "en": "Skilled building maintenance workers"
   },
   "633A": {
    "fr": "Electriciens qualifiés de type artisanal (y.c. bâtiment)",
-   "en": null
+   "en": "Skilled craft electricians (including building)"
   },
   "633B": {
    "fr": "Dépanneurs qualifiés en radiotélévision, électroménager, matériel électronique (salariés)",
-   "en": null
+   "en": "Skilled radio, television and domestic appliance repair technicians (employees)"
   },
   "633C": {
    "fr": "Electriciens, électroniciens qualifiés en maintenance entretien, réparation : automobile",
-   "en": null
+   "en": "Skilled automotive electricians and electronics maintenance workers"
   },
   "633D": {
    "fr": "Electriciens, électroniciens qualifiés en maintenance, entretien : équipements non industriels",
-   "en": null
+   "en": "Skilled electricians and electronics maintenance workers for non-industrial equipment"
   },
   "634A": {
    "fr": "Carrossiers d'automobiles qualifiés",
-   "en": null
+   "en": "Skilled car body repair workers"
   },
   "634B": {
    "fr": "Métalliers, serruriers qualifiés",
-   "en": null
+   "en": "Skilled locksmiths and metalworkers"
   },
   "634C": {
    "fr": "Mécaniciens qualifiés en maintenance, entretien, réparation : automobile",
-   "en": null
+   "en": "Skilled automotive maintenance and repair mechanics"
   },
   "634D": {
    "fr": "Mécaniciens qualifiés de maintenance, entretien : équipements non industriels",
-   "en": null
+   "en": "Skilled maintenance mechanics for non-industrial equipment"
   },
   "635A": {
    "fr": "Tailleurs et couturières qualifiés, ouvriers qualifiés du travail des étoffes (sauf fabrication de vêtements), ouvriers qualifiés de type artisanal du travail du cuir",
-   "en": null
+   "en": "Skilled tailors, dressmakers and textile workers (excluding garment manufacturing), skilled craft workers in leather work"
   },
   "636A": {
    "fr": "Bouchers (sauf industrie de la viande)",
-   "en": null
+   "en": "Butchers (excluding meat industry)"
   },
   "636B": {
    "fr": "Charcutiers (sauf industrie de la viande)",
-   "en": null
+   "en": "Delicatessen workers (excluding meat industry)"
   },
   "636C": {
    "fr": "Boulangers, pâtissiers (sauf activité industrielle)",
-   "en": null
+   "en": "Bakers and pastry chefs (excluding industrial production)"
   },
   "636D": {
    "fr": "Cuisiniers et commis de cuisine",
-   "en": null
+   "en": "Cooks and kitchen assistants"
   },
   "637A": {
    "fr": "Modeleurs (sauf modeleurs de métal), mouleurs-noyauteurs à la main, ouvriers qualifiés du travail du verre ou de la céramique à la main",
-   "en": null
+   "en": "Sculptors and model makers (excluding metal), hand moulders and core makers, skilled glass and ceramic workers"
   },
   "637B": {
    "fr": "Ouvriers d'art",
-   "en": null
+   "en": "Craft artists"
   },
   "637C": {
    "fr": "Ouvriers et techniciens des spectacles vivants et audiovisuels",
-   "en": null
+   "en": "Live performance and audiovisual technicians and workers"
   },
   "637D": {
    "fr": "Ouvriers qualifiés divers de type artisanal",
-   "en": null
+   "en": "Other skilled craft workers"
   },
   "64": {
    "fr": "Chauffeurs",
-   "en": null
+   "en": "Drivers"
   },
   "641A": {
    "fr": "Conducteurs routiers et grands routiers",
-   "en": null
+   "en": "Road haulage and long-distance drivers"
   },
   "641B": {
    "fr": "Conducteurs de véhicule routier de transport en commun",
-   "en": null
+   "en": "Bus and coach drivers"
   },
   "642A": {
    "fr": "Conducteurs de taxi",
-   "en": null
+   "en": "Taxi drivers"
   },
   "642B": {
    "fr": "Conducteurs de voiture particulière",
-   "en": null
+   "en": "Private hire car drivers"
   },
   "643A": {
    "fr": "Conducteurs livreurs, coursiers",
-   "en": null
+   "en": "Delivery drivers and couriers"
   },
   "644A": {
    "fr": "Conducteurs de véhicule de ramassage des ordures ménagères",
-   "en": null
+   "en": "Refuse and waste collection drivers"
   },
   "65": {
    "fr": "Ouvriers qualifiés de la manutention, du magasinage et du transport",
-   "en": null
+   "en": "Skilled materials handling, storage and transport workers"
   },
   "651A": {
    "fr": "Conducteurs d'engin lourd de levage",
-   "en": null
+   "en": "Heavy lifting equipment operators"
   },
   "651B": {
    "fr": "Conducteurs d'engin lourd de manoeuvre",
-   "en": null
+   "en": "Heavy equipment operators"
   },
   "652A": {
    "fr": "Ouvriers qualifiés de la manutention, conducteurs de chariots élévateurs, caristes",
-   "en": null
+   "en": "Skilled materials handlers, forklift and warehouse equipment operators"
   },
   "652B": {
    "fr": "Dockers",
-   "en": null
+   "en": "Dockers"
   },
   "653A": {
    "fr": "Magasiniers qualifiés",
-   "en": null
+   "en": "Skilled warehouse workers"
   },
   "654B": {
    "fr": "Conducteurs qualifiés d'engins de transport guidés (sauf remontées mécaniques)",
-   "en": null
+   "en": "Skilled guided transport system operators (excluding cable cars)"
   },
   "654C": {
    "fr": "Conducteurs qualifiés de systèmes de remontées mécaniques",
-   "en": null
+   "en": "Skilled ski lift and cable car operators"
   },
   "655A": {
    "fr": "Autres agents et ouvriers qualifiés (sédentaires) des services d'exploitation des transports",
-   "en": null
+   "en": "Other skilled transport operations agents and workers (sedentary)"
   },
   "656B": {
    "fr": "Matelots de la marine marchande",
-   "en": null
+   "en": "Merchant marine sailors"
   },
   "656C": {
    "fr": "Capitaines et matelots timoniers de la navigation fluviale",
-   "en": null
+   "en": "Skippers and helmsmen of inland navigation"
   },
   "67": {
    "fr": "Ouvriers non qualifiés de type industriel",
-   "en": null
+   "en": "Unskilled industrial workers"
   },
   "671A": {
    "fr": "Ouvriers non qualifiés des travaux publics de l'Etat et des collectivités locales",
-   "en": null
+   "en": "Unskilled public works and local authority construction workers"
   },
   "671C": {
    "fr": "Ouvriers non qualifiés des travaux publics et du travail du béton",
-   "en": null
+   "en": "Unskilled public works and concrete workers"
   },
   "671D": {
    "fr": "Aides-mineurs, ouvriers non qualifiés de l'extraction",
-   "en": null
+   "en": "Mining assistants and unskilled extraction workers"
   },
   "672A": {
    "fr": "Ouvriers non qualifiés de l'électricité et de l'électronique",
-   "en": null
+   "en": "Unskilled electrical and electronics workers"
   },
   "673A": {
    "fr": "Ouvriers de production non qualifiés travaillant par enlèvement de métal",
-   "en": null
+   "en": "Unskilled metal removal production workers"
   },
   "673B": {
    "fr": "Ouvriers de production non qualifiés travaillant par formage de métal",
-   "en": null
+   "en": "Unskilled metal forming production workers"
   },
   "673C": {
    "fr": "Ouvriers non qualifiés de montage, contrôle en mécanique et travail des métaux",
-   "en": null
+   "en": "Unskilled assembly, inspection and metalworking workers"
   },
   "674A": {
    "fr": "Ouvriers de production non qualifiés : chimie, pharmacie, plasturgie",
-   "en": null
+   "en": "Unskilled production workers: chemicals, pharmaceuticals and plastics"
   },
   "674B": {
    "fr": "Ouvriers de production non qualifiés de la transformation des viandes",
-   "en": null
+   "en": "Unskilled meat processing workers"
   },
   "674C": {
    "fr": "Autres ouvriers de production non qualifiés : industrie agroalimentaire",
-   "en": null
+   "en": "Other unskilled production workers: food industry"
   },
   "674D": {
    "fr": "Ouvriers de production non qualifiés : métallurgie, production verrière, céramique, matériaux de construction",
-   "en": null
+   "en": "Unskilled production workers: metallurgy, glass and ceramics, construction materials"
   },
   "674E": {
    "fr": "Ouvriers de production non qualifiés : industrie lourde du bois, fabrication des papiers et cartons",
-   "en": null
+   "en": "Unskilled production workers: heavy timber, paper and cardboard manufacturing"
   },
   "675A": {
    "fr": "Ouvriers de production non qualifiés du textile et de la confection, de la tannerie-mégisserie et du travail du cuir",
-   "en": null
+   "en": "Unskilled production workers in textiles, clothing, tanning and leather work"
   },
   "675B": {
    "fr": "Ouvriers de production non qualifiés du travail du bois et de l'ameublement",
-   "en": null
+   "en": "Unskilled production workers in woodwork and furniture"
   },
   "675C": {
    "fr": "Ouvriers de production non qualifiés de l'imprimerie, presse, édition",
-   "en": null
+   "en": "Unskilled production workers in printing, press and publishing"
   },
   "676A": {
    "fr": "Manutentionnaires non qualifiés",
-   "en": null
+   "en": "Unskilled materials handlers"
   },
   "676B": {
    "fr": "Déménageurs (hors chauffeurs-déménageurs), non qualifiés",
-   "en": null
+   "en": "Unskilled removals workers"
   },
   "676C": {
    "fr": "Ouvriers du tri, de l'emballage, de l'expédition, non qualifiés",
-   "en": null
+   "en": "Unskilled workers in sorting, packing and dispatch"
   },
   "676D": {
    "fr": "Agents non qualifiés des services d'exploitation des transports",
-   "en": null
+   "en": "Unskilled transport operations workers"
   },
   "676E": {
    "fr": "Ouvriers non qualifiés divers de type industriel",
-   "en": null
+   "en": "Unskilled miscellaneous industrial workers"
   },
   "68": {
    "fr": "Ouvriers non qualifiés de type artisanal",
-   "en": null
+   "en": "Unskilled craft workers"
   },
   "681A": {
    "fr": "Ouvriers non qualifiés du gros oeuvre du bâtiment",
-   "en": null
+   "en": "Unskilled structural construction workers"
   },
   "681B": {
    "fr": "Ouvriers non qualifiés du second oeuvre du bâtiment",
-   "en": null
+   "en": "Unskilled finishing construction workers"
   },
   "682A": {
    "fr": "Métalliers, serruriers, réparateurs en mécanique non qualifiés",
-   "en": null
+   "en": "Unskilled metalworkers, locksmiths and mechanical repairers"
   },
   "683A": {
    "fr": "Apprentis boulangers, bouchers, charcutiers",
-   "en": null
+   "en": "Trainee bakers, butchers and charcuterie workers"
   },
   "684A": {
    "fr": "Nettoyeurs",
-   "en": null
+   "en": "Cleaners"
   },
   "684B": {
    "fr": "Ouvriers non qualifiés de l'assainissement et du traitement des déchets",
-   "en": null
+   "en": "Unskilled sanitation and waste treatment workers"
   },
   "685A": {
    "fr": "Ouvriers non qualifiés divers de type artisanal",
-   "en": null
+   "en": "Unskilled miscellaneous craft workers"
   },
   "69": {
    "fr": "Ouvriers agricoles et assimilés",
-   "en": null
+   "en": "Agricultural workers and related occupations"
   },
   "691A": {
    "fr": "Conducteurs d'engin agricole ou forestier",
-   "en": null
+   "en": "Agricultural and forestry machinery operators"
   },
   "691B": {
    "fr": "Ouvriers de l'élevage",
-   "en": null
+   "en": "Livestock workers"
   },
   "691C": {
    "fr": "Ouvriers du maraîchage ou de l'horticulture",
-   "en": null
+   "en": "Market gardening and horticulture workers"
   },
   "691D": {
    "fr": "Ouvriers de la viticulture ou de l'arboriculture fruitière",
-   "en": null
+   "en": "Viticulture and fruit tree workers"
   },
   "691E": {
    "fr": "Ouvriers agricoles sans spécialisation particulière",
-   "en": null
+   "en": "Unskilled agricultural workers"
   },
   "691F": {
    "fr": "Ouvriers de l'exploitation forestière ou de la sylviculture",
-   "en": null
+   "en": "Forestry and silviculture workers"
   },
   "692A": {
    "fr": "Marins-pêcheurs et ouvriers de l'aquaculture",
-   "en": null
+   "en": "Fishers and aquaculture workers"
   }
  }
 }

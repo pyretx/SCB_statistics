@@ -55,7 +55,7 @@ T = {
         "raw": "Tableau de données",
         "no_data": "Pas de données pour cette sélection.",
         "err_api": "L'API INSEE Melodi est injoignable pour le moment — réessayez dans un instant.",
-        "note_v1": "À venir : vues nominales (IPC), comparaisons régionales, libellés anglais des professions.",
+        "note_v1": "",
         "tab_explorer": "🔎 Explorateur",
         "tab_dist": "📊 Distribution des salaires",
         "tab_trend": "📈 Évolution",
@@ -83,6 +83,19 @@ T = {
         "trend_range": "Période",
         "no_dist": "Distribution indisponible pour cette sélection.",
         "groups_private_only": "Les séries par groupe ne sont publiées que pour le secteur privé.",
+        "unit_label": "Unité",
+        "unit_real": "Réel (€ constants)",
+        "unit_nominal": "Nominal (€ courants)",
+        "y_nominal": "Salaire net mensuel (€ courants)",
+        "trend_caption_nom": "Euros courants — valeurs de l'époque, non corrigées de l'inflation (IPC INSEE).",
+        "no_cpi": "ℹ️ IPC indisponible — affichage en euros constants.",
+        "tab_regions": "🗺️ Régions",
+        "reg_title": "Salaire moyen par région",
+        "reg_caption": "Secteur privé uniquement (données locales BTS) · Année {year}",
+        "reg_group": "Groupe socioprofessionnel",
+        "reg_france": "France entière",
+        "grp_1t3": "Cadres et indépendants salariés (groupes 1–3)",
+        "reg_axis": "Salaire net mensuel moyen (€ EQTP)",
     },
     "EN": {
         "title": "Salary Explorer — France",
@@ -121,7 +134,7 @@ T = {
         "raw": "Raw data table",
         "no_data": "No data for this selection.",
         "err_api": "The INSEE Melodi API is unreachable right now — try again in a moment.",
-        "note_v1": "Coming next: nominal (CPI) views, regional comparisons, English occupation labels.",
+        "note_v1": "",
         "tab_explorer": "🔎 Explorer",
         "tab_dist": "📊 Wage distribution",
         "tab_trend": "📈 Trend",
@@ -149,6 +162,19 @@ T = {
         "trend_range": "Period",
         "no_dist": "No distribution available for this selection.",
         "groups_private_only": "Group series are only published for the private sector.",
+        "unit_label": "Unit",
+        "unit_real": "Real (constant €)",
+        "unit_nominal": "Nominal (current €)",
+        "y_nominal": "Net monthly salary (current €)",
+        "trend_caption_nom": "Current euros — values of the day, not inflation-adjusted (INSEE CPI).",
+        "no_cpi": "ℹ️ CPI unavailable — showing constant euros.",
+        "tab_regions": "🗺️ Regions",
+        "reg_title": "Mean salary by région",
+        "reg_caption": "Private sector only (BTS local data) · Year {year}",
+        "reg_group": "Socio-professional group",
+        "reg_france": "Whole of France",
+        "grp_1t3": "Managers, professionals & self-employed (groups 1–3)",
+        "reg_axis": "Mean net monthly salary (€ FTE)",
     },
 }
 
@@ -297,8 +323,8 @@ try:
 except Exception:
     sl, sl_error = None, True
 
-tab_exp, tab_dist, tab_trend = st.tabs(
-    [t["tab_explorer"], t["tab_dist"], t["tab_trend"]])
+tab_exp, tab_dist, tab_trend, tab_reg = st.tabs(
+    [t["tab_explorer"], t["tab_dist"], t["tab_trend"], t["tab_regions"]])
 
 # ── Tab 1: occupation explorer ────────────────────────────────────────────────
 with tab_exp:
@@ -462,13 +488,17 @@ with tab_trend:
         has_groups = (sl["pcs"] != "_T").any()
         if has_groups:
             modes.append(t["trend_groups"])
-        c1, c2, c3 = st.columns([2, 2, 1])
+        c1, c2, c3, c4 = st.columns([2, 2, 1, 2])
         with c1:
             tr_mode = st.radio(t["trend_mode"], modes, key="fr_tr_mode")
         with c2:
             tr_sex = _sex_radio("sex_label", "fr_tr_sex")
         with c3:
             tr_wk = _wk_radio("fr_tr_wk")
+        with c4:
+            tr_unit = st.radio(t["unit_label"],
+                               [t["unit_real"], t["unit_nominal"]],
+                               key="fr_tr_unit")
         if not has_groups:
             st.caption(t["groups_private_only"])
 
@@ -495,25 +525,100 @@ with tab_trend:
                                       value=(yrs_all[0], yrs_all[-1]),
                                       key="fr_tr_range")
             base_yr = yrs_all[-1]
+
+            # Nominal view: constant euros are expressed in latest-year prices,
+            # so nominal(y) = const(y) × CPI(y)/CPI(latest). Needs the IPC.
+            nominal, cpi, cpi_base = tr_unit == t["unit_nominal"], {}, None
+            if nominal:
+                try:
+                    cpi = fd.fetch_cpi_annual()
+                except Exception:
+                    cpi = {}
+                cpi_base = cpi.get(base_yr)
+                if not cpi_base:
+                    nominal = False
+                    st.caption(t["no_cpi"])
+
             BLUES = ["#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5",
                      "#08519c", "#083b7a", "#0a2f63", "#081d58"]
             fig = go.Figure()
             for i, (name, sdf) in enumerate(series):
                 sdf = sdf[(sdf["year"] >= y0) & (sdf["year"] <= y1)]
                 sdf = sdf.dropna(subset=["salary_const_eur"]).sort_values("year")
+                if nominal:
+                    sdf = sdf[sdf["year"].isin(cpi)]
                 if sdf.empty:
                     continue
+                ys = (sdf["salary_const_eur"] if not nominal else
+                      [v * cpi[y] / cpi_base
+                       for y, v in zip(sdf["year"], sdf["salary_const_eur"])])
                 color = ("#e15759" if name in ("P50",)
                          else BLUES[min(i, len(BLUES) - 1)])
                 fig.add_trace(go.Scatter(
-                    x=sdf["year"], y=sdf["salary_const_eur"],
+                    x=sdf["year"], y=ys,
                     mode="lines", name=name, line=dict(color=color, width=2)))
             fig.update_layout(
                 height=420, xaxis_title="",
-                yaxis_title=t["y_const"].format(base=base_yr),
+                yaxis_title=(t["y_nominal"] if nominal
+                             else t["y_const"].format(base=base_yr)),
                 margin=dict(t=30, b=40), hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
             st.plotly_chart(fig, use_container_width=True, key="fr_tr_chart")
-            st.caption(t["trend_caption"])
+            st.caption(t["trend_caption_nom"] if nominal else t["trend_caption"])
 
-st.caption(t["note_v1"])
+# ── Tab 4: mean salary by région (private sector, BTS local data) ─────────────
+with tab_reg:
+    try:
+        reg = fd.fetch_regional_salaries()
+        reg_error = False
+    except Exception:
+        reg_error = True
+    if reg_error:
+        st.error(t["err_api"])
+    else:
+        r_year = reg["year"].max()
+        st.subheader(t["reg_title"])
+        st.caption(t["reg_caption"].format(year=r_year))
+
+        grp_labels = {
+            "_T":  t["sex_total"] if lang == "EN" else "Ensemble",
+            "1T3": t["grp_1t3"],
+            "4":   fd.pcs_name("4", lang),
+            "5":   fd.pcs_name("5", lang),
+            "6":   fd.pcs_name("6", lang),
+        }
+        c1, c2 = st.columns([2, 2])
+        with c1:
+            g_label = st.selectbox(t["reg_group"], list(grp_labels.values()),
+                                   key="fr_reg_pcs")
+            g_code_r = [k for k, v in grp_labels.items() if v == g_label][0]
+        with c2:
+            r_sex = _sex_radio("sex_label", "fr_reg_sex")
+
+        sub = reg[(reg["year"] == r_year) & (reg["sex"] == r_sex)
+                  & (reg["pcs_group"] == g_code_r)]
+        sub = sub.dropna(subset=["mean_salary"])
+        if sub.empty:
+            st.info(t["no_data"])
+        else:
+            rows = [(t["reg_france"] if r == "FR"
+                     else fd.REGIONS_FR.get(r, r), v, r == "FR")
+                    for r, v in zip(sub["region"], sub["mean_salary"])]
+            rows.sort(key=lambda x: x[1])
+            fig = go.Figure(go.Bar(
+                x=[v for _, v, _ in rows], y=[n for n, _, _ in rows],
+                orientation="h",
+                marker_color=["#e15759" if fr else "#4e79a7"
+                              for _, _, fr in rows]))
+            fig.update_layout(height=110 + 30 * len(rows),
+                              xaxis_title=t["reg_axis"],
+                              margin=dict(t=20, b=40))
+            st.plotly_chart(fig, use_container_width=True, key="fr_reg_chart")
+            with st.expander(t["raw"]):
+                tbl = pd.DataFrame(
+                    [{t["col_name"]: n, t["col_mean"]: round(v)}
+                     for n, v, _ in reversed(rows)])
+                st.dataframe(tbl, use_container_width=True, hide_index=True)
+
+if t["note_v1"]:
+    st.caption(t["note_v1"])
