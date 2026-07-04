@@ -113,32 +113,33 @@ st.markdown("""
      stretch ("page within a page") on big monitors. This <style> is injected by
      the landing script only, so it never touches Sweden/France. */
   [data-testid="stMainBlockContainer"] { max-width: 1180px; margin: 0 auto; }
-  /* Country grid + cards — one HTML block, so hover is scoped to the CARD only
-     (the old rule targeted a shared Streamlit class and lifted the whole page). */
-  .se-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-  .se-country-card {
-    display: flex; flex-direction: column;
-    background: #fff; border: 1px solid #E7E9ED; border-radius: 16px; padding: 24px;
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-  }
-  .se-country-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 18px 40px -24px rgba(16,21,31,.30);
-    border-color: #D3D8DF;
-  }
+  /* Country cards are native st.container(border, key="cc_…") so the CTA can be
+     a real st.page_link (client-side nav that keeps the session/login) instead
+     of an <a href> that reloads the app. Streamlit tags keyed containers with
+     .st-key-cc_… — style that to reproduce the card look + scoped hover. */
+  [class*="st-key-cc_"] { background:#fff; border:1px solid #E7E9ED !important;
+     border-radius:16px !important; padding:22px 22px 18px !important; height:100%;
+     transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+  [class*="st-key-cc_"]:hover { transform: translateY(-3px);
+     box-shadow: 0 18px 40px -24px rgba(16,21,31,.30); border-color:#D3D8DF !important; }
+  /* stretch each column so all cards share the tallest one's height */
+  [data-testid="stColumn"]:has([class*="st-key-cc_"]) { align-self: stretch; }
+  [class*="st-key-cc_"] [data-testid="stVerticalBlock"] { height:100%; gap:0; }
+  /* The page-link CTA, styled as the blue button and pinned to the card foot. */
+  [class*="st-key-cc_"] [data-testid="stPageLink"] { margin-top:auto; padding-top:16px; }
+  [class*="st-key-cc_"] [data-testid="stPageLink"] a { background:#0A63A6; border-radius:10px;
+     padding:10px 14px; justify-content:center; box-shadow:0 2px 8px rgba(10,99,166,.24);
+     transition: background .15s ease; }
+  [class*="st-key-cc_"] [data-testid="stPageLink"] a:hover { background:#0B72C2; }
+  [class*="st-key-cc_"] [data-testid="stPageLink"] a p,
+  [class*="st-key-cc_"] [data-testid="stPageLink"] a span { color:#fff !important;
+     font-weight:600; font-size:14px; }
   /* Fixed-size flag swatch so it never stretches with the card width. */
   .se-flag { width: 46px; height: 33px; border-radius: 7px; flex: none; overflow: hidden;
              border: 1px solid rgba(0,0,0,.08); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  /* color/text-decoration need !important to beat Streamlit's global <a> link
-     styling (linkColor is the same blue, so the text would vanish otherwise). */
-  .se-cta { display:flex; align-items:center; justify-content:center; gap:7px;
-            background:#0A63A6; color:#fff !important; font-weight:600; font-size:14px;
-            padding:11px; border-radius:10px; text-decoration:none !important;
-            white-space:nowrap; box-shadow:0 2px 8px rgba(10,99,166,.24); }
-  .se-cta:hover { background:#0B72C2; color:#fff !important; }
   .se-cta-off { display:flex; align-items:center; justify-content:center; background:#F4F5F7;
-                color:#8A919D; font-weight:600; font-size:13px; padding:11px; border-radius:10px;
-                border:1px solid #E7E9ED; white-space:nowrap; }
+                color:#8A919D; font-weight:600; font-size:13px; padding:10px; border-radius:10px;
+                border:1px solid #E7E9ED; white-space:nowrap; margin-top:16px; }
   /* ── Auth dialog: match-height blue panel + full-width segmented toggle ── */
   [data-testid="stDialog"] div[role="dialog"]{ max-width: 720px; }
   [data-testid="stDialog"] [data-testid="stDialogContent"]{ padding-top: .25rem; }
@@ -271,17 +272,47 @@ with h_left:
     </div>
     """, unsafe_allow_html=True)
 with h_right:
-    hr_signin, hr_signup = st.columns(2)
-    with hr_signin:
-        if st.button("Sign in", use_container_width=True, key="hdr_signin"):
-            st.session_state["_auth_mode"] = "Sign in"
-            st.session_state["_show_auth"] = True
-            st.rerun()
-    with hr_signup:
-        if st.button("Create account", type="primary", use_container_width=True, key="hdr_signup"):
-            st.session_state["_auth_mode"] = "Create account"
-            st.session_state["_show_auth"] = True
-            st.rerun()
+    _hu = st.session_state.get("auth_user")
+    if _hu:
+        # Logged in: show who you are (name + role + avatar initials) instead of
+        # the sign-in buttons, with a Log out control.
+        _email = _hu.get("email", "")
+        _nm = _email.split("@")[0] if _email else "Account"
+        _ini = ("".join(w[0] for w in _nm.replace(".", " ").replace("_", " ").split()[:2])
+                or _nm[:1]).upper()
+        _role = _hu.get("role", "standard")
+        _rc = "#B8863B" if _role in ("admin", "master") else BLUE  # gold-ish for admins
+        _who, _out = st.columns([2.4, 1], vertical_alignment="center")
+        with _who:
+            st.markdown(f"""
+            <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;">
+              <div style="text-align:right;line-height:1.16;min-width:0;">
+                <div style="font-weight:600;font-size:13.5px;color:#0C1119;overflow:hidden;
+                            text-overflow:ellipsis;">{_nm}</div>
+                <div class="se-mono" style="font-size:10px;letter-spacing:.10em;color:{_rc};
+                     text-transform:uppercase;font-weight:600;">{_role}</div>
+              </div>
+              <div style="width:36px;height:36px;border-radius:50%;background:{_rc};color:#fff;
+                   flex:none;display:flex;align-items:center;justify-content:center;
+                   font-weight:700;font-size:13px;">{_ini}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with _out:
+            if st.button("Log out", use_container_width=True, key="hdr_logout"):
+                st.session_state.pop("auth_user", None)
+                st.rerun()
+    else:
+        hr_signin, hr_signup = st.columns(2)
+        with hr_signin:
+            if st.button("Sign in", use_container_width=True, key="hdr_signin"):
+                st.session_state["_auth_mode"] = "Sign in"
+                st.session_state["_show_auth"] = True
+                st.rerun()
+        with hr_signup:
+            if st.button("Create account", type="primary", use_container_width=True, key="hdr_signup"):
+                st.session_state["_auth_mode"] = "Create account"
+                st.session_state["_show_auth"] = True
+                st.rerun()
 
 # Dialog must be (re)invoked on every rerun while open — a Streamlit dialog
 # only stays open across its own internal reruns (typing, radio clicks) if
@@ -380,50 +411,42 @@ st.markdown(f"""
 st.subheader("Where do you want to look?")
 st.write("")
 
-# One HTML block for the whole grid → responsive auto-fill columns + a hover
-# scoped to each card, and fixed-size flags that never stretch.
-_page_code = {"scb_salaries.py": "sweden", "france.py": "france", None: "us"}
-_cards = []
-for c in COUNTRIES:
-    badge = ('<div style="background:rgba(10,99,166,.10);color:#0A63A6;font-size:11px;'
-             'font-weight:600;padding:4px 10px;border-radius:20px;flex:none;">Coming soon</div>'
-             if not c["live"] else "")
-    bullets = "".join(
-        '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
-        '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
-        f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in c["points"])
-    if c["live"]:
-        cta = (f'<a class="se-cta" href="?country={_page_code[c["page"]]}" '
-               f'target="_parent">Open {c["name"]} →</a>')
-    else:
-        cta = '<span class="se-cta-off">Notify me</span>'
-    _cards.append(f"""
-    <div class="se-country-card">
-      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
-        <div class="se-flag" style="{c['flag_css']}"></div>
-        <div style="flex:1;min-width:0;">
-          <div style="white-space:nowrap;">
-            <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{c['num']}</span>
-            <span style="font-weight:700;font-size:17px;">{c['name']}</span></div>
-          <div style="font-size:12px;color:#8A919D;margin-top:1px;">{c['native']}</div>
+# Native columns + a keyed st.container per card so the CTA can be a real
+# st.page_link. That navigates *client-side* (no full-page reload), which keeps
+# st.session_state — so an admin who signed in here stays signed in on Sweden /
+# France. (A raw <a href> reloads the app and silently drops the session.)
+_cols = st.columns(len(COUNTRIES), gap="medium")
+for _col, c in zip(_cols, COUNTRIES):
+    with _col, st.container(border=True, key=f"cc_{c['num']}"):
+        badge = ('<div style="background:rgba(10,99,166,.10);color:#0A63A6;font-size:11px;'
+                 'font-weight:600;padding:4px 10px;border-radius:20px;flex:none;">Coming soon</div>'
+                 if not c["live"] else "")
+        bullets = "".join(
+            '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
+            '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
+            f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in c["points"])
+        body = f"""
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+          <div class="se-flag" style="{c['flag_css']}"></div>
+          <div style="flex:1;min-width:0;">
+            <div style="white-space:nowrap;">
+              <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{c['num']}</span>
+              <span style="font-weight:700;font-size:17px;">{c['name']}</span></div>
+            <div style="font-size:12px;color:#8A919D;margin-top:1px;">{c['native']}</div>
+          </div>
+          {badge}
         </div>
-        {badge}
-      </div>
-      <ul style="list-style:none;margin:0 0 auto;padding:0;display:flex;flex-direction:column;gap:10px;">
-        {bullets}
-      </ul>
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;
-                  margin-top:22px;padding-top:16px;border-top:1px solid #EEF0F3;">
-        <span class="se-mono" style="font-size:11px;color:#98A0AC;">{c['source']}</span>
-        {cta}
-      </div>
-    </div>""")
-
-# Flatten to a single line: Markdown treats 4-space-indented lines as a CODE
-# block, which would show the card HTML as raw text instead of rendering it.
-_grid = f'<div class="se-grid">{"".join(_cards)}</div>'
-_grid = "".join(line.strip() for line in _grid.splitlines())
-st.markdown(_grid, unsafe_allow_html=True)
+        <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
+          {bullets}
+        </ul>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid #EEF0F3;">
+          <span class="se-mono" style="font-size:11px;color:#98A0AC;">{c['source']}</span>
+        </div>"""
+        st.markdown("".join(l.strip() for l in body.splitlines()), unsafe_allow_html=True)
+        if c["live"]:
+            st.page_link(c["page"], label=f"Open {c['name']} →")
+        else:
+            st.markdown('<div class="se-cta-off">Notify me</div>', unsafe_allow_html=True)
 
 st.write("")
 st.divider()
