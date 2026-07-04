@@ -55,7 +55,34 @@ T = {
         "raw": "Tableau de données",
         "no_data": "Pas de données pour cette sélection.",
         "err_api": "L'API INSEE Melodi est injoignable pour le moment — réessayez dans un instant.",
-        "note_v1": "v1 : moyennes par profession. À venir : distribution des salaires, séries longues, inflation.",
+        "note_v1": "À venir : vues nominales (IPC), comparaisons régionales, libellés anglais des professions.",
+        "tab_explorer": "🔎 Explorateur",
+        "tab_dist": "📊 Distribution des salaires",
+        "tab_trend": "📈 Évolution",
+        "dist_title": "Distribution des salaires — ensemble des salariés",
+        "dist_caption": "Salaire net mensuel EQTP en euros constants {base} · {sector}",
+        "dist_year": "Année",
+        "sex_label": "Sexe",
+        "wktime_label": "Temps de travail",
+        "wk_all": "Tous", "wk_ft": "Temps complet",
+        "x_pct": "Percentile",
+        "y_const": "Salaire net mensuel (€ constants {base})",
+        "dist_curve": "Distribution",
+        "occ_marker": "Moyenne · {name}",
+        "whereami": "💰 Où je me situe ?",
+        "my_salary": "Votre salaire net mensuel (EQTP, €)",
+        "whereami_result": "Vous gagnez plus qu'environ **{p} %** des salariés ({scope}).",
+        "whereami_low": "Votre salaire est sous le 1er décile (moins de 10 % des salariés).",
+        "whereami_high": "Votre salaire dépasse le dernier centile publié (top 1 %).",
+        "whereami_note": "Position estimée par interpolation entre les centiles publiés — année {year}.",
+        "marker_note": "★ = salaire moyen des professions sélectionnées (année {year}).",
+        "trend_mode": "Séries",
+        "trend_dist": "Distribution (ensemble)",
+        "trend_groups": "Groupes socioprofessionnels (moyennes)",
+        "trend_caption": "Euros constants — l'inflation est déjà déduite (une courbe qui monte = gain de pouvoir d'achat).",
+        "trend_range": "Période",
+        "no_dist": "Distribution indisponible pour cette sélection.",
+        "groups_private_only": "Les séries par groupe ne sont publiées que pour le secteur privé.",
     },
     "EN": {
         "title": "Salary Explorer — France",
@@ -94,7 +121,34 @@ T = {
         "raw": "Raw data table",
         "no_data": "No data for this selection.",
         "err_api": "The INSEE Melodi API is unreachable right now — try again in a moment.",
-        "note_v1": "v1: means per occupation. Coming next: wage distribution, long series, inflation.",
+        "note_v1": "Coming next: nominal (CPI) views, regional comparisons, English occupation labels.",
+        "tab_explorer": "🔎 Explorer",
+        "tab_dist": "📊 Wage distribution",
+        "tab_trend": "📈 Trend",
+        "dist_title": "Wage distribution — all employees",
+        "dist_caption": "Net monthly FTE salary in constant {base} euros · {sector}",
+        "dist_year": "Year",
+        "sex_label": "Sex",
+        "wktime_label": "Working time",
+        "wk_all": "All", "wk_ft": "Full-time",
+        "x_pct": "Percentile",
+        "y_const": "Net monthly salary (constant {base} €)",
+        "dist_curve": "Distribution",
+        "occ_marker": "Mean · {name}",
+        "whereami": "💰 Where do I stand?",
+        "my_salary": "Your net monthly salary (FTE, €)",
+        "whereami_result": "You earn more than about **{p}%** of employees ({scope}).",
+        "whereami_low": "Your salary is below the 1st decile (bottom 10% of employees).",
+        "whereami_high": "Your salary is above the highest published centile (top 1%).",
+        "whereami_note": "Position estimated by interpolating between published centiles — year {year}.",
+        "marker_note": "★ = mean salary of the selected occupations (year {year}).",
+        "trend_mode": "Series",
+        "trend_dist": "Distribution (all employees)",
+        "trend_groups": "Socio-professional groups (means)",
+        "trend_caption": "Constant euros — inflation is already removed (a rising line = real purchasing-power gain).",
+        "trend_range": "Period",
+        "no_dist": "No distribution available for this selection.",
+        "groups_private_only": "Group series are only published for the private sector.",
     },
 }
 
@@ -207,92 +261,259 @@ def _gap_pct(code: str):
     return None
 
 
-# ── No selection → ranked explorer table ─────────────────────────────────────
-if not sel_codes:
-    st.subheader(t["explorer_title"].format(n=len(pool_codes)))
-    st.caption(t["explorer_hint"])
-    rows = []
-    for c in pool_codes:
-        if c not in tot.index:
-            continue
-        r = tot.loc[c]
-        gap = _gap_pct(c)
-        rows.append({
-            t["col_code"]:  c,
-            t["col_name"]:  fd.pcs_name(c, lang),
-            t["col_mean"]:  round(r["mean_salary"]) if pd.notna(r["mean_salary"]) else None,
-            t["col_count"]: round(r["headcount"]) if pd.notna(r["headcount"]) else None,
-            t["col_gap"]:   round(gap, 1) if gap is not None else None,
-        })
-    tbl = pd.DataFrame(rows).sort_values(t["col_mean"], ascending=False,
-                                         na_position="last")
-    st.dataframe(tbl, use_container_width=True, hide_index=True, height=560)
-    st.caption(t["note_v1"])
-    st.stop()
+def _num(v):
+    return f"{v:,.0f}".replace(",", " ") if v is not None and pd.notna(v) else "–"
 
-# ── Selection → detail view ───────────────────────────────────────────────────
-for code in sel_codes:
-    st.subheader(f"{fd.pcs_name(code, lang)}  ({code})")
-    rows_t = det[(det["pcs"] == code) & (det["age"] == "_T")]
-    mean_t  = rows_t[rows_t["sex"] == "_T"]["mean_salary"]
-    count_t = rows_t[rows_t["sex"] == "_T"]["headcount"]
-    mean_f  = rows_t[rows_t["sex"] == "F"]["mean_salary"]
-    mean_m  = rows_t[rows_t["sex"] == "M"]["mean_salary"]
-    gap = _gap_pct(code)
 
-    def _num(v):
-        return f"{v:,.0f}".replace(",", " ") if v is not None and pd.notna(v) else "–"
+def _sex_radio(label_key: str, widget_key: str) -> str:
+    """Sex picker returning the Melodi code (_T/F/M)."""
+    names = {t["sex_total"]: "_T", t["sex_f"]: "F", t["sex_m"]: "M"}
+    return names[st.radio(t[label_key], list(names), horizontal=True, key=widget_key)]
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric(t["m_mean"] + " (€)",  _num(mean_t.iloc[0] if len(mean_t) else None))
-    c2.metric(t["m_women"] + " (€)", _num(mean_f.iloc[0] if len(mean_f) else None))
-    c3.metric(t["m_men"] + " (€)",   _num(mean_m.iloc[0] if len(mean_m) else None))
-    c4, c5, _ = st.columns(3)
-    c4.metric(t["m_gap"],   f"{gap:+.1f} %" if gap is not None else "–")
-    c5.metric(t["m_count"], _num(count_t.iloc[0] if len(count_t) else None))
 
-    # Mean salary by age band × sex
-    by_age = det[(det["pcs"] == code) & (det["age"] != "_T")]
-    if not by_age.empty:
-        bands = sorted(by_age["age"].unique(), key=_age_sort_key)
-        fig = go.Figure()
-        for sex in SEX_ORDER:
-            sub = by_age[by_age["sex"] == sex].set_index("age")
-            ys = [sub["mean_salary"].get(b) for b in bands]
-            if all(pd.isna(y) for y in ys):
+def _wk_radio(widget_key: str) -> str:
+    """Working-time picker returning the Melodi code (_T/FT)."""
+    names = {t["wk_all"]: "_T", t["wk_ft"]: "FT"}
+    return names[st.radio(t["wktime_label"], list(names), horizontal=True, key=widget_key)]
+
+
+def _pos_on_curve(salary: float, pts: list[tuple[int, float]]):
+    """Percentile position of a salary on a centile curve [(pct, value)…].
+    Returns float pct, or 'low'/'high' when outside the published range."""
+    if salary < pts[0][1]:
+        return "low"
+    if salary > pts[-1][1]:
+        return "high"
+    for (p1, v1), (p2, v2) in zip(pts, pts[1:]):
+        if v1 <= salary <= v2:
+            return p1 + (p2 - p1) * (salary - v1) / ((v2 - v1) or 1)
+    return "high"
+
+
+# Distribution + trend share the long-series pull (lazy, cached, may fail alone)
+try:
+    sl = fd.fetch_series_longues(sector)
+    sl_error = False
+except Exception:
+    sl, sl_error = None, True
+
+tab_exp, tab_dist, tab_trend = st.tabs(
+    [t["tab_explorer"], t["tab_dist"], t["tab_trend"]])
+
+# ── Tab 1: occupation explorer ────────────────────────────────────────────────
+with tab_exp:
+    if not sel_codes:
+        st.subheader(t["explorer_title"].format(n=len(pool_codes)))
+        st.caption(t["explorer_hint"])
+        rows = []
+        for c in pool_codes:
+            if c not in tot.index:
                 continue
-            fig.add_trace(go.Bar(
-                x=[_age_label(b, t) for b in bands], y=ys,
-                name={"_T": t["sex_total"], "F": t["sex_f"], "M": t["sex_m"]}[sex],
-                marker_color=SEX_COLORS[sex]))
-        fig.update_layout(
-            title=t["age_title"], barmode="group", height=320,
-            xaxis_title=t["age_axis"], yaxis_title=t["sal_axis"],
-            margin=dict(t=50, b=40),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
-        st.plotly_chart(fig, use_container_width=True,
-                        key=f"fr_age_chart_{code}")
+            r = tot.loc[c]
+            gap = _gap_pct(c)
+            rows.append({
+                t["col_code"]:  c,
+                t["col_name"]:  fd.pcs_name(c, lang),
+                t["col_mean"]:  round(r["mean_salary"]) if pd.notna(r["mean_salary"]) else None,
+                t["col_count"]: round(r["headcount"]) if pd.notna(r["headcount"]) else None,
+                t["col_gap"]:   round(gap, 1) if gap is not None else None,
+            })
+        tbl = pd.DataFrame(rows).sort_values(t["col_mean"], ascending=False,
+                                             na_position="last")
+        st.dataframe(tbl, use_container_width=True, hide_index=True, height=560)
+    else:
+        for code in sel_codes:
+            st.subheader(f"{fd.pcs_name(code, lang)}  ({code})")
+            rows_t = det[(det["pcs"] == code) & (det["age"] == "_T")]
+            mean_t  = rows_t[rows_t["sex"] == "_T"]["mean_salary"]
+            count_t = rows_t[rows_t["sex"] == "_T"]["headcount"]
+            mean_f  = rows_t[rows_t["sex"] == "F"]["mean_salary"]
+            mean_m  = rows_t[rows_t["sex"] == "M"]["mean_salary"]
+            gap = _gap_pct(code)
 
-# Comparison chart when several occupations are selected
-if len(sel_codes) > 1:
-    st.subheader(t["cmp_title"])
-    cmp_rows = [(fd.pcs_name(c, lang), tot.loc[c, "mean_salary"])
-                for c in sel_codes if c in tot.index]
-    cmp_rows.sort(key=lambda r: (pd.isna(r[1]), r[1]))
-    fig = go.Figure(go.Bar(
-        x=[v for _, v in cmp_rows], y=[n for n, _ in cmp_rows],
-        orientation="h", marker_color="#4e79a7"))
-    fig.update_layout(height=90 + 45 * len(cmp_rows),
-                      xaxis_title=t["sal_axis"], margin=dict(t=20, b=40))
-    st.plotly_chart(fig, use_container_width=True, key="fr_cmp_chart")
+            c1, c2, c3 = st.columns(3)
+            c1.metric(t["m_mean"] + " (€)",  _num(mean_t.iloc[0] if len(mean_t) else None))
+            c2.metric(t["m_women"] + " (€)", _num(mean_f.iloc[0] if len(mean_f) else None))
+            c3.metric(t["m_men"] + " (€)",   _num(mean_m.iloc[0] if len(mean_m) else None))
+            c4, c5, _ = st.columns(3)
+            c4.metric(t["m_gap"],   f"{gap:+.1f} %" if gap is not None else "–")
+            c5.metric(t["m_count"], _num(count_t.iloc[0] if len(count_t) else None))
 
-# Raw data expander
-with st.expander(t["raw"]):
-    show = det[det["pcs"].isin(sel_codes)].copy()
-    show.insert(1, t["col_name"], show["pcs"].map(lambda c: fd.pcs_name(c, lang)))
-    show["age"] = show["age"].map(lambda a: _age_label(a, t))
-    show["sex"] = show["sex"].map(
-        {"_T": t["sex_total"], "F": t["sex_f"], "M": t["sex_m"]})
-    st.dataframe(show, use_container_width=True, hide_index=True)
+            # Mean salary by age band × sex
+            by_age = det[(det["pcs"] == code) & (det["age"] != "_T")]
+            if not by_age.empty:
+                bands = sorted(by_age["age"].unique(), key=_age_sort_key)
+                fig = go.Figure()
+                for sex in SEX_ORDER:
+                    sub = by_age[by_age["sex"] == sex].set_index("age")
+                    ys = [sub["mean_salary"].get(b) for b in bands]
+                    if all(pd.isna(y) for y in ys):
+                        continue
+                    fig.add_trace(go.Bar(
+                        x=[_age_label(b, t) for b in bands], y=ys,
+                        name={"_T": t["sex_total"], "F": t["sex_f"], "M": t["sex_m"]}[sex],
+                        marker_color=SEX_COLORS[sex]))
+                fig.update_layout(
+                    title=t["age_title"], barmode="group", height=320,
+                    xaxis_title=t["age_axis"], yaxis_title=t["sal_axis"],
+                    margin=dict(t=50, b=40),
+                    legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
+                st.plotly_chart(fig, use_container_width=True,
+                                key=f"fr_age_chart_{code}")
+
+        # Comparison chart when several occupations are selected
+        if len(sel_codes) > 1:
+            st.subheader(t["cmp_title"])
+            cmp_rows = [(fd.pcs_name(c, lang), tot.loc[c, "mean_salary"])
+                        for c in sel_codes if c in tot.index]
+            cmp_rows.sort(key=lambda r: (pd.isna(r[1]), r[1]))
+            fig = go.Figure(go.Bar(
+                x=[v for _, v in cmp_rows], y=[n for n, _ in cmp_rows],
+                orientation="h", marker_color="#4e79a7"))
+            fig.update_layout(height=90 + 45 * len(cmp_rows),
+                              xaxis_title=t["sal_axis"], margin=dict(t=20, b=40))
+            st.plotly_chart(fig, use_container_width=True, key="fr_cmp_chart")
+
+        with st.expander(t["raw"]):
+            show = det[det["pcs"].isin(sel_codes)].copy()
+            show.insert(1, t["col_name"], show["pcs"].map(lambda c: fd.pcs_name(c, lang)))
+            show["age"] = show["age"].map(lambda a: _age_label(a, t))
+            show["sex"] = show["sex"].map(
+                {"_T": t["sex_total"], "F": t["sex_f"], "M": t["sex_m"]})
+            st.dataframe(show, use_container_width=True, hide_index=True)
+
+# ── Tab 2: wage distribution (all employees) ──────────────────────────────────
+with tab_dist:
+    if sl_error:
+        st.error(t["err_api"])
+    else:
+        dist = sl[sl["centile"].map(fd.centile_pct).notna()].copy()
+        dist["pct"] = dist["centile"].map(fd.centile_pct)
+        d_years = sorted(dist["year"].unique(), reverse=True)
+        base_yr = d_years[0] if d_years else year
+
+        st.subheader(t["dist_title"])
+        st.caption(t["dist_caption"].format(base=base_yr, sector=sector_label))
+        c1, c2, c3 = st.columns([1, 2, 2])
+        with c1:
+            d_year = st.selectbox(t["dist_year"], d_years, key="fr_dist_year")
+        with c2:
+            d_sex = _sex_radio("sex_label", "fr_dist_sex")
+        with c3:
+            d_wk = _wk_radio("fr_dist_wk")
+
+        sub = dist[(dist["year"] == d_year) & (dist["sex"] == d_sex)
+                   & (dist["wktime"] == d_wk)].sort_values("pct")
+        pts = [(int(p), float(v)) for p, v in
+               zip(sub["pct"], sub["salary_const_eur"]) if pd.notna(v)]
+        if not pts:
+            st.info(t["no_dist"])
+        else:
+            fig = go.Figure(go.Scatter(
+                x=[p for p, _ in pts], y=[v for _, v in pts],
+                mode="lines+markers", name=t["dist_curve"],
+                line=dict(color="#4e79a7", width=2), marker=dict(size=7)))
+            # Selected occupations' means as ★ markers (comparable on the
+            # latest year only — detail means are current-euro latest-year).
+            if d_year == base_yr:
+                for code in sel_codes:
+                    if code not in tot.index or pd.isna(tot.loc[code, "mean_salary"]):
+                        continue
+                    mv  = float(tot.loc[code, "mean_salary"])
+                    pos = _pos_on_curve(mv, pts)
+                    px  = {"low": pts[0][0], "high": pts[-1][0]}.get(pos, pos)
+                    fig.add_trace(go.Scatter(
+                        x=[px], y=[mv], mode="markers+text",
+                        name=t["occ_marker"].format(name=fd.pcs_name(code, lang)[:40]),
+                        text=["★"], textfont=dict(size=16, color="#e15759"),
+                        textposition="middle center",
+                        marker=dict(size=1, color="#e15759")))
+            fig.update_layout(
+                height=380, xaxis_title=t["x_pct"],
+                yaxis_title=t["y_const"].format(base=base_yr),
+                xaxis=dict(tickmode="array", tickvals=[p for p, _ in pts]),
+                margin=dict(t=30, b=40),
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
+            st.plotly_chart(fig, use_container_width=True, key="fr_dist_chart")
+            if d_year == base_yr and sel_codes:
+                st.caption(t["marker_note"].format(year=base_yr))
+
+            # Where do I stand?
+            st.subheader(t["whereami"])
+            my = st.number_input(t["my_salary"], min_value=0, step=50,
+                                 key="fr_my_salary")
+            if my:
+                pos = _pos_on_curve(float(my), pts)
+                if pos == "low":
+                    st.info(t["whereami_low"])
+                elif pos == "high":
+                    st.success(t["whereami_high"])
+                else:
+                    st.success(t["whereami_result"].format(
+                        p=f"{pos:.0f}", scope=sector_label.lower()))
+                st.caption(t["whereami_note"].format(year=d_year))
+
+# ── Tab 3: long-series trend (constant euros) ─────────────────────────────────
+with tab_trend:
+    if sl_error:
+        st.error(t["err_api"])
+    else:
+        modes = [t["trend_dist"]]
+        has_groups = (sl["pcs"] != "_T").any()
+        if has_groups:
+            modes.append(t["trend_groups"])
+        c1, c2, c3 = st.columns([2, 2, 1])
+        with c1:
+            tr_mode = st.radio(t["trend_mode"], modes, key="fr_tr_mode")
+        with c2:
+            tr_sex = _sex_radio("sex_label", "fr_tr_sex")
+        with c3:
+            tr_wk = _wk_radio("fr_tr_wk")
+        if not has_groups:
+            st.caption(t["groups_private_only"])
+
+        if tr_mode == t["trend_dist"]:
+            base = sl[(sl["centile"] != "_T") & (sl["sex"] == tr_sex)
+                      & (sl["wktime"] == tr_wk)].copy()
+            base["pct"] = base["centile"].map(fd.centile_pct)
+            series = [(f"P{int(p)}", base[base["pct"] == p])
+                      for p in sorted(base["pct"].dropna().unique())]
+        else:
+            base = sl[(sl["centile"] == "_T") & (sl["sex"] == tr_sex)
+                      & (sl["wktime"] == tr_wk)]
+            order = [p for p in ("_T", "3", "4", "5", "6")
+                     if p in set(base["pcs"])]
+            ens = t["sex_total"] if lang == "EN" else "Ensemble"
+            series = [(ens if p == "_T" else fd.pcs_name(p, lang)[:40],
+                       base[base["pcs"] == p]) for p in order]
+
+        yrs_all = sorted(base["year"].unique())
+        if not yrs_all:
+            st.info(t["no_dist"])
+        else:
+            y0, y1 = st.select_slider(t["trend_range"], options=yrs_all,
+                                      value=(yrs_all[0], yrs_all[-1]),
+                                      key="fr_tr_range")
+            base_yr = yrs_all[-1]
+            BLUES = ["#c6dbef", "#9ecae1", "#6baed6", "#4292c6", "#2171b5",
+                     "#08519c", "#083b7a", "#0a2f63", "#081d58"]
+            fig = go.Figure()
+            for i, (name, sdf) in enumerate(series):
+                sdf = sdf[(sdf["year"] >= y0) & (sdf["year"] <= y1)]
+                sdf = sdf.dropna(subset=["salary_const_eur"]).sort_values("year")
+                if sdf.empty:
+                    continue
+                color = ("#e15759" if name in ("P50",)
+                         else BLUES[min(i, len(BLUES) - 1)])
+                fig.add_trace(go.Scatter(
+                    x=sdf["year"], y=sdf["salary_const_eur"],
+                    mode="lines", name=name, line=dict(color=color, width=2)))
+            fig.update_layout(
+                height=420, xaxis_title="",
+                yaxis_title=t["y_const"].format(base=base_yr),
+                margin=dict(t=30, b=40), hovermode="x unified",
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
+            st.plotly_chart(fig, use_container_width=True, key="fr_tr_chart")
+            st.caption(t["trend_caption"])
 
 st.caption(t["note_v1"])

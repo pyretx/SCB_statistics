@@ -39,9 +39,21 @@ M_MEAN_SALARY = "SALAIRE_NET_EQTP_MENSUEL_MOYENNE"                # annual datas
 M_HEADCOUNT   = "EFFECTIFS_EQTP"                                  # annual dataset (FTE count)
 M_CONST_EUR   = "SALAIRE_NET_EQTP_MENSUEL_MOYEN_EUROS_CONSTANTS"  # long series (constant €)
 
-# QUANTILE codes carried by the long-series distribution, in display order
+# QUANTILE codes carried by the long-series distribution, in display order.
+# Private serves C10/25/50/75/90/95/99; public serves deciles C10…C90 — use
+# centile_pct() and the data itself rather than assuming a fixed set.
 CENTILES = ["CENTILE_10", "CENTILE_25", "CENTILE_50", "CENTILE_75",
             "CENTILE_90", "CENTILE_95", "CENTILE_99"]
+
+
+def centile_pct(code: str) -> int | None:
+    """'CENTILE_25' → 25; '_T'/anything else → None."""
+    if isinstance(code, str) and code.startswith("CENTILE_"):
+        try:
+            return int(code.split("_", 1)[1])
+        except ValueError:
+            return None
+    return None
 
 # "Everything = total" filter for the annual detail pull. The two datasets have
 # different dimension sets (private: NAF activity + establishment size; public:
@@ -113,12 +125,14 @@ def fetch_series_longues(sector: str = "private") -> pd.DataFrame:
     (Column is named 'centile', not 'quantile', because df.quantile is a
     pandas method and attribute access would silently shadow the column.)"""
     obs = _get_observations(DERA_SERIES[sector], {"DERA_MEASURE": M_CONST_EUR})
+    # .get defaults: the PUBLIC series has no PCS_ESE dimension at all, and its
+    # distribution uses deciles CENTILE_10…90 (vs private C10/25/50/75/90/95/99).
     df = pd.DataFrame([{
         "year":     o["dimensions"]["TIME_PERIOD"],
-        "pcs":      o["dimensions"]["PCS_ESE"],
-        "sex":      o["dimensions"]["SEX"],
-        "wktime":   o["dimensions"]["WKTIME"],
-        "centile":  o["dimensions"]["QUANTILE"],
+        "pcs":      o["dimensions"].get("PCS_ESE", "_T"),
+        "sex":      o["dimensions"].get("SEX", "_T"),
+        "wktime":   o["dimensions"].get("WKTIME", "_T"),
+        "centile":  o["dimensions"].get("QUANTILE", "_T"),
         "salary_const_eur": _value(o),
     } for o in obs])
     df["salary_const_eur"] = pd.to_numeric(df["salary_const_eur"], errors="coerce")
