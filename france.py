@@ -21,7 +21,7 @@ T = {
     "FR": {
         "title": "Explorateur de salaires — France",
         "caption": "Salaire net mensuel moyen en équivalent temps plein (EQTP) · Source : INSEE (DADS/DSN via l'API Melodi)",
-        "lang": "Langue / Language",
+        "lang": "Language / Langue",
         "sector": "Secteur",
         "sectors": {"private": "Secteur privé", "public": "Fonction publique"},
         "group": "1. Groupe socioprofessionnel",
@@ -115,7 +115,7 @@ T = {
     "EN": {
         "title": "Salary Explorer — France",
         "caption": "Mean net monthly salary, full-time equivalent (FTE) · Source: INSEE (DADS/DSN via the Melodi API)",
-        "lang": "Langue / Language",
+        "lang": "Language / Langue",
         "sector": "Sector",
         "sectors": {"private": "Private sector", "public": "Public service"},
         "group": "1. Socio-professional group",
@@ -238,9 +238,9 @@ def _age_sort_key(code: str) -> int:
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    lang = st.radio(T["FR"]["lang"], ["Français", "English"], horizontal=True,
+    lang = st.radio(T["EN"]["lang"], ["English", "Français"], horizontal=True,
                     key="fr_lang")
-    lang = "FR" if lang == "Français" else "EN"
+    lang = "EN" if lang == "English" else "FR"
     t = T[lang]
 
     sector_label = st.selectbox(
