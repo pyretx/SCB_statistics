@@ -139,48 +139,65 @@ st.markdown("""
   .se-cta-off { display:flex; align-items:center; justify-content:center; background:#F4F5F7;
                 color:#8A919D; font-weight:600; font-size:13px; padding:11px; border-radius:10px;
                 border:1px solid #E7E9ED; white-space:nowrap; }
+  /* ── Auth dialog: match-height blue panel + full-width segmented toggle ── */
+  [data-testid="stDialog"] div[role="dialog"]{ max-width: 720px; }
+  [data-testid="stDialog"] [data-testid="stDialogContent"]{ padding-top: .25rem; }
+  /* Full-width segmented "Sign in / Create account" pill toggle. */
+  [data-testid="stDialog"] [data-testid="stSegmentedControl"]{ width:100%; margin-bottom:6px; }
+  [data-testid="stDialog"] [data-testid="stSegmentedControl"] > div{ width:100%; display:flex; }
+  [data-testid="stDialog"] [data-testid="stSegmentedControl"] label{ flex:1; justify-content:center; }
+  /* Blue panel: rounded, decorative, fills its column height. */
+  .se-authpanel{ position:relative; overflow:hidden; background:#0A63A6; color:#fff;
+                 border-radius:14px; padding:28px 26px; min-height:466px;
+                 box-shadow:0 10px 30px rgba(10,99,166,.28); }
+  .se-authpanel .se-blob{ position:absolute; border-radius:50%;
+                          background:rgba(255,255,255,.08); pointer-events:none; }
+  .se-authcheck{ display:flex; align-items:center; gap:11px; font-size:13.5px;
+                 color:rgba(255,255,255,.94); margin-bottom:14px; }
+  .se-authcheck .se-tick{ flex:none; width:22px; height:22px; border-radius:50%;
+                          background:rgba(255,255,255,.16); display:flex; align-items:center;
+                          justify-content:center; font-size:12px; }
 </style>
 """, unsafe_allow_html=True)
 
 
 @st.dialog("Welcome to Salary Explorer", width="large")
 def _auth_dialog():
-    left, right = st.columns([0.85, 1], gap="medium")
+    left, right = st.columns([0.82, 1], gap="large", vertical_alignment="center")
 
     with left:
-        st.markdown(f"""
-        <div style="background:{BLUE};color:#fff;border-radius:12px;padding:26px 24px;height:100%;">
-          <div class="se-mono" style="font-size:11px;font-weight:600;letter-spacing:.16em;
-                                      color:rgba(255,255,255,.72);margin-bottom:14px;">SECURE ACCESS</div>
-          <div style="font-size:22px;line-height:1.2;font-weight:800;letter-spacing:-.01em;margin-bottom:20px;">
-            Official salary data, always free to browse.
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;
-                      color:rgba(255,255,255,.92);margin-bottom:12px;">
-            <span style="flex:none;">✓</span><span>Explore Sweden &amp; France right now - no account needed</span>
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;
-                      color:rgba(255,255,255,.92);margin-bottom:12px;">
-            <span style="flex:none;">✓</span><span>An account is only needed for admin tools today</span>
-          </div>
-          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;
-                      color:rgba(255,255,255,.92);">
-            <span style="flex:none;">✓</span><span>Free while in beta</span>
-          </div>
-          <div class="se-mono" style="font-size:11px;color:rgba(255,255,255,.62);margin-top:24px;">
-            SCB · INSEE · official statistics only
-          </div>
+        st.markdown("""
+        <div class="se-authpanel">
+          <div class="se-blob" style="width:190px;height:190px;top:-70px;right:-60px;"></div>
+          <div class="se-blob" style="width:150px;height:150px;bottom:-60px;left:-50px;"></div>
+          <div class="se-mono" style="font-size:11px;font-weight:600;letter-spacing:.18em;
+                                      color:rgba(255,255,255,.72);margin-bottom:16px;">SECURE ACCESS</div>
+          <div style="font-size:24px;line-height:1.18;font-weight:800;letter-spacing:-.015em;
+                      margin-bottom:24px;">Official salary data,<br>always free to browse.</div>
+          <div class="se-authcheck"><span class="se-tick">✓</span>
+            <span>Explore Sweden &amp; France right now — no account needed</span></div>
+          <div class="se-authcheck"><span class="se-tick">✓</span>
+            <span>An account is only needed for admin tools today</span></div>
+          <div class="se-authcheck"><span class="se-tick">✓</span>
+            <span>Free while in beta</span></div>
+          <div class="se-mono" style="position:absolute;bottom:26px;left:26px;font-size:11px;
+                                      color:rgba(255,255,255,.60);letter-spacing:.04em;">
+            SCB · INSEE · official statistics only</div>
         </div>
         """, unsafe_allow_html=True)
 
     with right:
-        # The header buttons pre-seed session_state["_auth_mode"] before this
-        # dialog opens; don't ALSO pass index= to the same-keyed widget
-        # (Streamlit warns — ambiguous which one wins). Letting the pre-set
-        # session_state value alone drive the widget's initial value is the
-        # supported pattern.
-        mode = st.radio("mode", ["Sign in", "Create account"],
-                        horizontal=True, label_visibility="collapsed", key="_auth_mode")
+        # Segmented pill toggle (mockup look). The header buttons pre-seed
+        # session_state["_auth_mode"]; feed that as the default and mirror any
+        # click back into it so the choice sticks across the dialog's reruns.
+        _default = st.session_state.get("_auth_mode", "Sign in")
+        _seg = st.segmented_control(
+            "mode", ["Sign in", "Create account"], default=_default,
+            key="_auth_seg", label_visibility="collapsed")
+        if _seg:  # None only if the active pill is clicked again (deselect)
+            st.session_state["_auth_mode"] = _seg
+        mode = st.session_state.get("_auth_mode", "Sign in")
+
         st.caption("Sign in or create a free account. Browsing salary data never requires "
                   "one — this is for admin access and account features.")
 
@@ -204,13 +221,27 @@ def _auth_dialog():
                 if not email.strip() or not pw:
                     st.error("Email and password are required.")
                 else:
+                    # sign_up stores the account in Supabase as a *standard*
+                    # user (the public client can't set app_metadata.role, so
+                    # no self-registration can ever mint an admin).
                     user, err = auth.sign_up(email.strip(), pw, name.strip())
-                    if user:
-                        st.session_state.pop("_auth_pw", None)
-                        st.success("Account created — check your inbox to confirm your "
-                                  "email, then sign in.")
-                    else:
+                    if not user:
                         st.error(f"Could not create account: {err}")
+                    else:
+                        st.session_state.pop("_auth_pw", None)
+                        # If the project doesn't require email confirmation the
+                        # account is usable immediately — sign them straight in
+                        # so they don't have to re-enter credentials. If it does
+                        # require confirmation, sign-in fails cleanly and we fall
+                        # back to the "check your inbox" message.
+                        signed, _ = auth.sign_in(email.strip(), pw)
+                        if signed:
+                            st.session_state["auth_user"] = signed
+                            st.session_state["_show_auth"] = False
+                            st.rerun()
+                        else:
+                            st.success("Account created — check your inbox to confirm "
+                                      "your email, then sign in.")
 
         st.caption("By continuing you agree to the Terms and acknowledge the Privacy Policy.")
         if st.button("Close", key="_auth_close"):

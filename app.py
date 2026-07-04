@@ -18,9 +18,18 @@ st.set_page_config(page_title="Salary Explorer", page_icon=_ICON_PNG, layout="wi
 # NOTE: no st.logo() — each page carries its own brand mark in its header, so a
 # global top-left logo would duplicate it (the "two globes" / page-in-page look).
 
-# Hide Streamlit's default top "decoration" gradient bar (applies to all pages).
-st.markdown("<style>[data-testid='stDecoration']{display:none;}</style>",
-            unsafe_allow_html=True)
+# Global chrome tweaks (all pages):
+#  • hide Streamlit's default top "decoration" gradient bar
+#  • pull the content up under the (transparent) top toolbar — the default
+#    ~6rem top padding left a big empty band above the header/logo, so the
+#    landing needed scrolling to see everything. Trim it right down.
+st.markdown("""
+<style>
+  [data-testid='stDecoration']{display:none;}
+  [data-testid='stMainBlockContainer']{padding-top:2rem;}
+  [data-testid='stSidebarUserContent']{padding-top:1.2rem;}
+</style>
+""", unsafe_allow_html=True)
 
 # position="hidden" suppresses Streamlit's automatic Home/Sweden/France link
 # list in the sidebar (the landing page has no sidebar content of its own, so
