@@ -15,16 +15,22 @@ _ICON_PNG = os.path.join(_ASSETS, "logo.png")
 _ICON_SVG = os.path.join(_ASSETS, "logo.svg")
 
 st.set_page_config(page_title="Salary Explorer", page_icon=_ICON_PNG, layout="wide")
-if os.path.exists(_ICON_SVG):
-    st.logo(_ICON_SVG, size="large")
+# NOTE: no st.logo() — each page carries its own brand mark in its header, so a
+# global top-left logo would duplicate it (the "two globes" / page-in-page look).
 
 # Hide Streamlit's default top "decoration" gradient bar (applies to all pages).
 st.markdown("<style>[data-testid='stDecoration']{display:none;}</style>",
             unsafe_allow_html=True)
 
+# position="hidden" suppresses Streamlit's automatic Home/Sweden/France link
+# list in the sidebar (the landing page has no sidebar content of its own, so
+# it should show no sidebar at all, matching the mockup). Country pages still
+# render their own filters into st.sidebar as before; each adds its own
+# "← Home" link (st.page_link) at the top so users aren't stranded without
+# the auto nav-list.
 pg = st.navigation([
     st.Page("landing.py",      title="Home",   default=True),
     st.Page("scb_salaries.py", title="Sweden", url_path="sweden"),
     st.Page("france.py",       title="France", url_path="france"),
-])
+], position="hidden")
 pg.run()

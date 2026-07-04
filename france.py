@@ -17,6 +17,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import france_data as fd
+import theme
 
 _FR_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "assets", "logo_france.png")   # blue-white-red bars
@@ -302,7 +303,7 @@ T = {
 }
 
 SEX_ORDER  = ["_T", "F", "M"]
-SEX_COLORS = {"_T": "#4e79a7", "F": "#e15759", "M": "#76b7b2"}
+SEX_COLORS = {"_T": theme.ACCENT, "F": "#8B5FA6", "M": "#4E93C6"}
 
 # Years the long-series (distribution/trend) datasets are known to cover.
 # Static like Sweden's own year bound — building the sidebar slider must not
@@ -336,6 +337,7 @@ def _age_sort_key(code: str) -> int:
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
+    st.page_link("landing.py", label="← Home", icon="🏠")
     lang = st.radio(T["EN"]["lang"], ["English", "Français"], horizontal=True,
                     key="fr_lang")
     lang = "EN" if lang == "English" else "FR"
@@ -421,13 +423,31 @@ query_codes  = _q.get("codes", ())
 query_sector = _q.get("sector", sector)
 query_sector_label = t["sectors"].get(query_sector, sector_label)
 
-# ── Header ───────────────────────────────────────────────────────────────────
-_c_logo, _c_title = st.columns([1, 12], vertical_alignment="center")
-with _c_logo:
-    st.image(_FR_LOGO, width=56)
-with _c_title:
-    st.title(t["title"])
-st.caption(t["caption"])
+# ── Header (design-system.md §4: eyebrow + H1 + source + avatar) ─────────────
+_au = st.session_state.get("auth_user") or {}
+_email = _au.get("email", "")
+if _email:
+    _p = _email.split("@")[0].replace(".", " ").replace("_", " ").split()
+    _initials = ("".join(w[0] for w in _p[:2]) or _email[:2]).upper()
+    _avatar = (f'<div style="width:34px;height:34px;border-radius:50%;flex:none;'
+               f'background:rgba(10,99,166,.12);color:#0A63A6;display:flex;'
+               f'align-items:center;justify-content:center;font-weight:700;'
+               f'font-size:13px;">{_initials}</div>')
+else:
+    _avatar = ('<div style="width:34px;height:34px;border-radius:50%;flex:none;'
+               'background:#EDEFF2;color:#98A0AC;display:flex;align-items:center;'
+               'justify-content:center;font-size:15px;">🌐</div>')
+st.markdown(f"""
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:6px;">
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+                letter-spacing:.16em;color:#0A63A6;margin-bottom:10px;">OFFICIAL STATISTICS · FRANCE</div>
+    <h1 style="margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#0C1119;line-height:1.05;">{t['title']}</h1>
+    <p style="margin:8px 0 0;font-size:14px;color:#7A828F;">{t['caption']}</p>
+  </div>
+  {_avatar}
+</div>
+""", unsafe_allow_html=True)
 
 # ── Landing: the code browser (no data loaded) until a query is committed ────
 # Mirrors Sweden's SSYK guide/landing: cascading dropdowns + global search + a
@@ -669,7 +689,8 @@ with tab_pct:
             fig = go.Figure(go.Scatter(
                 x=[p for p, _ in pts], y=[v for _, v in pts],
                 mode="lines+markers", name=t["dist_curve"],
-                line=dict(color="#4e79a7", width=2), marker=dict(size=7)))
+                line=dict(color=theme.ACCENT, width=2.5),
+                marker=theme.series_marker(theme.ACCENT)))
             # Selected occupations' means: a red star + a dashed horizontal
             # reference line spanning the chart, so the level is easy to read
             # against the curve even when it falls outside the P10–P90 range.
@@ -681,11 +702,11 @@ with tab_pct:
                     mv  = float(tot.loc[code, "mean_salary"])
                     pos = _pos_on_curve(mv, pts)
                     px  = {"low": pts[0][0], "high": pts[-1][0]}.get(pos, pos)
-                    fig.add_hline(y=mv, line=dict(color="#e15759", width=1.5, dash="dot"))
+                    fig.add_hline(y=mv, line=dict(color=theme.MEAN, width=1.5, dash="dot"))
                     fig.add_trace(go.Scatter(
                         x=[px], y=[mv], mode="markers",
                         name=t["occ_marker"].format(name=fd.pcs_name(code, lang)[:40]),
-                        marker=dict(symbol="star", size=16, color="#e15759",
+                        marker=dict(symbol="star", size=16, color=theme.MEAN,
                                    line=dict(width=1, color="#9a2f33"))))
                     markers_added = True
 
@@ -708,7 +729,7 @@ with tab_pct:
                                 mode="lines+markers",
                                 name=t["own_dist_name"].format(
                                     name=fd.pcs_name(code, lang)[:35], year=micro_year),
-                                line=dict(color="#59a14f", width=2, dash="dash"),
+                                line=dict(color="#5B8A72", width=2, dash="dash"),
                                 marker=dict(size=7, symbol="diamond")))
             if show_own and query_codes and not any_own_dist:
                 st.caption(t["own_dist_none"])
@@ -720,6 +741,7 @@ with tab_pct:
                 xaxis=dict(tickmode="array", tickvals=[p for p, _ in pts]),
                 margin=dict(t=30, b=40),
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
+            theme.style_fig(fig)
             st.plotly_chart(fig, use_container_width=True, key="fr_dist_chart")
             if markers_added:
                 st.caption(t["marker_note"].format(year=snapshot_year))
@@ -811,11 +833,11 @@ with tab_pct:
                 fig.add_trace(go.Scatter(
                     x=years, y=salary_growth, mode="lines+markers",
                     name=t["sal_growth_label"],
-                    line=dict(color="#4e79a7", width=2), marker=dict(size=6)))
+                    line=dict(color=theme.ACCENT, width=2.5), marker=dict(size=6)))
                 fig.add_trace(go.Scatter(
                     x=years, y=infl_growth, mode="lines+markers",
                     name=t["cpi_label"],
-                    line=dict(color="#f28e2b", width=2, dash="dash"), marker=dict(size=6)))
+                    line=dict(color=theme.MEAN, width=2, dash="dash"), marker=dict(size=6)))
                 yaxis = t["growth_axis"].format(base=base_y)
                 last_y, last_c = pairs[-1]
                 if cpi.get(last_y):
@@ -842,13 +864,14 @@ with tab_pct:
                     x=years, y=ys, mode="lines+markers",
                     name=(tr_measure if tr_series == t["trend_dist"] else
                           (t["ensemble"] if tr_group == "_T" else fd.pcs_name(tr_group, lang))),
-                    line=dict(color="#4e79a7", width=2), marker=dict(size=6)))
+                    line=dict(color=theme.ACCENT, width=2.5), marker=dict(size=6)))
                 summary = None
 
             fig.update_layout(
                 height=380, xaxis_title="", yaxis_title=yaxis,
                 margin=dict(t=30, b=40), hovermode="x unified",
                 legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
+            theme.style_fig(fig)
             st.plotly_chart(fig, use_container_width=True, key="fr_tr_chart")
             if summary:
                 st.caption(summary)
@@ -934,6 +957,7 @@ with tab_age:
                     xaxis_title=t["age_axis"], yaxis_title=t["sal_axis"],
                     margin=dict(t=50, b=40),
                     legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0))
+                theme.style_fig(fig)
                 st.plotly_chart(fig, use_container_width=True,
                                 key=f"fr_age_chart_{code}")
 
@@ -944,9 +968,10 @@ with tab_age:
             cmp_rows.sort(key=lambda r: (pd.isna(r[1]), r[1]))
             fig = go.Figure(go.Bar(
                 x=[v for _, v in cmp_rows], y=[n for n, _ in cmp_rows],
-                orientation="h", marker_color="#4e79a7"))
+                orientation="h", marker_color=theme.ACCENT))
             fig.update_layout(height=90 + 45 * len(cmp_rows),
                               xaxis_title=t["sal_axis"], margin=dict(t=20, b=40))
+            theme.style_fig(fig, horizontal=True)
             st.plotly_chart(fig, use_container_width=True, key="fr_cmp_chart")
 
         with st.expander(t["raw"]):
@@ -999,11 +1024,12 @@ with tab_reg:
             fig = go.Figure(go.Bar(
                 x=[v for _, v, _ in rows], y=[n for n, _, _ in rows],
                 orientation="h",
-                marker_color=["#e15759" if fr else "#4e79a7"
+                marker_color=[theme.MEAN if fr else theme.ACCENT
                               for _, _, fr in rows]))
             fig.update_layout(height=110 + 30 * len(rows),
                               xaxis_title=t["reg_axis"],
                               margin=dict(t=20, b=40))
+            theme.style_fig(fig, horizontal=True)
             st.plotly_chart(fig, use_container_width=True, key="fr_reg_chart")
             with st.expander(t["raw"]):
                 tbl = pd.DataFrame(

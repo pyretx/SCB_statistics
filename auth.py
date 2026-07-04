@@ -62,6 +62,27 @@ def sign_in(email: str, password: str):
         return None, str(e)
 
 
+def sign_up(email: str, password: str, full_name: str = ""):
+    """Public self-service registration (uses the anon/public client, not the
+    admin API). New accounts default to role 'standard' (no app_metadata is
+    set here — only the service-role client may set it). Depends on the
+    Supabase project having "Enable sign ups" turned on, and on whether email
+    confirmation is required there (both are dashboard settings, not code).
+    Returns (user_dict_or_None, error_str_or_None)."""
+    try:
+        res = _client(service=False).auth.sign_up({
+            "email": email, "password": password,
+            "options": {"data": {"full_name": full_name}} if full_name else {},
+        })
+        u = res.user
+        if u is None:
+            return None, "Sign-up did not return a user."
+        role = (u.app_metadata or {}).get("role", "standard")
+        return {"id": u.id, "email": u.email, "role": role}, None
+    except Exception as e:
+        return None, str(e)
+
+
 def list_users() -> list[dict]:
     resp = _client(service=True).auth.admin.list_users()
     users = resp if isinstance(resp, list) else getattr(resp, "users", resp)

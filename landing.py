@@ -1,54 +1,399 @@
-"""Country landing page — pick which country's salary statistics to explore."""
+"""Landing page — pick a country's salary statistics, or sign in / create a
+free account. Visual design follows the approved mockup (Hanken Grotesk +
+JetBrains Mono, blue #0A63A6 accent) as closely as Streamlit's own widgets
+allow: native st.container(border=True) cards + st.button for real navigation
+(the mockup's onclick handlers can't fire through st.markdown — JS is
+stripped — so every interactive element here is a real Streamlit widget;
+only the decorative parts, e.g. the flag swatches, are inline-styled HTML).
+
+Browsing stays free (confirmed 2026-07 — see project memory): country cards
+open directly, no login required. Sign in / Create account are here for the
+admin flow and for people who want an account; they do not gate the data —
+so there are deliberately no "Locked" badges or gated-access banners here,
+unlike the original mockup export (which defaults to a gated variant).
+"""
 import os
 
+import requests
 import streamlit as st
+
+import auth
 
 _ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 _GLOBE  = os.path.join(_ASSETS, "logo.png")
-_SWEDEN = os.path.join(_ASSETS, "logo_sweden.png")
-_FRANCE = os.path.join(_ASSETS, "logo_france.png")
 
-h_logo, h_title = st.columns([1, 11], vertical_alignment="center")
-with h_logo:
-    st.image(_GLOBE, width=52)
-with h_title:
-    st.title("Salary Explorer")
-st.caption("Interactive official salary statistics. Pick a country to get started.")
+BLUE = "#0A63A6"
+
+# Country-card CTAs are real <a href="?country=..."> links inside HTML (so the
+# whole card can be one styled block with a scoped :hover, per design-system §6).
+# JS can't call Python, so navigation rides a URL query param routed here.
+_ROUTES = {"sweden": "scb_salaries.py", "france": "france.py"}
+if st.query_params.get("country") in _ROUTES:
+    st.switch_page(_ROUTES[st.query_params["country"]])
+
+# Single source of truth for the country grid — add a country here only.
+COUNTRIES = [
+    {
+        "num": "01", "name": "Sweden", "native": "Sverige", "source": "SCB · official",
+        "flag_css": ("background-color:#006AA7;"
+                     "background-image:linear-gradient(90deg,transparent 26%,#FECC00 26% 40%,transparent 40%),"
+                     "linear-gradient(0deg,transparent 40%,#FECC00 40% 60%,transparent 60%);"),
+        "points": [
+            "Salary percentiles P10–P90 · ~430 occupations (SSYK)",
+            "Sector, sex, age, region &amp; education breakdowns",
+            "Work-permit salary check · Migrationsverket rules",
+        ],
+        "page": "scb_salaries.py", "live": True,
+    },
+    {
+        "num": "02", "name": "France", "native": "République française", "source": "INSEE · official",
+        "flag_css": ("background-image:linear-gradient(90deg,#0055A4 33.33%,#ffffff 33.33% 66.66%,"
+                     "#EF4135 66.66%);"),
+        "points": [
+            "Mean salaries · 361 detailed occupations (PCS)",
+            "Wage distribution by socio-professional group",
+            "Inflation-adjusted trends, series since 1951",
+        ],
+        "page": "france.py", "live": True,
+    },
+    {
+        "num": "03", "name": "United States", "native": "United States",
+        "source": "BLS Public Data API · planned",
+        "flag_css": ("background-color:#B22234;"
+                     "background-image:linear-gradient(#3C3B6E,#3C3B6E),"
+                     "repeating-linear-gradient(180deg,#B22234 0 7.7%,#ffffff 7.7% 15.4%);"
+                     "background-size:40% 53.85%,100% 100%;"
+                     "background-position:top left,top left;background-repeat:no-repeat,no-repeat;"),
+        "points": [
+            "Salary benchmarks by occupation &amp; location",
+            "Mean, median, P10/P25/P75/P90 wage data",
+            "Labour market indicators &amp; compensation trends",
+        ],
+        "page": None, "live": False,
+    },
+]
+N_OCCUPATIONS = "790+"  # ~430 SSYK (Sweden) + 361 PCS (France)
+
+
+@st.cache_data(show_spinner=False, persist="disk", ttl=86400)
+def _fetch_preview_data(occ_code: str, year: str):
+    """Real SCB percentile data for the hero's live-preview card. Same table/
+    codes/dims as Sweden's own percentile tab (AM0110A, LoneSpridSektYrk4AN),
+    queried directly here since importing scb_salaries.py would execute its
+    whole page script rather than just its functions."""
+    url = "https://api.scb.se/OV0104/v1/doris/en/ssd/AM/AM0110/AM0110A/LoneSpridSektYrk4AN"
+    body = {"query": [
+        {"code": "Sektor",       "selection": {"filter": "item", "values": ["0"]}},
+        {"code": "Yrke2012",     "selection": {"filter": "item", "values": [occ_code]}},
+        {"code": "Kon",          "selection": {"filter": "item", "values": ["1+2"]}},
+        {"code": "ContentsCode", "selection": {"filter": "item",
+         "values": ["000007CD", "000007CE", "000007CF", "000007CG", "000007CH", "000007CI"]}},
+        {"code": "Tid",          "selection": {"filter": "item", "values": [year]}},
+    ], "response": {"format": "json"}}
+    try:
+        r = requests.post(url, json=body, timeout=20)
+        r.raise_for_status()
+        vals = r.json()["data"][0]["values"]
+        avg, med, p10, p25, p75, p90 = (float(v) for v in vals)
+        return {"avg": avg, "median": med, "p10": p10, "p25": p25, "p75": p75, "p90": p90}
+    except Exception:
+        return None
+
+
+# ── Fonts + base type (scoped to this page — each Streamlit page is its own
+# script run, so this never bleeds into Sweden's / France's own styling) ──────
+st.markdown("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  .se-mono { font-family:'JetBrains Mono',monospace; }
+  /* Constrain + centre the landing to the mockup's editorial width. The wide
+     layout is only needed for the data-explorer pages; here it made everything
+     stretch ("page within a page") on big monitors. This <style> is injected by
+     the landing script only, so it never touches Sweden/France. */
+  [data-testid="stMainBlockContainer"] { max-width: 1180px; margin: 0 auto; }
+  /* Country grid + cards — one HTML block, so hover is scoped to the CARD only
+     (the old rule targeted a shared Streamlit class and lifted the whole page). */
+  .se-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+  .se-country-card {
+    display: flex; flex-direction: column;
+    background: #fff; border: 1px solid #E7E9ED; border-radius: 16px; padding: 24px;
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  }
+  .se-country-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 40px -24px rgba(16,21,31,.30);
+    border-color: #D3D8DF;
+  }
+  /* Fixed-size flag swatch so it never stretches with the card width. */
+  .se-flag { width: 46px; height: 33px; border-radius: 7px; flex: none; overflow: hidden;
+             border: 1px solid rgba(0,0,0,.08); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  /* color/text-decoration need !important to beat Streamlit's global <a> link
+     styling (linkColor is the same blue, so the text would vanish otherwise). */
+  .se-cta { display:flex; align-items:center; justify-content:center; gap:7px;
+            background:#0A63A6; color:#fff !important; font-weight:600; font-size:14px;
+            padding:11px; border-radius:10px; text-decoration:none !important;
+            white-space:nowrap; box-shadow:0 2px 8px rgba(10,99,166,.24); }
+  .se-cta:hover { background:#0B72C2; color:#fff !important; }
+  .se-cta-off { display:flex; align-items:center; justify-content:center; background:#F4F5F7;
+                color:#8A919D; font-weight:600; font-size:13px; padding:11px; border-radius:10px;
+                border:1px solid #E7E9ED; white-space:nowrap; }
+</style>
+""", unsafe_allow_html=True)
+
+
+@st.dialog("Welcome to Salary Explorer", width="large")
+def _auth_dialog():
+    left, right = st.columns([0.85, 1], gap="medium")
+
+    with left:
+        st.markdown(f"""
+        <div style="background:{BLUE};color:#fff;border-radius:12px;padding:26px 24px;height:100%;">
+          <div class="se-mono" style="font-size:11px;font-weight:600;letter-spacing:.16em;
+                                      color:rgba(255,255,255,.72);margin-bottom:14px;">SECURE ACCESS</div>
+          <div style="font-size:22px;line-height:1.2;font-weight:800;letter-spacing:-.01em;margin-bottom:20px;">
+            Official salary data, always free to browse.
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;
+                      color:rgba(255,255,255,.92);margin-bottom:12px;">
+            <span style="flex:none;">✓</span><span>Explore Sweden &amp; France right now - no account needed</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;
+                      color:rgba(255,255,255,.92);margin-bottom:12px;">
+            <span style="flex:none;">✓</span><span>An account is only needed for admin tools today</span>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:10px;font-size:13.5px;
+                      color:rgba(255,255,255,.92);">
+            <span style="flex:none;">✓</span><span>Free while in beta</span>
+          </div>
+          <div class="se-mono" style="font-size:11px;color:rgba(255,255,255,.62);margin-top:24px;">
+            SCB · INSEE · official statistics only
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with right:
+        # The header buttons pre-seed session_state["_auth_mode"] before this
+        # dialog opens; don't ALSO pass index= to the same-keyed widget
+        # (Streamlit warns — ambiguous which one wins). Letting the pre-set
+        # session_state value alone drive the widget's initial value is the
+        # supported pattern.
+        mode = st.radio("mode", ["Sign in", "Create account"],
+                        horizontal=True, label_visibility="collapsed", key="_auth_mode")
+        st.caption("Sign in or create a free account. Browsing salary data never requires "
+                  "one — this is for admin access and account features.")
+
+        if mode == "Create account":
+            name = st.text_input("Full name", key="_su_name", placeholder="Jane Andersson")
+        email = st.text_input("Email", key="_auth_email", placeholder="you@example.com")
+        pw = st.text_input("Password", key="_auth_pw", type="password", placeholder="••••••••")
+
+        if mode == "Sign in":
+            if st.button("Sign in", type="primary", use_container_width=True):
+                user, err = auth.sign_in(email.strip(), pw)
+                if user:
+                    st.session_state["auth_user"] = user
+                    st.session_state.pop("_auth_pw", None)
+                    st.session_state["_show_auth"] = False
+                    st.rerun()
+                else:
+                    st.error(f"Sign-in failed: {err}")
+        else:
+            if st.button("Create account", type="primary", use_container_width=True):
+                if not email.strip() or not pw:
+                    st.error("Email and password are required.")
+                else:
+                    user, err = auth.sign_up(email.strip(), pw, name.strip())
+                    if user:
+                        st.session_state.pop("_auth_pw", None)
+                        st.success("Account created — check your inbox to confirm your "
+                                  "email, then sign in.")
+                    else:
+                        st.error(f"Could not create account: {err}")
+
+        st.caption("By continuing you agree to the Terms and acknowledge the Privacy Policy.")
+        if st.button("Close", key="_auth_close"):
+            st.session_state["_show_auth"] = False
+            st.rerun()
+
+
+# ── Header ─────────────────────────────────────────────────────────────────
+# Nested columns so the button pair shares its own row and doesn't get
+# squeezed by the outer ratio (a flat 5-way split made "Create account" wrap
+# letter-by-letter — buttons need real pixel room, not a thin slice of 12).
+h_left, h_right = st.columns([2, 1], vertical_alignment="center")
+with h_left:
+    # Mockup logo mark: blue rounded square with a globe glyph, tight to the
+    # wordmark (a single flex row — no column gap to blow the spacing out).
+    st.markdown(f"""
+    <div style="display:flex;align-items:center;gap:11px;">
+      <div style="width:30px;height:30px;border-radius:8px;background:{BLUE};flex:none;
+                  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(10,99,166,.35);">
+        <div style="width:13px;height:13px;border-radius:50%;border:2px solid #fff;position:relative;">
+          <div style="position:absolute;top:50%;left:-2px;right:-2px;height:2px;background:#fff;transform:translateY(-50%);"></div>
+        </div>
+      </div>
+      <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;">Salary Explorer</span>
+      <span class="se-mono" style="font-size:10px;font-weight:600;letter-spacing:.06em;
+            color:{BLUE};background:rgba(10,99,166,.10);padding:3px 7px;border-radius:5px;">BETA</span>
+    </div>
+    """, unsafe_allow_html=True)
+with h_right:
+    hr_signin, hr_signup = st.columns(2)
+    with hr_signin:
+        if st.button("Sign in", use_container_width=True, key="hdr_signin"):
+            st.session_state["_auth_mode"] = "Sign in"
+            st.session_state["_show_auth"] = True
+            st.rerun()
+    with hr_signup:
+        if st.button("Create account", type="primary", use_container_width=True, key="hdr_signup"):
+            st.session_state["_auth_mode"] = "Create account"
+            st.session_state["_show_auth"] = True
+            st.rerun()
+
+# Dialog must be (re)invoked on every rerun while open — a Streamlit dialog
+# only stays open across its own internal reruns (typing, radio clicks) if
+# it's called unconditionally like this, gated by persisted state; calling it
+# only inside the button's `if` block would close it the instant you type.
+if st.session_state.get("_show_auth"):
+    _auth_dialog()
+
+st.divider()
+
+# ── Hero ───────────────────────────────────────────────────────────────────
+hc1, hc2 = st.columns([1.05, 0.95], gap="large")
+with hc1:
+    st.markdown(f"""
+    <div class="se-mono" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:{BLUE};margin-bottom:20px;">
+      OFFICIAL STATISTICS · GLOBAL
+    </div>
+    <h1 style="margin:0;font-size:52px;line-height:1.06;letter-spacing:-.025em;font-weight:800;color:#0C1119;">
+      Salary data from national agencies, made explorable.
+    </h1>
+    <p style="margin:20px 0 0;font-size:17px;line-height:1.55;color:#5B6472;max-width:520px;">
+      One clean interface over official government statistics — percentiles, breakdowns
+      and trends, standardised so you can compare occupations across countries.
+    </p>
+    <div style="display:flex;gap:0;margin-top:34px;flex-wrap:wrap;align-items:stretch;">
+      <div style="padding-right:28px;">
+        <div class="se-mono" style="font-size:26px;font-weight:600;color:#0C1119;letter-spacing:-.02em;">2</div>
+        <div style="font-size:13px;color:#7A828F;margin-top:3px;">countries live</div>
+      </div>
+      <div style="width:1px;background:#E1E4E9;margin:0 28px 0 0;"></div>
+      <div style="padding-right:28px;">
+        <div class="se-mono" style="font-size:26px;font-weight:600;color:#0C1119;letter-spacing:-.02em;">{N_OCCUPATIONS}</div>
+        <div style="font-size:13px;color:#7A828F;margin-top:3px;">occupations</div>
+      </div>
+      <div style="width:1px;background:#E1E4E9;margin:0 28px 0 0;"></div>
+      <div>
+        <div class="se-mono" style="font-size:26px;font-weight:600;color:#0C1119;letter-spacing:-.02em;">100%</div>
+        <div style="font-size:13px;color:#7A828F;margin-top:3px;">official sources</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with hc2:
+    _preview = _fetch_preview_data("2512", "2025")
+    if _preview:
+        _rows = [
+            ("P10", _preview["p10"]), ("P25", _preview["p25"]), ("MED", _preview["median"]),
+            ("P75", _preview["p75"]), ("P90", _preview["p90"]),
+        ]
+        _max = _preview["p90"] or 1
+        _bar_html = "".join(f'''
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;">
+        <span class="se-mono" style="font-size:11px;color:{'#0A63A6' if lbl=='MED' else '#98A0AC'};
+                                     font-weight:{'600' if lbl=='MED' else '400'};width:32px;flex:none;">{lbl}</span>
+        <div style="flex:1;height:8px;border-radius:5px;background:#EEF0F3;overflow:hidden;">
+          <div style="width:{val/_max*96:.0f}%;height:100%;background:{'#0A63A6' if lbl=='MED' else '#B9C6D4'};"></div>
+        </div>
+        <span class="se-mono" style="font-size:11px;color:#5B6472;width:56px;text-align:right;flex:none;">{val:,.0f}</span>
+      </div>''' for lbl, val in _rows)
+        _median_fmt = f"{_preview['median']:,.0f}"
+    else:
+        _bar_html = "<div style='font-size:13px;color:#9AA1AC;'>Live data unavailable right now.</div>"
+        _median_fmt = "—"
+
+    st.markdown(f"""
+    <div style="background:#fff;border:1px solid #E7E9ED;border-radius:16px;padding:22px;
+                box-shadow:0 20px 40px -26px rgba(16,21,31,.25);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div>
+          <div class="se-mono" style="font-size:10px;font-weight:600;letter-spacing:.14em;color:{BLUE};">LIVE PREVIEW</div>
+          <div style="font-weight:700;font-size:15px;margin-top:5px;">Software developers</div>
+          <div style="font-size:12px;color:#8A919D;margin-top:2px;">Sweden · SCB 2025 · monthly, SEK</div>
+        </div>
+        <div style="width:34px;height:24px;border-radius:5px;border:1px solid rgba(0,0,0,.08);
+                    background:#006AA7;background-image:linear-gradient(90deg,transparent 26%,#FECC00 26% 40%,transparent 40%),
+                    linear-gradient(0deg,transparent 40%,#FECC00 40% 60%,transparent 60%);"></div>
+      </div>
+      {_bar_html}
+      <div style="margin-top:14px;padding-top:13px;border-top:1px solid #EEF0F3;
+                  display:flex;justify-content:space-between;">
+        <span style="font-size:12px;color:#8A919D;">Median gross salary</span>
+        <span class="se-mono" style="font-weight:600;font-size:14px;">{_median_fmt} kr<span style="color:#98A0AC;font-weight:400;">/mo</span></span>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.write("")
 st.write("")
 
-c1, c2 = st.columns(2, gap="large")
+# ── Select a country ───────────────────────────────────────────────────────
+st.markdown(f"""
+<div class="se-mono" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:{BLUE};margin-bottom:10px;">
+  SELECT A COUNTRY
+</div>
+""", unsafe_allow_html=True)
+st.subheader("Where do you want to look?")
+st.write("")
 
-with c1:
-    with st.container(border=True):
-        t_logo, t_name = st.columns([1, 6], vertical_alignment="center")
-        with t_logo:
-            st.image(_SWEDEN, width=40)
-        with t_name:
-            st.subheader("Sweden · Sverige")
-        st.markdown(
-            "- Salary **percentiles (P10–P90)** for ~430 occupations (SSYK)\n"
-            "- Sector, sex, **age, region, education** breakdowns\n"
-            "- **Work-permit** salary check (Migrationsverket rules)\n"
-            "- Inflation-adjusted trends · Data: **SCB**, 2014–2025"
-        )
-        if st.button("Open Sweden →", type="primary", use_container_width=True, key="go_se"):
-            st.switch_page("scb_salaries.py")
+# One HTML block for the whole grid → responsive auto-fill columns + a hover
+# scoped to each card, and fixed-size flags that never stretch.
+_page_code = {"scb_salaries.py": "sweden", "france.py": "france", None: "us"}
+_cards = []
+for c in COUNTRIES:
+    badge = ('<div style="background:rgba(10,99,166,.10);color:#0A63A6;font-size:11px;'
+             'font-weight:600;padding:4px 10px;border-radius:20px;flex:none;">Coming soon</div>'
+             if not c["live"] else "")
+    bullets = "".join(
+        '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
+        '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
+        f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in c["points"])
+    if c["live"]:
+        cta = (f'<a class="se-cta" href="?country={_page_code[c["page"]]}" '
+               f'target="_parent">Open {c["name"]} →</a>')
+    else:
+        cta = '<span class="se-cta-off">Notify me</span>'
+    _cards.append(f"""
+    <div class="se-country-card">
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+        <div class="se-flag" style="{c['flag_css']}"></div>
+        <div style="flex:1;min-width:0;">
+          <div style="white-space:nowrap;">
+            <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{c['num']}</span>
+            <span style="font-weight:700;font-size:17px;">{c['name']}</span></div>
+          <div style="font-size:12px;color:#8A919D;margin-top:1px;">{c['native']}</div>
+        </div>
+        {badge}
+      </div>
+      <ul style="list-style:none;margin:0 0 auto;padding:0;display:flex;flex-direction:column;gap:10px;">
+        {bullets}
+      </ul>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;
+                  margin-top:22px;padding-top:16px;border-top:1px solid #EEF0F3;">
+        <span class="se-mono" style="font-size:11px;color:#98A0AC;">{c['source']}</span>
+        {cta}
+      </div>
+    </div>""")
 
-with c2:
-    with st.container(border=True):
-        t_logo, t_name = st.columns([1, 6], vertical_alignment="center")
-        with t_logo:
-            st.image(_FRANCE, width=40)
-        with t_name:
-            st.subheader("France")
-        st.markdown(
-            "- **Mean salaries** for 361 detailed occupations (PCS)\n"
-            "- Wage **distribution by socio-professional group**, series since 1951\n"
-            "- Inflation-adjusted trends (IPC)\n"
-            "- Data: **INSEE**"
-        )
-        if st.button("Open France →", use_container_width=True, key="go_fr"):
-            st.switch_page("france.py")
+# Flatten to a single line: Markdown treats 4-space-indented lines as a CODE
+# block, which would show the card HTML as raw text instead of rendering it.
+_grid = f'<div class="se-grid">{"".join(_cards)}</div>'
+_grid = "".join(line.strip() for line in _grid.splitlines())
+st.markdown(_grid, unsafe_allow_html=True)
 
 st.write("")
-st.caption("Sources: Statistics Sweden (SCB) PxWebApi · INSEE Melodi API")
+st.divider()
+st.caption("Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France)")

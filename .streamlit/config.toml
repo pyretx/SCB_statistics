@@ -11,6 +11,59 @@ enableXsrfProtection = false
 [browser]
 gatherUsageStats = false
 
+# ── Theme — the design system's single source of truth (design-system.md §1). ──
+# Applied app-wide (both country pages, the landing, every widget) from here so
+# we avoid fragile CSS that targets Streamlit's internal class names.
 [theme]
-# Salary-bar blue as the app's primary colour (buttons, sliders, toggles, radios).
-primaryColor = "#006AA7"
+base = "light"
+primaryColor = "#0A63A6"            # accent / brand blue
+backgroundColor = "#F6F7F9"         # app background
+secondaryBackgroundColor = "#FFFFFF" # cards, sidebar, inputs
+textColor = "#0C1119"               # headlines / primary text
+linkColor = "#0A63A6"
+borderColor = "#E7E9ED"
+baseRadius = "medium"
+font = "Hanken Grotesk"
+headingFont = "Hanken Grotesk"
+codeFont = "JetBrains Mono"
+# Restrained, accent-derived categorical palette for any Streamlit-native charts
+# (go.Figure charts are themed explicitly in theme.py). Red reserved for means.
+chartCategoricalColors = ["#0A63A6", "#4E93C6", "#5B8A72", "#8B5FA6", "#B8863B",
+                          "#3F7CAC", "#7A828F", "#C0453A"]
+
+# Hanken Grotesk (UI/headings) and JetBrains Mono (numbers/labels/code). Both are
+# variable fonts — one woff2 file serves every weight, declared per weight so each
+# resolves. Google-hosted (design-system.md endorses Google Fonts); a silent font
+# fallback is non-fatal if these URLs ever rotate.
+[[theme.fontFaces]]
+family = "Hanken Grotesk"
+url = "https://fonts.gstatic.com/s/hankengrotesk/v12/ieVn2YZDLWuGJpnzaiwFXS9tYtpd59A.woff2"
+weight = 400
+[[theme.fontFaces]]
+family = "Hanken Grotesk"
+url = "https://fonts.gstatic.com/s/hankengrotesk/v12/ieVn2YZDLWuGJpnzaiwFXS9tYtpd59A.woff2"
+weight = 500
+[[theme.fontFaces]]
+family = "Hanken Grotesk"
+url = "https://fonts.gstatic.com/s/hankengrotesk/v12/ieVn2YZDLWuGJpnzaiwFXS9tYtpd59A.woff2"
+weight = 600
+[[theme.fontFaces]]
+family = "Hanken Grotesk"
+url = "https://fonts.gstatic.com/s/hankengrotesk/v12/ieVn2YZDLWuGJpnzaiwFXS9tYtpd59A.woff2"
+weight = 700
+[[theme.fontFaces]]
+family = "Hanken Grotesk"
+url = "https://fonts.gstatic.com/s/hankengrotesk/v12/ieVn2YZDLWuGJpnzaiwFXS9tYtpd59A.woff2"
+weight = 800
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2"
+weight = 400
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2"
+weight = 500
+[[theme.fontFaces]]
+family = "JetBrains Mono"
+url = "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbv2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKwBNntkaToggR7BYRbKPxDcwg.woff2"
+weight = 600

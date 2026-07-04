@@ -6,6 +6,7 @@ import json
 import os
 from datetime import datetime
 import auth
+import theme
 
 # ── SSYK 2012 hierarchy labels ─────────────────────────────────────────────────
 
@@ -1344,6 +1345,7 @@ def _open_panel(name):
 
 
 with st.sidebar:
+    st.page_link("landing.py", label="← Home", icon="🏠")
     lang = st.radio("🌐 Language / Språk", ["EN", "SV"],
                     format_func=lambda k: {"EN": "English", "SV": "Svenska"}[k],
                     horizontal=True)
@@ -1920,12 +1922,31 @@ def render_ssyk_browser(prefix: str):
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
-c_logo, c_title = st.columns([1, 12], vertical_alignment="center")
-with c_logo:
-    st.image(_ICON_PNG, width=56)
-with c_title:
-    st.title(t["title"])
-st.caption(t["caption"])
+# Header per design-system.md §4: mono eyebrow, H1, source line, avatar badge.
+_au = st.session_state.get("auth_user") or {}
+_email = _au.get("email", "")
+if _email:
+    _p = _email.split("@")[0].replace(".", " ").replace("_", " ").split()
+    _initials = ("".join(w[0] for w in _p[:2]) or _email[:2]).upper()
+    _avatar = (f'<div style="width:34px;height:34px;border-radius:50%;flex:none;'
+               f'background:rgba(10,99,166,.12);color:#0A63A6;display:flex;'
+               f'align-items:center;justify-content:center;font-weight:700;'
+               f'font-size:13px;">{_initials}</div>')
+else:
+    _avatar = ('<div style="width:34px;height:34px;border-radius:50%;flex:none;'
+               'background:#EDEFF2;color:#98A0AC;display:flex;align-items:center;'
+               'justify-content:center;font-size:15px;">🌐</div>')
+st.markdown(f"""
+<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:6px;">
+  <div>
+    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+                letter-spacing:.16em;color:#0A63A6;margin-bottom:10px;">OFFICIAL STATISTICS · SWEDEN</div>
+    <h1 style="margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#0C1119;line-height:1.05;">{t['title']}</h1>
+    <p style="margin:8px 0 0;font-size:14px;color:#7A828F;">{t['caption']}</p>
+  </div>
+  {_avatar}
+</div>
+""", unsafe_allow_html=True)
 
 # Admin user-management modal (open across reruns via a session flag)
 if st.session_state.get("show_user_mgmt") and \
@@ -2016,7 +2037,7 @@ if agg_mode:
     df = collapse_df(df, occ_col, list(measure_labels),
                      ext_weights=weights, year_col=year_col)
 
-colors = ["#4e79a7","#f28e2b","#e15759","#76b7b2","#59a14f","#edc948","#b07aa1","#ff9da7"]
+colors = theme.SERIES
 
 def measure_toggle(key):
     """Monthly vs Basic salary radio + definitions. Returns (column_name, axis_label)."""
@@ -2090,7 +2111,7 @@ with tab_pct:
             fig.add_trace(go.Scatter(
                 x=pct_pts, y=[row[m] for m in pct_pts], mode="lines+markers",
                 name=legend_name,
-                line=dict(color=color, width=2), marker=dict(size=8),
+                line=dict(color=color, width=2.5), marker=theme.series_marker(color),
             ))
         # Average — standalone diamond, disconnected from the percentile line
         if avg_label is not None:
@@ -2107,6 +2128,7 @@ with tab_pct:
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         height=420, margin=dict(t=60, b=40), hovermode="x unified",
     )
+    theme.style_fig(fig)
     st.plotly_chart(fig, use_container_width=True)
 
     # Trend (single occupation or aggregated group)
@@ -2140,19 +2162,21 @@ with tab_pct:
                 fig2.add_trace(go.Scatter(
                     x=years, y=[(s / base_s - 1) * 100 for _, s in pairs],
                     mode="lines+markers", name=t["trend_sal_growth"],
-                    line=dict(color="#4e79a7", width=2), marker=dict(size=7)))
+                    line=dict(color=theme.ACCENT, width=2.5),
+                    marker=theme.series_marker(theme.ACCENT)))
                 fig2.add_trace(go.Scatter(
                     x=years, y=[(cpi[y] / cpi_base - 1) * 100 if cpi.get(y) else None
                                 for y in years],
                     mode="lines+markers", name=t["trend_infl"],
-                    line=dict(color="#f28e2b", width=2, dash="dash"), marker=dict(size=6)))
+                    line=dict(color=theme.MEAN, width=2, dash="dash"), marker=dict(size=6)))
                 yaxis = t["trend_growth_axis"].format(base=base_y)
             elif view == t["trend_real"] and cpi_base:
                 fig2.add_trace(go.Scatter(
                     x=years,
                     y=[s * cpi_base / cpi[y] if cpi.get(y) else None for y, s in pairs],
                     mode="lines+markers", name=t["trend_real"],
-                    line=dict(color="#59a14f", width=2), marker=dict(size=7)))
+                    line=dict(color=theme.ACCENT, width=2.5),
+                    marker=theme.series_marker(theme.ACCENT)))
                 yaxis = t["trend_real_axis"].format(base=base_y)
             else:
                 if view != t["trend_nominal"] and not cpi_base:
@@ -2160,13 +2184,15 @@ with tab_pct:
                 fig2.add_trace(go.Scatter(
                     x=years, y=[s for _, s in pairs], mode="lines+markers",
                     name=trend_measure,
-                    line=dict(color="#4e79a7", width=2), marker=dict(size=7)))
+                    line=dict(color=theme.ACCENT, width=2.5),
+                    marker=theme.series_marker(theme.ACCENT)))
 
             fig2.update_layout(xaxis_title=t["x_year"], yaxis_title=yaxis,
                                xaxis=dict(type="category"), height=340,
                                margin=dict(t=40, b=40),
                                legend=dict(orientation="h", yanchor="bottom", y=1.02,
                                            xanchor="left", x=0))
+            theme.style_fig(fig2)
             st.plotly_chart(fig2, use_container_width=True)
 
             # Summary of salary vs inflation over the shown span
@@ -2306,6 +2332,7 @@ with tab_calc:
                        range=[5, 95]),
             height=380, margin=dict(t=40, b=40), showlegend=False,
         )
+        theme.style_fig(fig_c)
         st.plotly_chart(fig_c, use_container_width=True)
 
 # ── Tab: Work permit check ────────────────────────────────────────────────────
@@ -2447,6 +2474,7 @@ with tab_permit:
                 xaxis_title=t["x_pct"], yaxis_title=t["y_salary"],
                 xaxis=dict(tickvals=levs, ticktext=[f"P{lv}" for lv in levs], range=[5, 95]),
                 height=360, margin=dict(t=30, b=40), showlegend=False)
+            theme.style_fig(fig_wp)
             st.plotly_chart(fig_wp, use_container_width=True)
             st.caption(t["wp_market_note"])
 
@@ -2588,7 +2616,7 @@ with tab_lead:
             topn = st.slider(t["lead_topn"], 5, 40, 15, key="lead_topn")
             show = ranked.head(topn).iloc[::-1]  # reversed so #1 is on top of the bar chart
             user_codes = set(selected_occ_codes)
-            bar_colors = ["#e15759" if c in user_codes else "#4e79a7" for c in show["code"]]
+            bar_colors = [theme.ACCENT if c in user_codes else theme.SOFT for c in show["code"]]
 
             fig_l = go.Figure(go.Bar(
                 x=show["val"], y=show["name"], orientation="h",
@@ -2600,6 +2628,7 @@ with tab_lead:
                 height=max(360, 26 * len(show) + 80),
                 margin=dict(t=30, b=40, l=260),
             )
+            theme.style_fig(fig_l, horizontal=True)
             st.plotly_chart(fig_l, use_container_width=True)
 
             # Where do the user's searched occupations land?
@@ -2656,8 +2685,8 @@ with tab_age:
             sub = df_age[df_age[occ_col2].str.strip() == code]
             oname = occ_name(code)
             vals = {}
-            for sex_code_val, sex_label, color in [("1", t["men"], "#1a3a6b"),
-                                                    ("2", t["women"], "#9ba8cc")]:
+            for sex_code_val, sex_label, color in [("1", t["men"], theme.SEX_MEN),
+                                                    ("2", t["women"], theme.SEX_WOMEN)]:
                 rows = sub[sub[sex_col].str.strip() == sex_code_val].copy()
                 rows = rows[rows[age_col].isin(AGE_GROUPS)].set_index(age_col).reindex(AGE_GROUPS)
                 vals[sex_code_val] = rows[sal_col]
@@ -2691,6 +2720,7 @@ with tab_age:
             layout["yaxis2"] = dict(title=t["ratio_axis"], overlaying="y", side="right",
                                     range=[0, 110], showgrid=False)
         fig_age.update_layout(**layout)
+        theme.style_fig(fig_age)
         st.plotly_chart(fig_age, use_container_width=True)
         show_breakdown_raw(df_age, age_col,
                            "Age group" if lang == "EN" else "Åldersgrupp",
@@ -2725,7 +2755,7 @@ with tab_reg:
                 group_cols=[reg_col, df_reg.columns[1], sex_c, yr_c])
             st.caption(t["agg_info"].format(n=len(selected_occ_codes), grp=agg_name))
 
-        TOTAL_COLOR = "#e15759"  # distinct colour for the national total (code "SE")
+        TOTAL_COLOR = theme.MEAN  # distinct colour for the national total (code "SE")
         multi = len(display_codes) > 1
 
         fig_reg = go.Figure()
@@ -2765,6 +2795,7 @@ with tab_reg:
             height=420, margin=dict(t=40, b=40, l=180),
             showlegend=len(selected_occ_codes) > 1,
         )
+        theme.style_fig(fig_reg, horizontal=True)
         st.plotly_chart(fig_reg, use_container_width=True)
         show_breakdown_raw(df_reg, reg_col, "Region", dim_map=region_map)
 
@@ -2804,8 +2835,8 @@ with tab_edu:
             sub = df_edu[df_edu[occ_col4].str.strip() == code].copy()
             vals_edu = {}
             for sex_code_val, sex_label, color in [
-                ("1", t["men"],   "#1a3a6b"),
-                ("2", t["women"], "#9ba8cc"),
+                ("1", t["men"],   theme.SEX_MEN),
+                ("2", t["women"], theme.SEX_WOMEN),
             ]:
                 rows = sub[sub[sex_col2].str.strip() == sex_code_val].copy()
                 rows["edu_name"] = rows[edu_col].str.strip().map(edu_map)
@@ -2847,6 +2878,7 @@ with tab_edu:
             layout_edu["xaxis2"] = dict(title=t["ratio_axis"], overlaying="x", side="top",
                                         range=[0, 110], showgrid=False)
         fig_edu.update_layout(**layout_edu)
+        theme.style_fig(fig_edu, horizontal=True)
         st.plotly_chart(fig_edu, use_container_width=True)
         show_breakdown_raw(df_edu, edu_col,
                            "Education level" if lang == "EN" else "Utbildningsnivå",
