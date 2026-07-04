@@ -674,7 +674,7 @@ def save_wp_rules(rules: dict):
 # ── General app settings (admin-editable) ─────────────────────────────────────
 APP_SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                  "app_settings.json")
-APP_DEFAULTS = {"ssyk_show_3digit": True}
+APP_DEFAULTS = {"ssyk_show_3digit": True, "latest_data_year": 2025}
 
 
 def load_app_settings() -> dict:
@@ -834,6 +834,31 @@ WP_BENCH_YEAR      = _wp["bench_year"]
 WP_EXEMPT_SSYK     = set(_wp["exempt_ssyk"])
 WP_BANNED_FULL     = set(_wp["banned_full"])
 WP_BANNED_PARTIAL  = set(_wp["banned_partial"])
+
+# ── Newest available SCB data year ────────────────────────────────────────────
+# Admin-controlled, persisted in app_settings.json. A forced "check for new data"
+# in the admin panel rolls this forward, updating the year slider, every API
+# query bound and the leaderboard for ALL users at once — no code changes needed.
+LATEST_DATA_YEAR = int(load_app_settings().get("latest_data_year", 2025))
+# First year of the current ("…4AN") table generation; the older "…4A" tables end 2022.
+NEW_GEN_START    = 2023
+
+
+def new_gen_years():
+    """Year strings covered by the current table generation (2023 … latest)."""
+    return [str(y) for y in range(NEW_GEN_START, LATEST_DATA_YEAR + 1)]
+
+
+def _cap_newest(table_list):
+    """Extend the newest table generation's upper year bound to LATEST_DATA_YEAR
+    (the 'hi' is at index 2 for both the 4-tuple and 3-tuple table rows)."""
+    row = list(table_list[-1])
+    row[2] = LATEST_DATA_YEAR
+    table_list[-1] = tuple(row)
+
+
+for _tl in (PCT_TABLES, AGE_TABLES, REG_TABLES, EDU_TABLES):
+    _cap_newest(_tl)
 
 
 def wp_floor(ssyk: str, permit_type: str, is_transition: bool, app_date_iso: str):
@@ -1152,12 +1177,30 @@ _LEAD_TABLES = [
     ("LoneSpridSektorYrk4A", 2014, 2022, ["000000C5", "000000C6"]),
     ("LoneSpridSektYrk4AN",  2023, 2025, ["000007CD", "000007CE"]),
 ]
+_cap_newest(_LEAD_TABLES)
+
+
+def fetch_available_year():
+    """Newest year SCB actually publishes for the current wage table.
+    Reads the table's 'Tid' metadata (a plain GET). Returns int or None on failure.
+    Deliberately uncached — it's only called when an admin forces a check."""
+    url = f"https://api.scb.se/OV0104/v1/doris/en/ssd/{TABLE_BASE}/LoneSpridSektYrk4AN"
+    try:
+        r = requests.get(url, timeout=30)
+        r.raise_for_status()
+        for var in r.json().get("variables", []):
+            if var.get("code") == "Tid":
+                yrs = [int(v) for v in var.get("values", []) if str(v).isdigit()]
+                return max(yrs) if yrs else None
+    except Exception:
+        return None
+    return None
 
 
 @st.cache_data(show_spinner=False, persist="disk")
 def fetch_live_median(lang):
     """Latest SCB national median (all sectors, all occupations, total) → (year, value)."""
-    tables = [("LoneSpridSektYrk4AN", 2023, 2025, ["000007CE"])]
+    tables = [("LoneSpridSektYrk4AN", NEW_GEN_START, LATEST_DATA_YEAR, ["000007CE"])]
     def q(yr, codes):
         return [
             {"code": "Sektor",       "selection": {"filter": "item", "values": ["0"]}},
@@ -1166,7 +1209,7 @@ def fetch_live_median(lang):
             {"code": "ContentsCode", "selection": {"filter": "item", "values": codes}},
             {"code": "Tid",          "selection": {"filter": "item", "values": yr}},
         ]
-    df = _merge_tables(tables, q, lang, ["2023", "2024", "2025"], ("median",))
+    df = _merge_tables(tables, q, lang, new_gen_years(), ("median",))
     if df.empty:
         return None, None
     ycol = df.columns[-2]
@@ -1296,7 +1339,8 @@ st.markdown("<style>[data-testid='stDecoration']{display:none;}</style>",
 
 # Full-page / modal panels are mutually exclusive — opening one closes the rest.
 _PANEL_FLAGS = ("show_user_mgmt", "show_wp_config", "show_app_settings",
-                "show_guide_edit", "show_user_guide", "show_ssyk_guide")
+                "show_guide_edit", "show_user_guide", "show_ssyk_guide",
+                "show_data_year")
 
 
 def _open_panel(name):
@@ -1329,7 +1373,7 @@ with st.sidebar:
         sex_labels.index(st.radio(t["sex"], sex_labels, horizontal=True, key="sex_sel"))
     ]
 
-    all_years = [str(y) for y in range(2014, 2026)]
+    all_years = [str(y) for y in range(2014, LATEST_DATA_YEAR + 1)]
     yr_from, yr_to = st.select_slider(t["year_range"], options=all_years,
                                       value=(all_years[-3], all_years[-1]))
     selected_years = tuple(y for y in all_years if yr_from <= y <= yr_to)
@@ -1466,6 +1510,9 @@ with st.sidebar:
                         ts = refresh_cache()
                     st.success(f"Updated {ts}")
                     st.rerun()
+                if st.button(f"📅 Check data year · {LATEST_DATA_YEAR}",
+                             use_container_width=True):
+                    _open_panel("show_data_year")
                 if st.button("👥 Manage users", use_container_width=True):
                     _open_panel("show_user_mgmt")
                 if st.button("⚙️ Work permit rules", use_container_width=True):
@@ -1665,6 +1712,51 @@ def render_wp_config():
         st.rerun()
 
 
+@st.dialog("Check SCB data year")
+def _data_year_dialog():
+    """Admin-forced check for a newer SCB data year, with an update/keep prompt.
+    Separate from the SSYK-codes refresh — this only touches the data-year setting."""
+    cur = LATEST_DATA_YEAR
+    st.markdown(f"Newest year currently used across the app: **{cur}**")
+    st.caption("SCB publishes each year's wage statistics roughly the following June. "
+               "Updating rolls the year slider, all charts, the leaderboard and the "
+               "work-permit check forward for every user at once.")
+
+    if st.button("🔄 Check SCB now", type="primary"):
+        with st.spinner("Asking SCB…"):
+            st.session_state["_scb_latest_found"] = fetch_available_year()
+
+    checked = "_scb_latest_found" in st.session_state
+    found = st.session_state.get("_scb_latest_found")
+    if checked and found is None:
+        st.error("Couldn't reach SCB. Try again in a moment.")
+    elif found is not None:
+        if found > cur:
+            st.info(f"SCB now publishes data up to **{found}**.")
+            c1, c2 = st.columns(2)
+            if c1.button(f"✅ Update to {found}", type="primary"):
+                s = load_app_settings()
+                save_app_settings({**s, "latest_data_year": int(found)})
+                st.cache_data.clear()  # drop cached fetches so the new year loads
+                st.session_state.pop("_scb_latest_found", None)
+                st.session_state["show_data_year"] = False
+                st.rerun()
+            if c2.button(f"Keep {cur}"):
+                st.session_state.pop("_scb_latest_found", None)
+                st.session_state["show_data_year"] = False
+                st.rerun()
+        elif found == cur:
+            st.success(f"Already up to date — SCB's newest year is {cur}.")
+        else:
+            st.warning(f"SCB's newest reported year is {found}, older than the "
+                       f"current setting ({cur}). Keeping {cur}.")
+
+    if st.button("Close"):
+        st.session_state.pop("_scb_latest_found", None)
+        st.session_state["show_data_year"] = False
+        st.rerun()
+
+
 def render_app_settings():
     """Admin editor for general app/display settings (saved to app_settings.json)."""
     s = load_app_settings()
@@ -1845,6 +1937,11 @@ st.caption(t["caption"])
 if st.session_state.get("show_user_mgmt") and \
         st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
     _user_mgmt_dialog()
+
+# Admin data-year check — modal dialog (gated to admin/master)
+if st.session_state.get("show_data_year") and \
+        st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
+    _data_year_dialog()
 
 # Admin work-permit rules editor — full-page panel (gated to admin/master)
 if st.session_state.get("show_wp_config") and \
@@ -2384,7 +2481,7 @@ with tab_permit:
         # Salary distribution data table for the selected occupation
         with st.expander(t["wp_data_expander"]):
             ddf = fetch_percentile_data(wp_sector_code, (pcode,), "1+2",
-                                        ("2023", "2024", "2025"), lang,
+                                        tuple(new_gen_years()), lang,
                                         measure_keys, measure_labels)
             if ddf.empty:
                 st.info(t["wp_market_none"])
