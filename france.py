@@ -11,10 +11,15 @@ French detail table arrives in a single cached Melodi pull, so all filters are
 fully reactive — no search-commit pattern needed.
 """
 import pandas as pd
+import os
+
 import plotly.graph_objects as go
 import streamlit as st
 
 import france_data as fd
+
+_FR_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        "assets", "logo_france.png")   # blue-white-red bars
 
 # ── Translations ───────────────────────────────────────────────────────────────
 T = {
@@ -96,7 +101,7 @@ T = {
         "reg_france": "France entière",
         "grp_1t3": "Cadres et indépendants salariés (groupes 1–3)",
         "reg_axis": "Salaire net mensuel moyen (€ EQTP)",
-        "browse_btn": "🗂️ Parcourir les codes PCS",
+        "browse_btn": "📖 Codes PCS",
         "browse_title": "Parcourir les codes PCS (professions)",
         "browse_intro": "Descendez la hiérarchie PCS pour trouver un code. Les libellés proviennent de la nomenclature officielle INSEE PCS-ESE 2017.",
         "browse_search": "🔍 Rechercher un code, une profession…",
@@ -107,6 +112,7 @@ T = {
         "browse_blank": "—",
         "browse_pick_prompt": "Choisissez un niveau à gauche (ou cherchez ci-dessus) pour voir le détail.",
         "browse_back": "← Retour à l'application",
+        "browse_use": "Utiliser cette profession →",
         "browse_hierarchy": "Position dans la hiérarchie",
         "browse_snapshot": "Salaire moyen · {year}",
         "browse_no_salary": "Niveau d'agrégation — pas de salaire détaillé (voir les professions à 4 chiffres).",
@@ -190,7 +196,7 @@ T = {
         "reg_france": "Whole of France",
         "grp_1t3": "Managers, professionals & self-employed (groups 1–3)",
         "reg_axis": "Mean net monthly salary (€ FTE)",
-        "browse_btn": "🗂️ Browse PCS codes",
+        "browse_btn": "📖 PCS guide",
         "browse_title": "Browse PCS occupation codes",
         "browse_intro": "Drill down the PCS hierarchy to find a code. Labels are the official INSEE PCS-ESE 2017 nomenclature.",
         "browse_search": "🔍 Search codes, occupations…",
@@ -201,6 +207,7 @@ T = {
         "browse_blank": "—",
         "browse_pick_prompt": "Pick a level on the left (or search above) to see the detail.",
         "browse_back": "← Back to app",
+        "browse_use": "Use this occupation →",
         "browse_hierarchy": "Position in the hierarchy",
         "browse_snapshot": "Mean salary · {year}",
         "browse_no_salary": "Aggregation level — no detailed salary (see the 4-digit occupations).",
@@ -243,6 +250,11 @@ with st.sidebar:
     lang = "EN" if lang == "English" else "FR"
     t = T[lang]
 
+    # Browse-codes guide button, placed at the top like Sweden's SSYK guide.
+    if st.button(t["browse_btn"], use_container_width=True, key="fr_browse_open"):
+        st.session_state["fr_show_browser"] = True
+        st.rerun()
+
     sector_label = st.selectbox(
         t["sector"], list(t["sectors"].values()), key="fr_sector")
     sector = [k for k, v in t["sectors"].items() if v == sector_label][0]
@@ -267,7 +279,11 @@ with st.sidebar:
                            label_visibility="collapsed", key="fr_search")
 
 # ── Data (one cached pull per sector) ─────────────────────────────────────────
-st.title(f"🇫🇷 {t['title']}")
+_c_logo, _c_title = st.columns([1, 12], vertical_alignment="center")
+with _c_logo:
+    st.image(_FR_LOGO, width=56)
+with _c_title:
+    st.title(t["title"])
 st.caption(t["caption"])
 
 try:
@@ -301,11 +317,6 @@ with st.sidebar:
             st.session_state.pop(k, None)
     st.button(t["clear"], use_container_width=True, on_click=_fr_clear)
 
-    st.divider()
-    if st.button(t["browse_btn"], use_container_width=True, key="fr_browse_open"):
-        st.session_state["fr_show_browser"] = True
-        st.rerun()
-
 st.caption(t["detail_year"].format(year=year) + f" · {sector_label}")
 
 # Convenience frames
@@ -326,10 +337,35 @@ def _num(v):
     return f"{v:,.0f}".replace(",", " ") if v is not None and pd.notna(v) else "–"
 
 
-# ── Browse PCS codes — full-page drill-down reference (opened from sidebar) ────
+def _ranked_table(codes) -> pd.DataFrame:
+    """Ranked occupation table (mean salary desc) for a list of 4-digit PCS
+    codes. Shared by the Explorer tab and the code browser."""
+    rows = []
+    for c in codes:
+        if c not in tot.index:
+            continue
+        r = tot.loc[c]
+        gap = _gap_pct(c)
+        rows.append({
+            t["col_code"]:  c,
+            t["col_name"]:  fd.pcs_name(c, lang),
+            t["col_mean"]:  round(r["mean_salary"]) if pd.notna(r["mean_salary"]) else None,
+            t["col_count"]: round(r["headcount"]) if pd.notna(r["headcount"]) else None,
+            t["col_gap"]:   round(gap, 1) if gap is not None else None,
+        })
+    if not rows:
+        return pd.DataFrame()
+    return pd.DataFrame(rows).sort_values(t["col_mean"], ascending=False,
+                                          na_position="last")
+
+
+# ── Browse PCS codes — full-page drill-down reference ─────────────────────────
 # Mirrors Sweden's SSYK guide: cascading dropdowns + global search + a detail
 # panel. PCS has no descriptions, so the panel shows the occupation's own wage
 # snapshot instead. Full-page (st.stop) so it replaces the tabs while open.
+# Shown by default on a fresh session (the "start page"), like Sweden's landing;
+# "Back to app" dismisses it and the top guide button re-opens it.
+st.session_state.setdefault("fr_show_browser", True)
 if st.session_state.get("fr_show_browser"):
     labels = fd.load_pcs_labels()
     st.subheader(t["browse_title"])
@@ -365,8 +401,10 @@ if st.session_state.get("fr_show_browser"):
         elif len(code) < 4:
             st.caption(t["browse_no_salary"])
 
+    all4 = sorted(det["pcs"].unique())
     q = st.text_input(t["browse_search"], key="fr_br_search",
                       placeholder=t["browse_search"], label_visibility="collapsed")
+    use_code = None   # the 4-digit occupation the "Use this occupation" button acts on
     if q.strip():
         qs = q.strip().lower()
         matches = [c for c, v in labels.items()
@@ -377,8 +415,11 @@ if st.session_state.get("fr_show_browser"):
             sel = st.selectbox(t["browse_results"].format(n=len(matches)),
                                matches[:300], format_func=_br_fmt, key="fr_br_res")
             _br_panel(sel)
+            use_code = sel if (len(sel) == 4 and sel in all4) else None
+            tcodes = [c for c in matches if len(c) == 4]
         else:
             st.info(t["no_match"])
+            tcodes = []
     else:
         BLANK = "__none__"
 
@@ -399,11 +440,39 @@ if st.session_state.get("fr_show_browser"):
             current = s4 or s2 or s1
         with panel:
             _br_panel(current)
+        use_code = s4 if (s4 and s4 in all4) else None
+        # Table filters to the deepest level chosen: group → category → occupation.
+        level = s4 or s2 or s1
+        if not level:
+            tcodes = all4
+        elif len(level) == 4:
+            tcodes = [level]
+        else:
+            tcodes = [c for c in all4 if c.startswith(level)]
+
+    # ── Filtered occupation table (updates with the drill-down / search) ──────
+    st.divider()
+    br_tbl = _ranked_table(tcodes)
+    st.markdown(f"**{t['explorer_title'].format(n=len(br_tbl))}**")
+    if not br_tbl.empty:
+        st.dataframe(br_tbl, use_container_width=True, hide_index=True, height=360)
 
     st.divider()
-    if st.button(t["browse_back"], key="fr_br_back"):
-        st.session_state["fr_show_browser"] = False
-        st.rerun()
+    b_back, b_use = st.columns(2)
+    with b_back:
+        if st.button(t["browse_back"], key="fr_br_back", use_container_width=True):
+            st.session_state["fr_show_browser"] = False
+            st.rerun()
+    with b_use:
+        if st.button(t["browse_use"], key="fr_br_use", type="primary",
+                     use_container_width=True, disabled=use_code is None):
+            # Seed the explorer's occupation multiselect and leave the browser.
+            # Clear the sidebar drill-down first so the picked label is in options.
+            st.session_state["fr_occ"] = [f"{fd.pcs_name(use_code, lang)}  ({use_code})"]
+            for k in ("fr_group", "fr_cat", "fr_search"):
+                st.session_state.pop(k, None)
+            st.session_state["fr_show_browser"] = False
+            st.rerun()
     st.stop()
 
 
@@ -447,22 +516,8 @@ with tab_exp:
     if not sel_codes:
         st.subheader(t["explorer_title"].format(n=len(pool_codes)))
         st.caption(t["explorer_hint"])
-        rows = []
-        for c in pool_codes:
-            if c not in tot.index:
-                continue
-            r = tot.loc[c]
-            gap = _gap_pct(c)
-            rows.append({
-                t["col_code"]:  c,
-                t["col_name"]:  fd.pcs_name(c, lang),
-                t["col_mean"]:  round(r["mean_salary"]) if pd.notna(r["mean_salary"]) else None,
-                t["col_count"]: round(r["headcount"]) if pd.notna(r["headcount"]) else None,
-                t["col_gap"]:   round(gap, 1) if gap is not None else None,
-            })
-        tbl = pd.DataFrame(rows).sort_values(t["col_mean"], ascending=False,
-                                             na_position="last")
-        st.dataframe(tbl, use_container_width=True, hide_index=True, height=560)
+        st.dataframe(_ranked_table(pool_codes), use_container_width=True,
+                     hide_index=True, height=560)
     else:
         for code in sel_codes:
             st.subheader(f"{fd.pcs_name(code, lang)}  ({code})")
