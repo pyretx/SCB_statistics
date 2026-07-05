@@ -123,6 +123,43 @@ def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,
     return theme.style_fig(fig, horizontal=True)
 
 
+def position_curve(levs, vals, est, salary, cfg, *, you_label: str = "You",
+                   x_title: str | None = None, title: str | None = None):
+    """Percentile curve for one occupation with the user's salary marked (a star
+    at the estimated percentile + a dotted salary line) — the Swedish "Where do I
+    stand?" chart."""
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=levs, y=vals, mode="lines+markers", showlegend=False,
+        line=dict(color=theme.ACCENT, width=2.5), marker=theme.series_marker(theme.ACCENT)))
+    fig.add_hline(y=salary, line=dict(color=theme.MEAN, width=1, dash="dot"))
+    fig.add_trace(go.Scatter(
+        x=[est], y=[salary], mode="markers+text", text=[you_label],
+        textposition="top center", textfont=dict(color=theme.MEAN), showlegend=False,
+        marker=dict(size=17, symbol="star", color=theme.MEAN, line=dict(width=1, color="white"))))
+    lo, hi = max(0, levs[0] - 10), min(100, levs[-1] + 10)
+    fig.update_layout(
+        xaxis=dict(tickvals=levs, ticktext=[f"P{int(l)}" for l in levs], range=[lo, hi],
+                   title=x_title),
+        yaxis_title=f"{cfg.currency_suffix}/mo", height=380, margin=dict(t=40, b=40),
+        showlegend=False, title=title)
+    return theme.style_fig(fig)
+
+
+def leaderboard_bar(show: pd.DataFrame, cfg, *, value_col: str, value_fmt,
+                    highlight: set, x_title: str | None = None, title: str | None = None):
+    """Horizontal ranking bars; the user's own occupations are drawn in the accent
+    colour, the rest dimmed — the Swedish Leaderboard chart."""
+    colors = [theme.ACCENT if c in highlight else theme.SOFT for c in show["occ_code"]]
+    fig = go.Figure(go.Bar(
+        x=show[value_col], y=show["occ_name"], orientation="h", marker_color=colors,
+        text=[value_fmt(v) for v in show[value_col]], textposition="auto",
+        hovertemplate="%{y}<br>%{x:,.0f}<extra></extra>"))
+    fig.update_layout(height=max(360, 27 * len(show) + 80), margin=dict(t=30, b=40, l=8),
+                      xaxis_title=x_title, yaxis_title=None, title=title)
+    return theme.style_fig(fig, horizontal=True)
+
+
 def trend_lines(df: pd.DataFrame, cfg, *, value_col: str = "value", y_title: str,
                 unit: str = "", inflation=None, inflation_label: str = "Inflation",
                 title: str | None = None):

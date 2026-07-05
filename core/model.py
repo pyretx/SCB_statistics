@@ -52,6 +52,7 @@ class Capabilities:
     has_age: bool = False
     has_education: bool = False
     has_trend: bool = False
+    has_leaderboard: bool = False               # can rank ALL occupations by pay
     sectors: tuple[str, ...] = ()               # e.g. ("private", "public"); () = none
     year_range: tuple[int, int] | None = None   # (first, last) available year
 

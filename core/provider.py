@@ -57,3 +57,9 @@ class CountryProvider:
     # trend tab's inflation / real-salary views. Empty when the country has no CPI.
     def cpi_annual(self, years: tuple[int, ...] = ()) -> dict:
         return {}
+
+    # ALL occupations' pay for one year → DataFrame[occ_code, occ_name, mean,
+    # median, count] (powers the Leaderboard). Empty by default.
+    def leaderboard(self, *, sector: str = "", sex: str = "total",
+                    year: int | None = None, lang: str = "EN") -> pd.DataFrame:
+        return pd.DataFrame(columns=["occ_code", "occ_name", "mean", "median", "count"])

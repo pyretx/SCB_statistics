@@ -193,6 +193,45 @@ def _fetch_cpi_annual(years: tuple[int, ...]) -> dict:
     return {y: sum(vs) / len(vs) for y, vs in by_year.items() if vs}
 
 
+@st.cache_data(show_spinner=False, persist="disk")
+def _fetch_leaderboard(sector: str, sex: str, year: int, lang: str = "EN") -> pd.DataFrame:
+    """Mean + median + count for EVERY 4-digit occupation, one year — powers the
+    Leaderboard ranking. One SSB query over all Yrke codes."""
+    query = {"query": [
+        {"code": "MaaleMetode", "selection": {"filter": "item", "values": ["02", "01", "10"]}},
+        {"code": "Yrke", "selection": {"filter": "all", "values": ["*"]}},
+        {"code": "Sektor", "selection": {"filter": "item",
+            "values": [SECTOR_CODE.get(sector, "ALLE")]}},
+        {"code": "Kjonn", "selection": {"filter": "item", "values": [SEX_CODE.get(sex, "0")]}},
+        {"code": "AvtaltVanlig", "selection": {"filter": "item", "values": ["0"]}},
+        {"code": "ContentsCode", "selection": {"filter": "item", "values": ["Manedslonn"]}},
+        {"code": "Tid", "selection": {"filter": "item", "values": [str(year)]}},
+    ], "response": {"format": "json-stat2"}}
+    ds = _post(TABLE_URL, query)
+    ids, sizes, values = ds["id"], ds["size"], ds["value"]
+    dims = ds["dimension"]
+    strides = [1] * len(sizes)
+    for i in range(len(sizes) - 2, -1, -1):
+        strides[i] = strides[i + 1] * sizes[i + 1]
+    yrke_index = dims["Yrke"]["category"]["index"]
+
+    def val(method: str, occ: str):
+        sel = {"MaaleMetode": method, "Yrke": occ, "Sektor": SECTOR_CODE.get(sector, "ALLE"),
+               "Kjonn": SEX_CODE.get(sex, "0"), "AvtaltVanlig": "0",
+               "ContentsCode": "Manedslonn", "Tid": str(year)}
+        try:
+            flat = sum(dims[d]["category"]["index"][sel[d]] * strides[ids.index(d)] for d in ids)
+        except KeyError:
+            return None
+        return values[flat] if 0 <= flat < len(values) else None
+
+    labels = _leaves(lang)               # only detailed (4-digit) occupations
+    rows = [{"occ_code": occ, "occ_name": name, "mean": val("02", occ),
+             "median": val("01", occ), "count": val("10", occ)}
+            for occ, name in labels.items() if occ in yrke_index]
+    return pd.DataFrame(rows, columns=["occ_code", "occ_name", "mean", "median", "count"])
+
+
 class NorwayProvider(CountryProvider):
     def occupations(self, lang: str = "EN") -> dict[str, str]:
         return _leaves(lang)
@@ -212,3 +251,6 @@ class NorwayProvider(CountryProvider):
 
     def cpi_annual(self, years=()) -> dict:
         return _fetch_cpi_annual(tuple(years))
+
+    def leaderboard(self, *, sector="all", sex="total", year=None, lang="EN") -> pd.DataFrame:
+        return _fetch_leaderboard(sector, sex, int(year or 2024), lang)

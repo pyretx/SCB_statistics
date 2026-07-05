@@ -7,7 +7,7 @@ from __future__ import annotations
 import streamlit as st
 
 from .. import i18n
-from . import by_sex, distribution, overview, trend
+from . import by_sex, distribution, leaderboard, overview, stats, trend, where
 
 # id -> render_fn. cfg.tabs lists which to enable, in order.
 TABS = {
@@ -15,9 +15,13 @@ TABS = {
     "distribution": distribution.render,
     "sex": by_sex.render,
     "trend": trend.render,
+    "where": where.render,
+    "leaderboard": leaderboard.render,
+    "stats": stats.render,
 }
 _FALLBACK = {"overview": "Overview", "distribution": "Distribution",
-             "sex": "By sex", "trend": "Trend"}
+             "sex": "By sex", "trend": "Trend", "where": "Where do I stand?",
+             "leaderboard": "Leaderboard", "stats": "Basic statistics"}
 
 
 def render_tabs(cfg, stats, query):
