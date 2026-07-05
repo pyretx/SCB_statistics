@@ -12,6 +12,7 @@ fully reactive — no search-commit pattern needed.
 """
 import pandas as pd
 import os
+import re
 
 import plotly.graph_objects as go
 import streamlit as st
@@ -337,10 +338,41 @@ def _age_sort_key(code: str) -> int:
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.page_link("landing.py", label="← Home", icon="🏠")
-    lang = st.radio(T["EN"]["lang"], ["English", "Français"], horizontal=True,
-                    key="fr_lang")
-    lang = "EN" if lang == "English" else "FR"
+    # Sidebar styling to match the mockup (mono uppercase labels, tidy nav,
+    # full-width segmented toggles) — same treatment as the Swedish page.
+    st.markdown("""
+    <style>
+      [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+        font-family:'JetBrains Mono',monospace !important; text-transform:uppercase;
+        letter-spacing:.11em; font-size:11px !important; font-weight:600; color:#8A919D !important; }
+      [data-testid="stSidebar"] [data-testid="stPageLink"] a { padding:6px 12px; border-radius:9px; }
+      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] { width:100%; }
+      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] > div { width:100%; display:flex; }
+      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] label { flex:1; justify-content:center; }
+    </style>
+    """, unsafe_allow_html=True)
+    st.markdown("""
+    <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;">
+      <div style="width:28px;height:28px;border-radius:8px;background:#0A63A6;flex:none;
+                  display:flex;align-items:center;justify-content:center;">
+        <div style="width:12px;height:12px;border-radius:50%;border:2px solid #fff;position:relative;">
+          <div style="position:absolute;top:50%;left:-2px;right:-2px;height:2px;background:#fff;transform:translateY(-50%);"></div>
+        </div>
+      </div>
+      <span style="font-weight:700;font-size:15px;letter-spacing:-.01em;color:#0C1119;">Salary Explorer</span>
+    </div>
+    """, unsafe_allow_html=True)
+    st.page_link("landing.py",      label="Home",   icon=":material/home:")
+    st.page_link("scb_salaries.py", label="Sweden", icon="🇸🇪")
+    st.page_link("france.py",       label="France", icon="🇫🇷")
+    st.markdown('<div style="height:1px;background:#EEF0F3;margin:10px 0 4px;"></div>',
+                unsafe_allow_html=True)
+
+    _fr_lang_prev = st.session_state.get("_fr_lang_val", "English")
+    _lang_sel = st.segmented_control(T["EN"]["lang"], ["English", "Français"],
+                                     default=_fr_lang_prev, key="fr_lang_seg") or _fr_lang_prev
+    st.session_state["_fr_lang_val"] = _lang_sel
+    lang = "EN" if _lang_sel == "English" else "FR"
     t = T[lang]
 
     # Browse-codes guide button, at the top like Sweden's SSYK guide.
@@ -387,8 +419,8 @@ with st.sidebar:
     # Sweden's cached occupations list — so nothing is fetched to build the menu.
     prefix = c_code or g_code or ""
     pool_codes = sorted(c for c in labels if len(c) == 4 and c.startswith(prefix))
-    search = st.text_input(t["search_label"], placeholder=t["search_ph"],
-                           key="fr_search")
+    search = st.text_input(re.sub(r"^\W+", "", t["search_label"]).strip(),
+                           placeholder=t["search_ph"], key="fr_search")
     if search.strip():
         s = search.strip().lower()
         pool_codes = [c for c in pool_codes
@@ -625,8 +657,10 @@ if not sl_error:
 
 # Tabs mirror the Swedish page as closely as the French data allows. The code
 # browser is reached from the sidebar (📖 PCS guide), so there is no explorer tab.
+_notab = lambda s: re.sub(r"^\W+", "", s).strip()   # strip the leading emoji
 tab_pct, tab_calc, tab_lead, tab_age, tab_reg = st.tabs(
-    [t["tab_pct"], t["tab_calc"], t["tab_lead"], t["tab_age"], t["tab_regions"]])
+    [_notab(x) for x in
+     (t["tab_pct"], t["tab_calc"], t["tab_lead"], t["tab_age"], t["tab_regions"])])
 
 # Canonical percentile order — P95/P99 available but NOT shown by default,
 # and re-adding a removed chip always snaps back to this order (Sweden's fix).

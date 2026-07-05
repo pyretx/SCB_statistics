@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import json
 import os
+import re
 from datetime import datetime
 import auth
 import theme
@@ -1345,17 +1346,51 @@ def _open_panel(name):
 
 
 with st.sidebar:
-    st.page_link("landing.py", label="← Home", icon="🏠")
-    lang = st.radio("🌐 Language / Språk", ["EN", "SV"],
-                    format_func=lambda k: {"EN": "English", "SV": "Svenska"}[k],
-                    horizontal=True)
+    # Sidebar styling to match the mockup: mono uppercase section labels, tidy
+    # nav page-links, and full-width segmented toggles.
+    st.markdown("""
+    <style>
+      [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
+        font-family:'JetBrains Mono',monospace !important; text-transform:uppercase;
+        letter-spacing:.11em; font-size:11px !important; font-weight:600; color:#8A919D !important; }
+      [data-testid="stSidebar"] [data-testid="stPageLink"] a { padding:6px 12px; border-radius:9px; }
+      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] { width:100%; }
+      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] > div { width:100%; display:flex; }
+      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] label { flex:1; justify-content:center; }
+    </style>
+    """, unsafe_allow_html=True)
+    # Logo mark (mockup): blue rounded square + globe glyph + wordmark.
+    st.markdown("""
+    <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;">
+      <div style="width:28px;height:28px;border-radius:8px;background:#0A63A6;flex:none;
+                  display:flex;align-items:center;justify-content:center;">
+        <div style="width:12px;height:12px;border-radius:50%;border:2px solid #fff;position:relative;">
+          <div style="position:absolute;top:50%;left:-2px;right:-2px;height:2px;background:#fff;transform:translateY(-50%);"></div>
+        </div>
+      </div>
+      <span style="font-weight:700;font-size:15px;letter-spacing:-.01em;color:#0C1119;">Salary Explorer</span>
+    </div>
+    """, unsafe_allow_html=True)
+    # Nav menu — Sweden is the current page, so Streamlit auto-highlights it.
+    st.page_link("landing.py",      label="Home",   icon=":material/home:")
+    st.page_link("scb_salaries.py", label="Sweden", icon="🇸🇪")
+    st.page_link("france.py",       label="France", icon="🇫🇷")
+    st.markdown('<div style="height:1px;background:#EEF0F3;margin:10px 0 4px;"></div>',
+                unsafe_allow_html=True)
+
+    _lang_prev = st.session_state.get("_lang_val", "EN")
+    lang = st.segmented_control(
+        "Language / Språk", ["EN", "SV"],
+        format_func=lambda k: {"EN": "English", "SV": "Svenska"}[k],
+        default=_lang_prev, key="lang_seg") or _lang_prev
+    st.session_state["_lang_val"] = lang
     t = T[lang]
 
     gc1, gc2 = st.columns(2)
-    if gc1.button("❓ User guide" if lang == "EN" else "❓ Användarguide",
+    if gc1.button("User guide" if lang == "EN" else "Användarguide",
                   use_container_width=True):
         _open_panel("show_user_guide")
-    if gc2.button("📖 SSYK guide" if lang == "EN" else "📖 SSYK-guide",
+    if gc2.button("SSYK guide" if lang == "EN" else "SSYK-guide",
                   use_container_width=True):
         _open_panel("show_ssyk_guide")
 
@@ -1365,9 +1400,10 @@ with st.sidebar:
     ]
 
     sex_labels = list(t["sex_options"].values())
-    sex_code   = list(t["sex_options"].keys())[
-        sex_labels.index(st.radio(t["sex"], sex_labels, horizontal=True, key="sex_sel"))
-    ]
+    _sex_sel = st.segmented_control(t["sex"], sex_labels, default=sex_labels[0], key="sex_seg")
+    if _sex_sel not in sex_labels:      # None (deselected) or stale after a language switch
+        _sex_sel = sex_labels[0]
+    sex_code = list(t["sex_options"].keys())[sex_labels.index(_sex_sel)]
 
     all_years = [str(y) for y in range(2014, LATEST_DATA_YEAR + 1)]
     yr_from, yr_to = st.select_slider(t["year_range"], options=all_years,
@@ -2063,11 +2099,13 @@ def show_breakdown_raw(df_in, dim_col, dim_label, dim_map=None, sex_col=None):
         st.dataframe(out, use_container_width=True, hide_index=True)
 
 
+# Clean, underlined tabs (mockup) — strip the leading emoji from each label.
+_notab = lambda s: re.sub(r"^\W+", "", s).strip()
 tab_pct, tab_calc, tab_permit, tab_lead, tab_age, tab_reg, tab_edu, tab_stats = \
-    st.tabs([
+    st.tabs([_notab(x) for x in (
         t["tab_pct"], t["tab_calc"], t["tab_permit"], t["tab_lead"], t["tab_age"],
         t["tab_region"], t["tab_edu"], t["tab_stats"]
-    ])
+    )])
 
 # ── Tab 1: Percentile distribution ────────────────────────────────────────────
 with tab_pct:
