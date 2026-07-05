@@ -1936,29 +1936,14 @@ def render_ssyk_browser(prefix: str):
 
 # ── Main ───────────────────────────────────────────────────────────────────────
 
-# Header per design-system.md §4: mono eyebrow, H1, source line, avatar badge.
-_au = st.session_state.get("auth_user") or {}
-_email = _au.get("email", "")
-if _email:
-    _p = _email.split("@")[0].replace(".", " ").replace("_", " ").split()
-    _initials = ("".join(w[0] for w in _p[:2]) or _email[:2]).upper()
-    _avatar = (f'<div style="width:34px;height:34px;border-radius:50%;flex:none;'
-               f'background:rgba(10,99,166,.12);color:#0A63A6;display:flex;'
-               f'align-items:center;justify-content:center;font-weight:700;'
-               f'font-size:13px;">{_initials}</div>')
-else:
-    _avatar = ('<div style="width:34px;height:34px;border-radius:50%;flex:none;'
-               'background:#EDEFF2;color:#98A0AC;display:flex;align-items:center;'
-               'justify-content:center;font-size:15px;">🌐</div>')
+# Header per design-system.md §4: mono eyebrow, H1, source line. The signed-in
+# identity lives in the sidebar (auth.sidebar_identity), so no header avatar.
 st.markdown(f"""
-<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:6px;">
-  <div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
-                letter-spacing:.16em;color:#0A63A6;margin-bottom:10px;">OFFICIAL STATISTICS · SWEDEN</div>
-    <h1 style="margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#0C1119;line-height:1.05;">{t['title']}</h1>
-    <p style="margin:8px 0 0;font-size:14px;color:#7A828F;">{t['caption']}</p>
-  </div>
-  {_avatar}
+<div style="margin-bottom:6px;">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+              letter-spacing:.16em;color:#0A63A6;margin-bottom:10px;">OFFICIAL STATISTICS · SWEDEN</div>
+  <h1 style="margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#0C1119;line-height:1.05;">{t['title']}</h1>
+  <p style="margin:8px 0 0;font-size:14px;color:#7A828F;">{t['caption']}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1972,43 +1957,56 @@ if st.session_state.get("show_data_year") and \
         st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
     _data_year_dialog()
 
+# Full-page exclusive views (admin panels, the guides, and the no-occupation
+# landing browser) ALL render into one st.empty mount point. On a normal charts
+# run this placeholder is created but left empty, which clears whatever a panel
+# rendered on the previous run — otherwise Streamlit's st.stop() leaves those
+# elements ghosting ("leaking through", faded) behind the charts.
+_view = st.empty()
+
 # Admin work-permit rules editor — full-page panel (gated to admin/master)
 if st.session_state.get("show_wp_config") and \
         st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
-    render_wp_config()
+    with _view.container():
+        render_wp_config()
     st.stop()
 
 # Admin app/display settings — full-page panel (gated to admin/master)
 if st.session_state.get("show_app_settings") and \
         st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
-    render_app_settings()
+    with _view.container():
+        render_app_settings()
     st.stop()
 
 # User guide — full-page, visible to everyone (no login needed)
 if st.session_state.get("show_user_guide"):
-    render_user_guide()
+    with _view.container():
+        render_user_guide()
     st.stop()
 
 # SSYK guide — full-page, visible to everyone (no login needed)
 if st.session_state.get("show_ssyk_guide"):
-    st.subheader(t["ssyk_title"])
-    render_ssyk_browser("page")
-    st.divider()
-    if st.button("← Back to app", key="ssyk_back"):
-        st.session_state["show_ssyk_guide"] = False
-        st.rerun()
+    with _view.container():
+        st.subheader(t["ssyk_title"])
+        render_ssyk_browser("page")
+        st.divider()
+        if st.button("← Back to app", key="ssyk_back"):
+            st.session_state["show_ssyk_guide"] = False
+            st.rerun()
     st.stop()
 
 # Admin user-guide editor — full-page panel (gated to admin/master)
 if st.session_state.get("show_guide_edit") and \
         st.session_state.get("auth_user", {}).get("role") in ("admin", "master"):
-    render_guide_edit()
+    with _view.container():
+        render_guide_edit()
     st.stop()
 
 if not selected_occ_codes:
-    st.info(t["select_prompt"])
-    st.markdown(f"### {t['ssyk_title']}")
-    render_ssyk_browser("landing")
+    with _view.container():
+        st.info(t["select_prompt"])
+        st.markdown(f"### {t['ssyk_title']}")
+        render_ssyk_browser("landing")
     st.stop()
 
 # Use the values that were active when Search was clicked

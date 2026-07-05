@@ -434,29 +434,14 @@ query_codes  = _q.get("codes", ())
 query_sector = _q.get("sector", sector)
 query_sector_label = t["sectors"].get(query_sector, sector_label)
 
-# ── Header (design-system.md §4: eyebrow + H1 + source + avatar) ─────────────
-_au = st.session_state.get("auth_user") or {}
-_email = _au.get("email", "")
-if _email:
-    _p = _email.split("@")[0].replace(".", " ").replace("_", " ").split()
-    _initials = ("".join(w[0] for w in _p[:2]) or _email[:2]).upper()
-    _avatar = (f'<div style="width:34px;height:34px;border-radius:50%;flex:none;'
-               f'background:rgba(10,99,166,.12);color:#0A63A6;display:flex;'
-               f'align-items:center;justify-content:center;font-weight:700;'
-               f'font-size:13px;">{_initials}</div>')
-else:
-    _avatar = ('<div style="width:34px;height:34px;border-radius:50%;flex:none;'
-               'background:#EDEFF2;color:#98A0AC;display:flex;align-items:center;'
-               'justify-content:center;font-size:15px;">🌐</div>')
+# ── Header (design-system.md §4: eyebrow + H1 + source). The signed-in identity
+# lives in the sidebar (auth.sidebar_identity), so there's no header avatar.
 st.markdown(f"""
-<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:6px;">
-  <div>
-    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
-                letter-spacing:.16em;color:#0A63A6;margin-bottom:10px;">OFFICIAL STATISTICS · FRANCE</div>
-    <h1 style="margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#0C1119;line-height:1.05;">{t['title']}</h1>
-    <p style="margin:8px 0 0;font-size:14px;color:#7A828F;">{t['caption']}</p>
-  </div>
-  {_avatar}
+<div style="margin-bottom:6px;">
+  <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+              letter-spacing:.16em;color:#0A63A6;margin-bottom:10px;">OFFICIAL STATISTICS · FRANCE</div>
+  <h1 style="margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#0C1119;line-height:1.05;">{t['title']}</h1>
+  <p style="margin:8px 0 0;font-size:14px;color:#7A828F;">{t['caption']}</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -464,78 +449,80 @@ st.markdown(f"""
 # Mirrors Sweden's SSYK guide/landing: cascading dropdowns + global search + a
 # detail panel — built purely from the labels file, so nothing is fetched. Pick
 # an occupation and "Use this occupation" commits the query (like Sweden).
+_fr_view = st.empty()  # single mount point so the code browser clears on chart runs
 if st.session_state.get("fr_show_browser") or not query_codes:
-    st.subheader(t["browse_title"])
-    st.caption(t["browse_intro"])
+    with _fr_view.container():
+        st.subheader(t["browse_title"])
+        st.caption(t["browse_intro"])
 
-    def _br_fmt(code):
-        return f"{code} · {fd.pcs_name(code, lang)}"
+        def _br_fmt(code):
+            return f"{code} · {fd.pcs_name(code, lang)}"
 
-    def _br_panel(code):
-        if not code:
-            st.info(t["browse_pick_prompt"])
-            return
-        st.markdown(f"#### {code} · {fd.pcs_name(code, lang)}")
-        if lang == "EN":
-            st.caption(t["browse_en_note"])
-        crumbs = [c for c in (code[:1], code[:2]) if c in labels and c != code]
-        if crumbs:
-            st.caption(f"**{t['browse_hierarchy']}:** "
-                       + " › ".join(fd.pcs_name(c, lang) for c in crumbs))
-        if len(code) < 4:
-            st.caption(t["browse_no_salary"])
+        def _br_panel(code):
+            if not code:
+                st.info(t["browse_pick_prompt"])
+                return
+            st.markdown(f"#### {code} · {fd.pcs_name(code, lang)}")
+            if lang == "EN":
+                st.caption(t["browse_en_note"])
+            crumbs = [c for c in (code[:1], code[:2]) if c in labels and c != code]
+            if crumbs:
+                st.caption(f"**{t['browse_hierarchy']}:** "
+                           + " › ".join(fd.pcs_name(c, lang) for c in crumbs))
+            if len(code) < 4:
+                st.caption(t["browse_no_salary"])
 
-    def _fr_use_occupation(code, sctr, language):
-        # on_click callback (runs before widgets are instantiated): commit the
-        # query and reflect the pick in the sidebar multiselect.
-        st.session_state["fr_query"] = {"sector": sctr, "codes": (code,)}
-        st.session_state["fr_show_browser"] = False
-        for k in ("fr_group", "fr_cat", "fr_search"):
-            st.session_state.pop(k, None)
-        st.session_state["fr_occ"] = [f"{fd.pcs_name(code, language)}  ({code})"]
+        def _fr_use_occupation(code, sctr, language):
+            # on_click callback (runs before widgets are instantiated): commit the
+            # query and reflect the pick in the sidebar multiselect.
+            st.session_state["fr_query"] = {"sector": sctr, "codes": (code,)}
+            st.session_state["fr_show_browser"] = False
+            for k in ("fr_group", "fr_cat", "fr_search"):
+                st.session_state.pop(k, None)
+            st.session_state["fr_occ"] = [f"{fd.pcs_name(code, language)}  ({code})"]
 
-    q = st.text_input(t["browse_search"], key="fr_br_search",
-                      placeholder=t["browse_search"], label_visibility="collapsed")
-    use_code = None
-    if q.strip():
-        qs = q.strip().lower()
-        matches = [c for c, v in labels.items()
-                   if qs in c.lower() or qs in v.get("fr", "").lower()
-                   or qs in (v.get("en") or "").lower()]
-        matches.sort(key=lambda c: (len(c), c))
-        if matches:
-            sel = st.selectbox(t["browse_results"].format(n=len(matches)),
-                               matches[:300], format_func=_br_fmt, key="fr_br_res")
-            _br_panel(sel)
-            use_code = sel if len(sel) == 4 else None
+        q = st.text_input(t["browse_search"], key="fr_br_search",
+                          placeholder=t["browse_search"], label_visibility="collapsed")
+        use_code = None
+        if q.strip():
+            qs = q.strip().lower()
+            matches = [c for c, v in labels.items()
+                       if qs in c.lower() or qs in v.get("fr", "").lower()
+                       or qs in (v.get("en") or "").lower()]
+            matches.sort(key=lambda c: (len(c), c))
+            if matches:
+                sel = st.selectbox(t["browse_results"].format(n=len(matches)),
+                                   matches[:300], format_func=_br_fmt, key="fr_br_res")
+                _br_panel(sel)
+                use_code = sel if len(sel) == 4 else None
+            else:
+                st.info(t["no_match"])
         else:
-            st.info(t["no_match"])
-    else:
-        BLANK = "__none__"
+            BLANK = "__none__"
 
-        def _br_pick(label, opts, key):
-            v = st.selectbox(label, [BLANK] + opts, key=key,
-                             format_func=lambda c: t["browse_blank"] if c == BLANK
-                             else _br_fmt(c))
-            return None if v == BLANK else v
+            def _br_pick(label, opts, key):
+                v = st.selectbox(label, [BLANK] + opts, key=key,
+                                 format_func=lambda c: t["browse_blank"] if c == BLANK
+                                 else _br_fmt(c))
+                return None if v == BLANK else v
 
-        nav, panel = st.columns([1, 1.3])
-        with nav:
-            l1 = sorted(c for c in labels if len(c) == 1)
-            s1 = _br_pick(t["browse_l1"], l1, "fr_br_l1")
-            l2 = sorted(c for c in labels if len(c) == 2 and c.startswith(s1)) if s1 else []
-            s2 = _br_pick(t["browse_l2"], l2, "fr_br_l2") if s1 else None
-            l4 = sorted(c for c in labels if len(c) == 4 and c.startswith(s2)) if s2 else []
-            s4 = _br_pick(t["browse_l4"], l4, "fr_br_l4") if s2 else None
-            current = s4 or s2 or s1
-        with panel:
-            _br_panel(current)
-        use_code = s4
+            nav, panel = st.columns([1, 1.3])
+            with nav:
+                l1 = sorted(c for c in labels if len(c) == 1)
+                s1 = _br_pick(t["browse_l1"], l1, "fr_br_l1")
+                l2 = sorted(c for c in labels if len(c) == 2 and c.startswith(s1)) if s1 else []
+                s2 = _br_pick(t["browse_l2"], l2, "fr_br_l2") if s1 else None
+                l4 = sorted(c for c in labels if len(c) == 4 and c.startswith(s2)) if s2 else []
+                s4 = _br_pick(t["browse_l4"], l4, "fr_br_l4") if s2 else None
+                current = s4 or s2 or s1
+            with panel:
+                _br_panel(current)
+            use_code = s4
 
-    st.divider()
-    st.button(t["browse_use"], key="fr_br_use", type="primary",
-              use_container_width=True, disabled=use_code is None,
-              on_click=_fr_use_occupation, args=(use_code, sector, lang))
+        st.divider()
+        st.button(t["browse_use"], key="fr_br_use", type="primary",
+                  use_container_width=True, disabled=use_code is None,
+                  on_click=_fr_use_occupation, args=(use_code, sector, lang))
     st.stop()
 
 # ── Data — fetched ONLY now, after Search committed a query ──────────────────

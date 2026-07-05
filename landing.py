@@ -182,7 +182,7 @@ def _auth_dialog():
           <div style="font-size:24px;line-height:1.18;font-weight:800;letter-spacing:-.015em;
                       margin-bottom:24px;">Official salary data,<br>always free to browse.</div>
           <div class="se-authcheck"><span class="se-tick">✓</span>
-            <span>Explore Sweden &amp; France right now — no account needed</span></div>
+            <span>Explore Sweden &amp; France right now - no account needed</span></div>
           <div class="se-authcheck"><span class="se-tick">✓</span>
             <span>An account is only needed for admin tools today</span></div>
           <div class="se-authcheck"><span class="se-tick">✓</span>
@@ -205,8 +205,8 @@ def _auth_dialog():
             st.session_state["_auth_mode"] = _seg
         mode = st.session_state.get("_auth_mode", "Sign in")
 
-        st.caption("Sign in or create a free account. Browsing salary data never requires "
-                  "one — this is for admin access and account features.")
+        st.caption("Create a free account or explore without sign in. Browsing salary data never requires "
+                  "one - sign in required for admin access.")
 
         if mode == "Create account":
             name = st.text_input("Full name", key="_su_name", placeholder="Jane Andersson")
@@ -340,7 +340,7 @@ with hc1:
       Salary data from national agencies, made explorable.
     </h1>
     <p style="margin:20px 0 0;font-size:17px;line-height:1.55;color:#5B6472;max-width:520px;">
-      One clean interface over official government statistics — percentiles, breakdowns
+      One clean interface over official government statistics - percentiles, breakdowns
       and trends, standardised so you can compare occupations across countries.
     </p>
     <div style="display:flex;gap:0;margin-top:34px;flex-wrap:wrap;align-items:stretch;">
