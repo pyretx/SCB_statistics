@@ -43,6 +43,7 @@ class Capabilities:
     switch on these, so a country never implies data it doesn't have."""
     has_occupation_percentiles: bool = False   # real P10..P90 per occupation (Sweden)
     has_population_distribution: bool = False   # whole-population curve (France)
+    has_occupation_hierarchy: bool = True       # classification nests (SSYK/STYRK/PCS)
     has_mean: bool = True
     has_median: bool = False
     has_sex: bool = False
@@ -72,11 +73,17 @@ class CountryConfig:
     tabs: tuple[str, ...] = ()       # standard tab ids to enable (see core.tabs)
     access: str = "internal"         # "public" | "registered" | "internal" | "restricted"
     fetch_mode: str = "reactive"     # "search" (commit button) | "reactive"
-    labels: dict = field(default_factory=dict)   # i18n / display strings
+    labels: dict = field(default_factory=dict)   # flat, language-independent tile strings
     provider: object = None          # a core.provider.CountryProvider instance
     landing: bool = False            # show a (gated) tile on the landing page?
     bullets: tuple[str, ...] = ()    # landing-tile feature bullets
+    # ── i18n / guides / classification (shared sidebar + panels) ──────────────
+    languages: tuple = (("EN", "English"),)      # (code, native name); >1 → toggle
+    i18n: dict = field(default_factory=dict)     # {lang: {key: str}} in-app overrides
+    guide: dict = field(default_factory=dict)    # {lang: markdown} for the User guide
+    classification: str = ""         # e.g. "STYRK-08" — code-browser heading
 
     def L(self, key: str, default: str = "") -> str:
-        """Look up a display label, falling back to a sane default."""
+        """Look up a flat, language-independent display label (landing tiles).
+        In-app strings that follow the language toggle use core.i18n.t instead."""
         return self.labels.get(key, default)

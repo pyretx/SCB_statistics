@@ -25,14 +25,21 @@ class CountryProvider:
         year: int              single year for one-year breakdowns
     """
 
-    # occupation code -> display name, for the given language
+    # occupation code -> display name (leaf occupations only), for the language
     def occupations(self, lang: str = "EN") -> dict[str, str]:
         return {}
+
+    # code -> name for EVERY classification level (groups + leaves), so the
+    # framework can build the major-group drill-down and the code browser.
+    # Default: no groups, just the leaves (a flat classification).
+    def occupation_tree(self, lang: str = "EN") -> dict[str, str]:
+        return self.occupations(lang)
 
     # long/tidy OccupationStat rows (dimension="total" unless a breakdown is asked)
     def occupation_stats(self, *, sector: str = "", occ_codes: tuple[str, ...] = (),
                          sex: str = "total", years: tuple[int, ...] = (),
-                         dimension: str = "total", year: int | None = None) -> pd.DataFrame:
+                         dimension: str = "total", year: int | None = None,
+                         lang: str = "EN") -> pd.DataFrame:
         return model.empty_occ_stats()
 
     # whole-population percentile curve (France-style backdrop)

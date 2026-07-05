@@ -6,14 +6,17 @@ from __future__ import annotations
 
 import streamlit as st
 
-from .. import charts, tables
+from .. import charts, i18n, tables
 
 
 def render(cfg, stats, query):
-    st.subheader("Occupation overview")
-    val = "mean" if cfg.capabilities.has_mean else "median"
+    lang = query.get("lang", "EN")
+    st.subheader(i18n.t(cfg, "occupation_overview", lang))
+    use_mean = cfg.capabilities.has_mean
+    val = "mean" if use_mean else "median"
+    heading = i18n.t(cfg, "avg_salary" if use_mean else "median_salary", lang)
     fig = charts.occupation_bar(stats, cfg, value_col=val,
-                                title=f"Average salary · {cfg.currency_suffix}/mo")
+                                title=f"{heading} · {cfg.currency_suffix}/mo")
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
-    tables.occupation_table(stats, cfg)
+    tables.occupation_table(stats, cfg, lang=lang)

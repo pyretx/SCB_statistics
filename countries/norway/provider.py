@@ -32,16 +32,24 @@ _METHOD = {"mean": "02", "median": "01", "p25": "051", "p75": "061", "count": "1
 
 
 @st.cache_data(show_spinner=False)
-def _labels() -> dict[str, str]:
+def _codes(lang: str = "EN") -> dict[str, str]:
+    """All STYRK codes (every level) → name, for the given language (EN|NO)."""
     try:
         with open(_LABELS_FILE, encoding="utf-8") as f:
-            return json.load(f).get("labels", {})
+            codes = json.load(f).get("codes", {})
+        return codes.get(lang) or codes.get("EN", {})
     except Exception:
         return {}
 
 
+def _leaves(lang: str = "EN") -> dict[str, str]:
+    """Just the detailed 4-digit occupations (the menu options)."""
+    return {c: n for c, n in _codes(lang).items() if len(c) == 4}
+
+
 @st.cache_data(show_spinner=False, persist="disk")
-def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int) -> pd.DataFrame:
+def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int,
+          lang: str = "EN") -> pd.DataFrame:
     """One SSB query → normalized OccupationStat rows (dimension='total')."""
     if not occ_codes:
         return model.empty_occ_stats()
@@ -75,7 +83,7 @@ def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int) -> pd.D
             return None
         return values[flat] if 0 <= flat < len(values) else None
 
-    labels = _labels()
+    labels = _leaves(lang)
     rows = []
     for occ in occ_codes:
         if occ not in dims["Yrke"]["category"]["index"]:
@@ -95,9 +103,13 @@ def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int) -> pd.D
 
 class NorwayProvider(CountryProvider):
     def occupations(self, lang: str = "EN") -> dict[str, str]:
-        return dict(_labels())
+        return _leaves(lang)
+
+    def occupation_tree(self, lang: str = "EN") -> dict[str, str]:
+        return dict(_codes(lang))
 
     def occupation_stats(self, *, sector="all", occ_codes=(), sex="total",
-                         years=(), dimension="total", year=None) -> pd.DataFrame:
+                         years=(), dimension="total", year=None,
+                         lang="EN") -> pd.DataFrame:
         yr = int(year or (years[-1] if years else 2024))
-        return _fetch(sector, tuple(occ_codes), sex, yr)
+        return _fetch(sector, tuple(occ_codes), sex, yr, lang)

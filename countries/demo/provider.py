@@ -22,7 +22,7 @@ class DemoProvider(CountryProvider):
         return dict(_OCCS)
 
     def occupation_stats(self, *, sector="", occ_codes=(), sex="total",
-                         years=(), dimension="total", year=None) -> pd.DataFrame:
+                         years=(), dimension="total", year=None, lang="EN") -> pd.DataFrame:
         yr = years[-1] if years else 2025
         rows = []
         for c in occ_codes:

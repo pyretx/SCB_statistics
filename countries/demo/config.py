@@ -22,6 +22,6 @@ CONFIG = CountryConfig(
     tabs=("overview",),
     access="internal",
     fetch_mode="reactive",
-    labels={"title": "Framework Demo Explorer", "sector_all": "All sectors"},
+    i18n={"EN": {"title": "Framework Demo Explorer", "sector_all": "All sectors"}},
     provider=DemoProvider(),
 )
