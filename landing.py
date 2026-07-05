@@ -21,12 +21,14 @@ import streamlit.components.v1 as components
 
 import auth
 
-# Optional: the country framework's registry (for the admin "Dev" preview menu).
-# Guarded so a framework issue can never break the landing page.
+# Optional: the country framework (registry + access gate) — for the admin "Dev"
+# preview menu and the gated framework tiles (e.g. Norway beta). Guarded so a
+# framework issue can never break the landing page.
 try:
     from core import registry as _registry
+    from core import access as _access
 except Exception:
-    _registry = None
+    _registry = _access = None
 
 _ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 _GLOBE  = os.path.join(_ASSETS, "logo.png")
@@ -636,6 +638,50 @@ for _col, c in zip(_cols, COUNTRIES):
             '<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">'
             + bullets + '</ul>', unsafe_allow_html=True)
         st.markdown(f'<div class="se-source">{c["source"]}</div>', unsafe_allow_html=True)
+
+# ── Gated framework countries (e.g. Norway beta) — a new row below the three,
+# furthest-left first. Shown to everyone as Locked · Beta; only openable by an
+# admin or a user explicitly granted the country (access-gated, client-side link
+# so the login is preserved). ──────────────────────────────────────────────────
+_fw = [c for c in (_registry.all_countries() if _registry else [])
+       if getattr(c, "landing", False)]
+if _fw:
+    st.write("")
+    _fcols = st.columns(3, gap="medium")     # empty slots reserved for future betas
+    for _i, (_fcol, c) in enumerate(zip(_fcols, _fw)):
+        with _fcol, st.container(border=True, key=f"cc_fw_{c.slug}"):
+            _unlocked = bool(_access and _access.can_open(c))
+            _badges = (f'<div style="background:rgba(178,106,0,.13);color:#B26A00;font-size:11px;'
+                       f'font-weight:600;padding:4px 10px;border-radius:20px;flex:none;">'
+                       f'{c.L("badge", "Beta")}</div>')
+            if not _unlocked:
+                _badges += ('<div style="background:#F1F3F6;color:#8A919D;font-size:11px;'
+                            'font-weight:600;padding:4px 9px;border-radius:20px;flex:none;">🔒 Locked</div>')
+            _blist = "".join(
+                '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
+                '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
+                f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in c.bullets)
+            _hdr = f"""
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+              <img class="se-flag" src="{flag_uri(c.iso)}" alt="{c.name} flag">
+              <div style="flex:1;min-width:0;">
+                <div style="white-space:nowrap;">
+                  <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{4 + _i:02d}</span>
+                  <span style="font-weight:700;font-size:17px;">{c.name}</span></div>
+                <div style="font-size:12px;color:#8A919D;margin-top:1px;">{c.native}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex:none;">{_badges}</div>
+            </div>"""
+            st.markdown("".join(l.strip() for l in _hdr.splitlines()), unsafe_allow_html=True)
+            if _unlocked:
+                st.page_link(f"countries/{c.slug}/page.py", label=f"Open {c.name} →")
+            else:
+                st.markdown('<div class="se-cta-off">🔒 Locked</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">'
+                + _blist + '</ul>', unsafe_allow_html=True)
+            st.markdown(f'<div class="se-source">{c.L("source_short", c.source_name)}</div>',
+                        unsafe_allow_html=True)
 
 st.write("")
 st.divider()

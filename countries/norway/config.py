@@ -22,10 +22,21 @@ CONFIG = CountryConfig(
         year_range=(2015, 2024),
     ),
     tabs=("overview",),
-    access="internal",
+    # restricted = admin/master OR a user explicitly granted this country
+    # (app_metadata.countries includes "norway" — a beta tester). Everyone else
+    # sees the landing tile as Locked.
+    access="restricted",
     fetch_mode="search",                    # commit-on-Search, like Sweden
+    landing=True,                           # show a gated tile on the landing page
+    bullets=(
+        "Mean &amp; median salary · ~400 occupations (STYRK-08)",
+        "Sector &amp; sex breakdowns · quartiles",
+        "Monthly earnings · 2015–2024",
+    ),
     labels={
         "title": "Norwegian Salary Explorer",
+        "badge": "Beta",
+        "source_short": "SSB · official",
         "sector_all": "All sectors",
         "sector_private": "Private + public enterprises",
         "sector_local": "Local government",

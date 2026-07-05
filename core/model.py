@@ -74,6 +74,8 @@ class CountryConfig:
     fetch_mode: str = "reactive"     # "search" (commit button) | "reactive"
     labels: dict = field(default_factory=dict)   # i18n / display strings
     provider: object = None          # a core.provider.CountryProvider instance
+    landing: bool = False            # show a (gated) tile on the landing page?
+    bullets: tuple[str, ...] = ()    # landing-tile feature bullets
 
     def L(self, key: str, default: str = "") -> str:
         """Look up a display label, falling back to a sane default."""
