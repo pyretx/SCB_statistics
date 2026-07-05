@@ -119,17 +119,25 @@ def sign_in(email: str, password: str):
         return None, str(e)
 
 
-def sign_up(email: str, password: str, full_name: str = ""):
+def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | None = None):
     """Public self-service registration (uses the anon/public client, not the
     admin API). New accounts default to role 'standard' (no app_metadata is
     set here — only the service-role client may set it). Depends on the
     Supabase project having "Enable sign ups" turned on, and on whether email
     confirmation is required there (both are dashboard settings, not code).
-    Returns (user_dict_or_None, error_str_or_None)."""
+
+    ``redirect_to`` sets where the confirmation email link lands after Supabase
+    verifies the token (must be in the project's Redirect URLs allow-list) — pass
+    the app URL with a marker like ``…/?confirmed=1`` so the app can greet the
+    user. Returns (user_dict_or_None, error_str_or_None)."""
     try:
+        options: dict = {}
+        if full_name:
+            options["data"] = {"full_name": full_name}
+        if redirect_to:
+            options["email_redirect_to"] = redirect_to
         res = _client(service=False).auth.sign_up({
-            "email": email, "password": password,
-            "options": {"data": {"full_name": full_name}} if full_name else {},
+            "email": email, "password": password, "options": options,
         })
         u = res.user
         if u is None:

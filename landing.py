@@ -119,6 +119,29 @@ _ROUTES = {"sweden": "scb_salaries.py", "france": "france.py"}
 if st.query_params.get("country") in _ROUTES:
     st.switch_page(_ROUTES[st.query_params["country"]])
 
+# Just confirmed their email? Supabase redirects the confirmation link back to
+# the app with ?confirmed=1 (see auth.sign_up's redirect_to). Greet them and
+# open the sign-in dialog, then drop the marker from the URL.
+if st.query_params.get("confirmed"):
+    st.session_state["_confirmed_msg"] = True
+    st.session_state["_show_auth"] = True
+    st.session_state["_auth_mode"] = "Sign in"
+    del st.query_params["confirmed"]
+
+
+def _app_base_url():
+    """Best-effort public base URL of this app (for the confirmation-email
+    redirect). Reads the forwarded host/proto behind Traefik; None if unknown."""
+    try:
+        h = st.context.headers
+    except Exception:
+        return None
+    host = h.get("X-Forwarded-Host") or h.get("Host")
+    if not host:
+        return None
+    proto = h.get("X-Forwarded-Proto") or ("http" if host.startswith(("localhost", "127.")) else "https")
+    return f"{proto}://{host}"
+
 # Single source of truth for the country grid — add a country here only.
 COUNTRIES = [
     {
@@ -305,6 +328,11 @@ def _auth_dialog():
         """, unsafe_allow_html=True)
 
     with right:
+        # Just clicked the email-confirmation link → greet them (see the
+        # ?confirmed=1 handling at the top of this file).
+        if st.session_state.get("_confirmed_msg"):
+            st.success("✅ Thanks for confirming your registration — "
+                       "please sign in below.")
         # Segmented pill toggle (mockup look). The header buttons pre-seed
         # session_state["_auth_mode"]; feed that as the default and mirror any
         # click back into it so the choice sticks across the dialog's reruns.
@@ -330,6 +358,7 @@ def _auth_dialog():
                 if user:
                     st.session_state["auth_user"] = user
                     st.session_state.pop("_auth_pw", None)
+                    st.session_state.pop("_confirmed_msg", None)
                     st.session_state["_show_auth"] = False
                     st.rerun()
                 else:
@@ -341,8 +370,13 @@ def _auth_dialog():
                 else:
                     # sign_up stores the account in Supabase as a *standard*
                     # user (the public client can't set app_metadata.role, so
-                    # no self-registration can ever mint an admin).
-                    user, err = auth.sign_up(email.strip(), pw, name.strip())
+                    # no self-registration can ever mint an admin). redirect_to
+                    # brings the confirmation-email link back here with
+                    # ?confirmed=1 so we can greet them.
+                    _base = _app_base_url()
+                    _redir = f"{_base}/?confirmed=1" if _base else None
+                    user, err = auth.sign_up(email.strip(), pw, name.strip(),
+                                             redirect_to=_redir)
                     if not user:
                         st.error(f"Could not create account: {err}")
                     else:
@@ -364,6 +398,7 @@ def _auth_dialog():
         st.caption("By continuing you agree to the Terms and acknowledge the Privacy Policy.")
         if st.button("Close", key="_auth_close"):
             st.session_state["_show_auth"] = False
+            st.session_state.pop("_confirmed_msg", None)
             st.rerun()
 
 

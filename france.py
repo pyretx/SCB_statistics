@@ -165,7 +165,7 @@ T = {
         "browse_en_note": "⚠️ Traduit automatiquement du français — la nomenclature officielle est en français.",
     },
     "EN": {
-        "title": "Salary Explorer — France",
+        "title": "Salary Explorer - France",
         "caption": "Mean net monthly salary, full-time equivalent (FTE) · Source: INSEE (DADS/DSN via the Melodi API)",
         "lang": "Language / Langue",
         "sector": "Sector",
