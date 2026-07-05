@@ -124,22 +124,28 @@ st.markdown("""
      box-shadow: 0 18px 40px -24px rgba(16,21,31,.30); border-color:#D3D8DF !important; }
   /* stretch each column so all cards share the tallest one's height */
   [data-testid="stColumn"]:has([class*="st-key-cc_"]) { align-self: stretch; }
+  [class*="st-key-cc_"] > [data-testid="stVerticalBlockBorderWrapper"],
+  [class*="st-key-cc_"] > [data-testid="stVerticalBlockBorderWrapper"] > div,
   [class*="st-key-cc_"] [data-testid="stVerticalBlock"] { height:100%; gap:0; }
-  /* The page-link CTA, styled as the blue button and pinned to the card foot. */
-  [class*="st-key-cc_"] [data-testid="stPageLink"] { margin-top:auto; padding-top:16px; }
-  [class*="st-key-cc_"] [data-testid="stPageLink"] a { background:#0A63A6; border-radius:10px;
-     padding:10px 14px; justify-content:center; box-shadow:0 2px 8px rgba(10,99,166,.24);
-     transition: background .15s ease; }
+  /* Footer row (source + CTA on one line), pinned to the card foot with a rule. */
+  [class*="st-key-cc_"] [data-testid="stHorizontalBlock"] { margin-top:auto; padding-top:14px;
+     border-top:1px solid #EEF0F3; align-items:center; }
+  /* Compact page-link CTA, right-aligned in its column (mockup look). */
+  [class*="st-key-cc_"] [data-testid="stPageLink"] { display:flex; justify-content:flex-end; }
+  [class*="st-key-cc_"] [data-testid="stPageLink"] a { width:auto; background:#0A63A6;
+     border-radius:9px; padding:8px 14px; justify-content:center;
+     box-shadow:0 2px 8px rgba(10,99,166,.24); transition: background .15s ease; }
   [class*="st-key-cc_"] [data-testid="stPageLink"] a:hover { background:#0B72C2; }
   [class*="st-key-cc_"] [data-testid="stPageLink"] a p,
   [class*="st-key-cc_"] [data-testid="stPageLink"] a span { color:#fff !important;
-     font-weight:600; font-size:14px; }
+     font-weight:600; font-size:13.5px; }
   /* Fixed-size flag swatch so it never stretches with the card width. */
   .se-flag { width: 46px; height: 33px; border-radius: 7px; flex: none; overflow: hidden;
              border: 1px solid rgba(0,0,0,.08); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
-  .se-cta-off { display:flex; align-items:center; justify-content:center; background:#F4F5F7;
-                color:#8A919D; font-weight:600; font-size:13px; padding:10px; border-radius:10px;
-                border:1px solid #E7E9ED; white-space:nowrap; margin-top:16px; }
+  .se-cta-off { display:flex; width:fit-content; margin-left:auto; align-items:center;
+                justify-content:center; background:#F4F5F7; color:#8A919D; font-weight:600;
+                font-size:13px; padding:8px 12px; border-radius:9px; border:1px solid #E7E9ED;
+                white-space:nowrap; }
   /* ── Auth dialog: match-height blue panel + full-width segmented toggle ── */
   [data-testid="stDialog"] div[role="dialog"]{ max-width: 720px; }
   [data-testid="stDialog"] [data-testid="stDialogContent"]{ padding-top: .25rem; }
@@ -438,15 +444,18 @@ for _col, c in zip(_cols, COUNTRIES):
         </div>
         <ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">
           {bullets}
-        </ul>
-        <div style="margin-top:16px;padding-top:14px;border-top:1px solid #EEF0F3;">
-          <span class="se-mono" style="font-size:11px;color:#98A0AC;">{c['source']}</span>
-        </div>"""
+        </ul>"""
         st.markdown("".join(l.strip() for l in body.splitlines()), unsafe_allow_html=True)
-        if c["live"]:
-            st.page_link(c["page"], label=f"Open {c['name']} →")
-        else:
-            st.markdown('<div class="se-cta-off">Notify me</div>', unsafe_allow_html=True)
+        # Footer row (mockup): source on the left, compact CTA on the right — same
+        # line, pinned to the card foot (see .st-key-cc_ CSS above).
+        fc1, fc2 = st.columns([1, 1], vertical_alignment="center")
+        fc1.markdown(f'<span class="se-mono" style="font-size:11px;color:#98A0AC;">{c["source"]}</span>',
+                     unsafe_allow_html=True)
+        with fc2:
+            if c["live"]:
+                st.page_link(c["page"], label=f"Open {c['name']} →")
+            else:
+                st.markdown('<div class="se-cta-off">Notify me</div>', unsafe_allow_html=True)
 
 st.write("")
 st.divider()
