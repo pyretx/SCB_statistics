@@ -156,6 +156,7 @@ COUNTRIES = [
             "Work-permit salary check · Migrationsverket rules",
         ],
         "page": "scb_salaries.py", "live": True,
+        "badge": ("Live", "#1B8A5A", "rgba(27,138,90,.12)"),   # (text, colour, bg)
     },
     {
         "num": "02", "name": "France", "native": "République française", "source": "INSEE · official",
@@ -168,6 +169,7 @@ COUNTRIES = [
             "Inflation-adjusted trends, series since 1951",
         ],
         "page": "france.py", "live": True,
+        "badge": ("Beta", "#B26A00", "rgba(178,106,0,.13)"),
     },
     {
         "num": "03", "name": "United States", "native": "United States",
@@ -183,6 +185,7 @@ COUNTRIES = [
             "Labour market indicators &amp; compensation trends",
         ],
         "page": None, "live": False,
+        "badge": ("Coming soon", "#0A63A6", "rgba(10,99,166,.10)"),
     },
 ]
 N_OCCUPATIONS = "790+"  # ~430 SSYK (Sweden) + 361 PCS (France)
@@ -572,9 +575,9 @@ st.write("")
 _cols = st.columns(len(COUNTRIES), gap="medium")
 for _col, c in zip(_cols, COUNTRIES):
     with _col, st.container(border=True, key=f"cc_{c['num']}"):
-        badge = ('<div style="background:rgba(10,99,166,.10);color:#0A63A6;font-size:11px;'
-                 'font-weight:600;padding:4px 10px;border-radius:20px;flex:none;">Coming soon</div>'
-                 if not c["live"] else "")
+        _bt, _bc, _bbg = c["badge"]     # per-country status pill (Live / Beta / Coming soon)
+        badge = (f'<div style="background:{_bbg};color:{_bc};font-size:11px;font-weight:600;'
+                 f'padding:4px 10px;border-radius:20px;flex:none;">{_bt}</div>')
         bullets = "".join(
             '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
             '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
