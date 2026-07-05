@@ -70,13 +70,15 @@ def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
         tree = prov.occupation_tree(lang)
         majors = {c: n for c, n in tree.items() if len(c) == 1}
         if majors:
-            opts = ["ALL"] + sorted(majors, key=lambda c: majors[c].lower())
-            sel = st.selectbox(
-                i18n.t(cfg, "major_group", lang), opts, key=k("major"),
-                format_func=lambda c: (i18n.t(cfg, "all_groups", lang) if c == "ALL"
-                                       else f"{c} · {majors[c]}"))
-            if sel != "ALL":
-                leaves = {c: n for c, n in leaves.items() if c[:1] == sel}
+            # translated labels as options (see the sector note above)
+            none_lbl = i18n.t(cfg, "all_groups", lang)
+            ordered = sorted(majors, key=lambda c: majors[c].lower())
+            labels = [none_lbl] + [f"{c} · {majors[c]}" for c in ordered]
+            chosen = st.selectbox(i18n.t(cfg, "major_group", lang), labels, key=k("major"))
+            i = labels.index(chosen)
+            if i > 0:
+                sel_major = ordered[i - 1]
+                leaves = {c: n for c, n in leaves.items() if c[:1] == sel_major}
 
     name_to_code = {v: c for c, v in leaves.items()}
     picked = st.multiselect(
@@ -121,9 +123,15 @@ def render_sidebar(cfg) -> dict:
                     unsafe_allow_html=True)
 
         if caps.sectors:
-            live["sector"] = st.selectbox(
-                i18n.t(cfg, "sector", lang), list(caps.sectors), key=k("sector"),
-                format_func=lambda s: i18n.t(cfg, f"sector_{s}", lang, s.capitalize()))
+            # Options are the TRANSLATED labels (not stable keys + format_func):
+            # a single-value selectbox memoizes its collapsed display by option
+            # value, so with stable keys the shown value wouldn't re-translate on
+            # a language switch. Changing the options list forces the refresh —
+            # the Swedish page's approach (selection resets to default on switch).
+            sec_labels = [i18n.t(cfg, f"sector_{s}", lang, s.capitalize())
+                          for s in caps.sectors]
+            chosen = st.selectbox(i18n.t(cfg, "sector", lang), sec_labels, key=k("sector"))
+            live["sector"] = caps.sectors[sec_labels.index(chosen)]
 
         if caps.has_sex:
             _sex = st.segmented_control(
