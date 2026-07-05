@@ -48,17 +48,13 @@ _pages = [
 # in the new framework can never take down the existing app; access is gated per
 # page (in-development countries are admin-only).
 try:
-    from core.page import render_country
     from core import registry
 
-    def _country_runner(cfg):
-        def _run():
-            render_country(cfg)
-        _run.__name__ = f"country_{cfg.slug}"
-        return _run
-
     for _cfg in registry.all_countries():
-        _pages.append(st.Page(_country_runner(_cfg), title=_cfg.name, url_path=_cfg.slug))
+        # File-path pages (thin loaders in countries/<slug>/page.py) so other
+        # pages can link to them client-side (st.page_link keeps the session).
+        _pages.append(st.Page(f"countries/{_cfg.slug}/page.py",
+                              title=_cfg.name, url_path=_cfg.slug))
 except Exception:
     pass
 

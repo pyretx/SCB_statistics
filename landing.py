@@ -21,6 +21,13 @@ import streamlit.components.v1 as components
 
 import auth
 
+# Optional: the country framework's registry (for the admin "Dev" preview menu).
+# Guarded so a framework issue can never break the landing page.
+try:
+    from core import registry as _registry
+except Exception:
+    _registry = None
+
 _ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 _GLOBE  = os.path.join(_ASSETS, "logo.png")
 _FLAGS  = os.path.join(_ASSETS, "flags")
@@ -445,7 +452,20 @@ with h_right:
                 or _nm[:1]).upper()
         _role = _hu.get("role", "standard")
         _rc = "#B8863B" if _role in ("admin", "master") else BLUE  # gold-ish for admins
-        _who, _out = st.columns([2.4, 1], vertical_alignment="center")
+        # In-development framework countries the admin may preview. Client-side
+        # page-links (not URL typing) so the session/login survives the jump.
+        _dev = (_registry.visible_for_current_user()
+                if (_registry and _role in ("admin", "master")) else [])
+        if _dev:
+            _dv, _who, _out = st.columns([1, 1.9, 1], vertical_alignment="center")
+            with _dv:
+                with st.popover("🧪 Dev", use_container_width=True):
+                    st.caption("In development · admin only")
+                    for _c in _dev:
+                        st.page_link(f"countries/{_c.slug}/page.py", label=_c.name,
+                                     icon=":material/open_in_new:")
+        else:
+            _who, _out = st.columns([2.4, 1], vertical_alignment="center")
         with _who:
             st.markdown(f"""
             <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;">
