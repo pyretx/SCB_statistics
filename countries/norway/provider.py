@@ -101,6 +101,55 @@ def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int,
     return pd.DataFrame(rows, columns=model.OCC_STAT_COLS)
 
 
+@st.cache_data(show_spinner=False, persist="disk")
+def _fetch_trend(sector: str, occ_codes: tuple[str, ...], sex: str,
+                 years: tuple[int, ...], lang: str = "EN") -> pd.DataFrame:
+    """Mean monthly earnings per occupation × year → normalized trend rows. One
+    SSB query spanning all selected years."""
+    if not occ_codes or not years:
+        return model.empty_trend()
+    yrs = [str(y) for y in years]
+    query = {"query": [
+        {"code": "MaaleMetode", "selection": {"filter": "item", "values": ["02"]}},  # mean
+        {"code": "Yrke", "selection": {"filter": "item", "values": list(occ_codes)}},
+        {"code": "Sektor", "selection": {"filter": "item",
+            "values": [SECTOR_CODE.get(sector, "ALLE")]}},
+        {"code": "Kjonn", "selection": {"filter": "item", "values": [SEX_CODE.get(sex, "0")]}},
+        {"code": "AvtaltVanlig", "selection": {"filter": "item", "values": ["0"]}},
+        {"code": "ContentsCode", "selection": {"filter": "item", "values": ["Manedslonn"]}},
+        {"code": "Tid", "selection": {"filter": "item", "values": yrs}},
+    ], "response": {"format": "json-stat2"}}
+    r = requests.post(TABLE_URL, json=query, timeout=120)
+    r.raise_for_status()
+    ds = r.json()
+    ids, sizes, values = ds["id"], ds["size"], ds["value"]
+    dims = ds["dimension"]
+    strides = [1] * len(sizes)
+    for i in range(len(sizes) - 2, -1, -1):
+        strides[i] = strides[i + 1] * sizes[i + 1]
+
+    def val(occ: str, yr: str):
+        sel = {"MaaleMetode": "02", "Yrke": occ, "Sektor": SECTOR_CODE.get(sector, "ALLE"),
+               "Kjonn": SEX_CODE.get(sex, "0"), "AvtaltVanlig": "0",
+               "ContentsCode": "Manedslonn", "Tid": yr}
+        try:
+            flat = sum(dims[d]["category"]["index"][sel[d]] * strides[ids.index(d)] for d in ids)
+        except KeyError:
+            return None
+        return values[flat] if 0 <= flat < len(values) else None
+
+    labels = _leaves(lang)
+    rows = []
+    for occ in occ_codes:
+        if occ not in dims["Yrke"]["category"]["index"]:
+            continue
+        name = labels.get(occ, occ)
+        for yr in yrs:
+            rows.append({"country": "norway", "year": int(yr), "series": name,
+                         "sex": sex, "value_nominal": val(occ, yr), "value_real": None})
+    return pd.DataFrame(rows, columns=model.TREND_COLS)
+
+
 class NorwayProvider(CountryProvider):
     def occupations(self, lang: str = "EN") -> dict[str, str]:
         return _leaves(lang)
@@ -113,3 +162,7 @@ class NorwayProvider(CountryProvider):
                          lang="EN") -> pd.DataFrame:
         yr = int(year or (years[-1] if years else 2024))
         return _fetch(sector, tuple(occ_codes), sex, yr, lang)
+
+    def trend(self, *, sector="all", occ_codes=(), sex="total", years=(),
+              lang="EN") -> pd.DataFrame:
+        return _fetch_trend(sector, tuple(occ_codes), sex, tuple(years), lang)

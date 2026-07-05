@@ -47,6 +47,8 @@ class CountryProvider:
                                year: int | None = None) -> pd.DataFrame:
         return model.empty_pop_pct()
 
-    # trend series over years
-    def trend(self, *, sector: str = "", occ_codes: tuple[str, ...] = ()) -> pd.DataFrame:
+    # trend series over years (normalized TREND_COLS: year, series, value_nominal…)
+    def trend(self, *, sector: str = "", occ_codes: tuple[str, ...] = (),
+              sex: str = "total", years: tuple[int, ...] = (),
+              lang: str = "EN") -> pd.DataFrame:
         return model.empty_trend()

@@ -53,11 +53,12 @@ CONFIG = CountryConfig(
     capabilities=Capabilities(
         has_occupation_percentiles=False,   # SSB 11418 has quartiles, not P10/P90
         has_occupation_hierarchy=True,       # STYRK-08 nests (ISCO-08 aligned)
-        has_mean=True, has_median=True, has_sex=True,
+        has_quartiles=True,                  # P25 · median · P75 spread
+        has_mean=True, has_median=True, has_sex=True, has_trend=True,
         sectors=("all", "private", "local", "central"),
         year_range=(2015, 2024),
     ),
-    tabs=("overview",),
+    tabs=("overview", "distribution", "sex", "trend"),
     access="restricted",
     fetch_mode="search",                    # commit-on-Search, like Sweden
     landing=True,                           # show a gated tile on the landing page

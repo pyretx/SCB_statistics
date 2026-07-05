@@ -1,24 +1,32 @@
 """Standard tab registry. A country's cfg.tabs picks which appear, in order.
-Each tab module exposes render(cfg, stats, query).
+Each tab module exposes render(cfg, stats, query); labels come from i18n
+(tab_<id>), so they translate with the language toggle.
 """
 from __future__ import annotations
 
 import streamlit as st
 
-from . import overview
+from .. import i18n
+from . import by_sex, distribution, overview, trend
 
-# id -> (label, render_fn). More tabs land here in later phases.
+# id -> render_fn. cfg.tabs lists which to enable, in order.
 TABS = {
-    "overview": ("Overview", overview.render),
+    "overview": overview.render,
+    "distribution": distribution.render,
+    "sex": by_sex.render,
+    "trend": trend.render,
 }
+_FALLBACK = {"overview": "Overview", "distribution": "Distribution",
+             "sex": "By sex", "trend": "Trend"}
 
 
 def render_tabs(cfg, stats, query):
+    lang = query.get("lang", "EN")
     enabled = [t for t in cfg.tabs if t in TABS] or ["overview"]
     if len(enabled) == 1:
-        TABS[enabled[0]][1](cfg, stats, query)
+        TABS[enabled[0]](cfg, stats, query)
         return
-    objs = st.tabs([TABS[t][0] for t in enabled])
-    for obj, tid in zip(objs, enabled):
+    labels = [i18n.t(cfg, f"tab_{t}", lang, _FALLBACK.get(t, t)) for t in enabled]
+    for obj, tid in zip(st.tabs(labels), enabled):
         with obj:
-            TABS[tid][1](cfg, stats, query)
+            TABS[tid](cfg, stats, query)

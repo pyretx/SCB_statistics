@@ -44,6 +44,7 @@ class Capabilities:
     has_occupation_percentiles: bool = False   # real P10..P90 per occupation (Sweden)
     has_population_distribution: bool = False   # whole-population curve (France)
     has_occupation_hierarchy: bool = True       # classification nests (SSYK/STYRK/PCS)
+    has_quartiles: bool = False                 # P25 · median · P75 spread (Norway)
     has_mean: bool = True
     has_median: bool = False
     has_sex: bool = False

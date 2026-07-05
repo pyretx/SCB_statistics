@@ -60,3 +60,79 @@ def percentile_line(stats: pd.DataFrame, cfg, *, title: str | None = None):
                       title=title, xaxis_title="Percentile",
                       yaxis_title=f"Salary ({cfg.currency_suffix}/mo)")
     return theme.style_fig(fig)
+
+
+def quartile_spread(stats: pd.DataFrame, cfg, *, title: str | None = None):
+    """Per-occupation P25 → P75 range bar with a median marker (a box-ish spread).
+    Uses the quartiles a source publishes when it has no P10/P90 (Norway/SSB)."""
+    d = stats[stats["dimension"] == "total"].copy()
+    d = d.dropna(subset=["p25", "p75", "median"]).sort_values("median")
+    if d.empty:
+        return None
+    fig = go.Figure()
+    # the P25→P75 span as a floating bar (base=P25), median as a diamond marker
+    fig.add_trace(go.Bar(
+        y=d["occ_name"], x=d["p75"] - d["p25"], base=d["p25"], orientation="h",
+        marker_color="#CBD5E1", width=0.5,
+        hovertemplate="%{y}<br>P25 %{base:,.0f} – P75 %{x:,.0f} "
+                      + cfg.currency_suffix + "<extra></extra>", showlegend=False))
+    fig.add_trace(go.Scatter(
+        y=d["occ_name"], x=d["median"], mode="markers",
+        marker=dict(symbol="diamond", size=11, color=theme.ACCENT,
+                    line=dict(color="#fff", width=1.5)),
+        name="Median",
+        hovertemplate="%{y}<br>median %{x:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
+    fig.update_layout(height=max(220, 46 * len(d) + 90),
+                      margin=dict(l=8, r=8, t=40 if title else 8, b=8),
+                      title=title, xaxis_title=None, yaxis_title=None, showlegend=False,
+                      barmode="overlay")
+    return theme.style_fig(fig, horizontal=True)
+
+
+def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,
+                    *, women_label: str, men_label: str, title: str | None = None):
+    """Grouped horizontal bars comparing women vs men on ``value_col`` per
+    occupation. Expects two total-slice frames keyed by occ_name."""
+    def _series(df):
+        d = df[df["dimension"] == "total"].dropna(subset=[value_col])
+        return dict(zip(d["occ_name"], d[value_col]))
+    w, m = _series(women), _series(men)
+    names = [n for n in dict.fromkeys(list(w) + list(m))]
+    if not names:
+        return None
+    fig = go.Figure()
+    fig.add_trace(go.Bar(y=names, x=[w.get(n) for n in names], orientation="h",
+                         name=women_label, marker_color=theme.ACCENT,
+                         hovertemplate="%{y}<br>%{x:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
+    fig.add_trace(go.Bar(y=names, x=[m.get(n) for n in names], orientation="h",
+                         name=men_label, marker_color="#8FB4D6",
+                         hovertemplate="%{y}<br>%{x:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
+    fig.update_layout(height=max(240, 58 * len(names) + 90), barmode="group",
+                      margin=dict(l=8, r=8, t=40 if title else 8, b=8),
+                      title=title, xaxis_title=None, yaxis_title=None,
+                      legend=dict(orientation="h", y=1.02, yanchor="bottom"))
+    return theme.style_fig(fig, horizontal=True)
+
+
+def trend_line(trend: pd.DataFrame, cfg, *, title: str | None = None):
+    """Mean salary over years, one line per occupation (series). Expects the
+    normalized trend frame (year, series, value_nominal)."""
+    if trend is None or trend.empty:
+        return None
+    fig = go.Figure()
+    for i, (series, g) in enumerate(trend.groupby("series", sort=False)):
+        g = g.dropna(subset=["value_nominal"]).sort_values("year")
+        if g.empty:
+            continue
+        col = theme.SERIES[i % len(theme.SERIES)]
+        fig.add_trace(go.Scatter(
+            x=g["year"], y=g["value_nominal"], mode="lines+markers", name=str(series),
+            line=dict(color=col, width=2.5), marker=theme.series_marker(col),
+            hovertemplate="%{x}<br>%{y:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
+    if not fig.data:
+        return None
+    fig.update_layout(height=400, margin=dict(l=8, r=8, t=40 if title else 8, b=8),
+                      title=title, xaxis_title=None,
+                      yaxis_title=f"{cfg.currency_suffix}/mo",
+                      legend=dict(orientation="h", y=1.02, yanchor="bottom"))
+    return theme.style_fig(fig)
