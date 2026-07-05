@@ -49,4 +49,15 @@ def render_country(cfg):
         states.no_data()
         return
 
+    # A source can return rows with every salary cell null — e.g. an
+    # occupation×sector combo the agency suppresses (SSB has no private-sector
+    # figure for ambulance workers). Show a clear message, not a bare table.
+    tot = stats[stats["dimension"] == "total"]
+    vcols = [c for c in ("mean", "median", "p10", "p25", "p75", "p90") if c in tot]
+    if tot.empty or not tot[vcols].notna().to_numpy().any():
+        states.no_data(
+            "No figures are published for this combination of occupation, "
+            "sector, sex and year. Try “All sectors” or adjust the selection.")
+        return
+
     tabs.render_tabs(cfg, stats, query)
