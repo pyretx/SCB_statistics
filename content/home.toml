@@ -1,0 +1,132 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  HOME PAGE CONTENT  —  edit the text here; no code changes needed.
+#  Lines starting with #  are comments.  Text goes inside "quotes".
+#  After editing, just refresh the page (rerun) to see it.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[brand]
+name  = "Salary Explorer"     # wordmark, top-left
+badge = "BETA"                # little pill next to the wordmark
+
+[header]                      # top-right controls
+sign_in        = "Sign in"
+create_account = "Create account"
+log_out        = "Log out"
+dev_menu       = "🧪 Dev"                       # admin-only preview menu
+dev_menu_note  = "In development · admin only"
+
+[hero]
+eyebrow = "OFFICIAL STATISTICS · GLOBAL"
+title   = "Salary data from national agencies, made explorable."
+intro   = "One clean interface over official government statistics - percentiles, breakdowns and trends, standardised so you can compare occupations within and across countries."
+
+# The three KPI figures under the hero headline.
+[[hero.stats]]
+value = "2"
+label = "countries live"
+[[hero.stats]]
+value = "790+"
+label = "occupations"
+[[hero.stats]]
+value = "100%"
+label = "official sources"
+
+# The live-preview card (right of the hero). Each slide previews one occupation.
+# occ_code/year: leave occ_code = "" to skip the live fetch and just show the
+# fallback figures (used for the France slide). fallback = the numbers shown if
+# the live fetch is unavailable.
+[hero.preview]
+eyebrow    = "LIVE PREVIEW"
+foot_label = "Median gross salary"
+per_month  = "/mo"
+
+[[hero.preview.slides]]
+title    = "Software developers"
+sub      = "Sweden · SCB 2025 · monthly, SEK"
+iso      = "se"
+unit     = "kr"
+occ_code = "2512"
+year     = "2025"
+fallback = { p10 = 39600, p25 = 46200, median = 53500, p75 = 62600, p90 = 72600 }
+
+[[hero.preview.slides]]
+title    = "Psychiatric nurses"
+sub      = "France · INSEE 2023 · monthly, EUR"
+iso      = "fr"
+unit     = "€"
+occ_code = ""
+year     = ""
+fallback = { p10 = 2070, p25 = 2470, median = 2950, p75 = 3280, p90 = 3830 }
+
+[[hero.preview.slides]]
+title    = "Mechanical engineers"
+sub      = "Sweden · SCB 2025 · monthly, SEK"
+iso      = "se"
+unit     = "kr"
+occ_code = "2144"
+year     = "2025"
+fallback = { p10 = 40200, p25 = 45300, median = 51800, p75 = 60000, p90 = 69900 }
+
+[countries]
+eyebrow    = "SELECT A COUNTRY"
+heading    = "Where do you want to look?"
+open_cta   = "Open {name} →"    # {name} is replaced with the country name
+notify_cta = "Notify me"        # shown on not-yet-live tiles
+locked_cta = "🔒 Locked"        # shown on locked (beta) tiles
+
+# One [[countries.tiles]] block per card in the top grid. `points` are the
+# bullet lines. name/native/source/points/badge_text are TEXT (edit freely);
+# num/iso/page/live/badge colours are wiring/styling (leave unless you know).
+[[countries.tiles]]
+num          = "01"
+name         = "Sweden"
+native       = "Sverige"
+source       = "SCB · official"
+iso          = "se"
+points       = [
+  "Salary percentiles P10–P90 · ~430 occupations (SSYK)",
+  "Sector, sex, age, region & education breakdowns",
+  "Work-permit salary check · Migrationsverket rules",
+]
+page         = "scb_salaries.py"
+live         = true
+badge_text   = "Live"
+badge_color  = "#1B8A5A"
+badge_bg     = "rgba(27,138,90,.12)"
+
+[[countries.tiles]]
+num          = "02"
+name         = "France"
+native       = "République française"
+source       = "INSEE · official"
+iso          = "fr"
+points       = [
+  "Mean salaries · 361 detailed occupations (PCS)",
+  "Wage distribution by socio-professional group",
+  "Inflation-adjusted trends, series since 1951",
+]
+page         = "france.py"
+live         = true
+badge_text   = "Live"
+badge_color  = "#1B8A5A"
+badge_bg     = "rgba(27,138,90,.12)"
+
+[[countries.tiles]]
+num          = "03"
+name         = "United States"
+native       = "United States"
+source       = "BLS Public Data API · planned"
+iso          = "us"
+points       = [
+  "Salary benchmarks by occupation & location",
+  "Mean, median, P10/P25/P75/P90 wage data",
+  "Labour market indicators & compensation trends",
+]
+page         = ""
+live         = false
+badge_text   = "Coming soon"
+badge_color  = "#0A63A6"
+badge_bg     = "rgba(10,99,166,.10)"
+
+[footer]
+note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France)"

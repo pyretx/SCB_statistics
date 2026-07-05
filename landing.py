@@ -20,6 +20,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 import auth
+import content
 
 # Optional: the country framework (registry + access gate) — for the admin "Dev"
 # preview menu and the gated framework tiles (e.g. Norway beta). Guarded so a
@@ -35,6 +36,11 @@ _GLOBE  = os.path.join(_ASSETS, "logo.png")
 _FLAGS  = os.path.join(_ASSETS, "flags")
 
 BLUE = "#0A63A6"
+
+# All user-facing text for this page lives in content/home.toml + content/auth.toml
+# (edit there, not here). See content.py.
+C = content.load("home")
+A = content.load("auth")
 
 
 def _svg_data_uri(path: str) -> str:
@@ -134,7 +140,7 @@ if st.query_params.get("country") in _ROUTES:
 if st.query_params.get("confirmed"):
     st.session_state["_confirmed_msg"] = True
     st.session_state["_show_auth"] = True
-    st.session_state["_auth_mode"] = "Sign in"
+    st.session_state["_auth_mode"] = A["form"]["mode_sign_in"]
     del st.query_params["confirmed"]
 
 
@@ -163,53 +169,8 @@ def _app_base_url():
         pass
     return None
 
-# Single source of truth for the country grid — add a country here only.
-COUNTRIES = [
-    {
-        "num": "01", "name": "Sweden", "native": "Sverige", "source": "SCB · official",
-        "iso": "se",
-        "flag_css": ("background-color:#006AA7;"
-                     "background-image:linear-gradient(90deg,transparent 26%,#FECC00 26% 40%,transparent 40%),"
-                     "linear-gradient(0deg,transparent 40%,#FECC00 40% 60%,transparent 60%);"),
-        "points": [
-            "Salary percentiles P10–P90 · ~430 occupations (SSYK)",
-            "Sector, sex, age, region &amp; education breakdowns",
-            "Work-permit salary check · Migrationsverket rules",
-        ],
-        "page": "scb_salaries.py", "live": True,
-        "badge": ("Live", "#1B8A5A", "rgba(27,138,90,.12)"),   # (text, colour, bg)
-    },
-    {
-        "num": "02", "name": "France", "native": "République française", "source": "INSEE · official",
-        "iso": "fr",
-        "flag_css": ("background-image:linear-gradient(90deg,#0055A4 33.33%,#ffffff 33.33% 66.66%,"
-                     "#EF4135 66.66%);"),
-        "points": [
-            "Mean salaries · 361 detailed occupations (PCS)",
-            "Wage distribution by socio-professional group",
-            "Inflation-adjusted trends, series since 1951",
-        ],
-        "page": "france.py", "live": True,
-        "badge": ("Live", "#1B8A5A", "rgba(27,138,90,.12)"),
-    },
-    {
-        "num": "03", "name": "United States", "native": "United States",
-        "source": "BLS Public Data API · planned", "iso": "us",
-        "flag_css": ("background-color:#B22234;"
-                     "background-image:linear-gradient(#3C3B6E,#3C3B6E),"
-                     "repeating-linear-gradient(180deg,#B22234 0 7.7%,#ffffff 7.7% 15.4%);"
-                     "background-size:40% 53.85%,100% 100%;"
-                     "background-position:top left,top left;background-repeat:no-repeat,no-repeat;"),
-        "points": [
-            "Salary benchmarks by occupation &amp; location",
-            "Mean, median, P10/P25/P75/P90 wage data",
-            "Labour market indicators &amp; compensation trends",
-        ],
-        "page": None, "live": False,
-        "badge": ("Coming soon", "#0A63A6", "rgba(10,99,166,.10)"),
-    },
-]
-N_OCCUPATIONS = "790+"  # ~430 SSYK (Sweden) + 361 PCS (France)
+# Country grid — content-driven (edit content/home.toml → [[countries.tiles]]).
+COUNTRIES = C["countries"]["tiles"]
 
 
 @st.cache_data(show_spinner=False, persist="disk", ttl=86400)
@@ -327,9 +288,13 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-@st.dialog("Welcome to Salary Explorer", width="large")
+@st.dialog(A["dialog"]["title"], width="large")
 def _auth_dialog():
     left, right = st.columns([0.82, 1], gap="large", vertical_alignment="center")
+    _p = A["panel"]
+    _checks = "".join(
+        f'<div class="se-authcheck"><span class="se-tick">✓</span><span>{c}</span></div>'
+        for c in _p["checks"])
 
     with left:
         st.markdown(f"""
@@ -339,48 +304,43 @@ def _auth_dialog():
           <img src="{LOGO_URI}" alt="Salary Explorer" style="width:40px;height:40px;border-radius:10px;
                background:rgba(255,255,255,.14);padding:3px;margin-bottom:20px;position:relative;display:block;">
           <div class="se-mono" style="font-size:11px;font-weight:600;letter-spacing:.18em;
-                                      color:rgba(255,255,255,.72);margin-bottom:16px;">SECURE ACCESS</div>
+                                      color:rgba(255,255,255,.72);margin-bottom:16px;">{_p["eyebrow"]}</div>
           <div style="font-size:24px;line-height:1.18;font-weight:800;letter-spacing:-.015em;
-                      margin-bottom:24px;">Official salary data,<br>always free to browse.</div>
-          <div class="se-authcheck"><span class="se-tick">✓</span>
-            <span>Explore Sweden &amp; France right now - no account needed</span></div>
-          <div class="se-authcheck"><span class="se-tick">✓</span>
-            <span>An account is only needed for admin tools today</span></div>
-          <div class="se-authcheck"><span class="se-tick">✓</span>
-            <span>Free while in beta</span></div>
+                      margin-bottom:24px;">{_p["headline"]}</div>
+          {_checks}
           <div class="se-mono" style="position:absolute;bottom:26px;left:26px;font-size:11px;
                                       color:rgba(255,255,255,.60);letter-spacing:.04em;">
-            SCB · INSEE · official statistics only</div>
+            {_p["footer"]}</div>
         </div>
         """, unsafe_allow_html=True)
 
     with right:
         # Just clicked the email-confirmation link → greet them (see the
         # ?confirmed=1 handling at the top of this file).
+        _f, _m = A["form"], A["messages"]
         if st.session_state.get("_confirmed_msg"):
-            st.success("✅ Thanks for confirming your registration — "
-                       "please sign in below.")
+            st.success(_m["confirmed"])
         # Segmented pill toggle (mockup look). The header buttons pre-seed
         # session_state["_auth_mode"]; feed that as the default and mirror any
         # click back into it so the choice sticks across the dialog's reruns.
-        _default = st.session_state.get("_auth_mode", "Sign in")
+        _default = st.session_state.get("_auth_mode", _f["mode_sign_in"])
         _seg = st.segmented_control(
-            "mode", ["Sign in", "Create account"], default=_default,
+            "mode", [_f["mode_sign_in"], _f["mode_create"]], default=_default,
             key="_auth_seg", label_visibility="collapsed")
         if _seg:  # None only if the active pill is clicked again (deselect)
             st.session_state["_auth_mode"] = _seg
-        mode = st.session_state.get("_auth_mode", "Sign in")
+        mode = st.session_state.get("_auth_mode", _f["mode_sign_in"])
 
-        st.caption("Create a free account or explore without sign in. Browsing salary data never requires "
-                  "one - sign in required for admin access.")
+        st.caption(_f["intro"])
 
-        if mode == "Create account":
-            name = st.text_input("Full name", key="_su_name", placeholder="Jane Andersson")
-        email = st.text_input("Email", key="_auth_email", placeholder="you@example.com")
-        pw = st.text_input("Password", key="_auth_pw", type="password", placeholder="••••••••")
+        if mode == _f["mode_create"]:
+            name = st.text_input(_f["name_label"], key="_su_name", placeholder=_f["name_ph"])
+        email = st.text_input(_f["email_label"], key="_auth_email", placeholder=_f["email_ph"])
+        pw = st.text_input(_f["password_label"], key="_auth_pw", type="password",
+                           placeholder=_f["password_ph"])
 
-        if mode == "Sign in":
-            if st.button("Sign in", type="primary", use_container_width=True):
+        if mode == _f["mode_sign_in"]:
+            if st.button(_f["sign_in_button"], type="primary", use_container_width=True):
                 user, err = auth.sign_in(email.strip(), pw)
                 if user:
                     st.session_state["auth_user"] = user
@@ -389,11 +349,11 @@ def _auth_dialog():
                     st.session_state["_show_auth"] = False
                     st.rerun()
                 else:
-                    st.error(f"Sign-in failed: {err}")
+                    st.error(_m["sign_in_failed"].format(err=err))
         else:
-            if st.button("Create account", type="primary", use_container_width=True):
+            if st.button(_f["create_button"], type="primary", use_container_width=True):
                 if not email.strip() or not pw:
-                    st.error("Email and password are required.")
+                    st.error(_m["missing_fields"])
                 else:
                     # sign_up stores the account in Supabase as a *standard*
                     # user (the public client can't set app_metadata.role, so
@@ -405,7 +365,7 @@ def _auth_dialog():
                     user, err = auth.sign_up(email.strip(), pw, name.strip(),
                                              redirect_to=_redir)
                     if not user:
-                        st.error(f"Could not create account: {err}")
+                        st.error(_m["create_failed"].format(err=err))
                     else:
                         st.session_state.pop("_auth_pw", None)
                         # If the project doesn't require email confirmation the
@@ -419,11 +379,10 @@ def _auth_dialog():
                             st.session_state["_show_auth"] = False
                             st.rerun()
                         else:
-                            st.success("Account created — check your inbox to confirm "
-                                      "your email, then sign in.")
+                            st.success(_m["check_inbox"])
 
-        st.caption("By continuing you agree to the Terms and acknowledge the Privacy Policy.")
-        if st.button("Close", key="_auth_close"):
+        st.caption(_f["terms"])
+        if st.button(_f["close"], key="_auth_close"):
             st.session_state["_show_auth"] = False
             st.session_state.pop("_confirmed_msg", None)
             st.rerun()
@@ -441,9 +400,9 @@ with h_left:
     <div style="display:flex;align-items:center;gap:11px;">
       <img src="{LOGO_URI}" alt="Salary Explorer" style="width:32px;height:32px;flex:none;
            border-radius:8px;box-shadow:0 2px 6px rgba(10,99,166,.35);">
-      <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;">Salary Explorer</span>
+      <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;">{C["brand"]["name"]}</span>
       <span class="se-mono" style="font-size:10px;font-weight:600;letter-spacing:.06em;
-            color:{BLUE};background:rgba(10,99,166,.10);padding:3px 7px;border-radius:5px;">BETA</span>
+            color:{BLUE};background:rgba(10,99,166,.10);padding:3px 7px;border-radius:5px;">{C["brand"]["badge"]}</span>
     </div>
     """, unsafe_allow_html=True)
 with h_right:
@@ -464,8 +423,8 @@ with h_right:
         if _dev:
             _dv, _who, _out = st.columns([1, 1.9, 1], vertical_alignment="center")
             with _dv:
-                with st.popover("🧪 Dev", use_container_width=True):
-                    st.caption("In development · admin only")
+                with st.popover(C["header"]["dev_menu"], use_container_width=True):
+                    st.caption(C["header"]["dev_menu_note"])
                     for _c in _dev:
                         st.page_link(f"countries/{_c.slug}/page.py", label=_c.name,
                                      icon=":material/open_in_new:")
@@ -486,19 +445,20 @@ with h_right:
             </div>
             """, unsafe_allow_html=True)
         with _out:
-            if st.button("Log out", use_container_width=True, key="hdr_logout"):
+            if st.button(C["header"]["log_out"], use_container_width=True, key="hdr_logout"):
                 st.session_state.pop("auth_user", None)
                 st.rerun()
     else:
         hr_signin, hr_signup = st.columns(2)
         with hr_signin:
-            if st.button("Sign in", use_container_width=True, key="hdr_signin"):
-                st.session_state["_auth_mode"] = "Sign in"
+            if st.button(C["header"]["sign_in"], use_container_width=True, key="hdr_signin"):
+                st.session_state["_auth_mode"] = A["form"]["mode_sign_in"]
                 st.session_state["_show_auth"] = True
                 st.rerun()
         with hr_signup:
-            if st.button("Create account", type="primary", use_container_width=True, key="hdr_signup"):
-                st.session_state["_auth_mode"] = "Create account"
+            if st.button(C["header"]["create_account"], type="primary",
+                         use_container_width=True, key="hdr_signup"):
+                st.session_state["_auth_mode"] = A["form"]["mode_create"]
                 st.session_state["_show_auth"] = True
                 st.rerun()
 
@@ -514,32 +474,28 @@ st.divider()
 # ── Hero ───────────────────────────────────────────────────────────────────
 hc1, hc2 = st.columns([1.05, 0.95], gap="large")
 with hc1:
+    _hero = C["hero"]
+    _divider = '<div style="width:1px;background:#E1E4E9;margin:0 28px 0 0;"></div>'
+    _stat_blocks = []
+    for _i, _s in enumerate(_hero["stats"]):
+        _pr = "padding-right:28px;" if _i < len(_hero["stats"]) - 1 else ""
+        _stat_blocks.append(
+            f'<div style="{_pr}">'
+            f'<div class="se-mono" style="font-size:26px;font-weight:600;color:#0C1119;letter-spacing:-.02em;">{_s["value"]}</div>'
+            f'<div style="font-size:13px;color:#7A828F;margin-top:3px;">{_s["label"]}</div></div>')
+    _stats_html = _divider.join(_stat_blocks)
     st.markdown(f"""
     <div class="se-mono" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:{BLUE};margin-bottom:20px;">
-      OFFICIAL STATISTICS · GLOBAL
+      {_hero["eyebrow"]}
     </div>
     <h1 style="margin:0;font-size:52px;line-height:1.06;letter-spacing:-.025em;font-weight:800;color:#0C1119;">
-      Salary data from national agencies, made explorable.
+      {_hero["title"]}
     </h1>
     <p style="margin:20px 0 0;font-size:17px;line-height:1.55;color:#5B6472;max-width:520px;">
-      One clean interface over official government statistics - percentiles, breakdowns
-      and trends, standardised so you can compare occupations within and across countries.
+      {_hero["intro"]}
     </p>
     <div style="display:flex;gap:0;margin-top:34px;flex-wrap:wrap;align-items:stretch;">
-      <div style="padding-right:28px;">
-        <div class="se-mono" style="font-size:26px;font-weight:600;color:#0C1119;letter-spacing:-.02em;">2</div>
-        <div style="font-size:13px;color:#7A828F;margin-top:3px;">countries live</div>
-      </div>
-      <div style="width:1px;background:#E1E4E9;margin:0 28px 0 0;"></div>
-      <div style="padding-right:28px;">
-        <div class="se-mono" style="font-size:26px;font-weight:600;color:#0C1119;letter-spacing:-.02em;">{N_OCCUPATIONS}</div>
-        <div style="font-size:13px;color:#7A828F;margin-top:3px;">occupations</div>
-      </div>
-      <div style="width:1px;background:#E1E4E9;margin:0 28px 0 0;"></div>
-      <div>
-        <div class="se-mono" style="font-size:26px;font-weight:600;color:#0C1119;letter-spacing:-.02em;">100%</div>
-        <div style="font-size:13px;color:#7A828F;margin-top:3px;">official sources</div>
-      </div>
+      {_stats_html}
     </div>
     """, unsafe_allow_html=True)
 
@@ -548,19 +504,14 @@ with hc2:
     # JS-driven slide animation → rendered via components.html (an iframe), since
     # st.markdown strips JS. Self-contained HTML/CSS/JS, no Python state. Sweden
     # slides use the live SCB fetch (fallbacks embedded); France is 2023 microdata.
-    _se_dev = _fetch_preview_data("2512", "2025") or \
-        {"p10": 39600, "p25": 46200, "median": 53500, "p75": 62600, "p90": 72600}
-    _se_mech = _fetch_preview_data("2144", "2025") or \
-        {"p10": 40200, "p25": 45300, "median": 51800, "p75": 60000, "p90": 69900}
-    _slides_data = [
-        {"title": "Software developers", "sub": "Sweden · SCB 2025 · monthly, SEK",
-         "iso": "se", "unit": "kr", "v": _se_dev},
-        {"title": "Psychiatric nurses", "sub": "France · INSEE 2023 · monthly, EUR",
-         "iso": "fr", "unit": "€",
-         "v": {"p10": 2070, "p25": 2470, "median": 2950, "p75": 3280, "p90": 3830}},
-        {"title": "Mechanical engineers", "sub": "Sweden · SCB 2025 · monthly, SEK",
-         "iso": "se", "unit": "kr", "v": _se_mech},
-    ]
+    _pv = C["hero"]["preview"]
+    _slides_data = []
+    for _s in _pv["slides"]:
+        # live SCB fetch when an occ_code is given, else the stored fallback
+        _v = (_fetch_preview_data(_s["occ_code"], _s["year"]) or _s["fallback"]) \
+            if _s.get("occ_code") else _s["fallback"]
+        _slides_data.append({"title": _s["title"], "sub": _s["sub"],
+                             "iso": _s["iso"], "unit": _s["unit"], "v": _v})
 
     def _nbsp(x):                       # 53500 -> "53 900" (nbsp so it never wraps)
         return f"{int(round(x)):,}".replace(",", " ")
@@ -580,12 +531,12 @@ with hc2:
                      f'<span class="val{m}">{_nbsp(val)}</span></div>')
         med = f'{_nbsp(v["median"])} {s["unit"]}'
         return (f'<div class="slide"><div class="head"><div>'
-                f'<div class="eyebrow mono">LIVE PREVIEW</div>'
+                f'<div class="eyebrow mono">{_pv["eyebrow"]}</div>'
                 f'<div class="title">{s["title"]}</div>'
                 f'<div class="sub">{s["sub"]}</div></div>'
                 f'<img class="flag" src="{flag_uri(s["iso"])}" alt=""></div>'
-                f'{rows}<div class="foot"><span class="foot-lbl">Median gross salary</span>'
-                f'<span class="foot-val mono">{med}<span class="unit">/mo</span></span></div></div>')
+                f'{rows}<div class="foot"><span class="foot-lbl">{_pv["foot_label"]}</span>'
+                f'<span class="foot-val mono">{med}<span class="unit">{_pv["per_month"]}</span></span></div></div>')
 
     _slides = "".join(_slide_html(s) for s in _slides_data)
     _dots = "".join('<span class="dot"></span>' for _ in _slides_data)
@@ -599,10 +550,10 @@ st.write("")
 # ── Select a country ───────────────────────────────────────────────────────
 st.markdown(f"""
 <div class="se-mono" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:{BLUE};margin-bottom:10px;">
-  SELECT A COUNTRY
+  {C["countries"]["eyebrow"]}
 </div>
 """, unsafe_allow_html=True)
-st.subheader("Where do you want to look?")
+st.subheader(C["countries"]["heading"])
 st.write("")
 
 # Native columns + a keyed st.container per card so the CTA can be a real
@@ -612,7 +563,7 @@ st.write("")
 _cols = st.columns(len(COUNTRIES), gap="medium")
 for _col, c in zip(_cols, COUNTRIES):
     with _col, st.container(border=True, key=f"cc_{c['num']}"):
-        _bt, _bc, _bbg = c["badge"]     # per-country status pill (Live / Beta / Coming soon)
+        _bt, _bc, _bbg = c["badge_text"], c["badge_color"], c["badge_bg"]  # status pill
         badge = (f'<div style="background:{_bbg};color:{_bc};font-size:11px;font-weight:600;'
                  f'padding:4px 10px;border-radius:20px;flex:none;">{_bt}</div>')
         bullets = "".join(
@@ -633,9 +584,10 @@ for _col, c in zip(_cols, COUNTRIES):
         st.markdown("".join(l.strip() for l in header.splitlines()), unsafe_allow_html=True)
         # Full-width CTA directly under the header (mockup layout).
         if c["live"]:
-            st.page_link(c["page"], label=f"Open {c['name']} →")
+            st.page_link(c["page"], label=C["countries"]["open_cta"].format(name=c["name"]))
         else:
-            st.markdown('<div class="se-cta-off">Notify me</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="se-cta-off">{C["countries"]["notify_cta"]}</div>',
+                        unsafe_allow_html=True)
         # Bullets, then the source line pinned to the card foot.
         st.markdown(
             '<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">'
@@ -677,9 +629,11 @@ if _fw:
             </div>"""
             st.markdown("".join(l.strip() for l in _hdr.splitlines()), unsafe_allow_html=True)
             if _unlocked:
-                st.page_link(f"countries/{c.slug}/page.py", label=f"Open {c.name} →")
+                st.page_link(f"countries/{c.slug}/page.py",
+                             label=C["countries"]["open_cta"].format(name=c.name))
             else:
-                st.markdown('<div class="se-cta-off">🔒 Locked</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="se-cta-off">{C["countries"]["locked_cta"]}</div>',
+                            unsafe_allow_html=True)
             st.markdown(
                 '<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">'
                 + _blist + '</ul>', unsafe_allow_html=True)
@@ -688,4 +642,4 @@ if _fw:
 
 st.write("")
 st.divider()
-st.caption("Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France)")
+st.caption(C["footer"]["note"])
