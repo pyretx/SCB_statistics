@@ -122,11 +122,15 @@ st.markdown("""
      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
   [class*="st-key-cc_"]:hover { transform: translateY(-3px);
      box-shadow: 0 18px 40px -24px rgba(16,21,31,.30); border-color:#D3D8DF !important; }
-  /* stretch each column so all cards share the tallest one's height */
+  /* Equal-height tiles: stretch each column to the tallest in the row, then make
+     EVERY wrapper between the column and the card full-height so a shorter card
+     (e.g. the US tile) stretches up to match. The source line is pinned to the
+     foot (margin-top:auto), so the slack lands after the last bullet and all
+     tiles share the same top and bottom edge. */
   [data-testid="stColumn"]:has([class*="st-key-cc_"]) { align-self: stretch; }
-  [class*="st-key-cc_"] > [data-testid="stVerticalBlockBorderWrapper"],
-  [class*="st-key-cc_"] > [data-testid="stVerticalBlockBorderWrapper"] > div,
-  [class*="st-key-cc_"] [data-testid="stVerticalBlock"] { height:100%; gap:0; }
+  [data-testid="stColumn"]:has([class*="st-key-cc_"]) > [data-testid="stVerticalBlock"],
+  [data-testid="stLayoutWrapper"]:has(> [class*="st-key-cc_"]) { height:100% !important; }
+  [class*="st-key-cc_"] { gap:0; }
   /* Full-width CTA button, directly under the card header (mockup). Force the
      element container + page-link to full width (Streamlit sizes to content),
      and add space before the bullets. */
