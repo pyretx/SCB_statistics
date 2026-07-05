@@ -50,7 +50,7 @@ class CountryProvider:
     # trend series over years (normalized TREND_COLS: year, series, value_nominal…)
     def trend(self, *, sector: str = "", occ_codes: tuple[str, ...] = (),
               sex: str = "total", years: tuple[int, ...] = (),
-              lang: str = "EN") -> pd.DataFrame:
+              lang: str = "EN", measure: str = "mean") -> pd.DataFrame:
         return model.empty_trend()
 
     # annual-average national CPI index → {year: index} (any base). Powers the

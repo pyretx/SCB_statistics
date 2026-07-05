@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import os
+import time
 
 import pandas as pd
 import requests
@@ -25,6 +26,22 @@ TABLE_URL = "https://data.ssb.no/api/v0/en/table/11418"
 CPI_URL = "https://data.ssb.no/api/v0/en/table/03013"   # Consumer Price Index (2015=100)
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _LABELS_FILE = os.path.join(_ROOT, "styrk_labels.json")
+
+def _post(url: str, query: dict, tries: int = 4) -> dict:
+    """POST to a PxWebApi table, retrying the transient 5xx errors SSB throws
+    under load (502/503/504) with a short backoff before giving up."""
+    r = None
+    for i in range(tries):
+        r = requests.post(url, json=query, timeout=120)
+        if r.status_code == 200:
+            return r.json()
+        if r.status_code in (500, 502, 503, 504) and i < tries - 1:
+            time.sleep(1.2 * (i + 1))
+            continue
+        break
+    r.raise_for_status()
+    return {}
+
 
 SECTOR_CODE = {"all": "ALLE", "private": "A+B+D+E", "local": "6500", "central": "6100"}
 SEX_CODE = {"total": "0", "women": "2", "men": "1"}
@@ -65,9 +82,7 @@ def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int,
         {"code": "ContentsCode", "selection": {"filter": "item", "values": ["Manedslonn"]}},
         {"code": "Tid", "selection": {"filter": "item", "values": [str(year)]}},
     ], "response": {"format": "json-stat2"}}
-    r = requests.post(TABLE_URL, json=query, timeout=120)
-    r.raise_for_status()
-    ds = r.json()
+    ds = _post(TABLE_URL, query)
     ids, sizes, values = ds["id"], ds["size"], ds["value"]
     dims = ds["dimension"]
     strides = [1] * len(sizes)
@@ -104,14 +119,16 @@ def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int,
 
 @st.cache_data(show_spinner=False, persist="disk")
 def _fetch_trend(sector: str, occ_codes: tuple[str, ...], sex: str,
-                 years: tuple[int, ...], lang: str = "EN") -> pd.DataFrame:
-    """Mean monthly earnings per occupation × year → normalized trend rows. One
-    SSB query spanning all selected years."""
+                 years: tuple[int, ...], lang: str = "EN",
+                 measure: str = "mean") -> pd.DataFrame:
+    """One measure (mean/median/p25/p75) per occupation × year → normalized trend
+    rows. One SSB query spanning all selected years."""
     if not occ_codes or not years:
         return model.empty_trend()
+    mm = _METHOD.get(measure, "02")
     yrs = [str(y) for y in years]
     query = {"query": [
-        {"code": "MaaleMetode", "selection": {"filter": "item", "values": ["02"]}},  # mean
+        {"code": "MaaleMetode", "selection": {"filter": "item", "values": [mm]}},
         {"code": "Yrke", "selection": {"filter": "item", "values": list(occ_codes)}},
         {"code": "Sektor", "selection": {"filter": "item",
             "values": [SECTOR_CODE.get(sector, "ALLE")]}},
@@ -120,9 +137,7 @@ def _fetch_trend(sector: str, occ_codes: tuple[str, ...], sex: str,
         {"code": "ContentsCode", "selection": {"filter": "item", "values": ["Manedslonn"]}},
         {"code": "Tid", "selection": {"filter": "item", "values": yrs}},
     ], "response": {"format": "json-stat2"}}
-    r = requests.post(TABLE_URL, json=query, timeout=120)
-    r.raise_for_status()
-    ds = r.json()
+    ds = _post(TABLE_URL, query)
     ids, sizes, values = ds["id"], ds["size"], ds["value"]
     dims = ds["dimension"]
     strides = [1] * len(sizes)
@@ -130,7 +145,7 @@ def _fetch_trend(sector: str, occ_codes: tuple[str, ...], sex: str,
         strides[i] = strides[i + 1] * sizes[i + 1]
 
     def val(occ: str, yr: str):
-        sel = {"MaaleMetode": "02", "Yrke": occ, "Sektor": SECTOR_CODE.get(sector, "ALLE"),
+        sel = {"MaaleMetode": mm, "Yrke": occ, "Sektor": SECTOR_CODE.get(sector, "ALLE"),
                "Kjonn": SEX_CODE.get(sex, "0"), "AvtaltVanlig": "0",
                "ContentsCode": "Manedslonn", "Tid": yr}
         try:
@@ -165,9 +180,7 @@ def _fetch_cpi_annual(years: tuple[int, ...]) -> dict:
         {"code": "Tid", "selection": {"filter": "item", "values": months}},
     ], "response": {"format": "json-stat2"}}
     try:
-        r = requests.post(CPI_URL, json=query, timeout=120)
-        r.raise_for_status()
-        ds = r.json()
+        ds = _post(CPI_URL, query)
     except Exception:
         return {}
     idx = ds["dimension"]["Tid"]["category"]["index"]   # only Tid varies → flat index
@@ -194,8 +207,8 @@ class NorwayProvider(CountryProvider):
         return _fetch(sector, tuple(occ_codes), sex, yr, lang)
 
     def trend(self, *, sector="all", occ_codes=(), sex="total", years=(),
-              lang="EN") -> pd.DataFrame:
-        return _fetch_trend(sector, tuple(occ_codes), sex, tuple(years), lang)
+              lang="EN", measure="mean") -> pd.DataFrame:
+        return _fetch_trend(sector, tuple(occ_codes), sex, tuple(years), lang, measure)
 
     def cpi_annual(self, years=()) -> dict:
         return _fetch_cpi_annual(tuple(years))

@@ -43,25 +43,32 @@ _PCT_ORDER = [("p10", "P10"), ("p25", "P25"), ("median", "Median"),
               ("p75", "P75"), ("p90", "P90")]
 
 
-def distribution_chart(stats: pd.DataFrame, cfg, *, mean_label: str = "Mean",
-                       x_title: str | None = None, title: str | None = None):
+def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict | None = None,
+                       mean_label: str = "Mean", x_title: str | None = None,
+                       title: str | None = None):
     """THE standard salary-distribution chart (mirrors the Swedish page): one
     line+markers trace per occupation across the percentile points the source
     actually publishes (P10..P90, whichever exist), with the mean drawn as a
     standalone diamond (it is not a percentile). Norway's P25·median·P75 renders
     the same way as Sweden's P10–P90 — just fewer points on the line.
 
+    ``keys`` — restrict to these measure keys (subset of p10/p25/median/p75/p90/
+    mean), in canonical order; None = all present. ``labels_map`` — key→x-label.
     Horizontal legend on top, ``hovermode='x unified'``, theme-styled — identical
     look to scb_salaries.py's Percentile distribution tab."""
     d = stats[stats["dimension"] == "total"].copy()
     if d.empty:
         return None
-    # keep only percentile columns that have data for at least one occupation
-    pct = [(col, lbl) for col, lbl in _PCT_ORDER if d[col].notna().any()]
-    if not pct:
-        return None
+    labels_map = labels_map or {}
+    want = set(keys) if keys is not None else None
+    # percentile columns to plot: canonical order, present in data, and selected
+    pct = [(col, labels_map.get(col, lbl)) for col, lbl in _PCT_ORDER
+           if d[col].notna().any() and (want is None or col in want)]
     labels = [lbl for _, lbl in pct]
-    show_mean = bool(cfg.capabilities.has_mean and d["mean"].notna().any())
+    show_mean = bool(cfg.capabilities.has_mean and d["mean"].notna().any()
+                     and (want is None or "mean" in want))
+    if not pct and not show_mean:
+        return None
     cats = labels + ([mean_label] if show_mean else [])
 
     fig = go.Figure()
