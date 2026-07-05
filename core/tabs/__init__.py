@@ -19,8 +19,9 @@ TABS = {
     "leaderboard": leaderboard.render,
     "stats": stats.render,
 }
-_FALLBACK = {"overview": "Overview", "distribution": "Distribution",
-             "sex": "By sex", "trend": "Trend", "where": "Where do I stand?",
+# Canonical framework tab names (the single standard; see docs/architecture.md).
+_FALLBACK = {"overview": "Overview", "distribution": "Salary distribution",
+             "sex": "By gender", "trend": "Trend", "where": "Where do I stand?",
              "leaderboard": "Leaderboard", "stats": "Basic statistics"}
 
 

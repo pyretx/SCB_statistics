@@ -59,8 +59,8 @@ CONFIG = CountryConfig(
         sectors=("all", "private", "local", "central"),
         year_range=(2015, 2024),
     ),
-    # trend is embedded in Distribution (like Sweden); overview/sex are extras
-    tabs=("distribution", "where", "leaderboard", "stats", "overview", "sex"),
+    # standard order (docs/architecture.md); trend is embedded in Salary distribution
+    tabs=("overview", "distribution", "where", "leaderboard", "sex", "stats"),
     access="restricted",
     fetch_mode="search",                    # commit-on-Search, like Sweden
     landing=True,                           # show a gated tile on the landing page

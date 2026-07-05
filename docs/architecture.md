@@ -159,3 +159,26 @@ No UI, chart or styling work.
   provider. Cross-country mapping deferred.
 - Occupation aggregation/weighting (`collapse_df`, `fetch_occ_weights`) becomes a
   shared, capability-gated feature.
+
+## Standard tabs (the single naming standard — 2026-07)
+
+Every country page uses the same canonical tabs; each appears only if the
+country's Capabilities support it (so a country never implies data it lacks).
+Names live in core/i18n.py (`tab_<id>`); the registry is core/tabs/__init__.py.
+
+| id            | Label (EN)          | Contents                                                                                   | Shown when |
+|---------------|---------------------|--------------------------------------------------------------------------------------------|------------|
+| overview      | Overview            | Per-occupation KPI cards (mean · median · P25/P75 · women · men · F/M gap · headcount) + comparison bar | always |
+| distribution  | Salary distribution | Percentile/quartile chart + year & measures pickers + raw-data table/export + embedded Salary-trend-over-time (nominal/growth/real) | has_occupation_percentiles OR has_quartiles |
+| where         | Where do I stand?   | Salary → percentile-position calculator                                                    | has_occupation_percentiles OR has_quartiles |
+| leaderboard   | Leaderboard         | Rank occupations by pay, scoped to the 2-digit sub-group drilled into                       | has_leaderboard |
+| age/region/education/sex | By age / By region / By education / By gender | One breakdown tab per dimension the source actually has                       | has_age / has_region / has_education / has_sex |
+| stats         | Basic statistics    | Per-occupation summary table + headcount + CSV export                                       | always |
+
+Standard order: overview · distribution · where · leaderboard · (breakdowns) · stats.
+The Trend view is embedded inside Salary distribution (a "Salary trend over time"
+section with a Measure selector), not a separate tab — mirrors the Swedish page.
+
+Note: the legacy Sweden (scb_salaries.py) and France (france.py) pages predate
+this standard and still say "Percentile distribution"; they are separate pages,
+untouched. New framework countries follow the table above.
