@@ -99,9 +99,11 @@ def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict 
 
 
 def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,
-                    *, women_label: str, men_label: str, title: str | None = None):
+                    *, women_label: str, men_label: str, title: str | None = None,
+                    show_ratio: bool = False):
     """Grouped horizontal bars comparing women vs men on ``value_col`` per
-    occupation. Expects two total-slice frames keyed by occ_name."""
+    occupation. When ``show_ratio`` is set, the two bars stay and a "women as %
+    of men" figure is annotated at the end of each row (the Swedish behaviour)."""
     def _series(df):
         d = df[df["dimension"] == "total"].dropna(subset=[value_col])
         return dict(zip(d["occ_name"], d[value_col]))
@@ -116,6 +118,14 @@ def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,
     fig.add_trace(go.Bar(y=names, x=[m.get(n) for n in names], orientation="h",
                          name=men_label, marker_color="#8FB4D6",
                          hovertemplate="%{y}<br>%{x:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
+    if show_ratio:
+        for n in names:
+            wv, mv = w.get(n), m.get(n)
+            if wv and mv:
+                fig.add_annotation(x=max(wv, mv), y=n, text=f"{wv / mv * 100:.0f}%",
+                                   showarrow=False, xanchor="left", xshift=10,
+                                   font=dict(color=theme.MEAN, size=13,
+                                             family="JetBrains Mono, monospace"))
     fig.update_layout(height=max(240, 58 * len(names) + 90), barmode="group",
                       margin=dict(l=8, r=8, t=40 if title else 8, b=8),
                       title=title, xaxis_title=None, yaxis_title=None,
@@ -157,30 +167,6 @@ def leaderboard_bar(show: pd.DataFrame, cfg, *, value_col: str, value_fmt,
         hovertemplate="%{y}<br>%{x:,.0f}<extra></extra>"))
     fig.update_layout(height=max(360, 27 * len(show) + 80), margin=dict(t=30, b=40, l=8),
                       xaxis_title=x_title, yaxis_title=None, title=title)
-    return theme.style_fig(fig, horizontal=True)
-
-
-def ratio_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, *, value_col: str,
-              title: str | None = None):
-    """Women's pay as % of men's, per occupation (one bar; 100 % = parity, dotted
-    reference line). Below parity is drawn in the mean/red colour."""
-    def _series(df):
-        d = df[df["dimension"] == "total"].dropna(subset=[value_col])
-        return dict(zip(d["occ_name"], d[value_col]))
-    w, m = _series(women), _series(men)
-    names = [n for n in dict.fromkeys(list(w) + list(m)) if w.get(n) and m.get(n)]
-    if not names:
-        return None
-    ratios = [round(w[n] / m[n] * 100, 1) for n in names]
-    colors = [theme.ACCENT if r >= 100 else theme.MEAN for r in ratios]
-    fig = go.Figure(go.Bar(
-        x=ratios, y=names, orientation="h", marker_color=colors,
-        text=[f"{r:.0f}%" for r in ratios], textposition="auto",
-        hovertemplate="%{y}<br>%{x:.1f}%<extra></extra>"))
-    fig.add_vline(x=100, line=dict(color="#98A0AC", width=1, dash="dot"))
-    fig.update_layout(height=max(240, 58 * len(names) + 90),
-                      margin=dict(l=8, r=8, t=40 if title else 8, b=8),
-                      title=title, xaxis_title="%", yaxis_title=None)
     return theme.style_fig(fig, horizontal=True)
 
 

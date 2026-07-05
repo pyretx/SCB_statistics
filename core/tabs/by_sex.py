@@ -24,17 +24,14 @@ def render(cfg, stats, query):
         men = cfg.provider.occupation_stats(sector=sector, occ_codes=occ,
                                             sex="men", years=years, lang=lang)
     val = "mean" if cfg.capabilities.has_mean else "median"
-
-    if ratio:
-        fig = charts.ratio_bar(women, men, cfg, value_col=val,
-                               title=i18n.t(cfg, "ratio_title", lang,
-                                            "Women's salary as % of men's"))
-    else:
-        heading = i18n.t(cfg, "avg_salary" if val == "mean" else "median_salary", lang)
-        fig = charts.grouped_sex_bar(
-            women, men, cfg, val,
-            women_label=i18n.t(cfg, "women", lang), men_label=i18n.t(cfg, "men", lang),
-            title=f"{heading} · {cfg.currency_suffix}/mo")
+    # Always the two bars; the toggle just annotates women-as-%-of-men at the end
+    # of each row (Sweden's behaviour), rather than replacing them.
+    heading = (i18n.t(cfg, "ratio_title", lang, "Women's salary as % of men's") if ratio
+               else f"{i18n.t(cfg, 'avg_salary' if val == 'mean' else 'median_salary', lang)} · {cfg.currency_suffix}/mo")
+    fig = charts.grouped_sex_bar(
+        women, men, cfg, val,
+        women_label=i18n.t(cfg, "women", lang), men_label=i18n.t(cfg, "men", lang),
+        title=heading, show_ratio=ratio)
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
     else:

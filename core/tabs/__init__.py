@@ -37,8 +37,11 @@ _TAB_CSS = """
   box-shadow:none !important; color:#5B6472 !important; font-weight:600 !important;
   font-size:15px !important; padding:8px 14px !important;
   border-bottom:2px solid transparent !important; margin-bottom:-1px !important; }}
-.st-key-{key} [data-testid="stBaseButton-segmented_control"]:hover {{ color:#0C1119 !important; }}
-.st-key-{key} [data-testid="stBaseButton-segmented_controlActive"] {{
+.st-key-{key} [data-testid="stButtonGroup"] button[data-testid="stBaseButton-segmented_control"]:hover {{
+  color:#0C1119 !important; }}
+/* active tab: must out-specify the base `button` rule above (both !important),
+   so include `button[testid]` — the underline was being overridden otherwise. */
+.st-key-{key} [data-testid="stButtonGroup"] button[data-testid="stBaseButton-segmented_controlActive"] {{
   color:#0A63A6 !important; background:transparent !important;
   border-bottom:2px solid #0A63A6 !important; }}
 </style>
