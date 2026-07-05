@@ -17,6 +17,7 @@ import base64
 
 import requests
 import streamlit as st
+import streamlit.components.v1 as components
 
 import auth
 
@@ -42,6 +43,74 @@ def flag_uri(code: str) -> str:
 
 # App logo mark (blue rounded square + white globe) — one asset used everywhere.
 LOGO_URI = _svg_data_uri(os.path.join(_ASSETS, "logo_mark.svg"))
+
+# Self-contained live-preview carousel (HTML/CSS/JS) rendered in an iframe via
+# components.html. __SLIDES__ / __DOTS__ / __N__ are filled in per render. The
+# animation is client-side only — Streamlit keeps no state for it.
+_CAROUSEL_TPL = """<!DOCTYPE html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:transparent;font-family:'Hanken Grotesk',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .panel{position:relative;background:#fff;border:1px solid #E7E9ED;border-radius:16px;
+         padding:22px 22px 16px;box-shadow:0 20px 40px -26px rgba(16,21,31,.25);overflow:hidden;user-select:none;}
+  .viewport{overflow:hidden;}
+  .track{display:flex;transition:transform .55s cubic-bezier(.22,1,.36,1);}
+  .slide{min-width:100%;flex:0 0 100%;}
+  .head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;}
+  .eyebrow{font-size:10px;font-weight:600;letter-spacing:.14em;color:#0A63A6;}
+  .title{font-weight:700;font-size:15px;margin-top:5px;color:#0C1119;}
+  .sub{font-size:12px;color:#8A919D;margin-top:2px;}
+  .flag{width:34px;height:24px;object-fit:cover;border-radius:5px;border:1px solid rgba(0,0,0,.08);flex:none;}
+  .row{display:flex;align-items:center;gap:10px;margin-bottom:11px;}
+  .lbl{font-size:11px;width:32px;flex:none;color:#98A0AC;}
+  .lbl.med{color:#0A63A6;font-weight:600;}
+  .track2{flex:1;height:8px;border-radius:5px;background:#EEF0F3;overflow:hidden;}
+  .fill{height:100%;border-radius:5px;background:#B9C6D4;}
+  .fill.med{background:#0A63A6;}
+  .val{font-size:11px;width:66px;text-align:right;flex:none;color:#5B6472;white-space:nowrap;}
+  .val.med{color:#0A63A6;font-weight:600;}
+  .foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;
+        padding-top:13px;border-top:1px solid #EEF0F3;}
+  .foot-lbl{font-size:12px;color:#8A919D;}
+  .foot-val{font-weight:600;font-size:14px;color:#0C1119;white-space:nowrap;}
+  .unit{color:#98A0AC;font-weight:400;}
+  .nav{position:absolute;top:0;bottom:52px;width:50%;cursor:pointer;z-index:2;}
+  .nav.l{left:0;} .nav.r{right:0;}
+  .pager{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:14px;position:relative;z-index:3;}
+  .arrow{width:26px;height:26px;border:1px solid #DDE1E6;border-radius:50%;background:#fff;color:#5B6472;
+         display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:15px;line-height:1;}
+  .arrow:hover{background:#F4F5F7;color:#0C1119;}
+  .dots{display:flex;align-items:center;gap:6px;}
+  .dot{width:6px;height:6px;border-radius:3px;background:#D3D8DF;cursor:pointer;
+       transition:width .4s cubic-bezier(.22,1,.36,1),background .4s;}
+  .dot.active{width:20px;background:#0A63A6;}
+</style></head><body>
+<div class="panel">
+  <div class="nav l" data-dir="-1"></div>
+  <div class="nav r" data-dir="1"></div>
+  <div class="viewport"><div class="track" id="tk">__SLIDES__</div></div>
+  <div class="pager">
+    <div class="arrow" data-dir="-1">&#8249;</div>
+    <div class="dots" id="dt">__DOTS__</div>
+    <div class="arrow" data-dir="1">&#8250;</div>
+  </div>
+</div>
+<script>
+(function(){
+  var N=__N__, i=0, tk=document.getElementById('tk');
+  var dots=[].slice.call(document.querySelectorAll('.dot'));
+  function go(k){ i=((k%N)+N)%N; tk.style.transform='translateX('+(-i*100)+'%)';
+    for(var j=0;j<dots.length;j++){ dots[j].className='dot'+(j===i?' active':''); } }
+  var nav=document.querySelectorAll('[data-dir]');
+  for(var a=0;a<nav.length;a++){ (function(el){ el.addEventListener('click',function(e){
+    e.stopPropagation(); go(i+parseInt(el.getAttribute('data-dir'),10)); }); })(nav[a]); }
+  for(var b=0;b<dots.length;b++){ (function(j){ dots[j].addEventListener('click',function(e){
+    e.stopPropagation(); go(j); }); })(b); }
+  go(0);
+})();
+</script></body></html>"""
 
 # Country-card CTAs are real <a href="?country=..."> links inside HTML (so the
 # whole card can be one styled block with a scoped :hover, per design-system §6).
@@ -400,46 +469,54 @@ with hc1:
     """, unsafe_allow_html=True)
 
 with hc2:
-    _preview = _fetch_preview_data("2512", "2025")
-    if _preview:
-        _rows = [
-            ("P10", _preview["p10"]), ("P25", _preview["p25"]), ("MED", _preview["median"]),
-            ("P75", _preview["p75"]), ("P90", _preview["p90"]),
-        ]
-        _max = _preview["p90"] or 1
-        _bar_html = "".join(f'''
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px;">
-        <span class="se-mono" style="font-size:11px;color:{'#0A63A6' if lbl=='MED' else '#98A0AC'};
-                                     font-weight:{'600' if lbl=='MED' else '400'};width:32px;flex:none;">{lbl}</span>
-        <div style="flex:1;height:8px;border-radius:5px;background:#EEF0F3;overflow:hidden;">
-          <div style="width:{val/_max*96:.0f}%;height:100%;background:{'#0A63A6' if lbl=='MED' else '#B9C6D4'};"></div>
-        </div>
-        <span class="se-mono" style="font-size:11px;color:#5B6472;width:56px;text-align:right;flex:none;">{val:,.0f}</span>
-      </div>''' for lbl, val in _rows)
-        _median_fmt = f"{_preview['median']:,.0f}"
-    else:
-        _bar_html = "<div style='font-size:13px;color:#9AA1AC;'>Live data unavailable right now.</div>"
-        _median_fmt = "—"
+    # ── Live-preview carousel: three example distributions, swipeable ──────────
+    # JS-driven slide animation → rendered via components.html (an iframe), since
+    # st.markdown strips JS. Self-contained HTML/CSS/JS, no Python state. Sweden
+    # slides use the live SCB fetch (fallbacks embedded); France is 2023 microdata.
+    _se_dev = _fetch_preview_data("2512", "2025") or \
+        {"p10": 39600, "p25": 46200, "median": 53500, "p75": 62600, "p90": 72600}
+    _se_mech = _fetch_preview_data("2144", "2025") or \
+        {"p10": 40200, "p25": 45300, "median": 51800, "p75": 60000, "p90": 69900}
+    _slides_data = [
+        {"title": "Software developers", "sub": "Sweden · SCB 2025 · monthly, SEK",
+         "iso": "se", "unit": "kr", "v": _se_dev},
+        {"title": "Psychiatric nurses", "sub": "France · INSEE 2023 · monthly, EUR",
+         "iso": "fr", "unit": "€",
+         "v": {"p10": 2070, "p25": 2470, "median": 2950, "p75": 3280, "p90": 3830}},
+        {"title": "Mechanical engineers", "sub": "Sweden · SCB 2025 · monthly, SEK",
+         "iso": "se", "unit": "kr", "v": _se_mech},
+    ]
 
-    st.markdown(f"""
-    <div style="background:#fff;border:1px solid #E7E9ED;border-radius:16px;padding:22px;
-                box-shadow:0 20px 40px -26px rgba(16,21,31,.25);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <div>
-          <div class="se-mono" style="font-size:10px;font-weight:600;letter-spacing:.14em;color:{BLUE};">LIVE PREVIEW</div>
-          <div style="font-weight:700;font-size:15px;margin-top:5px;">Software developers</div>
-          <div style="font-size:12px;color:#8A919D;margin-top:2px;">Sweden · SCB 2025 · monthly, SEK</div>
-        </div>
-        <img class="se-flag-sm" src="{flag_uri('se')}" alt="Sweden flag">
-      </div>
-      {_bar_html}
-      <div style="margin-top:14px;padding-top:13px;border-top:1px solid #EEF0F3;
-                  display:flex;justify-content:space-between;">
-        <span style="font-size:12px;color:#8A919D;">Median gross salary</span>
-        <span class="se-mono" style="font-weight:600;font-size:14px;">{_median_fmt} kr<span style="color:#98A0AC;font-weight:400;">/mo</span></span>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    def _nbsp(x):                       # 53500 -> "53 900" (nbsp so it never wraps)
+        return f"{int(round(x)):,}".replace(",", " ")
+
+    def _slide_html(s):
+        v = s["v"]
+        lo, hi = v["p10"], (v["p90"] or 1)
+        span = (hi - lo) or 1
+        rows = ""
+        for lbl, key in (("P10", "p10"), ("P25", "p25"), ("MED", "median"),
+                         ("P75", "p75"), ("P90", "p90")):
+            val = v[key]
+            w = 30 + 66 * (val - lo) / span        # P10 ≈ 30% … P90 ≈ 96%
+            m = " med" if lbl == "MED" else ""
+            rows += (f'<div class="row"><span class="lbl{m}">{lbl}</span>'
+                     f'<div class="track2"><div class="fill{m}" style="width:{w:.0f}%"></div></div>'
+                     f'<span class="val{m}">{_nbsp(val)}</span></div>')
+        med = f'{_nbsp(v["median"])} {s["unit"]}'
+        return (f'<div class="slide"><div class="head"><div>'
+                f'<div class="eyebrow mono">LIVE PREVIEW</div>'
+                f'<div class="title">{s["title"]}</div>'
+                f'<div class="sub">{s["sub"]}</div></div>'
+                f'<img class="flag" src="{flag_uri(s["iso"])}" alt=""></div>'
+                f'{rows}<div class="foot"><span class="foot-lbl">Median gross salary</span>'
+                f'<span class="foot-val mono">{med}<span class="unit">/mo</span></span></div></div>')
+
+    _slides = "".join(_slide_html(s) for s in _slides_data)
+    _dots = "".join('<span class="dot"></span>' for _ in _slides_data)
+    _carousel = _CAROUSEL_TPL.replace("__SLIDES__", _slides) \
+        .replace("__DOTS__", _dots).replace("__N__", str(len(_slides_data)))
+    components.html(_carousel, height=352)
 
 st.write("")
 st.write("")
