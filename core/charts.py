@@ -38,55 +38,57 @@ def occupation_bar(stats: pd.DataFrame, cfg, value_col: str = "mean", *,
     return theme.style_fig(fig, horizontal=True)
 
 
-def percentile_line(stats: pd.DataFrame, cfg, *, title: str | None = None):
-    """Per-occupation percentile curve (P10..P90) — Sweden-style. One trace per
-    occupation. Only meaningful when capabilities.has_occupation_percentiles."""
-    order = [("P10", "p10"), ("P25", "p25"), ("MED", "median"),
-             ("P75", "p75"), ("P90", "p90")]
-    d = stats[stats["dimension"] == "total"]
-    fig = go.Figure()
-    for i, (_, row) in enumerate(d.iterrows()):
-        ys = [row[k] for _, k in order]
-        if all(pd.isna(y) for y in ys):
-            continue
-        col = theme.SERIES[i % len(theme.SERIES)]
-        fig.add_trace(go.Scatter(
-            x=[lbl for lbl, _ in order], y=ys, mode="lines+markers",
-            name=str(row["occ_name"]), line=dict(color=col, width=2.5),
-            marker=theme.series_marker(col)))
-    if not fig.data:
-        return None
-    fig.update_layout(height=380, margin=dict(l=8, r=8, t=40 if title else 8, b=8),
-                      title=title, xaxis_title="Percentile",
-                      yaxis_title=f"Salary ({cfg.currency_suffix}/mo)")
-    return theme.style_fig(fig)
+# Percentile columns in canonical left→right order, with their x-axis labels.
+_PCT_ORDER = [("p10", "P10"), ("p25", "P25"), ("median", "Median"),
+              ("p75", "P75"), ("p90", "P90")]
 
 
-def quartile_spread(stats: pd.DataFrame, cfg, *, title: str | None = None):
-    """Per-occupation P25 → P75 range bar with a median marker (a box-ish spread).
-    Uses the quartiles a source publishes when it has no P10/P90 (Norway/SSB)."""
+def distribution_chart(stats: pd.DataFrame, cfg, *, mean_label: str = "Mean",
+                       x_title: str | None = None, title: str | None = None):
+    """THE standard salary-distribution chart (mirrors the Swedish page): one
+    line+markers trace per occupation across the percentile points the source
+    actually publishes (P10..P90, whichever exist), with the mean drawn as a
+    standalone diamond (it is not a percentile). Norway's P25·median·P75 renders
+    the same way as Sweden's P10–P90 — just fewer points on the line.
+
+    Horizontal legend on top, ``hovermode='x unified'``, theme-styled — identical
+    look to scb_salaries.py's Percentile distribution tab."""
     d = stats[stats["dimension"] == "total"].copy()
-    d = d.dropna(subset=["p25", "p75", "median"]).sort_values("median")
     if d.empty:
         return None
+    # keep only percentile columns that have data for at least one occupation
+    pct = [(col, lbl) for col, lbl in _PCT_ORDER if d[col].notna().any()]
+    if not pct:
+        return None
+    labels = [lbl for _, lbl in pct]
+    show_mean = bool(cfg.capabilities.has_mean and d["mean"].notna().any())
+    cats = labels + ([mean_label] if show_mean else [])
+
     fig = go.Figure()
-    # the P25→P75 span as a floating bar (base=P25), median as a diamond marker
-    fig.add_trace(go.Bar(
-        y=d["occ_name"], x=d["p75"] - d["p25"], base=d["p25"], orientation="h",
-        marker_color="#CBD5E1", width=0.5,
-        hovertemplate="%{y}<br>P25 %{base:,.0f} – P75 %{x:,.0f} "
-                      + cfg.currency_suffix + "<extra></extra>", showlegend=False))
-    fig.add_trace(go.Scatter(
-        y=d["occ_name"], x=d["median"], mode="markers",
-        marker=dict(symbol="diamond", size=11, color=theme.ACCENT,
-                    line=dict(color="#fff", width=1.5)),
-        name="Median",
-        hovertemplate="%{y}<br>median %{x:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
-    fig.update_layout(height=max(220, 46 * len(d) + 90),
-                      margin=dict(l=8, r=8, t=40 if title else 8, b=8),
-                      title=title, xaxis_title=None, yaxis_title=None, showlegend=False,
-                      barmode="overlay")
-    return theme.style_fig(fig, horizontal=True)
+    for i, (_, row) in enumerate(d.iterrows()):
+        col = theme.SERIES[i % len(theme.SERIES)]
+        name = str(row["occ_name"])
+        ys = [row[c] for c, _ in pct]
+        if not all(pd.isna(y) for y in ys):
+            fig.add_trace(go.Scatter(
+                x=labels, y=ys, mode="lines+markers", name=name,
+                line=dict(color=col, width=2.5), marker=theme.series_marker(col)))
+        # mean — standalone diamond, disconnected from the percentile line
+        if show_mean and pd.notna(row["mean"]):
+            fig.add_trace(go.Scatter(
+                x=[mean_label], y=[row["mean"]], mode="markers", showlegend=False,
+                marker=dict(size=12, symbol="diamond", color=col,
+                            line=dict(width=1, color="white")),
+                hovertemplate=f"{name}<br>{mean_label} %{{y:,.0f}} "
+                              + cfg.currency_suffix + "<extra></extra>"))
+    if not fig.data:
+        return None
+    fig.update_layout(
+        xaxis=dict(categoryorder="array", categoryarray=cats, title=x_title),
+        yaxis_title=f"{cfg.currency_suffix}/mo",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
+        height=420, margin=dict(t=60, b=40), hovermode="x unified", title=title)
+    return theme.style_fig(fig)
 
 
 def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,

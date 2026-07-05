@@ -58,7 +58,7 @@ CONFIG = CountryConfig(
         sectors=("all", "private", "local", "central"),
         year_range=(2015, 2024),
     ),
-    tabs=("overview", "distribution", "sex", "trend"),
+    tabs=("distribution", "overview", "sex", "trend"),  # lead with distribution, like Sweden
     access="restricted",
     fetch_mode="search",                    # commit-on-Search, like Sweden
     landing=True,                           # show a gated tile on the landing page
