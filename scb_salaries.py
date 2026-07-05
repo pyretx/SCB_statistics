@@ -1346,36 +1346,13 @@ def _open_panel(name):
 
 
 with st.sidebar:
-    # Sidebar styling to match the mockup: mono uppercase section labels, tidy
-    # nav page-links, and full-width segmented toggles.
-    st.markdown("""
-    <style>
-      [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
-        font-family:'JetBrains Mono',monospace !important; text-transform:uppercase;
-        letter-spacing:.11em; font-size:11px !important; font-weight:600; color:#8A919D !important; }
-      [data-testid="stSidebar"] [data-testid="stPageLink"] a { padding:6px 12px; border-radius:9px; }
-      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] { width:100%; }
-      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] > div { width:100%; display:flex; }
-      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] label { flex:1; justify-content:center; }
-    </style>
-    """, unsafe_allow_html=True)
-    # Logo mark (mockup): blue rounded square + globe glyph + wordmark.
-    st.markdown("""
-    <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;">
-      <div style="width:28px;height:28px;border-radius:8px;background:#0A63A6;flex:none;
-                  display:flex;align-items:center;justify-content:center;">
-        <div style="width:12px;height:12px;border-radius:50%;border:2px solid #fff;position:relative;">
-          <div style="position:absolute;top:50%;left:-2px;right:-2px;height:2px;background:#fff;transform:translateY(-50%);"></div>
-        </div>
-      </div>
-      <span style="font-weight:700;font-size:15px;letter-spacing:-.01em;color:#0C1119;">Salary Explorer</span>
-    </div>
-    """, unsafe_allow_html=True)
-    # Nav menu — Sweden is the current page, so Streamlit auto-highlights it.
-    st.page_link("landing.py",      label="Home",   icon=":material/home:")
-    st.page_link("scb_salaries.py", label="Sweden", icon="🇸🇪")
-    st.page_link("france.py",       label="France", icon="🇫🇷")
-    st.markdown('<div style="height:1px;background:#EEF0F3;margin:10px 0 4px;"></div>',
+    st.markdown(theme.SIDEBAR_CSS, unsafe_allow_html=True)
+    # Logo doubles as the Home link (it's the only sidebar page-link, styled as
+    # the brand mark below). No separate Home/Sweden/France nav — clicking the
+    # logo goes Home, where you pick a country.
+    st.page_link("landing.py", label="Salary Explorer", icon=":material/language:")
+    auth.sidebar_identity()   # show who's signed in (avatar + name + role) + Log out
+    st.markdown('<div style="height:1px;background:#EEF0F3;margin:12px 0 4px;"></div>',
                 unsafe_allow_html=True)
 
     _lang_prev = st.session_state.get("_lang_val", "EN")
@@ -1525,16 +1502,16 @@ with st.sidebar:
     selected_occ_codes = st.session_state.get("query", {}).get("codes", ())
 
     # ── Authentication / Admin ────────────────────────────────────────────────
-    st.divider()
+    # The signed-in identity + Log out now live at the TOP of the sidebar
+    # (auth.sidebar_identity), so this section only carries admin tools / the
+    # admin-login form.
     auth_user = st.session_state.get("auth_user")
     if not auth.supabase_configured():
+        st.divider()
         st.caption("🔒 Admin login not configured")
     elif auth_user:
-        st.markdown(f"👤 **{auth_user['email']}** · _{auth_user['role']}_")
-        if st.button("Log out", use_container_width=True):
-            st.session_state.pop("auth_user", None)
-            st.rerun()
         if auth_user["role"] in ("admin", "master"):
+            st.divider()
             with st.expander("🔐 Admin", expanded=False):
                 cache_ts = st.session_state.get("cache_ts", "")
                 if st.button(f"↻ Refresh SCB codes · {cache_ts}", use_container_width=True):
@@ -1554,6 +1531,7 @@ with st.sidebar:
                 if st.button("📝 Edit user guide", use_container_width=True):
                     _open_panel("show_guide_edit")
     else:
+        st.divider()
         with st.expander("🔐 Admin login", expanded=False):
             le = st.text_input("Email", key="login_email")
             lp = st.text_input("Password", type="password", key="login_pw")

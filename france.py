@@ -19,6 +19,7 @@ import streamlit as st
 
 import france_data as fd
 import theme
+import auth
 
 _FR_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "assets", "logo_france.png")   # blue-white-red bars
@@ -338,34 +339,12 @@ def _age_sort_key(code: str) -> int:
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Sidebar styling to match the mockup (mono uppercase labels, tidy nav,
-    # full-width segmented toggles) — same treatment as the Swedish page.
-    st.markdown("""
-    <style>
-      [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
-        font-family:'JetBrains Mono',monospace !important; text-transform:uppercase;
-        letter-spacing:.11em; font-size:11px !important; font-weight:600; color:#8A919D !important; }
-      [data-testid="stSidebar"] [data-testid="stPageLink"] a { padding:6px 12px; border-radius:9px; }
-      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] { width:100%; }
-      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] > div { width:100%; display:flex; }
-      [data-testid="stSidebar"] [data-testid="stSegmentedControl"] label { flex:1; justify-content:center; }
-    </style>
-    """, unsafe_allow_html=True)
-    st.markdown("""
-    <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px;">
-      <div style="width:28px;height:28px;border-radius:8px;background:#0A63A6;flex:none;
-                  display:flex;align-items:center;justify-content:center;">
-        <div style="width:12px;height:12px;border-radius:50%;border:2px solid #fff;position:relative;">
-          <div style="position:absolute;top:50%;left:-2px;right:-2px;height:2px;background:#fff;transform:translateY(-50%);"></div>
-        </div>
-      </div>
-      <span style="font-weight:700;font-size:15px;letter-spacing:-.01em;color:#0C1119;">Salary Explorer</span>
-    </div>
-    """, unsafe_allow_html=True)
-    st.page_link("landing.py",      label="Home",   icon=":material/home:")
-    st.page_link("scb_salaries.py", label="Sweden", icon="🇸🇪")
-    st.page_link("france.py",       label="France", icon="🇫🇷")
-    st.markdown('<div style="height:1px;background:#EEF0F3;margin:10px 0 4px;"></div>',
+    # Same sidebar treatment as the Swedish page. The logo is the only sidebar
+    # page-link and doubles as the Home link (no separate nav items).
+    st.markdown(theme.SIDEBAR_CSS, unsafe_allow_html=True)
+    st.page_link("landing.py", label="Salary Explorer", icon=":material/language:")
+    auth.sidebar_identity()   # show who's signed in (avatar + name + role) + Log out
+    st.markdown('<div style="height:1px;background:#EEF0F3;margin:12px 0 4px;"></div>',
                 unsafe_allow_html=True)
 
     _fr_lang_prev = st.session_state.get("_fr_lang_val", "English")

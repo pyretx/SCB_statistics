@@ -50,6 +50,37 @@ def _client(service: bool = False) -> Client:
     return create_client(cfg["url"], key)
 
 
+def sidebar_identity():
+    """Render the signed-in user's identity (avatar initials + name + role) and a
+    Log out button in the sidebar. No-op when signed out. Shared by the country
+    pages so the logged-in state is always visible in the left menu."""
+    u = st.session_state.get("auth_user")
+    if not u:
+        return
+    email = u.get("email", "")
+    name = email.split("@")[0] if email else "Account"
+    ini = ("".join(w[0] for w in name.replace(".", " ").replace("_", " ").split()[:2])
+           or name[:1]).upper()
+    role = u.get("role", "standard")
+    rc = "#B8863B" if role in ("admin", "master") else "#0A63A6"  # gold accent for admins
+    st.markdown(f"""
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;margin-top:8px;
+                border:1px solid #E7E9ED;border-radius:11px;background:#fff;">
+      <div style="width:32px;height:32px;border-radius:50%;background:{rc};color:#fff;flex:none;
+           display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">{ini}</div>
+      <div style="min-width:0;line-height:1.18;">
+        <div style="font-weight:600;font-size:13px;color:#0C1119;overflow:hidden;
+             text-overflow:ellipsis;white-space:nowrap;">{name}</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.08em;
+             text-transform:uppercase;color:{rc};font-weight:600;">{role}</div>
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+    if st.button("Log out", use_container_width=True, key="sb_logout"):
+        st.session_state.pop("auth_user", None)
+        st.rerun()
+
+
 def sign_in(email: str, password: str):
     """Return (user_dict, error). user_dict = {id, email, role}."""
     try:
