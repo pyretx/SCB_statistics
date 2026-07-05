@@ -256,7 +256,7 @@ st.markdown("""
      .st-key-cc_… — style that to reproduce the card look + scoped hover. */
   [class*="st-key-cc_"] { background:#fff; border:1px solid #E7E9ED !important;
      border-radius:16px !important; padding:22px 22px 18px !important;
-     display:flex; flex-direction:column; flex:1 0 auto; gap:0;
+     display:flex; flex-direction:column; flex:1 0 auto; gap:0; min-height:334px;
      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
   [class*="st-key-cc_"]:hover { transform: translateY(-3px);
      box-shadow: 0 18px 40px -24px rgba(16,21,31,.30); border-color:#D3D8DF !important; }

@@ -1551,14 +1551,30 @@ with st.sidebar:
 @st.dialog("User management", width="large")
 def _user_mgmt_dialog():
     me = st.session_state.get("auth_user", {})
+
+    # Country markets a user may be granted: the released markets + framework
+    # countries (excluding the throwaway demo). {slug: display name}.
+    _country_opts = {"sweden": "Sweden", "france": "France"}
+    try:
+        from core import registry as _reg
+        for _cc in _reg.all_countries():
+            if _cc.slug != "demo":
+                _country_opts[_cc.slug] = _cc.name
+    except Exception:
+        pass
+    _cslugs = list(_country_opts)
+    _cfmt = lambda s: _country_opts.get(s, s)
+
     st.markdown("**Create user**")
     c1, c2, c3 = st.columns([3, 2, 2])
     ne = c1.text_input("Email", key="nu_email")
     npw = c2.text_input("Password", type="password", key="nu_pw")
     nr = c3.selectbox("Role", auth.ROLES, key="nu_role")
+    nc = st.multiselect("Country access", _cslugs, default=list(auth.DEFAULT_COUNTRIES),
+                        format_func=_cfmt, key="nu_countries")
     if st.button("Create user", type="primary"):
         try:
-            auth.create_user(ne.strip(), npw, nr)
+            auth.create_user(ne.strip(), npw, nr, countries=nc)
             st.success(f"Created {ne}")
             st.rerun()
         except Exception as e:
@@ -1572,7 +1588,7 @@ def _user_mgmt_dialog():
         st.error(f"Could not list users: {e}")
         users = []
     for u in users:
-        c1, c2, c3, c4 = st.columns([4, 3, 1, 1])
+        c1, c2, cc, c3, c4 = st.columns([3.4, 2, 1, 1, 1])
         c1.write(u["email"])
         if u["role"] == "master":
             c2.write("👑 master")
@@ -1585,6 +1601,19 @@ def _user_mgmt_dialog():
             if nrole != u["role"]:
                 try:
                     auth.set_role(u["id"], nrole)
+                    st.rerun()
+                except Exception as e:
+                    st.error(str(e))
+        # Country access — which markets this user may open (admins see all).
+        with cc.popover("🌐", help="Country access"):
+            _cur = [s for s in u.get("countries", []) if s in _cslugs]
+            _sel = st.multiselect(f"Countries for {u['email']}", _cslugs, default=_cur,
+                                  format_func=_cfmt, key=f"cty_{u['id']}")
+            st.caption("Admins & master can open every country regardless.")
+            if st.button("Save access", key=f"ctybtn_{u['id']}"):
+                try:
+                    auth.set_countries(u["id"], _sel)
+                    st.success("Saved.")
                     st.rerun()
                 except Exception as e:
                     st.error(str(e))

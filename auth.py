@@ -11,6 +11,12 @@ from supabase import create_client, Client
 
 ROLES = ("standard", "admin")  # roles an admin may assign (master is bootstrap-only)
 
+# Country markets a user may open, stored in app_metadata.countries (slugs like
+# "sweden"/"france"/"norway"). Gates access to `registered`/`restricted`
+# countries (public countries are open regardless; admin/master see everything).
+# New/self-registered users with nothing set fall back to this default.
+DEFAULT_COUNTRIES = ("sweden", "france")
+
 _SECRETS_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                              ".streamlit", "secrets.toml")
 
@@ -107,14 +113,21 @@ def sidebar_identity():
         st.rerun()
 
 
+def _countries_of(meta: dict) -> list:
+    """Effective country grants: explicit app_metadata.countries if set (even
+    []), else the default. (Self-registered users have nothing set → default.)"""
+    return list(meta["countries"]) if "countries" in (meta or {}) else list(DEFAULT_COUNTRIES)
+
+
 def sign_in(email: str, password: str):
-    """Return (user_dict, error). user_dict = {id, email, role}."""
+    """Return (user_dict, error). user_dict = {id, email, role, countries}."""
     try:
         res = _client(service=False).auth.sign_in_with_password(
             {"email": email, "password": password})
         u = res.user
-        role = (u.app_metadata or {}).get("role", "standard")
-        return {"id": u.id, "email": u.email, "role": role}, None
+        meta = u.app_metadata or {}
+        return {"id": u.id, "email": u.email, "role": meta.get("role", "standard"),
+                "countries": _countries_of(meta)}, None
     except Exception as e:
         return None, str(e)
 
@@ -153,32 +166,51 @@ def list_users() -> list[dict]:
     users = resp if isinstance(resp, list) else getattr(resp, "users", resp)
     out = []
     for u in users:
+        meta = u.app_metadata or {}
         out.append({
             "id":    u.id,
             "email": u.email,
-            "role":  (u.app_metadata or {}).get("role", "standard"),
+            "role":  meta.get("role", "standard"),
+            "countries": _countries_of(meta),
         })
     out.sort(key=lambda r: ({"master": 0, "admin": 1, "standard": 2}.get(r["role"], 3), r["email"]))
     return out
 
 
-def create_user(email: str, password: str, role: str):
-    """Create an auto-confirmed user with the given role. Raises on failure."""
+def _set_app_metadata(user_id: str, **changes):
+    """Merge changes into a user's app_metadata (fetch → merge → update), so
+    setting the role never wipes country grants and vice-versa."""
+    client = _client(service=True)
+    cur = client.auth.admin.get_user_by_id(user_id)
+    meta = dict(getattr(cur.user, "app_metadata", None) or {})
+    meta.update(changes)
+    client.auth.admin.update_user_by_id(user_id, {"app_metadata": meta})
+
+
+def create_user(email: str, password: str, role: str, countries=None):
+    """Create an auto-confirmed user with the given role + country access.
+    Defaults to the DEFAULT_COUNTRIES set. Raises on failure."""
     if role not in ROLES:
         raise ValueError(f"role must be one of {ROLES}")
     _client(service=True).auth.admin.create_user({
         "email": email,
         "password": password,
         "email_confirm": True,
-        "app_metadata": {"role": role},
+        "app_metadata": {"role": role,
+                         "countries": list(countries) if countries is not None
+                         else list(DEFAULT_COUNTRIES)},
     })
 
 
 def set_role(user_id: str, role: str):
     if role not in ROLES:
         raise ValueError(f"role must be one of {ROLES}")
-    _client(service=True).auth.admin.update_user_by_id(
-        user_id, {"app_metadata": {"role": role}})
+    _set_app_metadata(user_id, role=role)
+
+
+def set_countries(user_id: str, countries):
+    """Set which country markets a user may open (app_metadata.countries)."""
+    _set_app_metadata(user_id, countries=list(countries))
 
 
 def set_password(user_id: str, new_password: str):
