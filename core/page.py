@@ -43,7 +43,7 @@ def render_country(cfg):
     vk = f"{cfg.slug}_view"
     if st.session_state.get(vk) in ("guide", "browser"):
         with view.container():
-            panels.render(cfg, st.session_state[vk], lang, vk)
+            panels.render(cfg, st.session_state[vk], lang, vk, query)
         return
 
     occ_codes = tuple(query.get("occ_codes", ()))
@@ -53,7 +53,7 @@ def render_country(cfg):
         with view.container():
             states.prompt(i18n.t(cfg, "prompt_select", lang))
             if panels.browsable(cfg, lang):
-                panels.default_browser(cfg, lang)
+                panels.default_browser(cfg, lang, query)
         return
 
     with states.loading():

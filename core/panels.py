@@ -10,7 +10,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from . import i18n
+from . import hierarchy, i18n
 
 
 def _back(cfg, lang, vk):
@@ -29,37 +29,38 @@ def _guide(cfg, lang, vk):
         st.info("—")
 
 
-def _parent_of(code: str, present: set) -> str | None:
-    """Longest present code that is a proper prefix of ``code`` (its direct
-    parent). Prefix-based, so it copes with level gaps — e.g. France PCS goes
-    1→2→4 digit, STYRK/SSYK 1→2→3→4."""
-    for L in range(len(code) - 1, 0, -1):
-        if code[:L] in present:
-            return code[:L]
-    return None
-
-
 def browsable(cfg, lang: str = "EN") -> bool:
-    """Whether the classification nests enough to browse (has group levels)."""
+    """Whether the classification nests enough to browse (more than one level)."""
     tree = cfg.provider.occupation_tree(lang) if cfg.provider else {}
-    return any(len(c) < 4 for c in tree)
+    return len({len(c) for c in tree}) > 1
 
 
-def _browse_body(cfg, lang):
+def _use_occupation(cfg, code, name, query, vk):
+    """Pick a drilled-to occupation: commit it as the active query (so its data
+    renders), mirror it into the sidebar, and close the browser view. Runs as a
+    button on_click callback — i.e. BEFORE the next run instantiates the sidebar
+    widgets — so it may safely write their keys (slug_occ / slug_grp*)."""
+    slug = cfg.slug
+    st.session_state[f"{slug}_committed"] = {**query, "occ_codes": (code,)}
+    for gkey in [key for key in st.session_state if key.startswith(f"{slug}_grp")]:
+        st.session_state.pop(gkey, None)        # clear the sidebar drill-down
+    st.session_state.pop(f"{slug}_occsearch", None)
+    st.session_state[f"{slug}_occ"] = [name]     # reflect the pick in the multiselect
+    if vk:
+        st.session_state.pop(vk, None)           # close the code-browser view
+
+
+def _browse_body(cfg, lang, query=None, vk=None):
     """The browser itself (search + cascading drill-down), reused by both the
-    full-page Code-browser view and the default landing."""
+    full-page Code-browser view and the default landing. When ``query`` is given,
+    a drilled-to occupation offers a 'Use this occupation' button."""
     tree = cfg.provider.occupation_tree(lang) if cfg.provider else {}
     if not tree:
         st.info("—")
         return
 
     present = set(tree)
-    children: dict[str, list] = {}
-    roots: list[str] = []
-    for c in tree:
-        p = _parent_of(c, present)
-        (roots if p is None else children.setdefault(p, [])).append(c)
-
+    roots, children = hierarchy.build(tree)
     col_code, col_name = i18n.t(cfg, "col_code", lang), i18n.t(cfg, "col_name", lang)
 
     def fmt(c):
@@ -67,15 +68,16 @@ def _browse_body(cfg, lang):
 
     def panel_for(cur):
         """Right-hand detail for the selected node: code · name, a breadcrumb of
-        ancestors, and either its direct children (a group) or a leaf note."""
+        ancestors, and either its direct children (a group) or a leaf note + a
+        'use this occupation' action."""
         if not cur:
             st.info(i18n.t(cfg, "browser_pick", lang))
             return
         st.markdown(f"#### {cur} · {tree[cur]}")
-        crumbs, p = [], _parent_of(cur, present)
+        crumbs, p = [], hierarchy.parent_of(cur, present)
         while p:
             crumbs.append(p)
-            p = _parent_of(p, present)
+            p = hierarchy.parent_of(p, present)
         if crumbs:
             st.caption(f"**{i18n.t(cfg, 'browser_hierarchy', lang)}:** "
                        + " › ".join(tree[c] for c in reversed(crumbs)))
@@ -83,8 +85,12 @@ def _browse_body(cfg, lang):
         if kids:
             rows = [{col_code: c, col_name: tree[c]} for c in kids]
             st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-        else:
+        else:                                    # a leaf = a detailed occupation
             st.caption(i18n.t(cfg, "browser_leaf", lang))
+            if query is not None:
+                st.button(i18n.t(cfg, "use_occupation", lang), type="primary",
+                          key=f"{cfg.slug}_use", use_container_width=True,
+                          on_click=_use_occupation, args=(cfg, cur, tree[cur], query, vk))
 
     # ── Global search: bypass the drill-down, pick from matches ────────────────
     q = st.text_input(i18n.t(cfg, "browser_search", lang),
@@ -119,17 +125,17 @@ def _browse_body(cfg, lang):
         panel_for(cur)
 
 
-def _browser(cfg, lang, vk):
+def _browser(cfg, lang, vk, query):
     """Full-page Code-browser view (from the sidebar button): Back + heading."""
     _back(cfg, lang, vk)
     heading = i18n.t(cfg, "code_browser", lang)
     if cfg.classification:
         heading += f" · {cfg.classification}"
     st.markdown(f"## {heading}")
-    _browse_body(cfg, lang)
+    _browse_body(cfg, lang, query, vk)
 
 
-def default_browser(cfg, lang):
+def default_browser(cfg, lang, query=None):
     """Inline browser shown on the empty landing (no occupation selected), under
     the prompt — the Swedish page's default start view. No Back button; the same
     drill-down as the full-page view."""
@@ -137,11 +143,11 @@ def default_browser(cfg, lang):
     if cfg.classification:
         heading += f" · {cfg.classification}"
     st.subheader(heading)
-    _browse_body(cfg, lang)
+    _browse_body(cfg, lang, query, None)
 
 
-def render(cfg, view: str, lang: str, vk: str):
+def render(cfg, view: str, lang: str, vk: str, query=None):
     if view == "guide":
         _guide(cfg, lang, vk)
     elif view == "browser":
-        _browser(cfg, lang, vk)
+        _browser(cfg, lang, vk, query)

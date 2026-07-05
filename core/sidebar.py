@@ -14,7 +14,7 @@ import streamlit as st
 import theme
 import auth
 
-from . import i18n
+from . import hierarchy, i18n
 
 
 def _language_toggle(cfg, k) -> str:
@@ -56,22 +56,25 @@ def _guide_browser_buttons(cfg, k, lang, has_tree):
             st.rerun()
 
 
-def _group_select(cfg, k, lang, key, label_key, none_key, groups: dict) -> str | None:
-    """One blank-able group selectbox (translated labels as options, so the shown
-    value re-translates on a language switch). Returns the selected group code, or
-    None for the blank/"all" option."""
-    none_lbl = i18n.t(cfg, none_key, lang)
-    ordered = sorted(groups)             # by code (0,1,2,…9), not by name
-    labels = [none_lbl] + [f"{c} · {groups[c]}" for c in ordered]
-    chosen = st.selectbox(i18n.t(cfg, label_key, lang), labels, key=k(key))
+def _group_select(cfg, k, lang, depth: int, codes: list, tree: dict) -> str | None:
+    """One blank-able group selectbox for cascade level ``depth`` (1-indexed).
+    Translated labels are the options (so the shown value re-translates on a
+    language switch); options are sorted by code. Returns the selected group
+    code, or None for the blank/"all" option."""
+    name = i18n.t(cfg, f"grp_{depth}", lang, i18n.t(cfg, "group_generic", lang))
+    none_lbl = i18n.t(cfg, f"all_grp_{depth}", lang, i18n.t(cfg, "all_generic", lang))
+    ordered = sorted(codes)                  # by code (0,1,2,…), not by name
+    labels = [none_lbl] + [f"{c} · {tree[c]}" for c in ordered]
+    chosen = st.selectbox(f"{depth}. {name}", labels, key=k(f"grp{depth}"))
     i = labels.index(chosen)
     return ordered[i - 1] if i > 0 else None
 
 
 def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
-    """Sweden-style occupation section: 1. Major group → 2. Sub-group (appears
-    once a major is picked) → an occupation search box → 3. Occupation(s). The
-    drill-down only shows when the classification actually nests."""
+    """Sweden-style occupation section, but showing EVERY group level the
+    classification has: 1. Major group → 2. Sub-group → 3. Minor group → … (each
+    appears once its parent is picked) → an occupation search box → the final
+    numbered Occupation(s) multiselect. A flat classification skips the levels."""
     prov = cfg.provider
     if not prov:
         return ()
@@ -80,18 +83,24 @@ def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
         return ()
 
     pool = leaves                            # occupations offered in the multiselect
+    n_levels = 0                             # number of group levels (for numbering)
     if cfg.capabilities.has_occupation_hierarchy:
         tree = prov.occupation_tree(lang)
-        majors = {c: n for c, n in tree.items() if len(c) == 1}
-        if majors:
-            major = _group_select(cfg, k, lang, "major", "major_group", "all_groups", majors)
-            if major:
-                pool = {c: n for c, n in leaves.items() if c[:1] == major}
-                subs = {c: tree[c] for c in tree if len(c) == 2 and c.startswith(major)}
-                if subs:
-                    sub = _group_select(cfg, k, lang, "sub", "sub_group", "all_subgroups", subs)
-                    if sub:
-                        pool = {c: n for c, n in leaves.items() if c[:2] == sub}
+        roots, children = hierarchy.build(tree)
+        leaf_len = max(len(c) for c in leaves)
+        n_levels = len(hierarchy.group_lengths(tree, leaf_len))
+        chosen = None                        # deepest group code selected
+        opts = sorted(c for c in roots if len(c) < leaf_len)
+        depth = 0
+        while opts and len(opts[0]) < leaf_len:
+            depth += 1
+            grp = _group_select(cfg, k, lang, depth, opts, tree)
+            if grp is None:
+                break
+            chosen = grp
+            opts = sorted(children.get(grp, []))
+        if chosen:
+            pool = {c: n for c, n in leaves.items() if c.startswith(chosen)}
 
     # Free-text occupation search — overrides the drill-down, searching every
     # occupation by name or code (Sweden's "Search occupations…").
@@ -103,9 +112,11 @@ def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
         st.caption(i18n.t(cfg, "found_n", lang).format(n=len(pool)) if pool
                    else i18n.t(cfg, "no_match", lang))
 
+    occ_label = f"{n_levels + 1}. {i18n.t(cfg, 'occupations', lang)}" if n_levels \
+        else i18n.t(cfg, "occupations", lang)
     name_to_code = {v: c for c, v in pool.items()}
     picked = st.multiselect(
-        i18n.t(cfg, "occupations", lang), sorted(name_to_code), key=k("occ"),
+        occ_label, sorted(name_to_code), key=k("occ"),
         placeholder=i18n.t(cfg, "occ_placeholder", lang), max_selections=8)
     return tuple(name_to_code[p] for p in picked)
 
