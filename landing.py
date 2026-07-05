@@ -27,13 +27,21 @@ _FLAGS  = os.path.join(_ASSETS, "flags")
 BLUE = "#0A63A6"
 
 
+def _svg_data_uri(path: str) -> str:
+    """Base64-inline an SVG file as a data URI so it can be dropped straight into
+    HTML (st.markdown strips <img src> to real files, but data URIs survive)."""
+    with open(path, "rb") as f:
+        return "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode("ascii")
+
+
 @st.cache_data(show_spinner=False)
 def flag_uri(code: str) -> str:
-    """Base64-inline a country flag SVG (assets/flags/<code>.svg) as a data URI,
-    so real high-quality flags can be dropped straight into card/preview HTML."""
-    with open(os.path.join(_FLAGS, f"{code}.svg"), "rb") as f:
-        b64 = base64.b64encode(f.read()).decode("ascii")
-    return f"data:image/svg+xml;base64,{b64}"
+    """Real high-quality country flag (assets/flags/<code>.svg) as a data URI."""
+    return _svg_data_uri(os.path.join(_FLAGS, f"{code}.svg"))
+
+
+# App logo mark (blue rounded square + white globe) — one asset used everywhere.
+LOGO_URI = _svg_data_uri(os.path.join(_ASSETS, "logo_mark.svg"))
 
 # Country-card CTAs are real <a href="?country=..."> links inside HTML (so the
 # whole card can be one styled block with a scoped :hover, per design-system §6).
@@ -161,17 +169,20 @@ st.markdown("""
      font-weight:600; font-size:14px; }
   /* Bullets: breathing room before the pinned source line (never let the rule
      touch the last bullet). */
-  [class*="st-key-cc_"] [data-testid="stElementContainer"]:has(ul) { margin-bottom:12px; }
+  [class*="st-key-cc_"] [data-testid="stElementContainer"]:has(ul) { margin-bottom:22px; }
   /* Source line pinned to the card foot with a rule. */
   [class*="st-key-cc_"] [data-testid="stElementContainer"]:has(.se-source) { margin-top:auto; }
   .se-source { padding-top:14px; border-top:1px solid #EEF0F3;
                font-family:'JetBrains Mono',monospace; font-size:11px; color:#98A0AC; }
   /* Real flag image — fixed size; object-fit:cover !important so it FILLS the
      swatch (Streamlit's global img rule forces scale-down, which letterboxes the
-     wider flags, e.g. the US one). */
+     wider flags, e.g. the US one). Class-based rule beats the inline default. */
   .se-flag { width:46px !important; height:33px !important; border-radius:7px; flex:none;
              object-fit:cover !important; display:block; border:1px solid rgba(0,0,0,.08);
              box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  /* Small flag in the live-preview card — same cover fix. */
+  .se-flag-sm { width:34px !important; height:24px !important; border-radius:5px;
+                object-fit:cover !important; display:block; border:1px solid rgba(0,0,0,.08); }
   .se-cta-off { display:flex; width:100%; align-items:center; justify-content:center;
                 background:#F4F5F7; color:#8A919D; font-weight:600; font-size:14px; padding:10px;
                 border-radius:9px; border:1px solid #E7E9ED; white-space:nowrap; }
@@ -202,10 +213,12 @@ def _auth_dialog():
     left, right = st.columns([0.82, 1], gap="large", vertical_alignment="center")
 
     with left:
-        st.markdown("""
+        st.markdown(f"""
         <div class="se-authpanel">
           <div class="se-blob" style="width:190px;height:190px;top:-70px;right:-60px;"></div>
           <div class="se-blob" style="width:150px;height:150px;bottom:-60px;left:-50px;"></div>
+          <img src="{LOGO_URI}" alt="Salary Explorer" style="width:40px;height:40px;border-radius:10px;
+               background:rgba(255,255,255,.14);padding:3px;margin-bottom:20px;position:relative;display:block;">
           <div class="se-mono" style="font-size:11px;font-weight:600;letter-spacing:.18em;
                                       color:rgba(255,255,255,.72);margin-bottom:16px;">SECURE ACCESS</div>
           <div style="font-size:24px;line-height:1.18;font-weight:800;letter-spacing:-.015em;
@@ -295,12 +308,8 @@ with h_left:
     # wordmark (a single flex row — no column gap to blow the spacing out).
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:11px;">
-      <div style="width:30px;height:30px;border-radius:8px;background:{BLUE};flex:none;
-                  display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(10,99,166,.35);">
-        <div style="width:13px;height:13px;border-radius:50%;border:2px solid #fff;position:relative;">
-          <div style="position:absolute;top:50%;left:-2px;right:-2px;height:2px;background:#fff;transform:translateY(-50%);"></div>
-        </div>
-      </div>
+      <img src="{LOGO_URI}" alt="Salary Explorer" style="width:32px;height:32px;flex:none;
+           border-radius:8px;box-shadow:0 2px 6px rgba(10,99,166,.35);">
       <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;">Salary Explorer</span>
       <span class="se-mono" style="font-size:10px;font-weight:600;letter-spacing:.06em;
             color:{BLUE};background:rgba(10,99,166,.10);padding:3px 7px;border-radius:5px;">BETA</span>
@@ -421,8 +430,7 @@ with hc2:
           <div style="font-weight:700;font-size:15px;margin-top:5px;">Software developers</div>
           <div style="font-size:12px;color:#8A919D;margin-top:2px;">Sweden · SCB 2025 · monthly, SEK</div>
         </div>
-        <img src="{flag_uri('se')}" alt="Sweden flag" style="width:34px;height:24px;
-             object-fit:cover !important;border-radius:5px;border:1px solid rgba(0,0,0,.08);">
+        <img class="se-flag-sm" src="{flag_uri('se')}" alt="Sweden flag">
       </div>
       {_bar_html}
       <div style="margin-top:14px;padding-top:13px;border-top:1px solid #EEF0F3;

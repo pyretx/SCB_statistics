@@ -11,6 +11,15 @@ mean / reference line and negative deltas only.
 """
 from __future__ import annotations
 
+import os
+import base64
+
+# App logo mark (blue rounded square + white globe) as a data URI, so the sidebar
+# brand link can render the real logo image rather than a material glyph.
+_ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+with open(os.path.join(_ASSETS, "logo_mark.svg"), "rb") as _lf:
+    LOGO_URI = "data:image/svg+xml;base64," + base64.b64encode(_lf.read()).decode("ascii")
+
 # ── Tokens (design-system.md §1) ─────────────────────────────────────────────
 ACCENT      = "#0A63A6"   # primary line / bar
 ACCENT_HOV  = "#0B72C2"
@@ -72,19 +81,20 @@ SIDEBAR_CSS = """
      box-shadow:0 1px 3px rgba(16,21,31,.12) !important; }
   [data-testid="stSidebar"] [data-testid="stBaseButton-segmented_controlActive"]:hover {
      background:#fff !important; color:#0C1119 !important; }
-  /* Brand logo = the only sidebar page-link (click → Home). */
+  /* Brand logo = the only sidebar page-link (click → Home). The material icon
+     span becomes the real logo image (blue square + globe SVG); hide the glyph. */
   [data-testid="stSidebar"] [data-testid="stPageLink"] a { padding:2px; gap:10px;
     background:transparent !important; }
   [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover { background:transparent !important; }
   [data-testid="stSidebar"] [data-testid="stPageLink"] span[data-testid="stIconMaterial"] {
-    background:#0A63A6; color:#fff; width:30px !important; min-width:30px !important;
-    height:30px !important; border-radius:8px; display:flex; flex:none; align-items:center;
-    justify-content:center; font-size:19px !important; margin:0; box-sizing:border-box; }
+    width:30px !important; min-width:30px !important; height:30px !important; flex:none; margin:0;
+    background:url("__LOGO_URI__") center/contain no-repeat;
+    color:transparent !important; font-size:0 !important; box-sizing:border-box; }
   [data-testid="stSidebar"] [data-testid="stPageLink"] p {
     font-weight:700 !important; font-size:16px !important; color:#0C1119 !important;
     letter-spacing:-.01em; }
 </style>
-"""
+""".replace("__LOGO_URI__", LOGO_URI)
 
 
 def series_marker(color: str) -> dict:
