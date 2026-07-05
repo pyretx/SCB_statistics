@@ -1,4 +1,4 @@
-# Salary Explorer — reusable country-page framework
+﻿# Salary Explorer — reusable country-page framework
 
 Status: **adopted** (2026-07). Sweden and France ship today as standalone page
 scripts; this document is the agreed plan for turning "add a country" into
@@ -160,25 +160,31 @@ No UI, chart or styling work.
 - Occupation aggregation/weighting (`collapse_df`, `fetch_occ_weights`) becomes a
   shared, capability-gated feature.
 
-## Standard tabs (the single naming standard — 2026-07)
+## Standard tabs (the single naming standard, 2026-07)
 
 Every country page uses the same canonical tabs; each appears only if the
-country's Capabilities support it (so a country never implies data it lacks).
-Names live in core/i18n.py (`tab_<id>`); the registry is core/tabs/__init__.py.
+country's Capabilities support it. Labels live in core/i18n.py (tab_<id>); the
+registry is core/tabs/__init__.py.
 
-| id            | Label (EN)          | Contents                                                                                   | Shown when |
-|---------------|---------------------|--------------------------------------------------------------------------------------------|------------|
-| overview      | Overview            | Per-occupation KPI cards (mean · median · P25/P75 · women · men · F/M gap · headcount) + comparison bar | always |
-| distribution  | Salary distribution | Percentile/quartile chart + year & measures pickers + raw-data table/export + embedded Salary-trend-over-time (nominal/growth/real) | has_occupation_percentiles OR has_quartiles |
-| where         | Where do I stand?   | Salary → percentile-position calculator                                                    | has_occupation_percentiles OR has_quartiles |
-| leaderboard   | Leaderboard         | Rank occupations by pay, scoped to the 2-digit sub-group drilled into                       | has_leaderboard |
-| age/region/education/sex | By age / By region / By education / By gender | One breakdown tab per dimension the source actually has                       | has_age / has_region / has_education / has_sex |
-| stats         | Basic statistics    | Per-occupation summary table + headcount + CSV export                                       | always |
+- overview -> "Overview": per-occupation KPI cards (mean, P25, median, P75,
+  women, men, F/M gap, headcount) + comparison bar + a summary table with CSV
+  export. Basic statistics is MERGED in here. Always shown.
+- distribution -> "Salary distribution": percentile/quartile chart + year &
+  measures pickers + raw-data table/export. Shown when has_occupation_percentiles
+  or has_quartiles.
+- trend -> "Trend": salary over time (own tab) with a Measure selector +
+  Nominal / Growth-vs-inflation / Real views + table/export. Shown when has_trend.
+- where -> "Where do I stand?": salary -> percentile-position calculator. Shown
+  when has_occupation_percentiles or has_quartiles.
+- leaderboard -> "Leaderboard": rank occupations by median / average / gender gap
+  / median growth, scoped to the 2-digit sub-group drilled into. has_leaderboard.
+- sex/age/region/education -> "By gender" / "By age" / "By region" / "By
+  education": one breakdown tab per dimension the source has. By gender has a
+  "Women as % of men" toggle.
 
-Standard order: overview · distribution · where · leaderboard · (breakdowns) · stats.
-The Trend view is embedded inside Salary distribution (a "Salary trend over time"
-section with a Measure selector), not a separate tab — mirrors the Swedish page.
+Standard order: overview, distribution, trend, where, leaderboard, (breakdowns).
+Median sits between P25 and P75 in the Overview KPIs (P10..P90 where available).
 
 Note: the legacy Sweden (scb_salaries.py) and France (france.py) pages predate
-this standard and still say "Percentile distribution"; they are separate pages,
-untouched. New framework countries follow the table above.
+this standard and stay as separate, untouched pages. New framework countries
+follow the list above.

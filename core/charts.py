@@ -160,6 +160,30 @@ def leaderboard_bar(show: pd.DataFrame, cfg, *, value_col: str, value_fmt,
     return theme.style_fig(fig, horizontal=True)
 
 
+def ratio_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, *, value_col: str,
+              title: str | None = None):
+    """Women's pay as % of men's, per occupation (one bar; 100 % = parity, dotted
+    reference line). Below parity is drawn in the mean/red colour."""
+    def _series(df):
+        d = df[df["dimension"] == "total"].dropna(subset=[value_col])
+        return dict(zip(d["occ_name"], d[value_col]))
+    w, m = _series(women), _series(men)
+    names = [n for n in dict.fromkeys(list(w) + list(m)) if w.get(n) and m.get(n)]
+    if not names:
+        return None
+    ratios = [round(w[n] / m[n] * 100, 1) for n in names]
+    colors = [theme.ACCENT if r >= 100 else theme.MEAN for r in ratios]
+    fig = go.Figure(go.Bar(
+        x=ratios, y=names, orientation="h", marker_color=colors,
+        text=[f"{r:.0f}%" for r in ratios], textposition="auto",
+        hovertemplate="%{y}<br>%{x:.1f}%<extra></extra>"))
+    fig.add_vline(x=100, line=dict(color="#98A0AC", width=1, dash="dot"))
+    fig.update_layout(height=max(240, 58 * len(names) + 90),
+                      margin=dict(l=8, r=8, t=40 if title else 8, b=8),
+                      title=title, xaxis_title="%", yaxis_title=None)
+    return theme.style_fig(fig, horizontal=True)
+
+
 def trend_lines(df: pd.DataFrame, cfg, *, value_col: str = "value", y_title: str,
                 unit: str = "", inflation=None, inflation_label: str = "Inflation",
                 title: str | None = None):

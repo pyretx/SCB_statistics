@@ -11,7 +11,6 @@ import pandas as pd
 import streamlit as st
 
 from .. import charts, i18n, states
-from . import trend as _trend
 
 _PCT_KEYS = ["p10", "p25", "median", "p75", "p90"]
 
@@ -87,8 +86,3 @@ def render(cfg, stats, query):
                            raw.to_csv(index=False).encode("utf-8-sig"),
                            file_name=f"{slug}_percentiles_{chart_year}.csv", mime="text/csv",
                            key=k("dl_dist"))
-
-    # ── Salary trend over time (embedded, like Sweden) ───────────────────────
-    if caps.has_trend:
-        st.divider()
-        _trend.trend_section(cfg, query, lang, k)
