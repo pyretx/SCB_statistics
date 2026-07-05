@@ -130,17 +130,29 @@ if st.query_params.get("confirmed"):
 
 
 def _app_base_url():
-    """Best-effort public base URL of this app (for the confirmation-email
-    redirect). Reads the forwarded host/proto behind Traefik; None if unknown."""
+    """Public base URL of this app (for the confirmation-email redirect). Prefer
+    an explicit ``[app] url`` in secrets.toml — that's rock-solid behind a reverse
+    proxy — then fall back to the forwarded host/proto headers; None if unknown."""
+    # 1) explicit config (recommended on the server: [app] url = "https://…")
+    try:
+        u = st.secrets.get("app", {}).get("url")
+        if u:
+            return str(u).rstrip("/")
+    except Exception:
+        pass
+    # 2) forwarded headers (case-insensitive; Traefik/HTTP2 may lowercase them)
     try:
         h = st.context.headers
+        host = (h.get("X-Forwarded-Host") or h.get("x-forwarded-host")
+                or h.get("Host") or h.get("host"))
+        if host:
+            host = host.split(",")[0].strip()
+            proto = (h.get("X-Forwarded-Proto") or h.get("x-forwarded-proto")
+                     or ("http" if host.startswith(("localhost", "127.")) else "https"))
+            return f"{proto}://{host}"
     except Exception:
-        return None
-    host = h.get("X-Forwarded-Host") or h.get("Host")
-    if not host:
-        return None
-    proto = h.get("X-Forwarded-Proto") or ("http" if host.startswith(("localhost", "127.")) else "https")
-    return f"{proto}://{host}"
+        pass
+    return None
 
 # Single source of truth for the country grid — add a country here only.
 COUNTRIES = [

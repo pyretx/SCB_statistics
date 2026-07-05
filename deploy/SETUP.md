@@ -97,6 +97,25 @@ Hostinger wildcard, so `scb-test.` / `scb-dev.` resolve automatically.
 | test | test   | /srv/scb-test   | scb-test   | scb-test.srv950186.hstgr.cloud       |
 | dev  | dev    | /srv/scb-dev    | scb-dev    | scb-dev.srv950186.hstgr.cloud        |
 
+## Auth: the confirmation-email popup (`[app] url`)
+
+For the "Thanks for confirming — please sign in" popup to work, the app must send
+the confirmation-email link back to itself with `?confirmed=1`. Behind Traefik the
+app can't reliably guess its own public URL, so set it explicitly in the server
+secrets file (`/root/scb-secrets.toml`, mounted into every container):
+
+```toml
+[app]
+url = "https://scb-dev.srv950186.hstgr.cloud"   # or scb. / scb-test. per env
+```
+
+Then in Supabase → **Authentication → URL Configuration**: **Site URL** = that same
+URL (no wildcard), and add `<that URL>/**` to the **Redirect URLs** allow-list.
+Restart the container after editing secrets. Without `[app] url` the confirmation
+link still works but lands on the start page with no popup.
+
+---
+
 For each new env, copy `docker-compose.scb.yml`, then change **four** things so the
 two routers don't clash in Traefik (router name `scb` must be unique per env):
 
