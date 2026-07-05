@@ -93,15 +93,23 @@ SIDEBAR_CSS = """
      box-shadow:0 1px 3px rgba(16,21,31,.12) !important; }
   [data-testid="stSidebar"] [data-testid="stBaseButton-segmented_controlActive"]:hover {
      background:#fff !important; color:#0C1119 !important; }
-  /* Country switcher: greyed 'coming soon' row inside the popover (global class,
-     since popover content renders in a body-level portal, not in the sidebar). */
-  .cc-soon { padding:6px 12px; font-size:14px; color:#B4BAC4; cursor:not-allowed; }
-  /* Compact switcher trigger, right-aligned next to the logo, vertically centred. */
-  [data-testid="stSidebar"] [data-testid="stPopover"] > div { display:flex; justify-content:flex-end; }
-  [data-testid="stSidebar"] [data-testid="stPopover"] button {
+  /* Country switcher rows: real flag + greyed 'coming soon' US. */
+  .cc-flag { width:22px; height:15px; object-fit:cover !important; border-radius:3px;
+             border:1px solid rgba(0,0,0,.10); display:block; }
+  .cc-soon { font-size:14px; color:#B4BAC4; cursor:not-allowed; padding-top:2px; }
+  /* Compact switcher trigger, right-aligned next to the logo — ONLY the first
+     child (the trigger). Targeting all children re-showed the (normally hidden)
+     popover-content div, so the options were visible all the time. */
+  [data-testid="stSidebar"] [data-testid="stPopover"] > div:first-child {
+    display:flex; justify-content:flex-end; }
+  [data-testid="stSidebar"] [data-testid="stPopover"] > div:first-child button {
     padding:5px 8px !important; min-height:0 !important; border-radius:9px !important;
     font-size:13px !important; color:#3A4250 !important; white-space:nowrap !important; }
-  [data-testid="stSidebar"] [data-testid="stPopover"] button p { white-space:nowrap !important; }
+  [data-testid="stSidebar"] [data-testid="stPopover"] > div:first-child button p {
+    white-space:nowrap !important; }
+  /* Tighten the option rows in the open popover. */
+  [data-testid="stSidebar"] [data-testid="stPopover"] [data-testid="stPageLink"] a {
+    padding:4px 4px !important; }
   /* Header flag next to the country H1 (object-fit:cover !important beats
      Streamlit's global img rule, which would letterbox it). */
   .se-hflag { width:44px !important; height:31px !important; object-fit:cover !important;

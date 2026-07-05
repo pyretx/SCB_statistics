@@ -53,13 +53,26 @@ def _client(service: bool = False) -> Client:
 def country_switcher(current: str):
     """Compact country switcher for the sidebar, next to the logo. ``current`` is
     'sweden' or 'france'. Sweden/France are real page-links (client-side nav, so
-    the session/login is preserved); the US is shown greyed ('soon'). Access
-    gating (who may open which country) will hook in here later."""
+    the session/login is preserved); the US is shown greyed ('soon'), with real
+    flag images. Access gating (who may open which country) will hook in later."""
+    import theme
     label = {"sweden": "Sweden", "france": "France"}.get(current, "Country")
+
+    def _flag(code, dim=False):
+        st.markdown(f'<img class="cc-flag" src="{theme.flag_uri(code)}" alt=""'
+                    f'{" style=opacity:.45" if dim else ""}>', unsafe_allow_html=True)
+
     with st.popover(label, use_container_width=True):
-        st.page_link("scb_salaries.py", label="Sweden", icon="🇸🇪")
-        st.page_link("france.py",       label="France", icon="🇫🇷")
-        st.markdown('<div class="cc-soon">🇺🇸&nbsp; United States · soon</div>',
+        for code, page, name in [("se", "scb_salaries.py", "Sweden"),
+                                 ("fr", "france.py", "France")]:
+            fc, lc = st.columns([1, 5], vertical_alignment="center")
+            with fc:
+                _flag(code)
+            lc.page_link(page, label=name)
+        fc, lc = st.columns([1, 5], vertical_alignment="center")
+        with fc:
+            _flag("us", dim=True)
+        lc.markdown('<div class="cc-soon">United States · soon</div>',
                     unsafe_allow_html=True)
 
 
