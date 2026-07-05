@@ -47,9 +47,31 @@ SIDEBAR_CSS = """
   [data-testid="stSidebar"] [data-testid="stWidgetLabel"] p {
     font-family:'JetBrains Mono',monospace !important; text-transform:uppercase;
     letter-spacing:.11em; font-size:11px !important; font-weight:600; color:#8A919D !important; }
-  [data-testid="stSidebar"] [data-testid="stSegmentedControl"] { width:100%; }
-  [data-testid="stSidebar"] [data-testid="stSegmentedControl"] > div { width:100%; display:flex; }
-  [data-testid="stSidebar"] [data-testid="stSegmentedControl"] label { flex:1; justify-content:center; }
+  /* Segmented toggles (Language, Sex): the widget LABEL and the radiogroup are
+     both children of stButtonGroup, so the grey track goes on the RADIOGROUP
+     (not the whole group — that would tint the label too). White active pill +
+     soft shadow per the mockup. Force the element container + radiogroup to full
+     width (Streamlit sizes them to content otherwise). */
+  [data-testid="stSidebar"] [data-testid="stElementContainer"]:has([data-testid="stButtonGroup"]) {
+     width:100% !important; }
+  [data-testid="stSidebar"] [data-testid="stButtonGroup"] { width:100%; }
+  [data-testid="stSidebar"] [data-testid="stButtonGroup"] > div[role="radiogroup"] {
+     display:flex !important; flex-wrap:nowrap !important; gap:4px !important;
+     width:100% !important; min-width:100% !important; box-sizing:border-box !important;
+     background:#EDEFF2; padding:4px; border-radius:10px; }
+  [data-testid="stSidebar"] [data-testid="stButtonGroup"] button {
+     flex:1 1 0 !important; min-width:0 !important; min-height:0; border:0 !important;
+     border-radius:7px !important; box-shadow:none; font-weight:600 !important;
+     font-size:13px !important; padding:7px 0 !important; }
+  [data-testid="stSidebar"] [data-testid="stBaseButton-segmented_control"] {
+     background:transparent !important; color:#8A919D !important; }
+  [data-testid="stSidebar"] [data-testid="stBaseButton-segmented_control"]:hover {
+     background:rgba(255,255,255,.55) !important; color:#5B6472 !important; }
+  [data-testid="stSidebar"] [data-testid="stBaseButton-segmented_controlActive"] {
+     background:#fff !important; color:#0C1119 !important;
+     box-shadow:0 1px 3px rgba(16,21,31,.12) !important; }
+  [data-testid="stSidebar"] [data-testid="stBaseButton-segmented_controlActive"]:hover {
+     background:#fff !important; color:#0C1119 !important; }
   /* Brand logo = the only sidebar page-link (click → Home). */
   [data-testid="stSidebar"] [data-testid="stPageLink"] a { padding:2px; gap:10px;
     background:transparent !important; }
