@@ -603,42 +603,51 @@ _fw = [c for c in (_registry.all_countries() if _registry else [])
 if _fw:
     st.write("")
     _fcols = st.columns(3, gap="medium")     # empty slots reserved for future betas
+    # Tile TEXT comes from content/home.toml → [countries.gated.<slug>] (editable),
+    # falling back to the country's own config where a field is omitted.
+    _gated = C["countries"].get("gated", {})
     for _i, (_fcol, c) in enumerate(zip(_fcols, _fw)):
+        g = _gated.get(c.slug, {})
+        _name = g.get("name", c.name)
+        _native = g.get("native", c.native)
+        _num = g.get("num", f"{4 + _i:02d}")
+        _points = g.get("points") or list(c.bullets)
+        _badge_txt = g.get("badge", c.L("badge", "Beta"))
+        _source = g.get("source", c.L("source_short", c.source_name))
         with _fcol, st.container(border=True, key=f"cc_fw_{c.slug}"):
             _unlocked = bool(_access and _access.can_open(c))
             _badges = (f'<div style="background:rgba(178,106,0,.13);color:#B26A00;font-size:11px;'
                        f'font-weight:600;padding:4px 10px;border-radius:20px;flex:none;">'
-                       f'{c.L("badge", "Beta")}</div>')
+                       f'{_badge_txt}</div>')
             if not _unlocked:
                 _badges += ('<div style="background:#F1F3F6;color:#8A919D;font-size:11px;'
                             'font-weight:600;padding:4px 9px;border-radius:20px;flex:none;">🔒 Locked</div>')
             _blist = "".join(
                 '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
                 '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
-                f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in c.bullets)
+                f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in _points)
             _hdr = f"""
             <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-              <img class="se-flag" src="{flag_uri(c.iso)}" alt="{c.name} flag">
+              <img class="se-flag" src="{flag_uri(c.iso)}" alt="{_name} flag">
               <div style="flex:1;min-width:0;">
                 <div style="white-space:nowrap;">
-                  <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{4 + _i:02d}</span>
-                  <span style="font-weight:700;font-size:17px;">{c.name}</span></div>
-                <div style="font-size:12px;color:#8A919D;margin-top:1px;">{c.native}</div>
+                  <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{_num}</span>
+                  <span style="font-weight:700;font-size:17px;">{_name}</span></div>
+                <div style="font-size:12px;color:#8A919D;margin-top:1px;">{_native}</div>
               </div>
               <div style="display:flex;gap:6px;flex:none;">{_badges}</div>
             </div>"""
             st.markdown("".join(l.strip() for l in _hdr.splitlines()), unsafe_allow_html=True)
             if _unlocked:
                 st.page_link(f"countries/{c.slug}/page.py",
-                             label=C["countries"]["open_cta"].format(name=c.name))
+                             label=C["countries"]["open_cta"].format(name=_name))
             else:
                 st.markdown(f'<div class="se-cta-off">{C["countries"]["locked_cta"]}</div>',
                             unsafe_allow_html=True)
             st.markdown(
                 '<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">'
                 + _blist + '</ul>', unsafe_allow_html=True)
-            st.markdown(f'<div class="se-source">{c.L("source_short", c.source_name)}</div>',
-                        unsafe_allow_html=True)
+            st.markdown(f'<div class="se-source">{_source}</div>', unsafe_allow_html=True)
 
 st.write("")
 st.divider()

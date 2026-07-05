@@ -128,5 +128,21 @@ badge_text   = "Coming soon"
 badge_color  = "#0A63A6"
 badge_bg     = "rgba(10,99,166,.10)"
 
+# ── Gated / beta tiles (the second row of framework countries, e.g. Norway) ──
+# Keyed by the country's slug. Text is editable here; whether the tile shows as
+# open or "🔒 Locked" is decided by the app (admin / granted users only). name,
+# native and source fall back to the country's own config if left out here.
+[countries.gated.norway]
+num     = "04"
+name    = "Norway"
+native  = "Norge"
+source  = "SSB · official"
+badge   = "Beta"
+points  = [
+  "Mean & median salary · ~400 occupations (STYRK-08)",
+  "Sector & sex breakdowns · quartiles",
+  "Monthly earnings · 2015–2024",
+]
+
 [footer]
 note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France)"
