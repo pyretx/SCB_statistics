@@ -27,7 +27,7 @@ _FR_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
 # ── Translations ───────────────────────────────────────────────────────────────
 T = {
     "FR": {
-        "title": "Explorateur de salaires — France",
+        "title": "Explorateur de salaires - France",
         "caption": "Salaire net mensuel moyen en équivalent temps plein (EQTP) · Source : INSEE (DADS/DSN via l'API Melodi)",
         "lang": "Language / Langue",
         "sector": "Secteur",

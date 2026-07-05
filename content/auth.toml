@@ -11,10 +11,10 @@ eyebrow  = "SECURE ACCESS"
 headline = "Official salary data,<br>always free to browse."   # <br> = line break
 checks   = [
   "Explore Sweden & France right now - no account needed",
-  "An account is only needed for admin tools today",
+  "An account is only needed for admin tools and beta users today",
   "Free while in beta",
 ]
-footer   = "SCB · INSEE · official statistics only"
+footer   = "SCB · INSEE · SSB · official statistics only"
 
 # The form on the right.
 [form]
