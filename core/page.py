@@ -47,8 +47,12 @@ def render_country(cfg):
     _header(cfg, lang)
     occ_codes = tuple(query.get("occ_codes", ()))
     if not occ_codes:
+        # Default start page: the prompt + the code browser inline (Sweden-style),
+        # so the empty state is useful rather than blank.
         with view.container():
             states.prompt(i18n.t(cfg, "prompt_select", lang))
+            if panels.browsable(cfg, lang):
+                panels.default_browser(cfg, lang)
         return
 
     with states.loading():

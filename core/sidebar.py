@@ -56,9 +56,22 @@ def _guide_browser_buttons(cfg, k, lang, has_tree):
             st.rerun()
 
 
+def _group_select(cfg, k, lang, key, label_key, none_key, groups: dict) -> str | None:
+    """One blank-able group selectbox (translated labels as options, so the shown
+    value re-translates on a language switch). Returns the selected group code, or
+    None for the blank/"all" option."""
+    none_lbl = i18n.t(cfg, none_key, lang)
+    ordered = sorted(groups, key=lambda c: groups[c].lower())
+    labels = [none_lbl] + [f"{c} · {groups[c]}" for c in ordered]
+    chosen = st.selectbox(i18n.t(cfg, label_key, lang), labels, key=k(key))
+    i = labels.index(chosen)
+    return ordered[i - 1] if i > 0 else None
+
+
 def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
-    """Optional major-group drill-down (leveling) + occupation multiselect.
-    The drill-down appears only when the classification actually nests."""
+    """Sweden-style occupation section: 1. Major group → 2. Sub-group (appears
+    once a major is picked) → an occupation search box → 3. Occupation(s). The
+    drill-down only shows when the classification actually nests."""
     prov = cfg.provider
     if not prov:
         return ()
@@ -66,24 +79,34 @@ def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
     if not leaves:
         return ()
 
+    pool = leaves                            # occupations offered in the multiselect
     if cfg.capabilities.has_occupation_hierarchy:
         tree = prov.occupation_tree(lang)
         majors = {c: n for c, n in tree.items() if len(c) == 1}
         if majors:
-            # translated labels as options (see the sector note above)
-            none_lbl = i18n.t(cfg, "all_groups", lang)
-            ordered = sorted(majors, key=lambda c: majors[c].lower())
-            labels = [none_lbl] + [f"{c} · {majors[c]}" for c in ordered]
-            chosen = st.selectbox(i18n.t(cfg, "major_group", lang), labels, key=k("major"))
-            i = labels.index(chosen)
-            if i > 0:
-                sel_major = ordered[i - 1]
-                leaves = {c: n for c, n in leaves.items() if c[:1] == sel_major}
+            major = _group_select(cfg, k, lang, "major", "major_group", "all_groups", majors)
+            if major:
+                pool = {c: n for c, n in leaves.items() if c[:1] == major}
+                subs = {c: tree[c] for c in tree if len(c) == 2 and c.startswith(major)}
+                if subs:
+                    sub = _group_select(cfg, k, lang, "sub", "sub_group", "all_subgroups", subs)
+                    if sub:
+                        pool = {c: n for c, n in leaves.items() if c[:2] == sub}
 
-    name_to_code = {v: c for c, v in leaves.items()}
+    # Free-text occupation search — overrides the drill-down, searching every
+    # occupation by name or code (Sweden's "Search occupations…").
+    q = st.text_input(i18n.t(cfg, "occ_search", lang), key=k("occsearch"),
+                      placeholder=i18n.t(cfg, "occ_search", lang), label_visibility="collapsed")
+    if q.strip():
+        s = q.strip().lower()
+        pool = {c: n for c, n in leaves.items() if s in n.lower() or s in c.lower()}
+        st.caption(i18n.t(cfg, "found_n", lang).format(n=len(pool)) if pool
+                   else i18n.t(cfg, "no_match", lang))
+
+    name_to_code = {v: c for c, v in pool.items()}
     picked = st.multiselect(
         i18n.t(cfg, "occupations", lang), sorted(name_to_code), key=k("occ"),
-        placeholder=i18n.t(cfg, "occ_placeholder", lang))
+        placeholder=i18n.t(cfg, "occ_placeholder", lang), max_selections=8)
     return tuple(name_to_code[p] for p in picked)
 
 

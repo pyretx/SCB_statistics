@@ -39,13 +39,15 @@ def _parent_of(code: str, present: set) -> str | None:
     return None
 
 
-def _browser(cfg, lang, vk):
-    _back(cfg, lang, vk)
-    heading = i18n.t(cfg, "code_browser", lang)
-    if cfg.classification:
-        heading += f" · {cfg.classification}"
-    st.markdown(f"## {heading}")
+def browsable(cfg, lang: str = "EN") -> bool:
+    """Whether the classification nests enough to browse (has group levels)."""
+    tree = cfg.provider.occupation_tree(lang) if cfg.provider else {}
+    return any(len(c) < 4 for c in tree)
 
+
+def _browse_body(cfg, lang):
+    """The browser itself (search + cascading drill-down), reused by both the
+    full-page Code-browser view and the default landing."""
     tree = cfg.provider.occupation_tree(lang) if cfg.provider else {}
     if not tree:
         st.info("—")
@@ -115,6 +117,27 @@ def _browser(cfg, lang, vk):
             cur, opts, level = v, sorted(children.get(v, [])), level + 1
     with panel:
         panel_for(cur)
+
+
+def _browser(cfg, lang, vk):
+    """Full-page Code-browser view (from the sidebar button): Back + heading."""
+    _back(cfg, lang, vk)
+    heading = i18n.t(cfg, "code_browser", lang)
+    if cfg.classification:
+        heading += f" · {cfg.classification}"
+    st.markdown(f"## {heading}")
+    _browse_body(cfg, lang)
+
+
+def default_browser(cfg, lang):
+    """Inline browser shown on the empty landing (no occupation selected), under
+    the prompt — the Swedish page's default start view. No Back button; the same
+    drill-down as the full-page view."""
+    heading = i18n.t(cfg, "browse_title", lang)
+    if cfg.classification:
+        heading += f" · {cfg.classification}"
+    st.subheader(heading)
+    _browse_body(cfg, lang)
 
 
 def render(cfg, view: str, lang: str, vk: str):
