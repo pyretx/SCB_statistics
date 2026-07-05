@@ -339,10 +339,14 @@ def _age_sort_key(code: str) -> int:
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Same sidebar treatment as the Swedish page. The logo is the only sidebar
-    # page-link and doubles as the Home link (no separate nav items).
+    # Same sidebar treatment as the Swedish page: logo (→ Home) on the left, the
+    # country switcher on the right.
     st.markdown(theme.SIDEBAR_CSS, unsafe_allow_html=True)
-    st.page_link("landing.py", label="Salary Explorer", icon=":material/language:")
+    _logo_col, _sw_col = st.columns([1.7, 1], vertical_alignment="center")
+    with _logo_col:
+        st.page_link("landing.py", label="Salary Explorer", icon=":material/language:")
+    with _sw_col:
+        auth.country_switcher("france")
     auth.sidebar_identity()   # show who's signed in (avatar + name + role) + Log out
     st.markdown('<div style="height:1px;background:#EEF0F3;margin:12px 0 4px;"></div>',
                 unsafe_allow_html=True)

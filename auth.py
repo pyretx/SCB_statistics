@@ -50,6 +50,19 @@ def _client(service: bool = False) -> Client:
     return create_client(cfg["url"], key)
 
 
+def country_switcher(current: str):
+    """Compact country switcher for the sidebar, next to the logo. ``current`` is
+    'sweden' or 'france'. Sweden/France are real page-links (client-side nav, so
+    the session/login is preserved); the US is shown greyed ('soon'). Access
+    gating (who may open which country) will hook in here later."""
+    label = {"sweden": "Sweden", "france": "France"}.get(current, "Country")
+    with st.popover(label, use_container_width=True):
+        st.page_link("scb_salaries.py", label="Sweden", icon="🇸🇪")
+        st.page_link("france.py",       label="France", icon="🇫🇷")
+        st.markdown('<div class="cc-soon">🇺🇸&nbsp; United States · soon</div>',
+                    unsafe_allow_html=True)
+
+
 def sidebar_identity():
     """Render the signed-in user's identity (avatar initials + name + role) and a
     Log out button in the sidebar. No-op when signed out. Shared by the country

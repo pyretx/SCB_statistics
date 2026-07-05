@@ -1347,10 +1347,13 @@ def _open_panel(name):
 
 with st.sidebar:
     st.markdown(theme.SIDEBAR_CSS, unsafe_allow_html=True)
-    # Logo doubles as the Home link (it's the only sidebar page-link, styled as
-    # the brand mark below). No separate Home/Sweden/France nav — clicking the
-    # logo goes Home, where you pick a country.
-    st.page_link("landing.py", label="Salary Explorer", icon=":material/language:")
+    # Logo (→ Home) on the left, a compact country switcher on the right so you
+    # can jump straight to another country without going Home first.
+    _logo_col, _sw_col = st.columns([1.7, 1], vertical_alignment="center")
+    with _logo_col:
+        st.page_link("landing.py", label="Salary Explorer", icon=":material/language:")
+    with _sw_col:
+        auth.country_switcher("sweden")
     auth.sidebar_identity()   # show who's signed in (avatar + name + role) + Log out
     st.markdown('<div style="height:1px;background:#EEF0F3;margin:12px 0 4px;"></div>',
                 unsafe_allow_html=True)
