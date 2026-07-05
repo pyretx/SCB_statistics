@@ -272,9 +272,12 @@ st.markdown("""
      display:flex; flex-direction:column; flex:1 0 auto; }
   /* Full-width CTA button under the header — space above (off the header) + below
      (before the bullets), and a slightly reduced height. */
-  [class*="st-key-cc_"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]),
-  [class*="st-key-cc_"] [data-testid="stElementContainer"]:has(.se-cta-off) {
+  [class*="st-key-cc_"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]) {
      width:100% !important; margin:8px 0 16px; }
+  /* The markdown-chip CTA (Notify me / Locked) sits tighter to the bullets than a
+     real page-link button, so give it extra bottom margin — all tiles then match. */
+  [class*="st-key-cc_"] [data-testid="stElementContainer"]:has(.se-cta-off) {
+     width:100% !important; margin:8px 0 34px; }
   [class*="st-key-cc_"] [data-testid="stPageLink"] { width:100%; }
   [class*="st-key-cc_"] [data-testid="stPageLink"] a { width:100%; background:#0A63A6;
      border-radius:9px; padding:8px 14px; justify-content:center;

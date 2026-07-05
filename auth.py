@@ -57,29 +57,49 @@ def _client(service: bool = False) -> Client:
 
 
 def country_switcher(current: str):
-    """Compact country switcher for the sidebar, next to the logo. ``current`` is
-    'sweden' or 'france'. Sweden/France are real page-links (client-side nav, so
-    the session/login is preserved); the US is shown greyed ('soon'), with real
-    flag images. Access gating (who may open which country) will hook in later."""
+    """Registry- and access-aware country switcher for the sidebar. Lists every
+    country: those the user may open are real client-side page-links (session
+    preserved); the rest are shown greyed — '🔒 locked' (needs access) or 'soon'
+    (not built). So a visitor/standard user sees e.g. Norway right now, greyed &
+    locked, until an admin grants them access."""
     import theme
-    label = {"sweden": "Sweden", "france": "France"}.get(current, "Country")
 
-    def _flag(code, dim=False):
-        st.markdown(f'<img class="cc-flag" src="{theme.flag_uri(code)}" alt=""'
+    # Released (legacy) markets + framework landing countries + coming-soon.
+    items = [
+        {"slug": "sweden", "name": "Sweden", "iso": "se", "page": "scb_salaries.py", "state": "open"},
+        {"slug": "france", "name": "France", "iso": "fr", "page": "france.py", "state": "open"},
+    ]
+    try:
+        from core import registry, access as _acc
+        for c in registry.all_countries():
+            if not getattr(c, "landing", False):        # skip the throwaway demo
+                continue
+            items.append({"slug": c.slug, "name": c.name, "iso": c.iso,
+                          "page": f"countries/{c.slug}/page.py",
+                          "state": "open" if _acc.can_open(c) else "locked"})
+    except Exception:
+        pass
+    items.append({"slug": "us", "name": "United States", "iso": "us", "page": None, "state": "soon"})
+
+    label = next((it["name"] for it in items if it["slug"] == current), "Country")
+
+    def _flag(iso, dim=False):
+        st.markdown(f'<img class="cc-flag" src="{theme.flag_uri(iso)}" alt=""'
                     f'{" style=opacity:.45" if dim else ""}>', unsafe_allow_html=True)
 
     with st.popover(label, use_container_width=True):
-        for code, page, name in [("se", "scb_salaries.py", "Sweden"),
-                                 ("fr", "france.py", "France")]:
+        for it in items:
             fc, lc = st.columns([1, 5], vertical_alignment="center")
             with fc:
-                _flag(code)
-            lc.page_link(page, label=name)
-        fc, lc = st.columns([1, 5], vertical_alignment="center")
-        with fc:
-            _flag("us", dim=True)
-        lc.markdown('<div class="cc-soon">United States · soon</div>',
-                    unsafe_allow_html=True)
+                _flag(it["iso"], dim=(it["state"] != "open"))
+            if it["state"] == "open":
+                lc.page_link(it["page"], label=it["name"])
+            elif it["state"] == "locked":
+                lc.markdown(f'<div class="cc-soon">{it["name"]} · 🔒 locked</div>',
+                            unsafe_allow_html=True)
+            else:  # soon
+                lc.markdown(f'<div class="cc-soon">{it["name"]} · soon</div>',
+                            unsafe_allow_html=True)
 
 
 def sidebar_identity():
