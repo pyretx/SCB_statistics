@@ -36,13 +36,13 @@ def render(cfg, stats, query):
     # ── Controls: chart year + measures shown ────────────────────────────────
     c1, c2 = st.columns([1, 2.4])
     with c1:
-        if caps.year_range:
-            y0, y1 = caps.year_range
-            chart_year = st.selectbox(i18n.t(cfg, "chart_year", lang, "Chart year"),
-                                      list(range(y1, y0 - 1, -1)), key=k("dyear"))
-        else:
-            yy = query.get("years", ())
-            chart_year = int(yy[-1]) if yy else None
+        # Only the years selected in the sidebar (newest first) — default = latest,
+        # which is what the page already fetched, so no extra call on open.
+        yy = query.get("years", ())
+        years = sorted({int(y) for y in yy}, reverse=True) if yy else (
+            list(range(caps.year_range[1], caps.year_range[0] - 1, -1)) if caps.year_range else [])
+        chart_year = st.selectbox(i18n.t(cfg, "chart_year", lang, "Chart year"),
+                                  years, key=k("dyear")) if years else None
 
     with states.loading():
         d = cfg.provider.occupation_stats(sector=sector, occ_codes=occ, sex=sex,

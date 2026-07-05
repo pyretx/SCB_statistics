@@ -24,13 +24,37 @@ _FALLBACK = {"overview": "Overview", "distribution": "Distribution",
              "leaderboard": "Leaderboard", "stats": "Basic statistics"}
 
 
+_TAB_CSS = """
+<style>
+/* Lazy tab bar: a segmented control styled as Sweden's underlined tabs, so ONLY
+   the open tab renders (and only it fetches). */
+.st-key-{key} [data-testid="stButtonGroup"] > div[role="radiogroup"] {{
+  background:transparent !important; padding:0 !important; gap:2px !important;
+  border-bottom:1px solid #E7E9ED; border-radius:0 !important; flex-wrap:wrap; }}
+.st-key-{key} [data-testid="stButtonGroup"] button {{
+  background:transparent !important; border:0 !important; border-radius:0 !important;
+  box-shadow:none !important; color:#5B6472 !important; font-weight:600 !important;
+  font-size:15px !important; padding:8px 14px !important;
+  border-bottom:2px solid transparent !important; margin-bottom:-1px !important; }}
+.st-key-{key} [data-testid="stBaseButton-segmented_control"]:hover {{ color:#0C1119 !important; }}
+.st-key-{key} [data-testid="stBaseButton-segmented_controlActive"] {{
+  color:#0A63A6 !important; background:transparent !important;
+  border-bottom:2px solid #0A63A6 !important; }}
+</style>
+"""
+
+
 def render_tabs(cfg, stats, query):
     lang = query.get("lang", "EN")
     enabled = [t for t in cfg.tabs if t in TABS] or ["overview"]
     if len(enabled) == 1:
         TABS[enabled[0]](cfg, stats, query)
         return
-    labels = [i18n.t(cfg, f"tab_{t}", lang, _FALLBACK.get(t, t)) for t in enabled]
-    for obj, tid in zip(st.tabs(labels), enabled):
-        with obj:
-            TABS[tid](cfg, stats, query)
+    labels = {t: i18n.t(cfg, f"tab_{t}", lang, _FALLBACK.get(t, t)) for t in enabled}
+    key = f"{cfg.slug}_activetab"
+    st.markdown(_TAB_CSS.format(key=key), unsafe_allow_html=True)
+    active = st.segmented_control(key, enabled, default=enabled[0],
+                                  format_func=lambda t: labels[t],
+                                  key=key, label_visibility="collapsed") or enabled[0]
+    st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
+    TABS[active](cfg, stats, query)          # render ONLY the open tab (lazy)
