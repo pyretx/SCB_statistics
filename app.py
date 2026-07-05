@@ -37,9 +37,30 @@ st.markdown("""
 # render their own filters into st.sidebar as before; each adds its own
 # "← Home" link (st.page_link) at the top so users aren't stranded without
 # the auto nav-list.
-pg = st.navigation([
+_pages = [
     st.Page("landing.py",      title="Home",   default=True),
     st.Page("scb_salaries.py", title="Sweden", url_path="sweden"),
     st.Page("france.py",       title="France", url_path="france"),
-], position="hidden")
+]
+
+# Framework-driven country pages (docs/architecture.md) register themselves from
+# the registry, ALONGSIDE the legacy Sweden/France pages above. Wrapped so a bug
+# in the new framework can never take down the existing app; access is gated per
+# page (in-development countries are admin-only).
+try:
+    from core.page import render_country
+    from core import registry
+
+    def _country_runner(cfg):
+        def _run():
+            render_country(cfg)
+        _run.__name__ = f"country_{cfg.slug}"
+        return _run
+
+    for _cfg in registry.all_countries():
+        _pages.append(st.Page(_country_runner(_cfg), title=_cfg.name, url_path=_cfg.slug))
+except Exception:
+    pass
+
+pg = st.navigation(_pages, position="hidden")
 pg.run()

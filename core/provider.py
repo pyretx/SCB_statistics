@@ -1,0 +1,45 @@
+"""CountryProvider — the data interface every country implements.
+
+A provider turns one country's API into the normalized model (core.model). It
+subclasses this base and overrides only the methods its source supports; the
+config's Capabilities declare which of those are meaningful, so the shared tabs
+know what to render. This mirrors France's clean data-layer split (france_data.py),
+generalized behind one interface.
+"""
+from __future__ import annotations
+
+import pandas as pd
+
+from . import model
+
+
+class CountryProvider:
+    """Base provider: every method returns an empty normalized frame by default.
+    Countries override what they can serve.
+
+    Query kwargs are a superset; a provider ignores dimensions it doesn't support:
+        sector: str            selected market sector (or "" if the country has none)
+        occ_codes: tuple[str]  selected occupation codes
+        sex: str               "total" | "women" | "men"
+        years: tuple[int]      selected year range
+        year: int              single year for one-year breakdowns
+    """
+
+    # occupation code -> display name, for the given language
+    def occupations(self, lang: str = "EN") -> dict[str, str]:
+        return {}
+
+    # long/tidy OccupationStat rows (dimension="total" unless a breakdown is asked)
+    def occupation_stats(self, *, sector: str = "", occ_codes: tuple[str, ...] = (),
+                         sex: str = "total", years: tuple[int, ...] = (),
+                         dimension: str = "total", year: int | None = None) -> pd.DataFrame:
+        return model.empty_occ_stats()
+
+    # whole-population percentile curve (France-style backdrop)
+    def population_distribution(self, *, sector: str = "", sex: str = "total",
+                               year: int | None = None) -> pd.DataFrame:
+        return model.empty_pop_pct()
+
+    # trend series over years
+    def trend(self, *, sector: str = "", occ_codes: tuple[str, ...] = ()) -> pd.DataFrame:
+        return model.empty_trend()
