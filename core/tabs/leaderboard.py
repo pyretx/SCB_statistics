@@ -53,9 +53,10 @@ def render(cfg, stats, query):
     if lb is None or lb.empty:
         st.caption(i18n.t(cfg, "no_data_combo", lang))
         return
-    # Scope the ranking to the group drilled into in the sidebar (like Sweden):
-    # e.g. major group "2" → rank only occupations whose code starts with "2".
-    scope = query.get("scope", "")
+    # Scope the ranking to the group drilled into in the sidebar (like Sweden),
+    # but capped at the SUB-GROUP (2-digit) so a deep drill-down still ranks a
+    # useful set — e.g. drilling to 231 ranks all of sub-group 23, not just 231.
+    scope = query.get("scope", "")[:2]
     if scope:
         lb = lb[lb["occ_code"].str.startswith(scope)]
     tree = cfg.provider.occupation_tree(lang) if cfg.provider else {}
