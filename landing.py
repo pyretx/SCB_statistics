@@ -190,7 +190,7 @@ COUNTRIES = [
             "Inflation-adjusted trends, series since 1951",
         ],
         "page": "france.py", "live": True,
-        "badge": ("Beta", "#B26A00", "rgba(178,106,0,.13)"),
+        "badge": ("Live", "#1B8A5A", "rgba(27,138,90,.12)"),
     },
     {
         "num": "03", "name": "United States", "native": "United States",
