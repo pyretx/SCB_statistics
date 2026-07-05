@@ -1942,7 +1942,10 @@ st.markdown(f"""
 <div style="margin-bottom:6px;">
   <div style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
               letter-spacing:.16em;color:#0A63A6;margin-bottom:10px;">OFFICIAL STATISTICS · SWEDEN</div>
-  <h1 style="margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#0C1119;line-height:1.05;">{t['title']}</h1>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <img class="se-hflag" src="{theme.flag_uri('se')}" alt="Sweden flag">
+    <h1 style="margin:0;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#0C1119;line-height:1.05;">{t['title']}</h1>
+  </div>
   <p style="margin:8px 0 0;font-size:14px;color:#7A828F;">{t['caption']}</p>
 </div>
 """, unsafe_allow_html=True)

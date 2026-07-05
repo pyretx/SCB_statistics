@@ -17,8 +17,20 @@ import base64
 # App logo mark (blue rounded square + white globe) as a data URI, so the sidebar
 # brand link can render the real logo image rather than a material glyph.
 _ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
-with open(os.path.join(_ASSETS, "logo_mark.svg"), "rb") as _lf:
-    LOGO_URI = "data:image/svg+xml;base64," + base64.b64encode(_lf.read()).decode("ascii")
+
+
+def _svg_uri(path: str) -> str:
+    with open(path, "rb") as f:
+        return "data:image/svg+xml;base64," + base64.b64encode(f.read()).decode("ascii")
+
+
+def flag_uri(code: str) -> str:
+    """Real country flag (assets/flags/<code>.svg) as a data URI — shared by the
+    country pages so the header can show the right flag."""
+    return _svg_uri(os.path.join(_ASSETS, "flags", f"{code}.svg"))
+
+
+LOGO_URI = _svg_uri(os.path.join(_ASSETS, "logo_mark.svg"))
 
 # ── Tokens (design-system.md §1) ─────────────────────────────────────────────
 ACCENT      = "#0A63A6"   # primary line / bar
@@ -81,9 +93,14 @@ SIDEBAR_CSS = """
      box-shadow:0 1px 3px rgba(16,21,31,.12) !important; }
   [data-testid="stSidebar"] [data-testid="stBaseButton-segmented_controlActive"]:hover {
      background:#fff !important; color:#0C1119 !important; }
+  /* Header flag next to the country H1 (object-fit:cover !important beats
+     Streamlit's global img rule, which would letterbox it). */
+  .se-hflag { width:44px !important; height:31px !important; object-fit:cover !important;
+    border-radius:6px; border:1px solid rgba(0,0,0,.10); display:block;
+    box-shadow:0 1px 3px rgba(0,0,0,.08); }
   /* Brand logo = the only sidebar page-link (click → Home). The material icon
      span becomes the real logo image (blue square + globe SVG); hide the glyph. */
-  [data-testid="stSidebar"] [data-testid="stPageLink"] a { padding:2px; gap:10px;
+  [data-testid="stSidebar"] [data-testid="stPageLink"] a { padding:2px; gap:13px;
     background:transparent !important; }
   [data-testid="stSidebar"] [data-testid="stPageLink"] a:hover { background:transparent !important; }
   [data-testid="stSidebar"] [data-testid="stPageLink"] span[data-testid="stIconMaterial"] {

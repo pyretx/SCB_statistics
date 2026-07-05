@@ -379,7 +379,7 @@ with hc1:
     </h1>
     <p style="margin:20px 0 0;font-size:17px;line-height:1.55;color:#5B6472;max-width:520px;">
       One clean interface over official government statistics - percentiles, breakdowns
-      and trends, standardised so you can compare occupations across countries.
+      and trends, standardised so you can compare occupations within and across countries.
     </p>
     <div style="display:flex;gap:0;margin-top:34px;flex-wrap:wrap;align-items:stretch;">
       <div style="padding-right:28px;">
