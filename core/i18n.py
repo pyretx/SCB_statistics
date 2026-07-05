@@ -42,8 +42,16 @@ UI: dict[str, dict[str, str]] = {
                           "occupation, sector, sex and year. Try “All sectors” or "
                           "adjust the selection."),
         "browser_search": "Search a code or name",
-        "browser_intro": "Browse the occupation classification. Click a group to expand it.",
+        "browser_intro": "Drill down the classification — pick a level and the next appears.",
         "browser_results": "results",
+        "browser_blank": "— select —",
+        "browser_pick": "Pick a level on the left to drill down.",
+        "browser_hierarchy": "Hierarchy",
+        "browser_leaf": "Detailed occupation — no sub-levels.",
+        "brlvl_1": "Major group (1-digit)",
+        "brlvl_2": "Sub-major group (2-digit)",
+        "brlvl_3": "Minor group (3-digit)",
+        "brlvl_4": "Unit group / occupation (4-digit)",
     },
     "NO": {
         "brand": "Salary Explorer",
@@ -71,8 +79,16 @@ UI: dict[str, dict[str, str]] = {
                           "yrke, sektor, kjønn og år. Prøv «Alle sektorer» eller "
                           "juster utvalget."),
         "browser_search": "Søk kode eller navn",
-        "browser_intro": "Bla gjennom yrkesklassifiseringen. Klikk en gruppe for å utvide.",
+        "browser_intro": "Bor deg ned i klassifiseringen — velg et nivå, så vises det neste.",
         "browser_results": "treff",
+        "browser_blank": "— velg —",
+        "browser_pick": "Velg et nivå til venstre for å bore ned.",
+        "browser_hierarchy": "Hierarki",
+        "browser_leaf": "Detaljert yrke — ingen undernivåer.",
+        "brlvl_1": "Yrkesfelt (1-siffer)",
+        "brlvl_2": "Yrkesområde (2-siffer)",
+        "brlvl_3": "Yrkesgruppe (3-siffer)",
+        "brlvl_4": "Yrke (4-siffer)",
     },
 }
 
