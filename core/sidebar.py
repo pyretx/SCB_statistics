@@ -70,26 +70,33 @@ def _group_select(cfg, k, lang, depth: int, codes: list, tree: dict) -> str | No
     return ordered[i - 1] if i > 0 else None
 
 
-def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
+def occ_label(name: str, code: str) -> str:
+    """Multiselect option text: name + code, e.g. 'Ambulance workers  (3258)'."""
+    return f"{name}  ({code})"
+
+
+def _occupation_picker(cfg, k, lang) -> tuple[tuple[str, ...], str]:
     """Sweden-style occupation section, but showing EVERY group level the
     classification has: 1. Major group → 2. Sub-group → 3. Minor group → … (each
     appears once its parent is picked) → an occupation search box → the final
-    numbered Occupation(s) multiselect. A flat classification skips the levels."""
+    numbered Occupation(s) multiselect. Returns (occ_codes, scope) where scope is
+    the deepest drilled-into group code ("" if none) — used to scope the
+    Leaderboard. A flat classification skips the levels."""
     prov = cfg.provider
     if not prov:
-        return ()
+        return (), ""
     leaves = prov.occupations(lang)          # {code: name}, detailed occupations
     if not leaves:
-        return ()
+        return (), ""
 
     pool = leaves                            # occupations offered in the multiselect
     n_levels = 0                             # number of group levels (for numbering)
+    scope = ""                               # deepest drilled-into group code
     if cfg.capabilities.has_occupation_hierarchy:
         tree = prov.occupation_tree(lang)
         roots, children = hierarchy.build(tree)
         leaf_len = max(len(c) for c in leaves)
         n_levels = len(hierarchy.group_lengths(tree, leaf_len))
-        chosen = None                        # deepest group code selected
         opts = sorted(c for c in roots if len(c) < leaf_len)
         depth = 0
         while opts and len(opts[0]) < leaf_len:
@@ -97,10 +104,10 @@ def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
             grp = _group_select(cfg, k, lang, depth, opts, tree)
             if grp is None:
                 break
-            chosen = grp
+            scope = grp
             opts = sorted(children.get(grp, []))
-        if chosen:
-            pool = {c: n for c, n in leaves.items() if c.startswith(chosen)}
+        if scope:
+            pool = {c: n for c, n in leaves.items() if c.startswith(scope)}
 
     # Free-text occupation search — overrides the drill-down, searching every
     # occupation by name or code (Sweden's "Search occupations…").
@@ -112,13 +119,13 @@ def _occupation_picker(cfg, k, lang) -> tuple[str, ...]:
         st.caption(i18n.t(cfg, "found_n", lang).format(n=len(pool)) if pool
                    else i18n.t(cfg, "no_match", lang))
 
-    occ_label = f"{n_levels + 1}. {i18n.t(cfg, 'occupations', lang)}" if n_levels \
+    label = f"{n_levels + 1}. {i18n.t(cfg, 'occupations', lang)}" if n_levels \
         else i18n.t(cfg, "occupations", lang)
-    name_to_code = {v: c for c, v in pool.items()}
+    opt_to_code = {occ_label(name, code): code for code, name in pool.items()}
     picked = st.multiselect(
-        occ_label, sorted(name_to_code), key=k("occ"),
+        label, sorted(opt_to_code), key=k("occ"),
         placeholder=i18n.t(cfg, "occ_placeholder", lang), max_selections=8)
-    return tuple(name_to_code[p] for p in picked)
+    return tuple(opt_to_code[p] for p in picked), scope
 
 
 def render_sidebar(cfg) -> dict:
@@ -133,7 +140,7 @@ def render_sidebar(cfg) -> dict:
         return f"{cfg.slug}_{name}"
 
     live = {"lang": "EN", "sector": (caps.sectors[0] if caps.sectors else ""),
-            "sex": "total", "years": (), "occ_codes": ()}
+            "sex": "total", "years": (), "occ_codes": (), "scope": ""}
 
     with st.sidebar:
         st.markdown(theme.SIDEBAR_CSS, unsafe_allow_html=True)
@@ -184,7 +191,7 @@ def render_sidebar(cfg) -> dict:
             else:
                 live["years"] = (y1,)
 
-        live["occ_codes"] = _occupation_picker(cfg, k, lang)
+        live["occ_codes"], live["scope"] = _occupation_picker(cfg, k, lang)
 
         if cfg.fetch_mode == "search":
             b1, b2 = st.columns(2)

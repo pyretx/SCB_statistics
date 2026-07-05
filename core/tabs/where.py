@@ -28,7 +28,7 @@ def render(cfg, stats, query):
     name_by = dict(zip(tot["occ_code"], tot["occ_name"]))
     if len(codes) > 1:
         code = st.selectbox(i18n.t(cfg, "calc_occ", lang, "Occupation"), codes,
-                            format_func=lambda c: name_by[c], key=k("wocc"))
+                            format_func=lambda c: f"{name_by[c]}  ({c})", key=k("wocc"))
     else:
         code = codes[0]
         st.markdown(f"**{name_by[code]}**")

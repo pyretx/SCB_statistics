@@ -41,11 +41,11 @@ def _use_occupation(cfg, code, name, query, vk):
     button on_click callback — i.e. BEFORE the next run instantiates the sidebar
     widgets — so it may safely write their keys (slug_occ / slug_grp*)."""
     slug = cfg.slug
-    st.session_state[f"{slug}_committed"] = {**query, "occ_codes": (code,)}
+    st.session_state[f"{slug}_committed"] = {**query, "occ_codes": (code,), "scope": ""}
     for gkey in [key for key in st.session_state if key.startswith(f"{slug}_grp")]:
         st.session_state.pop(gkey, None)        # clear the sidebar drill-down
     st.session_state.pop(f"{slug}_occsearch", None)
-    st.session_state[f"{slug}_occ"] = [name]     # reflect the pick in the multiselect
+    st.session_state[f"{slug}_occ"] = [f"{name}  ({code})"]   # reflect in the multiselect
     if vk:
         st.session_state.pop(vk, None)           # close the code-browser view
 

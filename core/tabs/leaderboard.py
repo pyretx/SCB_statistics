@@ -53,6 +53,19 @@ def render(cfg, stats, query):
     if lb is None or lb.empty:
         st.caption(i18n.t(cfg, "no_data_combo", lang))
         return
+    # Scope the ranking to the group drilled into in the sidebar (like Sweden):
+    # e.g. major group "2" → rank only occupations whose code starts with "2".
+    scope = query.get("scope", "")
+    if scope:
+        lb = lb[lb["occ_code"].str.startswith(scope)]
+    tree = cfg.provider.occupation_tree(lang) if cfg.provider else {}
+    scope_disp = (f"{scope} · {tree.get(scope, '')}".strip(" ·") if scope
+                  else i18n.t(cfg, "lead_all_occ", lang, "all occupations"))
+    st.caption(i18n.t(cfg, "lead_intro", lang,
+                      "Ranking {scope} — your picks are highlighted.").format(scope=scope_disp))
+    if lb.empty:
+        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        return
     lb = lb.sort_values(mkey, ascending=asc).reset_index(drop=True)
     lb["rank"] = lb.index + 1
 
