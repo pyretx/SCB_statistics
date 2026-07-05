@@ -116,25 +116,36 @@ def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,
     return theme.style_fig(fig, horizontal=True)
 
 
-def trend_line(trend: pd.DataFrame, cfg, *, title: str | None = None):
-    """Mean salary over years, one line per occupation (series). Expects the
-    normalized trend frame (year, series, value_nominal)."""
-    if trend is None or trend.empty:
+def trend_lines(df: pd.DataFrame, cfg, *, value_col: str = "value", y_title: str,
+                unit: str = "", inflation=None, inflation_label: str = "Inflation",
+                title: str | None = None):
+    """One line+markers per occupation (series) over years — the shared trend
+    chart. ``df`` has columns [year, series, <value_col>]. Optionally overlays a
+    dashed inflation line (``inflation`` = list of (year, pct)), as on the Swedish
+    growth-vs-inflation view."""
+    if df is None or df.empty:
         return None
     fig = go.Figure()
-    for i, (series, g) in enumerate(trend.groupby("series", sort=False)):
-        g = g.dropna(subset=["value_nominal"]).sort_values("year")
+    for i, (series, g) in enumerate(df.groupby("series", sort=False)):
+        g = g.dropna(subset=[value_col]).sort_values("year")
         if g.empty:
             continue
         col = theme.SERIES[i % len(theme.SERIES)]
         fig.add_trace(go.Scatter(
-            x=g["year"], y=g["value_nominal"], mode="lines+markers", name=str(series),
+            x=g["year"], y=g[value_col], mode="lines+markers", name=str(series),
             line=dict(color=col, width=2.5), marker=theme.series_marker(col),
-            hovertemplate="%{x}<br>%{y:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
+            hovertemplate="%{x}<br>%{y:,.0f} " + unit + "<extra></extra>"))
+    if inflation:
+        xs = [y for y, _ in inflation]
+        ys = [p for _, p in inflation]
+        fig.add_trace(go.Scatter(
+            x=xs, y=ys, mode="lines+markers", name=inflation_label,
+            line=dict(color=theme.MEAN, width=2, dash="dash"), marker=dict(size=6),
+            hovertemplate="%{x}<br>%{y:+.1f}%<extra></extra>"))
     if not fig.data:
         return None
     fig.update_layout(height=400, margin=dict(l=8, r=8, t=40 if title else 8, b=8),
-                      title=title, xaxis_title=None,
-                      yaxis_title=f"{cfg.currency_suffix}/mo",
+                      title=title, xaxis_title=None, yaxis_title=y_title,
+                      xaxis=dict(type="category"),
                       legend=dict(orientation="h", y=1.02, yanchor="bottom"))
     return theme.style_fig(fig)

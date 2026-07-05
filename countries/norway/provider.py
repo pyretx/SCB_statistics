@@ -22,6 +22,7 @@ from core import model
 from core.provider import CountryProvider
 
 TABLE_URL = "https://data.ssb.no/api/v0/en/table/11418"
+CPI_URL = "https://data.ssb.no/api/v0/en/table/03013"   # Consumer Price Index (2015=100)
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _LABELS_FILE = os.path.join(_ROOT, "styrk_labels.json")
 
@@ -150,6 +151,35 @@ def _fetch_trend(sector: str, occ_codes: tuple[str, ...], sex: str,
     return pd.DataFrame(rows, columns=model.TREND_COLS)
 
 
+@st.cache_data(show_spinner=False, persist="disk")
+def _fetch_cpi_annual(years: tuple[int, ...]) -> dict:
+    """Annual-average all-item CPI (2015=100) → {year: index}, from SSB table
+    03013, averaged over the 12 months of each year (mirrors the Swedish page)."""
+    if not years:
+        return {}
+    yrs = sorted(set(int(y) for y in years))
+    months = [f"{y}M{m:02d}" for y in range(yrs[0], yrs[-1] + 1) for m in range(1, 13)]
+    query = {"query": [
+        {"code": "Konsumgrp", "selection": {"filter": "item", "values": ["TOTAL"]}},
+        {"code": "ContentsCode", "selection": {"filter": "item", "values": ["KpiIndMnd"]}},
+        {"code": "Tid", "selection": {"filter": "item", "values": months}},
+    ], "response": {"format": "json-stat2"}}
+    try:
+        r = requests.post(CPI_URL, json=query, timeout=120)
+        r.raise_for_status()
+        ds = r.json()
+    except Exception:
+        return {}
+    idx = ds["dimension"]["Tid"]["category"]["index"]   # only Tid varies → flat index
+    values = ds["value"]
+    by_year: dict[int, list] = {}
+    for tid, i in idx.items():
+        v = values[i]
+        if v is not None:
+            by_year.setdefault(int(tid[:4]), []).append(v)
+    return {y: sum(vs) / len(vs) for y, vs in by_year.items() if vs}
+
+
 class NorwayProvider(CountryProvider):
     def occupations(self, lang: str = "EN") -> dict[str, str]:
         return _leaves(lang)
@@ -166,3 +196,6 @@ class NorwayProvider(CountryProvider):
     def trend(self, *, sector="all", occ_codes=(), sex="total", years=(),
               lang="EN") -> pd.DataFrame:
         return _fetch_trend(sector, tuple(occ_codes), sex, tuple(years), lang)
+
+    def cpi_annual(self, years=()) -> dict:
+        return _fetch_cpi_annual(tuple(years))

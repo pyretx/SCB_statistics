@@ -52,3 +52,8 @@ class CountryProvider:
               sex: str = "total", years: tuple[int, ...] = (),
               lang: str = "EN") -> pd.DataFrame:
         return model.empty_trend()
+
+    # annual-average national CPI index → {year: index} (any base). Powers the
+    # trend tab's inflation / real-salary views. Empty when the country has no CPI.
+    def cpi_annual(self, years: tuple[int, ...] = ()) -> dict:
+        return {}
