@@ -6,18 +6,23 @@ import time, and to avoid import-order coupling.
 """
 from __future__ import annotations
 
+import importlib
+
 from .access import can_open
+
+# Framework-driven countries, in nav order. Add a country by dropping its module
+# under countries/<name>/ (config.py exposing CONFIG) and listing it here.
+# (Legacy Sweden/France pages are still registered directly in app.py — Phase 5.)
+_COUNTRY_MODULES = ["demo", "norway"]
 
 
 def all_countries() -> list:
-    """Every framework-driven country. (Legacy Sweden/France pages are still
-    registered directly in app.py and are NOT in here yet — Phase 3/5.)"""
     out = []
-    try:
-        from countries.demo.config import CONFIG as DEMO
-        out.append(DEMO)
-    except Exception:
-        pass
+    for name in _COUNTRY_MODULES:
+        try:
+            out.append(importlib.import_module(f"countries.{name}.config").CONFIG)
+        except Exception:
+            pass
     return out
 
 

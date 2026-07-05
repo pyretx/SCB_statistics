@@ -1,0 +1,103 @@
+"""Norway data provider — SSB Statbank table 11418 (PxWeb / json-stat2).
+
+Verified against the live API 2026-07: monthly earnings (NOK) with measuring
+methods Average / Median / Lower quartile / Upper quartile / count, by STYRK-08
+occupation × sector × sex × working-hours × year (2015→). No P10/P90 (quartiles
+only), so has_occupation_percentiles is False in the config.
+
+Occupation LABELS come from the bundled styrk_labels.json (build_styrk_labels.py)
+so the menu never waits on SSB; the salary VALUES are fetched per query (cached
+on disk, never auto-refreshed — same discipline as france_data.py).
+"""
+from __future__ import annotations
+
+import json
+import os
+
+import pandas as pd
+import requests
+import streamlit as st
+
+from core import model
+from core.provider import CountryProvider
+
+TABLE_URL = "https://data.ssb.no/api/v0/en/table/11418"
+_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+_LABELS_FILE = os.path.join(_ROOT, "styrk_labels.json")
+
+SECTOR_CODE = {"all": "ALLE", "private": "A+B+D+E", "local": "6500", "central": "6100"}
+SEX_CODE = {"total": "0", "women": "2", "men": "1"}
+# MaaleMetode codes → normalized column
+_METHOD = {"mean": "02", "median": "01", "p25": "051", "p75": "061", "count": "10"}
+
+
+@st.cache_data(show_spinner=False)
+def _labels() -> dict[str, str]:
+    try:
+        with open(_LABELS_FILE, encoding="utf-8") as f:
+            return json.load(f).get("labels", {})
+    except Exception:
+        return {}
+
+
+@st.cache_data(show_spinner=False, persist="disk")
+def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int) -> pd.DataFrame:
+    """One SSB query → normalized OccupationStat rows (dimension='total')."""
+    if not occ_codes:
+        return model.empty_occ_stats()
+    query = {"query": [
+        {"code": "MaaleMetode", "selection": {"filter": "item",
+            "values": list(_METHOD.values())}},
+        {"code": "Yrke", "selection": {"filter": "item", "values": list(occ_codes)}},
+        {"code": "Sektor", "selection": {"filter": "item",
+            "values": [SECTOR_CODE.get(sector, "ALLE")]}},
+        {"code": "Kjonn", "selection": {"filter": "item", "values": [SEX_CODE.get(sex, "0")]}},
+        {"code": "AvtaltVanlig", "selection": {"filter": "item", "values": ["0"]}},
+        {"code": "ContentsCode", "selection": {"filter": "item", "values": ["Manedslonn"]}},
+        {"code": "Tid", "selection": {"filter": "item", "values": [str(year)]}},
+    ], "response": {"format": "json-stat2"}}
+    r = requests.post(TABLE_URL, json=query, timeout=120)
+    r.raise_for_status()
+    ds = r.json()
+    ids, sizes, values = ds["id"], ds["size"], ds["value"]
+    dims = ds["dimension"]
+    strides = [1] * len(sizes)
+    for i in range(len(sizes) - 2, -1, -1):
+        strides[i] = strides[i + 1] * sizes[i + 1]
+
+    def val(method: str, occ: str):
+        sel = {"MaaleMetode": method, "Yrke": occ, "Sektor": SECTOR_CODE.get(sector, "ALLE"),
+               "Kjonn": SEX_CODE.get(sex, "0"), "AvtaltVanlig": "0",
+               "ContentsCode": "Manedslonn", "Tid": str(year)}
+        try:
+            flat = sum(dims[d]["category"]["index"][sel[d]] * strides[ids.index(d)] for d in ids)
+        except KeyError:
+            return None
+        return values[flat] if 0 <= flat < len(values) else None
+
+    labels = _labels()
+    rows = []
+    for occ in occ_codes:
+        if occ not in dims["Yrke"]["category"]["index"]:
+            continue
+        rows.append({
+            "country": "norway", "year": year, "occ_code": occ,
+            "occ_name": labels.get(occ, dims["Yrke"]["category"]["label"].get(occ, occ)),
+            "occ_group": occ[:2], "dimension": "total", "dim_value": "total",
+            "currency": "NOK", "period": "monthly",
+            "mean": val("02", occ), "median": val("01", occ),
+            "p10": None, "p25": val("051", occ), "p75": val("061", occ), "p90": None,
+            "count": val("10", occ),
+            "source_name": "Statistics Norway (SSB)", "source_url": TABLE_URL, "notes": "",
+        })
+    return pd.DataFrame(rows, columns=model.OCC_STAT_COLS)
+
+
+class NorwayProvider(CountryProvider):
+    def occupations(self, lang: str = "EN") -> dict[str, str]:
+        return dict(_labels())
+
+    def occupation_stats(self, *, sector="all", occ_codes=(), sex="total",
+                         years=(), dimension="total", year=None) -> pd.DataFrame:
+        yr = int(year or (years[-1] if years else 2024))
+        return _fetch(sector, tuple(occ_codes), sex, yr)
