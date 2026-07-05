@@ -13,6 +13,7 @@ so there are deliberately no "Locked" badges or gated-access banners here,
 unlike the original mockup export (which defaults to a gated variant).
 """
 import os
+import base64
 
 import requests
 import streamlit as st
@@ -21,8 +22,18 @@ import auth
 
 _ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 _GLOBE  = os.path.join(_ASSETS, "logo.png")
+_FLAGS  = os.path.join(_ASSETS, "flags")
 
 BLUE = "#0A63A6"
+
+
+@st.cache_data(show_spinner=False)
+def flag_uri(code: str) -> str:
+    """Base64-inline a country flag SVG (assets/flags/<code>.svg) as a data URI,
+    so real high-quality flags can be dropped straight into card/preview HTML."""
+    with open(os.path.join(_FLAGS, f"{code}.svg"), "rb") as f:
+        b64 = base64.b64encode(f.read()).decode("ascii")
+    return f"data:image/svg+xml;base64,{b64}"
 
 # Country-card CTAs are real <a href="?country=..."> links inside HTML (so the
 # whole card can be one styled block with a scoped :hover, per design-system §6).
@@ -35,6 +46,7 @@ if st.query_params.get("country") in _ROUTES:
 COUNTRIES = [
     {
         "num": "01", "name": "Sweden", "native": "Sverige", "source": "SCB · official",
+        "iso": "se",
         "flag_css": ("background-color:#006AA7;"
                      "background-image:linear-gradient(90deg,transparent 26%,#FECC00 26% 40%,transparent 40%),"
                      "linear-gradient(0deg,transparent 40%,#FECC00 40% 60%,transparent 60%);"),
@@ -47,6 +59,7 @@ COUNTRIES = [
     },
     {
         "num": "02", "name": "France", "native": "République française", "source": "INSEE · official",
+        "iso": "fr",
         "flag_css": ("background-image:linear-gradient(90deg,#0055A4 33.33%,#ffffff 33.33% 66.66%,"
                      "#EF4135 66.66%);"),
         "points": [
@@ -58,7 +71,7 @@ COUNTRIES = [
     },
     {
         "num": "03", "name": "United States", "native": "United States",
-        "source": "BLS Public Data API · planned",
+        "source": "BLS Public Data API · planned", "iso": "us",
         "flag_css": ("background-color:#B22234;"
                      "background-image:linear-gradient(#3C3B6E,#3C3B6E),"
                      "repeating-linear-gradient(180deg,#B22234 0 7.7%,#ffffff 7.7% 15.4%);"
@@ -118,40 +131,47 @@ st.markdown("""
      of an <a href> that reloads the app. Streamlit tags keyed containers with
      .st-key-cc_… — style that to reproduce the card look + scoped hover. */
   [class*="st-key-cc_"] { background:#fff; border:1px solid #E7E9ED !important;
-     border-radius:16px !important; padding:22px 22px 18px !important; height:100%;
+     border-radius:16px !important; padding:22px 22px 18px !important;
+     display:flex; flex-direction:column; flex:1 0 auto; gap:0;
      transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
   [class*="st-key-cc_"]:hover { transform: translateY(-3px);
      box-shadow: 0 18px 40px -24px rgba(16,21,31,.30); border-color:#D3D8DF !important; }
-  /* Equal-height tiles: stretch each column to the tallest in the row, then make
-     EVERY wrapper between the column and the card full-height so a shorter card
-     (e.g. the US tile) stretches up to match. The source line is pinned to the
-     foot (margin-top:auto), so the slack lands after the last bullet and all
-     tiles share the same top and bottom edge. */
-  [data-testid="stColumn"]:has([class*="st-key-cc_"]) { align-self: stretch; }
+  /* Equal-height tiles: a flex chain from the column down to the card, so a short
+     tile (US) grows to match the tallest in the row. (Plain height:100% collapses
+     here — the column's height is content-driven, so it's circular.) The source
+     line is pinned to the foot, so the slack lands after the last bullet and every
+     tile shares the same top and bottom edge. */
+  [data-testid="stColumn"]:has([class*="st-key-cc_"]) {
+     align-self:stretch; display:flex; flex-direction:column; }
   [data-testid="stColumn"]:has([class*="st-key-cc_"]) > [data-testid="stVerticalBlock"],
-  [data-testid="stLayoutWrapper"]:has(> [class*="st-key-cc_"]) { height:100% !important; }
-  [class*="st-key-cc_"] { gap:0; }
-  /* Full-width CTA button, directly under the card header (mockup). Force the
-     element container + page-link to full width (Streamlit sizes to content),
-     and add space before the bullets. */
+  [data-testid="stLayoutWrapper"]:has(> [class*="st-key-cc_"]) {
+     display:flex; flex-direction:column; flex:1 0 auto; }
+  /* Full-width CTA button under the header — space above (off the header) + below
+     (before the bullets), and a slightly reduced height. */
   [class*="st-key-cc_"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]),
   [class*="st-key-cc_"] [data-testid="stElementContainer"]:has(.se-cta-off) {
-     width:100% !important; margin-bottom:16px; }
+     width:100% !important; margin:8px 0 16px; }
   [class*="st-key-cc_"] [data-testid="stPageLink"] { width:100%; }
   [class*="st-key-cc_"] [data-testid="stPageLink"] a { width:100%; background:#0A63A6;
-     border-radius:9px; padding:10px 14px; justify-content:center;
+     border-radius:9px; padding:8px 14px; justify-content:center;
      box-shadow:0 2px 8px rgba(10,99,166,.24); transition: background .15s ease; }
   [class*="st-key-cc_"] [data-testid="stPageLink"] a:hover { background:#0B72C2; }
   [class*="st-key-cc_"] [data-testid="stPageLink"] a p,
   [class*="st-key-cc_"] [data-testid="stPageLink"] a span { color:#fff !important;
      font-weight:600; font-size:14px; }
+  /* Bullets: breathing room before the pinned source line (never let the rule
+     touch the last bullet). */
+  [class*="st-key-cc_"] [data-testid="stElementContainer"]:has(ul) { margin-bottom:12px; }
   /* Source line pinned to the card foot with a rule. */
   [class*="st-key-cc_"] [data-testid="stElementContainer"]:has(.se-source) { margin-top:auto; }
   .se-source { padding-top:14px; border-top:1px solid #EEF0F3;
                font-family:'JetBrains Mono',monospace; font-size:11px; color:#98A0AC; }
-  /* Fixed-size flag swatch so it never stretches with the card width. */
-  .se-flag { width: 46px; height: 33px; border-radius: 7px; flex: none; overflow: hidden;
-             border: 1px solid rgba(0,0,0,.08); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  /* Real flag image — fixed size; object-fit:cover !important so it FILLS the
+     swatch (Streamlit's global img rule forces scale-down, which letterboxes the
+     wider flags, e.g. the US one). */
+  .se-flag { width:46px !important; height:33px !important; border-radius:7px; flex:none;
+             object-fit:cover !important; display:block; border:1px solid rgba(0,0,0,.08);
+             box-shadow:0 1px 3px rgba(0,0,0,.08); }
   .se-cta-off { display:flex; width:100%; align-items:center; justify-content:center;
                 background:#F4F5F7; color:#8A919D; font-weight:600; font-size:14px; padding:10px;
                 border-radius:9px; border:1px solid #E7E9ED; white-space:nowrap; }
@@ -401,9 +421,8 @@ with hc2:
           <div style="font-weight:700;font-size:15px;margin-top:5px;">Software developers</div>
           <div style="font-size:12px;color:#8A919D;margin-top:2px;">Sweden · SCB 2025 · monthly, SEK</div>
         </div>
-        <div style="width:34px;height:24px;border-radius:5px;border:1px solid rgba(0,0,0,.08);
-                    background:#006AA7;background-image:linear-gradient(90deg,transparent 26%,#FECC00 26% 40%,transparent 40%),
-                    linear-gradient(0deg,transparent 40%,#FECC00 40% 60%,transparent 60%);"></div>
+        <img src="{flag_uri('se')}" alt="Sweden flag" style="width:34px;height:24px;
+             object-fit:cover !important;border-radius:5px;border:1px solid rgba(0,0,0,.08);">
       </div>
       {_bar_html}
       <div style="margin-top:14px;padding-top:13px;border-top:1px solid #EEF0F3;
@@ -442,7 +461,7 @@ for _col, c in zip(_cols, COUNTRIES):
             f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in c["points"])
         header = f"""
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-          <div class="se-flag" style="{c['flag_css']}"></div>
+          <img class="se-flag" src="{flag_uri(c['iso'])}" alt="{c['name']} flag">
           <div style="flex:1;min-width:0;">
             <div style="white-space:nowrap;">
               <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{c['num']}</span>
