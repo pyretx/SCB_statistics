@@ -61,7 +61,7 @@ def _group_select(cfg, k, lang, key, label_key, none_key, groups: dict) -> str |
     value re-translates on a language switch). Returns the selected group code, or
     None for the blank/"all" option."""
     none_lbl = i18n.t(cfg, none_key, lang)
-    ordered = sorted(groups, key=lambda c: groups[c].lower())
+    ordered = sorted(groups)             # by code (0,1,2,…9), not by name
     labels = [none_lbl] + [f"{c} · {groups[c]}" for c in ordered]
     chosen = st.selectbox(i18n.t(cfg, label_key, lang), labels, key=k(key))
     i = labels.index(chosen)

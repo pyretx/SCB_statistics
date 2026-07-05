@@ -37,6 +37,8 @@ def render_country(cfg):
     access.require_access(cfg)            # …then gate the main area (stops if denied)
     lang = query.get("lang", "EN")
 
+    _header(cfg, lang)                   # header ALWAYS first, at the top of the page
+
     view = states.view_mount()           # exclusive-view mount (guides/browsers)
     vk = f"{cfg.slug}_view"
     if st.session_state.get(vk) in ("guide", "browser"):
@@ -44,7 +46,6 @@ def render_country(cfg):
             panels.render(cfg, st.session_state[vk], lang, vk)
         return
 
-    _header(cfg, lang)
     occ_codes = tuple(query.get("occ_codes", ()))
     if not occ_codes:
         # Default start page: the prompt + the code browser inline (Sweden-style),
