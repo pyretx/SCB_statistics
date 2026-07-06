@@ -556,94 +556,79 @@ st.write("")
 # st.page_link. That navigates *client-side* (no full-page reload), which keeps
 # st.session_state — so an admin who signed in here stays signed in on Sweden /
 # France. (A raw <a href> reloads the app and silently drops the session.)
-_cols = st.columns(len(COUNTRIES), gap="medium")
-for _col, c in zip(_cols, COUNTRIES):
-    with _col, st.container(border=True, key=f"cc_{c['num']}"):
-        _bt, _bc, _bbg = c["badge_text"], c["badge_color"], c["badge_bg"]  # status pill
-        badge = (f'<div style="background:{_bbg};color:{_bc};font-size:11px;font-weight:600;'
-                 f'padding:4px 10px;border-radius:20px;flex:none;">{_bt}</div>')
-        bullets = "".join(
-            '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
-            '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
-            f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in c["points"])
+def _country_tile(col, *, key, iso, num, name, native, source, points, badges, cta):
+    """Render one country card. `badges` = list of (text, fg, bg); `cta` has a
+    `label` and, when openable, a `page` (real client-side page-link) — else it
+    renders the greyed Notify/Locked chip."""
+    with col, st.container(border=True, key=key):
+        badge_html = "".join(
+            f'<div style="background:{bg};color:{fg};font-size:11px;font-weight:600;'
+            f'padding:4px 10px;border-radius:20px;flex:none;">{txt}</div>'
+            for txt, fg, bg in badges)
         header = f"""
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-          <img class="se-flag" src="{flag_uri(c['iso'])}" alt="{c['name']} flag">
+          <img class="se-flag" src="{flag_uri(iso)}" alt="{name} flag">
           <div style="flex:1;min-width:0;">
             <div style="white-space:nowrap;">
-              <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{c['num']}</span>
-              <span style="font-weight:700;font-size:17px;">{c['name']}</span></div>
-            <div style="font-size:12px;color:#8A919D;margin-top:1px;">{c['native']}</div>
+              <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{num}</span>
+              <span style="font-weight:700;font-size:17px;">{name}</span></div>
+            <div style="font-size:12px;color:#8A919D;margin-top:1px;">{native}</div>
           </div>
-          {badge}
+          <div style="display:flex;gap:6px;flex:none;">{badge_html}</div>
         </div>"""
         st.markdown("".join(l.strip() for l in header.splitlines()), unsafe_allow_html=True)
-        # Full-width CTA directly under the header (mockup layout).
-        if c["live"]:
-            st.page_link(c["page"], label=C["countries"]["open_cta"].format(name=c["name"]))
+        if cta.get("page"):
+            st.page_link(cta["page"], label=cta["label"])
         else:
-            st.markdown(f'<div class="se-cta-off">{C["countries"]["notify_cta"]}</div>',
-                        unsafe_allow_html=True)
-        # Bullets, then the source line pinned to the card foot.
+            st.markdown(f'<div class="se-cta-off">{cta["label"]}</div>', unsafe_allow_html=True)
+        blist = "".join(
+            '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
+            '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
+            f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in points)
         st.markdown(
             '<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">'
-            + bullets + '</ul>', unsafe_allow_html=True)
-        st.markdown(f'<div class="se-source">{c["source"]}</div>', unsafe_allow_html=True)
+            + blist + '</ul>', unsafe_allow_html=True)
+        st.markdown(f'<div class="se-source">{source}</div>', unsafe_allow_html=True)
 
-# ── Gated framework countries (e.g. Norway beta) — a new row below the three,
-# furthest-left first. Shown to everyone as Locked · Beta; only openable by an
-# admin or a user explicitly granted the country (access-gated, client-side link
-# so the login is preserved). ──────────────────────────────────────────────────
+
+# One ordered list of ALL country tiles — released markets (content/home.toml)
+# first, then gated framework betas (registry + editable [countries.gated.<slug>]).
+# They share a single 3-per-row grid so every tile is the same size and the rows
+# fill left-to-right (Sweden · France · Norway / United States …).
+_tiles = []
+for c in COUNTRIES:
+    _tiles.append(dict(
+        key=f"cc_{c['num']}", iso=c["iso"], num=c["num"], name=c["name"],
+        native=c["native"], source=c["source"], points=c["points"],
+        badges=[(c["badge_text"], c["badge_color"], c["badge_bg"])],
+        cta=({"page": c["page"], "label": C["countries"]["open_cta"].format(name=c["name"])}
+             if c["live"] else {"label": C["countries"]["notify_cta"]})))
+
 _fw = [c for c in (_registry.all_countries() if _registry else [])
        if getattr(c, "landing", False)]
-if _fw:
-    st.write("")
-    _fcols = st.columns(3, gap="medium")     # empty slots reserved for future betas
-    # Tile TEXT comes from content/home.toml → [countries.gated.<slug>] (editable),
-    # falling back to the country's own config where a field is omitted.
-    _gated = C["countries"].get("gated", {})
-    for _i, (_fcol, c) in enumerate(zip(_fcols, _fw)):
-        g = _gated.get(c.slug, {})
-        _name = g.get("name", c.name)
-        _native = g.get("native", c.native)
-        _num = g.get("num", f"{4 + _i:02d}")
-        _points = g.get("points") or list(c.bullets)
-        _badge_txt = g.get("badge", c.L("badge", "Beta"))
-        _source = g.get("source", c.L("source_short", c.source_name))
-        with _fcol, st.container(border=True, key=f"cc_fw_{c.slug}"):
-            _unlocked = bool(_access and _access.can_open(c))
-            _badges = (f'<div style="background:rgba(178,106,0,.13);color:#B26A00;font-size:11px;'
-                       f'font-weight:600;padding:4px 10px;border-radius:20px;flex:none;">'
-                       f'{_badge_txt}</div>')
-            if not _unlocked:
-                _badges += ('<div style="background:#F1F3F6;color:#8A919D;font-size:11px;'
-                            'font-weight:600;padding:4px 9px;border-radius:20px;flex:none;">🔒 Locked</div>')
-            _blist = "".join(
-                '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
-                '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
-                f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in _points)
-            _hdr = f"""
-            <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-              <img class="se-flag" src="{flag_uri(c.iso)}" alt="{_name} flag">
-              <div style="flex:1;min-width:0;">
-                <div style="white-space:nowrap;">
-                  <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{_num}</span>
-                  <span style="font-weight:700;font-size:17px;">{_name}</span></div>
-                <div style="font-size:12px;color:#8A919D;margin-top:1px;">{_native}</div>
-              </div>
-              <div style="display:flex;gap:6px;flex:none;">{_badges}</div>
-            </div>"""
-            st.markdown("".join(l.strip() for l in _hdr.splitlines()), unsafe_allow_html=True)
-            if _unlocked:
-                st.page_link(f"countries/{c.slug}/page.py",
-                             label=C["countries"]["open_cta"].format(name=_name))
-            else:
-                st.markdown(f'<div class="se-cta-off">{C["countries"]["locked_cta"]}</div>',
-                            unsafe_allow_html=True)
-            st.markdown(
-                '<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">'
-                + _blist + '</ul>', unsafe_allow_html=True)
-            st.markdown(f'<div class="se-source">{_source}</div>', unsafe_allow_html=True)
+_gated = C["countries"].get("gated", {})
+for _i, c in enumerate(_fw):
+    g = _gated.get(c.slug, {})
+    _name = g.get("name", c.name)
+    _unlocked = bool(_access and _access.can_open(c))
+    _badges = [(g.get("badge", c.L("badge", "Beta")), "#B26A00", "rgba(178,106,0,.13)")]
+    if not _unlocked:
+        _badges.append(("🔒 Locked", "#8A919D", "#F1F3F6"))
+    _tiles.append(dict(
+        key=f"cc_fw_{c.slug}", iso=c.iso, num=g.get("num", f"{3 + _i:02d}"),
+        name=_name, native=g.get("native", c.native),
+        source=g.get("source", c.L("source_short", c.source_name)),
+        points=g.get("points") or list(c.bullets), badges=_badges,
+        cta=({"page": f"countries/{c.slug}/page.py",
+              "label": C["countries"]["open_cta"].format(name=_name)}
+             if _unlocked else {"label": C["countries"]["locked_cta"]})))
+
+# Render 3 per row (each row is its own st.columns so the equal-height CSS applies
+# within the row; a short final row keeps 1/3-width tiles, no stretching).
+for _i in range(0, len(_tiles), 3):
+    _cols = st.columns(3, gap="medium")
+    for _col, _t in zip(_cols, _tiles[_i:_i + 3]):
+        _country_tile(_col, **_t)
 
 st.write("")
 st.divider()

@@ -116,7 +116,7 @@ badge_bg     = "rgba(27,138,90,.12)"
 # open or "🔒 Locked" is decided by the app (admin / granted users only). name,
 # native and source fall back to the country's own config if left out here.
 [countries.gated.norway]
-num     = "04"
+num     = "03"
 name    = "Norway"
 native  = "Norge"
 source  = "SSB · official"
@@ -128,7 +128,7 @@ points  = [
 ]
 
 [countries.gated.us]
-num     = "05"
+num     = "04"
 name    = "United States"
 native  = "United States"
 source  = "BLS OEWS · official"
