@@ -187,9 +187,13 @@ def list_users() -> list[dict]:
     out = []
     for u in users:
         meta = u.app_metadata or {}
+        umeta = getattr(u, "user_metadata", None) or {}
+        name = (umeta.get("full_name") or umeta.get("name")
+                or umeta.get("display_name") or "")
         out.append({
             "id":    u.id,
             "email": u.email,
+            "name":  name,
             "role":  meta.get("role", "standard"),
             "countries": _countries_of(meta),
         })
@@ -207,19 +211,22 @@ def _set_app_metadata(user_id: str, **changes):
     client.auth.admin.update_user_by_id(user_id, {"app_metadata": meta})
 
 
-def create_user(email: str, password: str, role: str, countries=None):
-    """Create an auto-confirmed user with the given role + country access.
-    Defaults to the DEFAULT_COUNTRIES set. Raises on failure."""
+def create_user(email: str, password: str, role: str, countries=None, name: str = ""):
+    """Create an auto-confirmed user with the given role + country access (+ an
+    optional display name). Defaults to the DEFAULT_COUNTRIES set. Raises on failure."""
     if role not in ROLES:
         raise ValueError(f"role must be one of {ROLES}")
-    _client(service=True).auth.admin.create_user({
+    payload = {
         "email": email,
         "password": password,
         "email_confirm": True,
         "app_metadata": {"role": role,
                          "countries": list(countries) if countries is not None
                          else list(DEFAULT_COUNTRIES)},
-    })
+    }
+    if name:
+        payload["user_metadata"] = {"full_name": name}
+    _client(service=True).auth.admin.create_user(payload)
 
 
 def set_role(user_id: str, role: str):

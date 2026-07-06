@@ -13,8 +13,13 @@ _u = st.session_state.get("auth_user")
 _role = (_u or {}).get("role", "")
 
 # ── Header ───────────────────────────────────────────────────────────────────
-hl, hr = st.columns([3, 1], vertical_alignment="center")
-with hl:
+# Top spacer so the right-aligned back link clears Streamlit's top-right toolbar
+# (Deploy / menu), which otherwise clips it.
+st.markdown("<div style='height:2.2rem'></div>", unsafe_allow_html=True)
+_bl, _br = st.columns([3, 1], vertical_alignment="center")
+with _br:
+    st.page_link("landing.py", label="Back to home", icon=":material/arrow_back:")
+with _bl:
     st.markdown(
         "<div style='display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;'>"
         "<span style='font-size:26px;font-weight:800;letter-spacing:-.02em;color:#0C1119;'>"
@@ -22,8 +27,6 @@ with hl:
         "<span style='font-family:\"JetBrains Mono\",monospace;font-size:11px;letter-spacing:.12em;"
         "text-transform:uppercase;color:#8A919D;'>Salary Explorer · control room</span></div>",
         unsafe_allow_html=True)
-with hr:
-    st.page_link("landing.py", label="Back to home", icon=":material/arrow_back:")
 
 st.divider()
 

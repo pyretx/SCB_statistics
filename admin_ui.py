@@ -8,11 +8,42 @@ Sections: Overview · Data sources · Users.
 """
 from __future__ import annotations
 
+import gzip
+import json
+import os
+
 import streamlit as st
 
 import auth
 
 _ADMIN_ROLES = ("admin", "master")
+_ROOT = os.path.dirname(os.path.abspath(__file__))   # repo root (admin_ui.py lives here)
+
+
+def _file_meta(name: str) -> dict:
+    """Read a repo-root data file (plain or .gz JSON) → {exists, size, data}.
+    Lets the admin panel report a data source's freshness without importing the
+    legacy page modules (which would execute their whole page script)."""
+    p = os.path.join(_ROOT, name)
+    if not os.path.exists(p):
+        return {"exists": False, "size": 0, "data": None}
+    out = {"exists": True, "size": os.path.getsize(p), "data": None}
+    try:
+        opener = gzip.open if name.endswith(".gz") else open
+        with opener(p, "rt", encoding="utf-8") as f:
+            out["data"] = json.load(f)
+    except Exception:
+        pass
+    return out
+
+
+def _norway_latest_year():
+    try:
+        from core import registry
+        yr = getattr(registry.get("norway").capabilities, "year_range", None)
+        return yr[1] if yr else None
+    except Exception:
+        return None
 
 
 # ── small helpers ────────────────────────────────────────────────────────────
@@ -50,48 +81,31 @@ def _invalidate_users():
 
 # ── Section: Overview ────────────────────────────────────────────────────────
 def overview_section():
-    from countries.us import build as usbuild
-
     st.subheader("Overview")
     users, uerr = _load_users()
     n_users = len(users) if users is not None else None
     n_admins = sum(1 for u in users if u["role"] in _ADMIN_ROLES) if users else None
 
-    info = usbuild.bundled_info()
+    # Released markets (Sweden, France) + framework countries (excluding the demo).
+    links = [("Sweden", "scb_salaries.py"), ("France", "france.py")]
     try:
         from core import registry
-        n_countries = len([c for c in registry.all_countries() if c.slug != "demo"]) + 2  # + SE/FR
+        for c in registry.all_countries():
+            if c.slug != "demo":
+                links.append((c.name, f"countries/{c.slug}/page.py"))
     except Exception:
-        n_countries = "—"
+        pass
 
-    m1, m2, m3 = st.columns(3)
+    m1, m2 = st.columns(2)
     m1.metric("Registered users", n_users if n_users is not None else "—",
               help=(f"{n_admins} admin / master" if n_admins is not None else uerr))
-    m2.metric("Countries", n_countries, help="Framework + legacy Sweden/France")
-    m3.metric("US OEWS data", f"May {info.get('year', '—')}",
-              help=f"built {info.get('built_at', '—')}")
-
-    # Data-freshness heads-up (uses the last auto-scan result if present)
-    latest = st.session_state.get("_us_latest")
-    if latest and info.get("year") and latest > info["year"]:
-        st.warning(f"🆕 A newer US release (**May {latest}**) is available. "
-                   "Refresh it under **Data sources**.")
+    m2.metric("Countries", len(links), help="Released markets + framework countries")
 
     st.markdown("#### Open a country")
     st.caption("Jump straight into any country page (including admin-only previews).")
-    try:
-        from core import registry
-        vis = registry.visible_for_current_user()
-        if vis:
-            cols = st.columns(min(4, len(vis)))
-            for i, c in enumerate(vis):
-                cols[i % len(cols)].page_link(f"countries/{c.slug}/page.py",
-                                              label=c.name, icon=":material/open_in_new:")
-    except Exception:
-        pass
-    lc1, lc2 = st.columns(2)
-    lc1.page_link("scb_salaries.py", label="Sweden", icon=":material/open_in_new:")
-    lc2.page_link("france.py", label="France", icon=":material/open_in_new:")
+    cols = st.columns(4)
+    for i, (name, page) in enumerate(links):
+        cols[i % 4].page_link(page, label=name, icon=":material/open_in_new:")
 
 
 # ── Section: Data sources ────────────────────────────────────────────────────
@@ -116,27 +130,26 @@ def _run_us_refresh(usbuild, target):
     st.rerun()
 
 
-def data_section():
+def _src_head(title, subtitle):
+    st.markdown(f"#### {title}  <span style='color:#8A919D;font-weight:400;'>· {subtitle}</span>",
+                unsafe_allow_html=True)
+
+
+def _us_card():
     from countries.us import build as usbuild
-
-    st.subheader("Data sources")
-    st.caption("Watch for newer official releases and refresh the bundled datasets.")
-
     info = usbuild.bundled_info()
     counts = info.get("counts", {})
     with st.container(border=True):
-        st.markdown("#### 🇺🇸 United States · BLS OEWS  <span style='color:#8A919D;font-weight:400;'>"
-                    "· bundled snapshot</span>", unsafe_allow_html=True)
+        _src_head("🇺🇸 United States · BLS OEWS", "bundled file")
         m1, m2, m3, m4 = st.columns(4)
-        m1.metric("Reference year", f"May {info.get('year', '—')}")
+        m1.metric("Latest data year", f"May {info.get('year', '—')}")
         m2.metric("Occupations", f"{counts.get('occupations', '—')}")
         m3.metric("Scopes", f"{counts.get('scopes', '—')}",
                   help="US national + states + NAICS industries")
         m4.metric("File size", _fmt_bytes(info.get("size")))
-        st.caption(f"Built {info.get('built_at', '—')} · source: BLS special-requests files "
-                   "(national + state + national-industry).")
+        st.caption(f"Bundled file built {info.get('built_at', '—')} · re-downloadable from BLS "
+                   "special-requests files (national + state + national-industry).")
 
-        # Auto-scan — cached in session so we don't hit BLS on every rerun.
         sc1, sc2 = st.columns([1, 2.4], vertical_alignment="center")
         if sc1.button("🔎 Check for newer release", key="us_scan", use_container_width=True):
             with st.spinner("Scanning BLS…"):
@@ -154,7 +167,6 @@ def data_section():
         label = f"↻ Refresh to May {target}" if target else "↻ Rebuild from BLS"
         if st.button(label, type="primary", key="us_refresh_btn"):
             st.session_state["_us_confirm"] = True
-
         if st.session_state.get("_us_confirm"):
             st.warning("This re-downloads ~65 MB from BLS and rebuilds the dataset "
                        "(≈1–2 min). The running app updates immediately; to persist "
@@ -167,7 +179,6 @@ def data_section():
             if cc2.button("Cancel", key="us_confirm_no", use_container_width=True):
                 st.session_state.pop("_us_confirm", None)
                 st.rerun()
-
         if st.session_state.get("_us_refresh_error"):
             st.error(f"Last refresh failed: {st.session_state.pop('_us_refresh_error')}")
         res = st.session_state.get("_us_refresh_result")
@@ -177,11 +188,87 @@ def data_section():
                 f"{res['scopes']} scopes · {res['rows']:,} rows · {_fmt_bytes(res['size'])} "
                 f"· built {res['built_at']}")
 
+
+def _norway_card():
+    styrk = (_file_meta("styrk_labels.json").get("data") or {})
     with st.container(border=True):
-        st.markdown("#### Live-API sources  <span style='color:#8A919D;font-weight:400;'>"
-                    "· Sweden · Norway · France</span>", unsafe_allow_html=True)
-        st.caption("These fetch on demand and cache to disk — there is no bundled file to "
-                   "rebuild. Clear the cache to force a re-fetch of the latest figures.")
+        _src_head("🇳🇴 Norway · SSB", "live API + STYRK labels")
+        m1, m2 = st.columns(2)
+        m1.metric("Latest data year", _norway_latest_year() or "—")
+        m2.metric("STYRK labels built", styrk.get("built_at", "—"))
+        st.caption("Salaries fetched live from SSB table 11418 and disk-cached; the bundled "
+                   "bilingual STYRK labels give instant dropdowns. No file to refresh — "
+                   "rebuild labels offline via build_styrk_labels.py.")
+
+
+def _sweden_card():
+    occ = (_file_meta("occupations_cache.json").get("data") or {})
+    ssyk = (_file_meta("ssyk_descriptions.json").get("data") or {})
+    appset = (_file_meta("app_settings.json").get("data") or {})
+    with st.container(border=True):
+        _src_head("🇸🇪 Sweden · SCB", "live API + stored codes & labels")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Latest data year", appset.get("latest_data_year", 2025))
+        m2.metric("SCB codes cached", (occ.get("cached_at") or "—")[:10])
+        m3.metric("SSYK labels built", (ssyk.get("built_at") or "—")[:10])
+        st.caption("Salaries fetched live from SCB; occupation codes + SSYK labels/translations "
+                   "are cached for fast, translated dropdowns. Code re-fetch and the data-year "
+                   "check currently run from the Sweden page's own admin — migrating those "
+                   "actions here is the next step.")
+
+
+def _france_card():
+    lbl = (_file_meta("pcs_labels.json").get("data") or {})
+    micro_meta = _file_meta("pcs_microdata_percentiles.json")
+    micro = micro_meta.get("data") or {}
+    micro_year = micro.get("year", "—")
+    with st.container(border=True):
+        _src_head("🇫🇷 France · INSEE", "live API + microdata file + PCS labels")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Microdata year", micro_year)
+        m2.metric("PCS labels built", lbl.get("built_at", "—"))
+        m3.metric("Microdata size", _fmt_bytes(micro_meta.get("size")))
+        st.caption("Mean-salary series fetched live from INSEE Melodi; per-occupation "
+                   "percentiles come from a bundled **microdata** file (FD_SALAAN), and PCS "
+                   "labels/translations from a bundled file. Both rebuild offline — INSEE "
+                   "microdata is a manual download, not a live URL.")
+
+        sc1, sc2 = st.columns([1, 2.4], vertical_alignment="center")
+        if sc1.button("🔎 Check INSEE for a newer year", key="fr_scan",
+                      use_container_width=True):
+            with st.spinner("Querying INSEE Melodi…"):
+                try:
+                    import france_data as fd
+                    st.session_state["_fr_latest"] = fd.fetch_available_year("private")
+                except Exception as e:  # noqa: BLE001
+                    st.session_state["_fr_latest"], st.session_state["_fr_err"] = None, str(e)
+        frl = st.session_state.get("_fr_latest")
+        if frl:
+            try:
+                my = int(str(micro_year)[:4])
+            except (TypeError, ValueError):
+                my = 0
+            if frl > my:
+                sc2.warning(f"🆕 INSEE publishes annual data through **{frl}** — the bundled "
+                            f"microdata is {micro_year}. Rebuild via "
+                            "build_pcs_microdata_percentiles.py to update.")
+            else:
+                sc2.success(f"✅ Microdata year {micro_year} matches INSEE's latest ({frl}).")
+        elif st.session_state.get("_fr_err"):
+            sc2.error(f"INSEE check failed: {st.session_state.pop('_fr_err')}")
+
+
+def data_section():
+    st.subheader("Data sources")
+    st.caption("Each source shows its latest data year and how it refreshes.")
+    _us_card()
+    _norway_card()
+    _sweden_card()
+    _france_card()
+    with st.container(border=True):
+        _src_head("Caches", "Sweden · Norway · France live fetches")
+        st.caption("The live-API sources cache fetched figures to disk. Clear to force a "
+                   "re-fetch of the latest published data on next view.")
         if st.button("🗑 Clear data caches", key="clear_caches"):
             st.cache_data.clear()
             st.success("Cleared — fresh figures will be fetched on next view.")
@@ -196,15 +283,17 @@ def users_section():
     cfmt = lambda s: country_opts.get(s, s)          # noqa: E731
 
     st.markdown("**Create user**")
-    c1, c2, c3 = st.columns([3, 2, 2])
-    ne = c1.text_input("Email", key="nu_email")
-    npw = c2.text_input("Password", type="password", key="nu_pw")
-    nr = c3.selectbox("Role", auth.ROLES, key="nu_role")
+    n1, n2 = st.columns(2)
+    nn = n1.text_input("Name", key="nu_name", placeholder="Full name (optional)")
+    ne = n2.text_input("Email", key="nu_email")
+    p1, p2 = st.columns(2)
+    npw = p1.text_input("Password", type="password", key="nu_pw")
+    nr = p2.selectbox("Role", auth.ROLES, key="nu_role")
     nc = st.multiselect("Country access", cslugs, default=list(auth.DEFAULT_COUNTRIES),
                         format_func=cfmt, key="nu_countries")
     if st.button("Create user", type="primary"):
         try:
-            auth.create_user(ne.strip(), npw, nr, countries=nc)
+            auth.create_user(ne.strip(), npw, nr, countries=nc, name=nn.strip())
             _invalidate_users()
             st.success(f"Created {ne}")
             st.rerun()
@@ -222,15 +311,36 @@ def users_section():
     if err:
         st.error(f"Could not list users: {err}")
         return
-    for u in users or []:
-        c1, c2, cc, c3, c4 = st.columns([3.4, 2, 1, 1, 1])
-        c1.write(u["email"])
+    users = users or []
+
+    # Per-role counter
+    from collections import Counter
+    rc = Counter(u["role"] for u in users)
+    st.caption(f"👑 {rc.get('master', 0)} master · {rc.get('admin', 0)} admin · "
+               f"{rc.get('standard', 0)} standard · {len(users)} total")
+
+    # Column captions (same ratios as the rows so they line up)
+    _W = [2.2, 3, 2, 2.8]
+
+    def _cap(col, text):
+        col.markdown(f"<div style='font-family:\"JetBrains Mono\",monospace;font-size:10.5px;"
+                     "letter-spacing:.08em;text-transform:uppercase;color:#8A919D;'>"
+                     f"{text}</div>", unsafe_allow_html=True)
+
+    _h = st.columns(_W)
+    for _c, _t in zip(_h, ("Name", "Email", "Role", "Function")):
+        _cap(_c, _t)
+
+    for u in users:
+        c_name, c_email, c_role, c_fn = st.columns(_W, vertical_alignment="center")
+        c_name.write(u.get("name") or "—")
+        c_email.write(u["email"])
         if u["role"] == "master":
-            c2.write("👑 master")
+            c_role.write("👑 master")
         elif u["id"] == me.get("id"):
-            c2.write(f"{u['role']} (you)")
+            c_role.write(f"{u['role']} (you)")
         else:
-            nrole = c2.selectbox(
+            nrole = c_role.selectbox(
                 "role", auth.ROLES,
                 index=auth.ROLES.index(u["role"]) if u["role"] in auth.ROLES else 0,
                 key=f"role_{u['id']}", label_visibility="collapsed")
@@ -241,7 +351,9 @@ def users_section():
                     st.rerun()
                 except Exception as e:  # noqa: BLE001
                     st.error(str(e))
-        with cc.popover("🌐", help="Country access"):
+        # Function column: country access · password · delete
+        f1, f2, f3 = c_fn.columns(3)
+        with f1.popover("🌐", help="Country access"):
             cur = [s for s in u.get("countries", []) if s in cslugs]
             sel = st.multiselect(f"Countries for {u['email']}", cslugs, default=cur,
                                  format_func=cfmt, key=f"cty_{u['id']}")
@@ -254,7 +366,7 @@ def users_section():
                     st.rerun()
                 except Exception as e:  # noqa: BLE001
                     st.error(str(e))
-        with c3.popover("🔑", help="Set password"):
+        with f2.popover("🔑", help="Set password"):
             pw_label = "Your new password" if u["id"] == me.get("id") \
                 else f"New password for {u['email']}"
             newpw = st.text_input(pw_label, type="password", key=f"pw_{u['id']}")
@@ -265,7 +377,7 @@ def users_section():
                 except Exception as e:  # noqa: BLE001
                     st.error(str(e))
         if u["role"] != "master" and u["id"] != me.get("id"):
-            if c4.button("🗑", key=f"del_{u['id']}", help="Delete user"):
+            if f3.button("🗑", key=f"del_{u['id']}", help="Delete user"):
                 try:
                     auth.delete_user(u["id"])
                     _invalidate_users()
