@@ -420,7 +420,8 @@ with h_right:
         # in-dev country previews). st.switch_page keeps the session across the
         # jump. Non-admins just see their identity + Log out.
         if _role in ("admin", "master"):
-            _adm, _who, _out = st.columns([1, 1.9, 1], vertical_alignment="center")
+            # Identity, then Admin + Log out as two equal, adjacent buttons.
+            _who, _adm, _out = st.columns([1.7, 1, 1], vertical_alignment="center")
             with _adm:
                 if st.button("⚙ Admin", use_container_width=True, key="hdr_admin"):
                     st.switch_page("admin.py")
