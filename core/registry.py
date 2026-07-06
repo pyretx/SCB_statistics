@@ -13,7 +13,7 @@ from .access import can_open
 # Framework-driven countries, in nav order. Add a country by dropping its module
 # under countries/<name>/ (config.py exposing CONFIG) and listing it here.
 # (Legacy Sweden/France pages are still registered directly in app.py — Phase 5.)
-_COUNTRY_MODULES = ["demo", "norway"]
+_COUNTRY_MODULES = ["demo", "norway", "us"]
 
 
 def all_countries() -> list:

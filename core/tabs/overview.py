@@ -81,7 +81,7 @@ def render(cfg, stats, query):
         st.subheader(i18n.t(cfg, "compare_occ", lang, "Compare occupations"))
         val = "mean" if caps.has_mean else "median"
         heading = i18n.t(cfg, "avg_salary" if val == "mean" else "median_salary", lang)
-        fig = charts.occupation_bar(stats, cfg, value_col=val, title=f"{heading} · {suf}/mo")
+        fig = charts.occupation_bar(stats, cfg, value_col=val, title=f"{heading} · {suf}{cfg.per_label}")
         if fig is not None:
             st.plotly_chart(fig, use_container_width=True)
 

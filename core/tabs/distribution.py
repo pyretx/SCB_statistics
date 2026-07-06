@@ -66,7 +66,7 @@ def render(cfg, stats, query):
     fig = charts.distribution_chart(
         tot, cfg, keys=keys, labels_map=labels, mean_label=labels.get("mean", "Average"),
         x_title=i18n.t(cfg, "x_percentile", lang, "Percentile"),
-        title=f"{i18n.t(cfg, 'distribution_title', lang)} · {cfg.currency_suffix}/mo")
+        title=f"{i18n.t(cfg, 'distribution_title', lang)} · {cfg.currency_suffix}{cfg.per_label}")
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
     if caps.has_quartiles and not caps.has_occupation_percentiles:

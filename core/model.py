@@ -53,6 +53,8 @@ class Capabilities:
     has_education: bool = False
     has_trend: bool = False
     has_leaderboard: bool = False               # can rank ALL occupations by pay
+    leaderboard_scope: int = 2                  # code-prefix length to scope the leaderboard
+                                                # to (STYRK sub-group=2; SOC minor=4)
     sectors: tuple[str, ...] = ()               # e.g. ("private", "public"); () = none
     year_range: tuple[int, int] | None = None   # (first, last) available year
 
@@ -69,7 +71,8 @@ class CountryConfig:
     source_url: str
     caption: str                    # sub-line under the H1
     currency: str = "SEK"           # ISO code, e.g. "NOK"
-    currency_suffix: str = "kr"     # shown after values, e.g. "kr", "€"
+    currency_suffix: str = "kr"     # shown next to values, e.g. "kr", "€", "$"
+    money_prefix: bool = False      # symbol before the number ($93,600) vs after (93 600 kr)
     period: str = "monthly"         # "monthly" | "annual" | "hourly"
     capabilities: Capabilities = field(default_factory=Capabilities)
     tabs: tuple[str, ...] = ()       # standard tab ids to enable (see core.tabs)
@@ -89,3 +92,9 @@ class CountryConfig:
         """Look up a flat, language-independent display label (landing tiles).
         In-app strings that follow the language toggle use core.i18n.t instead."""
         return self.labels.get(key, default)
+
+    @property
+    def per_label(self) -> str:
+        """Pay-period suffix for chart/axis labels, e.g. '/mo' (Sweden/Norway),
+        '/yr' (US OEWS annual), '/hr'."""
+        return {"annual": "/yr", "monthly": "/mo", "hourly": "/hr"}.get(self.period, "/mo")

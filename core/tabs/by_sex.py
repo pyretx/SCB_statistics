@@ -27,7 +27,7 @@ def render(cfg, stats, query):
     # Always the two bars; the toggle just annotates women-as-%-of-men at the end
     # of each row (Sweden's behaviour), rather than replacing them.
     heading = (i18n.t(cfg, "ratio_title", lang, "Women's salary as % of men's") if ratio
-               else f"{i18n.t(cfg, 'avg_salary' if val == 'mean' else 'median_salary', lang)} · {cfg.currency_suffix}/mo")
+               else f"{i18n.t(cfg, 'avg_salary' if val == 'mean' else 'median_salary', lang)} · {cfg.currency_suffix}{cfg.per_label}")
     fig = charts.grouped_sex_bar(
         women, men, cfg, val,
         women_label=i18n.t(cfg, "women", lang), men_label=i18n.t(cfg, "men", lang),

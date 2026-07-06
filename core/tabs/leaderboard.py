@@ -44,7 +44,7 @@ def render(cfg, stats, query):
     lo = i18n.t(cfg, "lead_low", lang, "Lowest first")
 
     # ── Controls + fetch + build a [occ_code, occ_name, val] frame ────────────
-    axis, value_fmt = f"{suf}/mo", lambda v: f"{int(round(v)):,}".replace(",", " ") + f" {suf}"
+    axis, value_fmt = f"{suf}{cfg.per_label}", lambda v: charts.fmt_value(v, cfg)
     if mkey == "growth":
         c1, c2, c3 = st.columns(3)
         yf = c1.selectbox(i18n.t(cfg, "lead_from", lang, "From"), years, index=len(years) - 1, key=k("lfrom"))
@@ -87,8 +87,8 @@ def render(cfg, stats, query):
         st.caption(i18n.t(cfg, "no_data_combo", lang))
         return
 
-    # scope to the drilled sub-group (2-digit), like Sweden
-    scope = query.get("scope", "")[:2]
+    # scope to the drilled sub-group (STYRK 2-digit, SOC minor 4-char), like Sweden
+    scope = query.get("scope", "")[:caps.leaderboard_scope]
     if scope:
         ranked = ranked[ranked["occ_code"].str.startswith(scope)]
     tree = cfg.provider.occupation_tree(lang) if cfg.provider else {}

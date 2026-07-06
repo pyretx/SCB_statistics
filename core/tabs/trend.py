@@ -89,11 +89,11 @@ def trend_section(cfg, query, lang, k):
                 for _, r in tr.iterrows()]
         fig = charts.trend_lines(pd.DataFrame(rows), cfg, unit=suf,
                                  y_title=i18n.t(cfg, "trend_real_axis", lang).format(base=base),
-                                 title=f"{v_real} · {suf}/mo")
+                                 title=f"{v_real} · {suf}{cfg.per_label}")
     else:
         df = tr.rename(columns={"value_nominal": "value"})[["year", "series", "value"]]
-        fig = charts.trend_lines(df, cfg, unit=suf, y_title=f"{suf}/mo",
-                                 title=f"{_mlabel(cfg, lang, mkey)} · {suf}/mo")
+        fig = charts.trend_lines(df, cfg, unit=suf, y_title=f"{suf}{cfg.per_label}",
+                                 title=f"{_mlabel(cfg, lang, mkey)} · {suf}{cfg.per_label}")
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
 

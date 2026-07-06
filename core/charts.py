@@ -16,7 +16,8 @@ def fmt_value(v, cfg) -> str:
     e.g. 53500 -> '53 500 kr'. '–' for missing."""
     if v is None or (isinstance(v, float) and pd.isna(v)):
         return "–"
-    return f"{int(round(v)):,}".replace(",", " ") + f" {cfg.currency_suffix}"
+    n = f"{int(round(v)):,}".replace(",", " ")
+    return f"{cfg.currency_suffix}{n}" if cfg.money_prefix else f"{n} {cfg.currency_suffix}"
 
 
 def occupation_bar(stats: pd.DataFrame, cfg, value_col: str = "mean", *,
@@ -92,7 +93,7 @@ def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict 
         return None
     fig.update_layout(
         xaxis=dict(categoryorder="array", categoryarray=cats, title=x_title),
-        yaxis_title=f"{cfg.currency_suffix}/mo",
+        yaxis_title=f"{cfg.currency_suffix}{cfg.per_label}",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0),
         height=420, margin=dict(t=60, b=40), hovermode="x unified", title=title)
     return theme.style_fig(fig)
@@ -151,7 +152,7 @@ def position_curve(levs, vals, est, salary, cfg, *, you_label: str = "You",
     fig.update_layout(
         xaxis=dict(tickvals=levs, ticktext=[f"P{int(l)}" for l in levs], range=[lo, hi],
                    title=x_title),
-        yaxis_title=f"{cfg.currency_suffix}/mo", height=380, margin=dict(t=40, b=40),
+        yaxis_title=f"{cfg.currency_suffix}{cfg.per_label}", height=380, margin=dict(t=40, b=40),
         showlegend=False, title=title)
     return theme.style_fig(fig)
 

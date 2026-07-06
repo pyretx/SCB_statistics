@@ -111,23 +111,6 @@ badge_text   = "Live"
 badge_color  = "#1B8A5A"
 badge_bg     = "rgba(27,138,90,.12)"
 
-[[countries.tiles]]
-num          = "03"
-name         = "United States"
-native       = "United States"
-source       = "BLS Public Data API · planned"
-iso          = "us"
-points       = [
-  "Salary benchmarks by occupation & location",
-  "Mean, median, P10/P25/P75/P90 wage data",
-  "Labour market indicators & compensation trends",
-]
-page         = ""
-live         = false
-badge_text   = "Coming soon"
-badge_color  = "#0A63A6"
-badge_bg     = "rgba(10,99,166,.10)"
-
 # ── Gated / beta tiles (the second row of framework countries, e.g. Norway) ──
 # Keyed by the country's slug. Text is editable here; whether the tile shows as
 # open or "🔒 Locked" is decided by the app (admin / granted users only). name,
@@ -142,6 +125,18 @@ points  = [
   "Mean & median salary · ~400 occupations (STYRK-08)",
   "Sector & sex breakdowns · quartiles",
   "Monthly earnings · 2015–2024",
+]
+
+[countries.gated.us]
+num     = "05"
+name    = "United States"
+native  = "United States"
+source  = "BLS OEWS · official"
+badge   = "Beta"
+points  = [
+  "P10–P90 + mean · ~830 occupations (SOC-2018)",
+  "National + all 50 states",
+  "Annual wages + employment · BLS OEWS 2024",
 ]
 
 [footer]
