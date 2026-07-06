@@ -39,6 +39,7 @@ st.markdown("""
 # the auto nav-list.
 _pages = [
     st.Page("landing.py",      title="Home",   default=True),
+    st.Page("admin.py",        title="Admin",  url_path="admin"),
     st.Page("scb_salaries.py", title="Sweden", url_path="sweden"),
     st.Page("france.py",       title="France", url_path="france"),
 ]

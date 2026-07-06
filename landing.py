@@ -416,18 +416,14 @@ with h_right:
                 or _nm[:1]).upper()
         _role = _hu.get("role", "standard")
         _rc = "#B8863B" if _role in ("admin", "master") else BLUE  # gold-ish for admins
-        # In-development framework countries the admin may preview. Client-side
-        # page-links (not URL typing) so the session/login survives the jump.
-        _dev = (_registry.visible_for_current_user()
-                if (_registry and _role in ("admin", "master")) else [])
-        if _dev:
-            _dv, _who, _out = st.columns([1, 1.9, 1], vertical_alignment="center")
-            with _dv:
-                with st.popover(C["header"]["dev_menu"], use_container_width=True):
-                    st.caption(C["header"]["dev_menu_note"])
-                    for _c in _dev:
-                        st.page_link(f"countries/{_c.slug}/page.py", label=_c.name,
-                                     icon=":material/open_in_new:")
+        # Admins get a button to the full-page Admin panel (data refresh, users,
+        # in-dev country previews). st.switch_page keeps the session across the
+        # jump. Non-admins just see their identity + Log out.
+        if _role in ("admin", "master"):
+            _adm, _who, _out = st.columns([1, 1.9, 1], vertical_alignment="center")
+            with _adm:
+                if st.button("⚙ Admin", use_container_width=True, key="hdr_admin"):
+                    st.switch_page("admin.py")
         else:
             _who, _out = st.columns([2.4, 1], vertical_alignment="center")
         with _who:
