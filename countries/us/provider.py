@@ -4,9 +4,11 @@ Reads the bundled snapshot us_oews.json.gz (built by build_us_oews.py); no live
 API — OEWS is one annual release, parsed offline (like France's data). Full
 P10–P90 + mean + employment per occupation.
 
-The framework's 'sector' filter slot carries the REGION here (US national + 54
-states); OEWS v1 has no industry sector. SOC codes are keyed by their significant
-prefix so the prefix drill-down works (see build_us_oews.py).
+The framework's 'sector' filter slot carries the SCOPE here — US national, a
+state, or a nationwide NAICS industry ("IND"+naics). These are mutually
+exclusive (OEWS has no state × industry), so they share one selector. SOC codes
+are keyed by their significant prefix so the prefix drill-down works (see
+build_us_oews.py).
 """
 from __future__ import annotations
 

@@ -7,8 +7,16 @@ from core.model import CountryConfig, Capabilities
 from .provider import UsProvider
 
 _prov = UsProvider()
-_regions = _prov.regions()                      # {code: name}, "US" (national) first
-_region_labels = {f"sector_{code}": name for code, name in _regions.items()}
+_regions = _prov.regions()                      # {code: name} — US national, states, then industries
+
+
+def _scope_label(code: str, name: str) -> str:
+    # Industry scopes (key "IND"+NAICS) are national-only and mutually exclusive
+    # with a state — mark them so they read distinctly in the combined selector.
+    return f"Industry · {name}" if code.startswith("IND") else name
+
+
+_region_labels = {f"sector_{code}": _scope_label(code, name) for code, name in _regions.items()}
 
 _GUIDE_EN = """
 **What this shows.** Annual wages for ~830 occupations (SOC-2018) from the U.S.
@@ -16,7 +24,9 @@ Bureau of Labor Statistics **OEWS** program (May 2024), nationally and for every
 state.
 
 **How to use it**
-1. Pick a **Location** — United States (national) or a state.
+1. Pick a **Location / industry** — United States (national), a state, or a
+   nationwide **industry** (`Industry · …`, e.g. *Hospitals*). Location and
+   industry are separate cuts, so you choose one or the other, not both.
 2. Narrow by **occupation field** (SOC major → minor → broad), then pick one or
    more **occupations**.
 3. Press **Search**.
@@ -24,6 +34,8 @@ state.
 **Good to know**
 - Figures are annual **mean**, **median** and **P10 / P25 / P75 / P90** wages, plus
   **employment**.
+- Industry cuts (NAICS sector / 3- / 4-digit) are **national** — BLS does not
+  publish state × industry, so picking an industry replaces the state view.
 - Very high wages are **top-coded** by BLS (shown blank when a percentile is at or
   above the top code, $239,200/yr in 2024).
 - OEWS has **no gender, age or education** breakdown and is a single annual
@@ -59,7 +71,7 @@ CONFIG = CountryConfig(
     i18n={"EN": {
         "title": "US Salary Explorer",
         "caption": "BLS Occupational Employment & Wage Statistics · May 2024 · annual USD",
-        "sector": "Location",
+        "sector": "Location / industry",
         **_region_labels,
         # SOC drill-down (sidebar, by depth) and code browser (by key length 2/4/6/7)
         "grp_1": "Major group", "grp_2": "Minor group", "grp_3": "Broad occupation",
