@@ -546,7 +546,7 @@ def users_section():
         st.markdown("#### Create user")
         a, b = st.columns(2)
         a.markdown('<div class="ad-flbl">Name</div>', unsafe_allow_html=True)
-        nn = a.text_input("Name", key="nu_name", placeholder="Full name (optional)",
+        nn = a.text_input("Name", key="nu_name", placeholder="Full name",
                           label_visibility="collapsed")
         b.markdown('<div class="ad-flbl">Email</div>', unsafe_allow_html=True)
         ne = b.text_input("Email", key="nu_email", placeholder="name@company.com",
@@ -560,13 +560,16 @@ def users_section():
         nc = st.multiselect("Country access", cslugs, default=list(auth.DEFAULT_COUNTRIES),
                             format_func=cfmt, key="nu_countries", label_visibility="collapsed")
         if st.button("Create user", type="primary", key="nu_create"):
-            try:
-                auth.create_user(ne.strip(), npw, nr, countries=nc, name=nn.strip())
-                _invalidate_users()
-                st.success(f"Created {ne}")
-                st.rerun()
-            except Exception as e:  # noqa: BLE001
-                st.error(f"Could not create user: {e}")
+            if not nn.strip() or not ne.strip() or not npw:
+                st.error("Name, email and password are required.")
+            else:
+                try:
+                    auth.create_user(ne.strip(), npw, nr, countries=nc, name=nn.strip())
+                    _invalidate_users()
+                    st.success(f"Created {ne}")
+                    st.rerun()
+                except Exception as e:  # noqa: BLE001
+                    st.error(f"Could not create user: {e}")
 
     st.write("")
 

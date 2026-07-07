@@ -172,11 +172,13 @@ def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | N
     ``redirect_to`` sets where the confirmation email link lands after Supabase
     verifies the token (must be in the project's Redirect URLs allow-list) — pass
     the app URL with a marker like ``…/?confirmed=1`` so the app can greet the
-    user. Returns (user_dict_or_None, error_str_or_None)."""
+    user. Returns (user_dict_or_None, error_str_or_None).
+
+    The name is REQUIRED and stored in Supabase user_metadata.full_name."""
+    if not (full_name or "").strip():
+        return None, "Name is required."
     try:
-        options: dict = {}
-        if full_name:
-            options["data"] = {"full_name": full_name}
+        options: dict = {"data": {"full_name": full_name.strip()}}
         if redirect_to:
             options["email_redirect_to"] = redirect_to
         res = _client(service=False).auth.sign_up({
@@ -232,21 +234,22 @@ def _set_app_metadata(user_id: str, **changes):
 
 
 def create_user(email: str, password: str, role: str, countries=None, name: str = ""):
-    """Create an auto-confirmed user with the given role + country access (+ an
-    optional display name). Defaults to the DEFAULT_COUNTRIES set. Raises on failure."""
+    """Create an auto-confirmed user with the given role + country access. The
+    display name is REQUIRED and stored in Supabase user_metadata.full_name.
+    Defaults to the DEFAULT_COUNTRIES set. Raises on failure."""
     if role not in ROLES:
         raise ValueError(f"role must be one of {ROLES}")
-    payload = {
+    if not (name or "").strip():
+        raise ValueError("Name is required.")
+    _client(service=True).auth.admin.create_user({
         "email": email,
         "password": password,
         "email_confirm": True,
+        "user_metadata": {"full_name": name.strip()},
         "app_metadata": {"role": role,
                          "countries": list(countries) if countries is not None
                          else list(DEFAULT_COUNTRIES)},
-    }
-    if name:
-        payload["user_metadata"] = {"full_name": name}
-    _client(service=True).auth.admin.create_user(payload)
+    })
 
 
 def set_role(user_id: str, role: str):

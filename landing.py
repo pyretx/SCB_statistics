@@ -352,7 +352,7 @@ def _auth_dialog():
                     st.error(_m["sign_in_failed"].format(err=err))
         else:
             if st.button(_f["create_button"], type="primary", use_container_width=True):
-                if not email.strip() or not pw:
+                if not name.strip() or not email.strip() or not pw:
                     st.error(_m["missing_fields"])
                 else:
                     # sign_up stores the account in Supabase as a *standard*

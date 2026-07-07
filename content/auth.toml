@@ -36,6 +36,6 @@ close           = "Close"
 [messages]
 confirmed      = "✅ Thanks for confirming your registration — please sign in below."
 sign_in_failed = "Sign-in failed: {err}"
-missing_fields = "Email and password are required."
+missing_fields = "Name, email and password are required."
 create_failed  = "Could not create account: {err}"
 check_inbox    = "Account created — check your inbox to confirm your email, then sign in."
