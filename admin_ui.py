@@ -6,7 +6,8 @@ Access is gated to admin/master by admin.py before any of this renders.
 
 Sections: Overview · Data sources · Users. The visual design (card tiles, status
 pills, mono stat grids, compact button rows) follows the approved Admin-panel
-mockup; the data/logic underneath is unchanged.
+mockup. All static text lives in content/admin.toml (see content.py) — edit
+there, not here.
 """
 from __future__ import annotations
 
@@ -18,10 +19,16 @@ from collections import Counter
 import streamlit as st
 
 import auth
+import content
 import theme
 
 _ADMIN_ROLES = ("admin", "master")
 _ROOT = os.path.dirname(os.path.abspath(__file__))   # repo root (admin_ui.py lives here)
+
+
+def _A() -> dict:
+    """All admin-panel text (content/admin.toml). Uncached — edits show live."""
+    return content.load("admin")
 
 
 # ── shared styling ───────────────────────────────────────────────────────────
@@ -42,6 +49,17 @@ CSS = """
   border-radius:16px!important; padding:22px 24px!important; box-shadow:0 1px 2px rgba(16,21,31,.04); }
 [class*="st-key-adkpi_"]{ background:#fff; border:1px solid #E7E9ED!important;
   border-radius:16px!important; padding:18px 20px!important; }
+
+/* Inputs inside cards — the design's visible 1px bordered, rounded fields.
+   (On the white card the theme's default input border washed out entirely.) */
+[class*="st-key-adcard_"] [data-baseweb="input"],
+[class*="st-key-adcard_"] [data-baseweb="select"] > div{
+  border:1px solid #DDE1E6 !important; border-radius:10px !important;
+  background-color:#fff !important; }
+[class*="st-key-adcard_"] [data-baseweb="input"] input{ background:transparent !important; }
+[class*="st-key-adcard_"] [data-baseweb="input"]:focus-within,
+[class*="st-key-adcard_"] [data-baseweb="select"] > div:focus-within{
+  border-color:#0A63A6 !important; box-shadow:0 0 0 3px rgba(10,99,166,.12) !important; }
 
 /* Card header (flag · name · source · type … status pill) */
 .ad-hd{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
@@ -185,7 +203,7 @@ def _country_options() -> dict:
 
 def _load_users(force: bool = False):
     if force or "_admin_users" not in st.session_state:
-        with st.spinner("Loading users…"):
+        with st.spinner(_A()["users"]["loading"]):
             try:
                 st.session_state["_admin_users"] = (auth.list_users(), None)
             except Exception as e:  # noqa: BLE001
@@ -230,8 +248,8 @@ def _btnrow():
 
 
 # ── Section: Overview ────────────────────────────────────────────────────────
-def _kpi(col, icon, color, tint, num, label):
-    with col, st.container(border=True, key=f"adkpi_{label.lower().replace(' ', '_')}"):
+def _kpi(col, key, icon, color, tint, num, label):
+    with col, st.container(border=True, key=f"adkpi_{key}"):
         st.markdown(
             f'<div class="ad-kico" style="background:{tint};color:{color};">{icon}</div>'
             f'<div class="ad-knum">{num}</div><div class="ad-klbl">{label}</div>',
@@ -253,23 +271,24 @@ def _country_links() -> list[tuple[str, str, str, str]]:
 
 
 def overview_section():
+    O = _A()["overview"]
     users, uerr = _load_users()
     n_users = len(users) if users is not None else "—"
     links = _country_links()
     updates = sum(1 for k in ("_us_upd", "_fr_upd") if st.session_state.get(k))
 
     c1, c2, c3, c4 = st.columns(4)
-    _kpi(c1, _IC_USERS, "#0A63A6", "rgba(10,99,166,.10)", n_users, "Registered users")
-    _kpi(c2, _IC_GLOBE, "#1B8A5A", "rgba(27,138,90,.12)", len(links), "Countries")
-    _kpi(c3, _IC_ZAP, "#B26A00", "rgba(178,106,0,.13)", 3, "Live sources")
-    _kpi(c4, _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, "Updates available")
+    _kpi(c1, "users", _IC_USERS, "#0A63A6", "rgba(10,99,166,.10)", n_users, O["kpi_users"])
+    _kpi(c2, "countries", _IC_GLOBE, "#1B8A5A", "rgba(27,138,90,.12)", len(links), O["kpi_countries"])
+    _kpi(c3, "live", _IC_ZAP, "#B26A00", "rgba(178,106,0,.13)", 3, O["kpi_live"])
+    _kpi(c4, "updates", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, O["kpi_updates"])
     if uerr:
-        st.caption(f"⚠ Could not load users: {uerr}")
+        st.caption(O["users_error"].format(err=uerr))
 
     st.write("")
     with st.container(border=True, key="adcard_open"):
-        st.markdown("#### Open a country")
-        st.caption("Jump straight into any country page, including admin-only previews.")
+        st.markdown(f"#### {O['open_heading']}")
+        st.caption(O["open_caption"])
         cols = st.columns(4)
         flag_css = ""
         for i, (slug, name, iso, page) in enumerate(links):
@@ -282,11 +301,10 @@ def overview_section():
 
 # ── Section: Data sources ────────────────────────────────────────────────────
 def _run_us_refresh(usbuild, target):
-    with st.status("Refreshing US OEWS…", expanded=True) as status:
-        def log(msg):
-            status.write(msg)
+    T = _A()["data"]["us"]
+    with st.status("…", expanded=True) as status:
         try:
-            res = usbuild.build(year=target, log=log)
+            res = usbuild.build(year=target, log=status.write)
             try:
                 from countries.us import provider as usprov
                 usprov._load.clear()
@@ -295,56 +313,53 @@ def _run_us_refresh(usbuild, target):
             st.session_state["_us_refresh_result"] = res
             st.session_state.pop("_us_latest", None)
             st.session_state.pop("_us_upd", None)
-            status.update(label=f"Done — May {res['year']}", state="complete")
+            status.update(label=f"May {res['year']} ✓", state="complete")
         except Exception as e:  # noqa: BLE001
-            status.update(label="Refresh failed", state="error")
+            status.update(label=T["failed"].format(err=""), state="error")
             st.session_state["_us_refresh_error"] = str(e)
     st.rerun()
 
 
-def _us_card(query):
+def _us_card(query, D):
     from countries.us import build as usbuild
-    if not _match(query, "united states", "us", "bls", "oews", "bundled", "soc"):
+    T = D["us"]
+    if not _match(query, T["name"], "us", T["source"], T["type"], "soc"):
         return
     info = usbuild.bundled_info()
     c = info.get("counts", {})
     latest = st.session_state.get("_us_latest")
     newer = bool(latest and info.get("year") and latest > info["year"])
     st.session_state["_us_upd"] = newer
-    pill = _pill("amber", "Update available") if newer else _pill("green", "Up to date")
+    pill = _pill("amber", D["pill_update"]) if newer else _pill("green", D["pill_ok"])
     with st.container(border=True, key="adcard_us"):
-        html = _hdr("us", "United States", "BLS OEWS", "bundled file", pill)
-        html += _stats([("Latest data year", f"May {info.get('year', '—')}"),
-                        ("Occupations", _n(c.get("occupations", "—"))),
-                        ("Scopes", _n(c.get("scopes", "—"))),
-                        ("File size", _fmt_bytes(info.get("size")))])
-        html += (f'<div class="ad-cap">Bundled file built {info.get("built_at", "—")} · '
-                 "re-downloadable from BLS special-requests files (national + state + "
-                 "national-industry).</div>")
+        html = _hdr("us", T["name"], T["source"], T["type"], pill)
+        html += _stats([(T["s_year"], f"May {info.get('year', '—')}"),
+                        (T["s_occ"], _n(c.get("occupations", "—"))),
+                        (T["s_scopes"], _n(c.get("scopes", "—"))),
+                        (T["s_size"], _fmt_bytes(info.get("size")))])
+        html += f'<div class="ad-cap">{T["desc"].format(built=info.get("built_at", "—"))}</div>'
         if newer:
-            html += (f'<div class="ad-alert">↻ May {latest} available — newer than the '
-                     f'bundled May {info["year"]}.</div>')
+            html += ('<div class="ad-alert">'
+                     + T["alert"].format(latest=latest, year=info["year"]) + '</div>')
         st.markdown(html, unsafe_allow_html=True)
 
         target = latest if newer else None
         with _btnrow():
-            go = st.button(f"↻ Refresh to May {target}" if target else "↻ Rebuild from BLS",
+            go = st.button(T["btn_refresh"].format(year=target) if target else T["btn_rebuild"],
                            type="primary", key="us_refresh_btn")
-            chk = st.button("🔍 Check for newer release", key="us_scan")
+            chk = st.button(T["btn_check"], key="us_scan")
         if go:
             st.session_state["_us_confirm"] = True
         if chk:
-            with st.spinner("Scanning BLS…"):
+            with st.spinner("…"):
                 st.session_state["_us_latest"] = usbuild.latest_available_year()
             st.rerun()
 
         if st.session_state.get("_us_confirm"):
-            st.warning("This re-downloads ~65 MB from BLS and rebuilds the dataset (≈1–2 min). "
-                       "The running app updates immediately; to persist across redeploys, "
-                       "commit the regenerated `us_oews.json.gz`.")
+            st.warning(T["confirm"])
             with _btnrow():
-                yes = st.button("✅ Confirm refresh", type="primary", key="us_confirm_yes")
-                no = st.button("Cancel", key="us_confirm_no")
+                yes = st.button(T["btn_confirm"], type="primary", key="us_confirm_yes")
+                no = st.button(T["btn_cancel"], key="us_confirm_no")
             if yes:
                 st.session_state.pop("_us_confirm", None)
                 _run_us_refresh(usbuild, target)
@@ -352,31 +367,30 @@ def _us_card(query):
                 st.session_state.pop("_us_confirm", None)
                 st.rerun()
         if st.session_state.get("_us_refresh_error"):
-            st.error(f"Last refresh failed: {st.session_state.pop('_us_refresh_error')}")
+            st.error(T["failed"].format(err=st.session_state.pop("_us_refresh_error")))
         res = st.session_state.get("_us_refresh_result")
         if res:
-            st.success(f"✅ Refreshed to May {res['year']} · {_n(res['occupations'])} occupations "
-                       f"· {_n(res['scopes'])} scopes · {_n(res['rows'])} rows · "
-                       f"{_fmt_bytes(res['size'])}")
+            st.success(T["refreshed"].format(
+                year=res["year"], occ=_n(res["occupations"]), scopes=_n(res["scopes"]),
+                rows=_n(res["rows"]), size=_fmt_bytes(res["size"])))
 
 
-def _norway_card(query):
-    if not _match(query, "norway", "ssb", "styrk", "live"):
+def _norway_card(query, D):
+    T = D["norway"]
+    if not _match(query, T["name"], T["source"], "styrk", T["type"]):
         return
     styrk = (_file_meta("styrk_labels.json").get("data") or {})
     with st.container(border=True, key="adcard_no"):
         st.markdown(
-            _hdr("no", "Norway", "SSB", "live API + STYRK labels", _pill("green", "Up to date"))
-            + _stats([("Latest data year", _norway_latest_year() or "—"),
-                      ("STYRK labels built", styrk.get("built_at", "—"))])
-            + ('<div class="ad-cap">Salaries fetched live from SSB table 11418 and disk-cached; '
-               "the bundled bilingual STYRK labels give instant dropdowns. Rebuilding re-fetches "
-               "the labels from SSB (EN + NO).</div>"),
+            _hdr("no", T["name"], T["source"], T["type"], _pill("green", D["pill_ok"]))
+            + _stats([(T["s_year"], _norway_latest_year() or "—"),
+                      (T["s_built"], styrk.get("built_at", "—"))])
+            + f'<div class="ad-cap">{T["desc"]}</div>',
             unsafe_allow_html=True)
         with _btnrow():
-            go = st.button("↻ Rebuild labels", key="no_rebuild")
+            go = st.button(T["btn"], key="no_rebuild")
         if go:
-            with st.status("Rebuilding STYRK labels…", expanded=True) as status:
+            with st.status("…", expanded=True) as status:
                 try:
                     from countries.norway import build as nobuild
                     res = nobuild.build(log=status.write)
@@ -386,38 +400,36 @@ def _norway_card(query):
                     except Exception:
                         pass
                     st.session_state["_no_labels_result"] = res
-                    status.update(label=f"Done — {res['built_at']}", state="complete")
+                    status.update(label=res["built_at"] + " ✓", state="complete")
                 except Exception as e:  # noqa: BLE001
-                    status.update(label="Rebuild failed", state="error")
+                    status.update(label="✗", state="error")
                     st.error(str(e))
             st.rerun()
         res = st.session_state.get("_no_labels_result")
         if res:
-            st.success(f"✅ Labels rebuilt {res['built_at']} · {_n(res['codes'])} codes "
-                       f"({_n(res['leaves'])} occupations).")
+            st.success(T["done"].format(built=res["built_at"], codes=_n(res["codes"]),
+                                        leaves=_n(res["leaves"])))
 
 
-def _sweden_card(query):
-    if not _match(query, "sweden", "scb", "ssyk", "live"):
+def _sweden_card(query, D):
+    T = D["sweden"]
+    if not _match(query, T["name"], T["source"], "ssyk", T["type"]):
         return
     occ = (_file_meta("occupations_cache.json").get("data") or {})
     ssyk = (_file_meta("ssyk_descriptions.json").get("data") or {})
     appset = (_file_meta("app_settings.json").get("data") or {})
     with st.container(border=True, key="adcard_se"):
         st.markdown(
-            _hdr("se", "Sweden", "SCB", "live API + stored codes & labels",
-                 _pill("green", "Up to date"))
-            + _stats([("Latest data year", appset.get("latest_data_year", 2025)),
-                      ("SCB codes cached", (occ.get("cached_at") or "—")[:10]),
-                      ("SSYK labels built", (ssyk.get("built_at") or "—")[:10])])
-            + ('<div class="ad-cap">Salaries fetched live from SCB; occupation codes + SSYK '
-               "labels/translations are cached for fast, translated dropdowns. Re-fetching "
-               "updates the occupation codes from the SCB API (EN + SV).</div>"),
+            _hdr("se", T["name"], T["source"], T["type"], _pill("green", D["pill_ok"]))
+            + _stats([(T["s_year"], appset.get("latest_data_year", 2025)),
+                      (T["s_codes"], (occ.get("cached_at") or "—")[:10]),
+                      (T["s_built"], (ssyk.get("built_at") or "—")[:10])])
+            + f'<div class="ad-cap">{T["desc"]}</div>',
             unsafe_allow_html=True)
         with _btnrow():
-            go = st.button("↻ Re-fetch codes", key="se_refetch")
+            go = st.button(T["btn"], key="se_refetch")
         if go:
-            with st.spinner("Fetching occupation codes from SCB…"):
+            with st.spinner("…"):
                 try:
                     import sweden_codes
                     ts = sweden_codes.refresh()
@@ -427,15 +439,16 @@ def _sweden_card(query):
                         st.session_state.pop(k, None)
                     st.session_state["_se_codes_result"] = ts
                 except Exception as e:  # noqa: BLE001
-                    st.error(f"Re-fetch failed: {e}")
+                    st.error(T["failed"].format(err=e))
             st.rerun()
         res = st.session_state.get("_se_codes_result")
         if res:
-            st.success(f"✅ SCB codes re-fetched {res}.")
+            st.success(T["done"].format(ts=res))
 
 
-def _france_card(query):
-    if not _match(query, "france", "insee", "melodi", "microdata", "pcs", "live"):
+def _france_card(query, D):
+    T = D["france"]
+    if not _match(query, T["name"], T["source"], "melodi", "microdata", "pcs", T["type"]):
         return
     lbl = (_file_meta("pcs_labels.json").get("data") or {})
     micro_meta = _file_meta("pcs_microdata_percentiles.json")
@@ -448,24 +461,21 @@ def _france_card(query):
         my = 0
     newer = bool(frl and frl > my)
     st.session_state["_fr_upd"] = newer
-    pill = _pill("amber", "Update available") if newer else _pill("green", "Up to date")
+    pill = _pill("amber", D["pill_update"]) if newer else _pill("green", D["pill_ok"])
     with st.container(border=True, key="adcard_fr"):
-        html = _hdr("fr", "France", "INSEE", "live API + microdata + PCS labels", pill)
-        html += _stats([("Microdata year", micro_year),
-                        ("PCS labels built", lbl.get("built_at", "—")),
-                        ("Microdata size", _fmt_bytes(micro_meta.get("size")))])
-        html += ('<div class="ad-cap">Mean-salary series fetched live from INSEE Melodi; '
-                 "per-occupation percentiles come from a bundled microdata file (FD_SALAAN), PCS "
-                 "labels from a bundled file. Both rebuild offline — INSEE microdata is a manual "
-                 "download, not a live URL.</div>")
+        html = _hdr("fr", T["name"], T["source"], T["type"], pill)
+        html += _stats([(T["s_year"], micro_year),
+                        (T["s_built"], lbl.get("built_at", "—")),
+                        (T["s_size"], _fmt_bytes(micro_meta.get("size")))])
+        html += f'<div class="ad-cap">{T["desc"]}</div>'
         if newer:
-            html += (f'<div class="ad-alert">↻ INSEE publishes annual data through {frl} — '
-                     f'the bundled microdata is {micro_year}.</div>')
+            html += ('<div class="ad-alert">'
+                     + T["alert"].format(latest=frl, year=micro_year) + '</div>')
         st.markdown(html, unsafe_allow_html=True)
         with _btnrow():
-            chk = st.button("🔍 Check INSEE for a newer year", key="fr_scan")
+            chk = st.button(T["btn_check"], key="fr_scan")
         if chk:
-            with st.spinner("Querying INSEE Melodi…"):
+            with st.spinner("…"):
                 try:
                     import france_data as fd
                     st.session_state["_fr_latest"] = fd.fetch_available_year("private")
@@ -473,56 +483,51 @@ def _france_card(query):
                     st.session_state["_fr_err"] = str(e)
             st.rerun()
         if st.session_state.get("_fr_err"):
-            st.error(f"INSEE check failed: {st.session_state.pop('_fr_err')}")
+            st.error(T["failed"].format(err=st.session_state.pop("_fr_err")))
 
 
-def _caches_card(query):
-    if not _match(query, "cache", "clear", "sweden", "norway", "france"):
+def _caches_card(query, D):
+    if not _match(query, D["caches_title"], "clear", D["caches_type"]):
         return
     with st.container(border=True, key="adcard_caches"):
         lc, rc = st.columns([3, 1.2], vertical_alignment="center")
         lc.markdown(
-            '<div class="ad-hdL"><span><span class="ad-name">Caches</span>'
-            '<span class="ad-type">· Sweden · Norway · France live fetches</span></span></div>'
-            '<div class="ad-cap" style="margin-top:8px;">Live-API sources cache fetched figures '
-            "to disk. Clear to force a re-fetch of the latest published data on next view.</div>",
+            f'<div class="ad-hdL"><span><span class="ad-name">{D["caches_title"]}</span>'
+            f'<span class="ad-type">· {D["caches_type"]}</span></span></div>'
+            f'<div class="ad-cap" style="margin-top:8px;">{D["caches_caption"]}</div>',
             unsafe_allow_html=True)
-        if rc.button("🗑 Clear data caches", key="clear_caches"):
+        if rc.button(D["clear_btn"], key="clear_caches"):
             st.cache_data.clear()
-            st.success("Cleared — fresh figures on next view.")
+            st.success(D["cleared"])
 
 
 def data_section():
     st.markdown(CSS, unsafe_allow_html=True)
+    D = _A()["data"]
     tl, tr = st.columns([2.4, 1], vertical_alignment="center")
-    tl.caption("Each source shows its latest data year and how it refreshes.")
+    tl.caption(D["caption"])
     tr.markdown('<div style="text-align:right;font-size:12px;color:#7A828F;">'
-                '<span class="ad-pill ad-green" style="padding:2px 8px;">Up to date</span>&nbsp;'
-                '<span class="ad-pill ad-amber" style="padding:2px 8px;">Update available</span></div>',
+                f'<span class="ad-pill ad-green" style="padding:2px 8px;">{D["pill_ok"]}</span>&nbsp;'
+                f'<span class="ad-pill ad-amber" style="padding:2px 8px;">{D["pill_update"]}</span></div>',
                 unsafe_allow_html=True)
     query = st.text_input("Search data sources", key="ds_search",
-                          placeholder="🔍  Search sources — country, agency, classification…",
-                          label_visibility="collapsed")
-    _us_card(query)
-    _norway_card(query)
-    _sweden_card(query)
-    _france_card(query)
-    _caches_card(query)
+                          placeholder=D["search_ph"], label_visibility="collapsed")
+    _us_card(query, D)
+    _norway_card(query, D)
+    _sweden_card(query, D)
+    _france_card(query, D)
+    _caches_card(query, D)
     if query.strip() and not any(_match(query, *t) for t in (
-            ("united states", "us", "bls", "oews", "bundled", "soc"),
-            ("norway", "ssb", "styrk"), ("sweden", "scb", "ssyk"),
-            ("france", "insee", "melodi", "microdata", "pcs"), ("cache", "clear"))):
-        st.caption(f"No data source matches “{query}”.")
+            (D["us"]["name"], "us", D["us"]["source"], D["us"]["type"], "soc"),
+            (D["norway"]["name"], D["norway"]["source"], "styrk", D["norway"]["type"]),
+            (D["sweden"]["name"], D["sweden"]["source"], "ssyk", D["sweden"]["type"]),
+            (D["france"]["name"], D["france"]["source"], "melodi", "microdata", "pcs",
+             D["france"]["type"]),
+            (D["caches_title"], "clear", D["caches_type"]))):
+        st.caption(D["no_match"].format(q=query))
 
 
 # ── Section: Users ───────────────────────────────────────────────────────────
-_ROLE_BADGE = {
-    "master": ('👑 Master', '#8A6A2A', 'rgba(184,134,59,.16)'),
-    "admin": ('Admin', '#0A63A6', 'rgba(10,99,166,.10)'),
-    "standard": ('Standard', '#5B6472', '#EEF0F3'),
-}
-
-
 def _initials(name, email):
     base = (name or (email.split("@")[0] if email else "?")).strip()
     parts = base.replace(".", " ").replace("_", " ").split()
@@ -536,40 +541,45 @@ def _initials(name, email):
 
 def users_section():
     st.markdown(CSS, unsafe_allow_html=True)
+    U = _A()["users"]
     me = st.session_state.get("auth_user", {})
     country_opts = _country_options()
     cslugs = list(country_opts)
     cfmt = lambda s: country_opts.get(s, s)          # noqa: E731
+    role_badges = {"master": (U["role_master"], "#8A6A2A", "rgba(184,134,59,.16)"),
+                   "admin": (U["role_admin"], "#0A63A6", "rgba(10,99,166,.10)"),
+                   "standard": (U["role_standard"], "#5B6472", "#EEF0F3")}
 
     # ── Create user card ──
     with st.container(border=True, key="adcard_create"):
-        st.markdown("#### Create user")
+        st.markdown(f"#### {U['create_heading']}")
         a, b = st.columns(2)
-        a.markdown('<div class="ad-flbl">Name</div>', unsafe_allow_html=True)
-        nn = a.text_input("Name", key="nu_name", placeholder="Full name",
+        a.markdown(f'<div class="ad-flbl">{U["f_name"]}</div>', unsafe_allow_html=True)
+        nn = a.text_input(U["f_name"], key="nu_name", placeholder=U["ph_name"],
                           label_visibility="collapsed")
-        b.markdown('<div class="ad-flbl">Email</div>', unsafe_allow_html=True)
-        ne = b.text_input("Email", key="nu_email", placeholder="name@company.com",
+        b.markdown(f'<div class="ad-flbl">{U["f_email"]}</div>', unsafe_allow_html=True)
+        ne = b.text_input(U["f_email"], key="nu_email", placeholder=U["ph_email"],
                           label_visibility="collapsed")
         c, d = st.columns(2)
-        c.markdown('<div class="ad-flbl">Password</div>', unsafe_allow_html=True)
-        npw = c.text_input("Password", type="password", key="nu_pw", label_visibility="collapsed")
-        d.markdown('<div class="ad-flbl">Role</div>', unsafe_allow_html=True)
-        nr = d.selectbox("Role", auth.ROLES, key="nu_role", label_visibility="collapsed")
-        st.markdown('<div class="ad-flbl">Country access</div>', unsafe_allow_html=True)
-        nc = st.multiselect("Country access", cslugs, default=list(auth.DEFAULT_COUNTRIES),
+        c.markdown(f'<div class="ad-flbl">{U["f_password"]}</div>', unsafe_allow_html=True)
+        npw = c.text_input(U["f_password"], type="password", key="nu_pw",
+                           label_visibility="collapsed")
+        d.markdown(f'<div class="ad-flbl">{U["f_role"]}</div>', unsafe_allow_html=True)
+        nr = d.selectbox(U["f_role"], auth.ROLES, key="nu_role", label_visibility="collapsed")
+        st.markdown(f'<div class="ad-flbl">{U["f_access"]}</div>', unsafe_allow_html=True)
+        nc = st.multiselect(U["f_access"], cslugs, default=list(auth.DEFAULT_COUNTRIES),
                             format_func=cfmt, key="nu_countries", label_visibility="collapsed")
-        if st.button("Create user", type="primary", key="nu_create"):
+        if st.button(U["btn_create"], type="primary", key="nu_create"):
             if not nn.strip() or not ne.strip() or not npw:
-                st.error("Name, email and password are required.")
+                st.error(U["missing"])
             else:
                 try:
                     auth.create_user(ne.strip(), npw, nr, countries=nc, name=nn.strip())
                     _invalidate_users()
-                    st.success(f"Created {ne}")
+                    st.success(U["created"].format(email=ne))
                     st.rerun()
                 except Exception as e:  # noqa: BLE001
-                    st.error(f"Could not create user: {e}")
+                    st.error(U["create_failed"].format(err=e))
 
     st.write("")
 
@@ -577,83 +587,98 @@ def users_section():
     users, err = _load_users()
     with st.container(border=True, key="adcard_users"):
         rc = Counter((u["role"] for u in users)) if users else Counter()
-        h1, h2 = st.columns([4, 1], vertical_alignment="center")
+        h1, h2, h3 = st.columns([2.6, 2, 1], vertical_alignment="center")
         h1.markdown(
-            '#### Existing users '
+            f'#### {U["existing_heading"]} '
             f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;'
-            f'color:#98A0AC;font-weight:400;">&nbsp;&nbsp;{rc.get("master",0)} master · '
-            f'{rc.get("admin",0)} admin · {rc.get("standard",0)} standard · '
-            f'{sum(rc.values())} total</span>', unsafe_allow_html=True)
-        if h2.button("↻ Reload", key="users_reload", use_container_width=True):
+            f'color:#98A0AC;font-weight:400;">&nbsp;&nbsp;'
+            + U["counts"].format(master=rc.get("master", 0), admin=rc.get("admin", 0),
+                                 standard=rc.get("standard", 0), total=sum(rc.values()))
+            + '</span>', unsafe_allow_html=True)
+        uq = h2.text_input("Search users", key="users_search", placeholder=U["search_ph"],
+                           label_visibility="collapsed")
+        if h3.button(U["btn_reload"], key="users_reload", use_container_width=True):
             _load_users(force=True)
             st.rerun()
         if err:
-            st.error(f"Could not list users: {err}")
-            st.caption("Supabase can be slow to respond — try ↻ Reload.")
+            st.error(U["load_error"].format(err=err))
+            st.caption(U["retry_hint"])
             return
+
+        shown = [u for u in (users or []) if _match(
+            uq, u.get("name"), u["email"], u["role"],
+            *(cfmt(s) for s in u.get("countries", [])))]
+        if uq.strip() and not shown:
+            st.caption(U["no_match"].format(q=uq))
 
         _W = [2.6, 3, 1.7, 2.2, 1.2]
         head = st.columns(_W)
-        for col, cap in zip(head, ("User", "Email", "Role", "Access", "Actions")):
+        for col, cap in zip(head, (U["col_user"], U["col_email"], U["col_role"],
+                                   U["col_access"], U["col_actions"])):
             col.markdown(f'<div class="ad-th">{cap}</div>', unsafe_allow_html=True)
         st.markdown('<div style="height:1px;background:#EEF0F3;margin:6px 0 2px;"></div>',
                     unsafe_allow_html=True)
 
-        for u in users or []:
+        for u in shown:
             c_user, c_email, c_role, c_acc, c_act = st.columns(_W, vertical_alignment="center")
             av = "#B8863B" if u["role"] in _ADMIN_ROLES else "#0A63A6"
-            nm = u.get("name") or "— (no name)"
+            nm = u.get("name") or U["no_name"]
             c_user.markdown(
                 f'<div class="ad-user"><div class="ad-av" style="background:{av};">'
                 f'{_initials(u.get("name"), u["email"])}</div>'
                 f'<span class="ad-uname">{nm}</span></div>', unsafe_allow_html=True)
             c_email.markdown(f'<span class="ad-email">{u["email"]}</span>', unsafe_allow_html=True)
-            txt, fg, bg = _ROLE_BADGE.get(u["role"], (u["role"], "#5B6472", "#EEF0F3"))
-            you = " (you)" if u["id"] == me.get("id") else ""
+            txt, fg, bg = role_badges.get(u["role"], (u["role"], "#5B6472", "#EEF0F3"))
+            you = U["you"] if u["id"] == me.get("id") else ""
             c_role.markdown(f'<span class="ad-badge" style="color:{fg};background:{bg};">'
                             f'{txt}</span>{you}', unsafe_allow_html=True)
-            acc = ("All countries" if u["role"] in _ADMIN_ROLES
+            acc = (U["all_countries"] if u["role"] in _ADMIN_ROLES
                    else ", ".join(cfmt(s) for s in u.get("countries", [])) or "—")
             c_acc.markdown(f'<span class="ad-access">🌐 {acc}</span>', unsafe_allow_html=True)
 
             e_col, d_col = c_act.columns(2)
-            with e_col.popover("✏️", help="Edit user"):
+            with e_col.popover("✏️", help=U["edit_help"]):
                 if u["role"] == "master":
-                    st.caption("👑 Master — role fixed.")
+                    st.caption(U["master_fixed"])
                 elif u["id"] == me.get("id"):
-                    st.caption("This is you — role fixed.")
+                    st.caption(U["you_fixed"])
                 else:
-                    nrole = st.selectbox("Role", auth.ROLES,
+                    nrole = st.selectbox(U["f_role"], auth.ROLES,
                                          index=auth.ROLES.index(u["role"]) if u["role"] in auth.ROLES else 0,
                                          key=f"role_{u['id']}")
-                    if nrole != u["role"] and st.button("Save role", key=f"rolebtn_{u['id']}"):
+                    if nrole != u["role"] and st.button(U["save_role"], key=f"rolebtn_{u['id']}"):
                         try:
                             auth.set_role(u["id"], nrole)
                             _invalidate_users()
                             st.rerun()
                         except Exception as e:  # noqa: BLE001
                             st.error(str(e))
-                cur = [s for s in u.get("countries", []) if s in cslugs]
-                sel = st.multiselect("Country access", cslugs, default=cur, format_func=cfmt,
-                                     key=f"cty_{u['id']}")
-                if st.button("Save access", key=f"ctybtn_{u['id']}"):
-                    try:
-                        auth.set_countries(u["id"], sel)
-                        _invalidate_users()
-                        st.success("Saved.")
-                        st.rerun()
-                    except Exception as e:  # noqa: BLE001
-                        st.error(str(e))
-                pwl = "Your new password" if u["id"] == me.get("id") else "New password"
+                # Country grants only matter for standard users — admins/master
+                # open every country regardless, so hide the picker for them.
+                if u["role"] in _ADMIN_ROLES:
+                    st.caption(U["admin_access"])
+                else:
+                    cur = [s for s in u.get("countries", []) if s in cslugs]
+                    sel = st.multiselect(U["f_access"], cslugs, default=cur, format_func=cfmt,
+                                         key=f"cty_{u['id']}")
+                    if st.button(U["save_access"], key=f"ctybtn_{u['id']}"):
+                        try:
+                            auth.set_countries(u["id"], sel)
+                            _invalidate_users()
+                            st.success(U["saved"])
+                            st.rerun()
+                        except Exception as e:  # noqa: BLE001
+                            st.error(str(e))
+                pwl = U["pw_yours"] if u["id"] == me.get("id") else U["pw_new"]
                 newpw = st.text_input(pwl, type="password", key=f"pw_{u['id']}")
-                if st.button("Update password", key=f"pwbtn_{u['id']}"):
+                if st.button(U["btn_pw"], key=f"pwbtn_{u['id']}"):
                     try:
                         auth.set_password(u["id"], newpw)
-                        st.success("Password updated.")
+                        st.success(U["pw_updated"])
                     except Exception as e:  # noqa: BLE001
                         st.error(str(e))
             if u["role"] != "master" and u["id"] != me.get("id"):
-                if d_col.button("🗑", key=f"del_{u['id']}", help="Delete user"):
+                if d_col.button("🗑", key=f"del_{u['id']}", help=U["del_help"]):
                     try:
                         auth.delete_user(u["id"])
                         _invalidate_users()
@@ -663,14 +688,17 @@ def users_section():
 
 
 # ── Orchestrator ─────────────────────────────────────────────────────────────
-SECTIONS = {"Overview": overview_section, "Data sources": data_section, "Users": users_section}
+SECTIONS = {"overview": overview_section, "data": data_section, "users": users_section}
 
 
 def section_selector() -> str:
-    """The Overview / Data sources / Users pill toggle (rendered in the header)."""
-    sec = st.segmented_control("section", list(SECTIONS), default="Overview",
-                               key="_admin_section", label_visibility="collapsed")
-    return sec or "Overview"
+    """The Overview / Data sources / Users pill toggle (rendered in the header).
+    Options are stable ids; the shown labels come from content/admin.toml."""
+    labels = _A()["tabs"]
+    sec = st.segmented_control("section", list(SECTIONS), default="overview",
+                               key="_admin_section", label_visibility="collapsed",
+                               format_func=lambda s: labels.get(s, s))
+    return sec or "overview"
 
 
 def render_body(section: str):

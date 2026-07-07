@@ -1,0 +1,141 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  ADMIN PANEL CONTENT  —  edit the text here; no code changes needed.
+#  Lines starting with #  are comments.  Text goes inside "quotes".
+#  {placeholders} are filled in by the app — keep them where they appear.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[header]
+badge   = "ADMIN"                 # pill next to the wordmark
+eyebrow = "Control room"
+title   = "Admin panel"
+back    = "Back to home"
+gate    = "🔒 The admin panel is available to administrators only. Sign in with an admin account from the home page."
+go_home = "Go to home"
+
+[tabs]
+overview = "Overview"
+data     = "Data sources"
+users    = "Users"
+
+[overview]
+kpi_users     = "Registered users"
+kpi_countries = "Countries"
+kpi_live      = "Live sources"
+kpi_updates   = "Updates available"
+users_error   = "⚠ Could not load users: {err}"
+open_heading  = "Open a country"
+open_caption  = "Jump straight into any country page, including admin-only previews."
+
+[data]
+caption        = "Each source shows its latest data year and how it refreshes."
+pill_ok        = "Up to date"
+pill_update    = "Update available"
+search_ph      = "🔍  Search sources — country, agency, classification…"
+no_match       = "No data source matches “{q}”."
+caches_title   = "Caches"
+caches_type    = "Sweden · Norway · France live fetches"
+caches_caption = "Live-API sources cache fetched figures to disk. Clear to force a re-fetch of the latest published data on next view."
+clear_btn      = "🗑 Clear data caches"
+cleared        = "Cleared — fresh figures on next view."
+
+[data.us]
+name        = "United States"
+source      = "BLS OEWS"
+type        = "bundled file"
+s_year      = "Latest data year"
+s_occ       = "Occupations"
+s_scopes    = "Scopes"
+s_size      = "File size"
+desc        = "Bundled file built {built} · re-downloadable from BLS special-requests files (national + state + national-industry)."
+alert       = "↻ May {latest} available — newer than the bundled May {year}."
+btn_refresh = "↻ Refresh to May {year}"
+btn_rebuild = "↻ Rebuild from BLS"
+btn_check   = "🔍 Check for newer release"
+confirm     = "This re-downloads ~65 MB from BLS and rebuilds the dataset (≈1–2 min). The running app updates immediately; to persist across redeploys, commit the regenerated `us_oews.json.gz`."
+btn_confirm = "✅ Confirm refresh"
+btn_cancel  = "Cancel"
+refreshed   = "✅ Refreshed to May {year} · {occ} occupations · {scopes} scopes · {rows} rows · {size}"
+failed      = "Last refresh failed: {err}"
+
+[data.norway]
+name    = "Norway"
+source  = "SSB"
+type    = "live API + STYRK labels"
+s_year  = "Latest data year"
+s_built = "STYRK labels built"
+desc    = "Salaries fetched live from SSB table 11418 and disk-cached; the bundled bilingual STYRK labels give instant dropdowns. Rebuilding re-fetches the labels from SSB (EN + NO)."
+btn     = "↻ Rebuild labels"
+done    = "✅ Labels rebuilt {built} · {codes} codes ({leaves} occupations)."
+
+[data.sweden]
+name    = "Sweden"
+source  = "SCB"
+type    = "live API + stored codes & labels"
+s_year  = "Latest data year"
+s_codes = "SCB codes cached"
+s_built = "SSYK labels built"
+desc    = "Salaries fetched live from SCB; occupation codes + SSYK labels/translations are cached for fast, translated dropdowns. Re-fetching updates the occupation codes from the SCB API (EN + SV)."
+btn     = "↻ Re-fetch codes"
+done    = "✅ SCB codes re-fetched {ts}."
+failed  = "Re-fetch failed: {err}"
+
+[data.france]
+name      = "France"
+source    = "INSEE"
+type      = "live API + microdata + PCS labels"
+s_year    = "Microdata year"
+s_built   = "PCS labels built"
+s_size    = "Microdata size"
+desc      = "Mean-salary series fetched live from INSEE Melodi; per-occupation percentiles come from a bundled microdata file (FD_SALAAN), PCS labels from a bundled file. Both rebuild offline — INSEE microdata is a manual download, not a live URL."
+alert     = "↻ INSEE publishes annual data through {latest} — the bundled microdata is {year}."
+btn_check = "🔍 Check INSEE for a newer year"
+failed    = "INSEE check failed: {err}"
+
+[users]
+create_heading = "Create user"
+f_name         = "Name"
+f_email        = "Email"
+f_password     = "Password"
+f_role         = "Role"
+f_access       = "Country access"
+ph_name        = "Full name"
+ph_email       = "name@company.com"
+btn_create     = "Create user"
+missing        = "Name, email and password are required."
+created        = "Created {email}"
+create_failed  = "Could not create user: {err}"
+
+existing_heading = "Existing users"
+counts           = "{master} master · {admin} admin · {standard} standard · {total} total"
+btn_reload       = "↻ Reload"
+search_ph        = "🔍  Search users — name, email, role…"
+no_match         = "No user matches “{q}”."
+loading          = "Loading users…"
+load_error       = "Could not list users: {err}"
+retry_hint       = "Supabase can be slow to respond — try ↻ Reload."
+
+col_user    = "User"
+col_email   = "Email"
+col_role    = "Role"
+col_access  = "Access"
+col_actions = "Actions"
+
+no_name       = "— (no name)"
+you           = " (you)"
+all_countries = "All countries"
+role_master   = "👑 Master"
+role_admin    = "Admin"
+role_standard = "Standard"
+
+master_fixed  = "👑 Master — role fixed."
+you_fixed     = "This is you — role fixed."
+admin_access  = "Admins & master can open every country — no grants needed."
+save_role     = "Save role"
+save_access   = "Save access"
+saved         = "Saved."
+pw_yours      = "Your new password"
+pw_new        = "New password"
+btn_pw        = "Update password"
+pw_updated    = "Password updated."
+edit_help     = "Edit user"
+del_help      = "Delete user"
