@@ -53,7 +53,17 @@ def supabase_configured() -> bool:
 def _client(service: bool = False) -> Client:
     cfg = _cfg()
     key = _secret_key(cfg) if service else _public_key(cfg)
-    return create_client(cfg["url"], key)
+    client = create_client(cfg["url"], key)
+    if service:
+        # Admin calls (list/create/update users) sometimes exceed httpx's 5s
+        # default read timeout on a slow Supabase — give them real headroom so
+        # one call succeeds instead of several timing out.
+        try:
+            import httpx
+            client.auth._http_client.timeout = httpx.Timeout(30.0)
+        except Exception:
+            pass
+    return client
 
 
 def country_switcher(current: str):
@@ -181,8 +191,18 @@ def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | N
         return None, str(e)
 
 
-def list_users() -> list[dict]:
-    resp = _client(service=True).auth.admin.list_users()
+def list_users(retries: int = 1) -> list[dict]:
+    # The service client now runs with a 30s timeout (see _client); one retry
+    # covers transient drops without stacking long waits.
+    resp, last_err = None, None
+    for _ in range(retries + 1):
+        try:
+            resp = _client(service=True).auth.admin.list_users()
+            break
+        except Exception as e:  # noqa: BLE001
+            last_err = e
+    if resp is None:
+        raise last_err
     users = resp if isinstance(resp, list) else getattr(resp, "users", resp)
     out = []
     for u in users:

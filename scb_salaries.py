@@ -894,14 +894,10 @@ CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "occupatio
 # ── Occupation cache (disk + session) ─────────────────────────────────────────
 
 def _fetch_occupations_from_api(lang: str) -> dict[str, str]:
-    base = f"https://api.scb.se/OV0104/v1/doris/{lang.lower()}/ssd"
-    url  = f"{base}/{TABLE_BASE}/LoneSpridSektorYrk4A"
-    r = requests.get(url, timeout=15)
-    r.raise_for_status()
-    for var in r.json()["variables"]:
-        if var["code"] == "Yrke2012":
-            return dict(zip(var["values"], var["valueTexts"]))
-    return {}
+    # Fetch logic lives in sweden_codes.py (shared with the admin panel's
+    # "Re-fetch codes" so the two can never drift).
+    from sweden_codes import fetch_occupations
+    return fetch_occupations(lang)
 
 
 def refresh_cache() -> str:

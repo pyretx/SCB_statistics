@@ -5,8 +5,8 @@ reused elsewhere (e.g. Sweden's 'Manage users' dialog calls users_section()).
 Access is gated to admin/master by admin.py before any of this renders.
 
 Sections: Overview · Data sources · Users. The visual design (card tiles, status
-pills, mono stat grids) follows the approved Admin-panel mockup; the data/logic
-underneath is unchanged.
+pills, mono stat grids, compact button rows) follows the approved Admin-panel
+mockup; the data/logic underneath is unchanged.
 """
 from __future__ import annotations
 
@@ -75,11 +75,29 @@ CSS = """
   border:1px solid rgba(178,106,0,.18); color:#8A6A2A; font-size:13px; padding:10px 13px;
   border-radius:10px; margin:14px 0 2px; }
 
+/* Compact button rows inside cards — buttons keep their content width */
+[class*="st-key-adcard_"] .stButton button{ padding:7px 16px; border-radius:9px;
+  font-weight:600; font-size:13.5px; }
+
 /* KPI cards (Overview) */
 .ad-kico{ width:36px; height:36px; border-radius:10px; display:flex; align-items:center;
   justify-content:center; margin-bottom:14px; }
 .ad-knum{ font-size:30px; font-weight:800; color:#0C1119; letter-spacing:-.02em; line-height:1; }
 .ad-klbl{ font-size:13px; color:#7A828F; margin-top:5px; }
+
+/* Country tiles (Overview → Open a country): styled page-links with a flag */
+[class*="st-key-adtile_"] [data-testid="stPageLink"]{ width:100%; }
+[class*="st-key-adtile_"] [data-testid="stPageLink"] a{ width:100%; border:1px solid #E7E9ED;
+  border-radius:10px; background-color:#fff; padding:10px 32px 10px 48px; position:relative;
+  background-repeat:no-repeat; background-position:13px center; background-size:24px 17px;
+  transition:border-color .15s ease, background-color .15s ease; justify-content:flex-start; }
+[class*="st-key-adtile_"] [data-testid="stPageLink"] a:hover{ border-color:#C9CFD8;
+  background-color:#F9FAFB; }
+[class*="st-key-adtile_"] [data-testid="stPageLink"] a p,
+[class*="st-key-adtile_"] [data-testid="stPageLink"] a span{ font-weight:600; font-size:13.5px;
+  color:#0C1119!important; }
+[class*="st-key-adtile_"] [data-testid="stPageLink"] a::after{ content:'↗'; position:absolute;
+  right:13px; top:50%; transform:translateY(-50%); color:#98A0AC; font-size:13px; }
 
 /* Field label (mono uppercase, above inputs) */
 .ad-flbl{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.10em;
@@ -145,6 +163,14 @@ def _fmt_bytes(n) -> str:
     return f"{n / 1e6:.2f} MB" if n else "—"
 
 
+def _n(v) -> str:
+    """1402 → '1 402' (design's mono thin-space grouping)."""
+    try:
+        return f"{int(v):,}".replace(",", " ")
+    except (TypeError, ValueError):
+        return str(v)
+
+
 def _country_options() -> dict:
     opts = {"sweden": "Sweden", "france": "France"}
     try:
@@ -159,10 +185,11 @@ def _country_options() -> dict:
 
 def _load_users(force: bool = False):
     if force or "_admin_users" not in st.session_state:
-        try:
-            st.session_state["_admin_users"] = (auth.list_users(), None)
-        except Exception as e:  # noqa: BLE001
-            st.session_state["_admin_users"] = (None, str(e))
+        with st.spinner("Loading users…"):
+            try:
+                st.session_state["_admin_users"] = (auth.list_users(), None)
+            except Exception as e:  # noqa: BLE001
+                st.session_state["_admin_users"] = (None, str(e))
     return st.session_state["_admin_users"]
 
 
@@ -193,6 +220,15 @@ def _hdr(iso: str, name: str, src: str, typ: str, pill_html: str) -> str:
             f'</div>{pill_html}</div>')
 
 
+def _btnrow():
+    """Horizontal, content-width button row (design's compact side-by-side pair).
+    Falls back to a plain (vertical) container on older Streamlit."""
+    try:
+        return st.container(horizontal=True, gap="small")
+    except TypeError:
+        return st.container()
+
+
 # ── Section: Overview ────────────────────────────────────────────────────────
 def _kpi(col, icon, color, tint, num, label):
     with col, st.container(border=True, key=f"adkpi_{label.lower().replace(' ', '_')}"):
@@ -202,20 +238,24 @@ def _kpi(col, icon, color, tint, num, label):
             unsafe_allow_html=True)
 
 
+def _country_links() -> list[tuple[str, str, str, str]]:
+    """[(slug, name, iso, page)] — released markets first, then framework countries."""
+    links = [("sweden", "Sweden", "se", "scb_salaries.py"),
+             ("france", "France", "fr", "france.py")]
+    try:
+        from core import registry
+        for c in registry.all_countries():
+            if c.slug != "demo":
+                links.append((c.slug, c.name, c.iso, f"countries/{c.slug}/page.py"))
+    except Exception:
+        pass
+    return links
+
+
 def overview_section():
     users, uerr = _load_users()
     n_users = len(users) if users is not None else "—"
-
-    links = [("Sweden", "se", "scb_salaries.py"), ("France", "fr", "france.py")]
-    try:
-        from core import registry
-        _iso = {"norway": "no", "us": "us"}
-        for c in registry.all_countries():
-            if c.slug != "demo":
-                links.append((c.name, _iso.get(c.slug, c.iso), f"countries/{c.slug}/page.py"))
-    except Exception:
-        pass
-
+    links = _country_links()
     updates = sum(1 for k in ("_us_upd", "_fr_upd") if st.session_state.get(k))
 
     c1, c2, c3, c4 = st.columns(4)
@@ -223,14 +263,21 @@ def overview_section():
     _kpi(c2, _IC_GLOBE, "#1B8A5A", "rgba(27,138,90,.12)", len(links), "Countries")
     _kpi(c3, _IC_ZAP, "#B26A00", "rgba(178,106,0,.13)", 3, "Live sources")
     _kpi(c4, _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, "Updates available")
+    if uerr:
+        st.caption(f"⚠ Could not load users: {uerr}")
 
     st.write("")
     with st.container(border=True, key="adcard_open"):
         st.markdown("#### Open a country")
         st.caption("Jump straight into any country page, including admin-only previews.")
-        cols = st.columns(3)
-        for i, (name, _iso, page) in enumerate(links):
-            cols[i % 3].page_link(page, label=name, icon=":material/open_in_new:")
+        cols = st.columns(4)
+        flag_css = ""
+        for i, (slug, name, iso, page) in enumerate(links):
+            with cols[i % 4], st.container(key=f"adtile_{slug}"):
+                st.page_link(page, label=name)
+            flag_css += (f".st-key-adtile_{slug} [data-testid='stPageLink'] a"
+                         f"{{background-image:url('{theme.flag_uri(iso)}');}}\n")
+        st.markdown(f"<style>{flag_css}</style>", unsafe_allow_html=True)
 
 
 # ── Section: Data sources ────────────────────────────────────────────────────
@@ -257,10 +304,10 @@ def _run_us_refresh(usbuild, target):
 
 def _us_card(query):
     from countries.us import build as usbuild
-    info = usbuild.bundled_info()
-    c = info.get("counts", {})
     if not _match(query, "united states", "us", "bls", "oews", "bundled", "soc"):
         return
+    info = usbuild.bundled_info()
+    c = info.get("counts", {})
     latest = st.session_state.get("_us_latest")
     newer = bool(latest and info.get("year") and latest > info["year"])
     st.session_state["_us_upd"] = newer
@@ -268,8 +315,8 @@ def _us_card(query):
     with st.container(border=True, key="adcard_us"):
         html = _hdr("us", "United States", "BLS OEWS", "bundled file", pill)
         html += _stats([("Latest data year", f"May {info.get('year', '—')}"),
-                        ("Occupations", f"{c.get('occupations', '—')}"),
-                        ("Scopes", f"{c.get('scopes', '—')}"),
+                        ("Occupations", _n(c.get("occupations", "—"))),
+                        ("Scopes", _n(c.get("scopes", "—"))),
                         ("File size", _fmt_bytes(info.get("size")))])
         html += (f'<div class="ad-cap">Bundled file built {info.get("built_at", "—")} · '
                  "re-downloadable from BLS special-requests files (national + state + "
@@ -280,11 +327,13 @@ def _us_card(query):
         st.markdown(html, unsafe_allow_html=True)
 
         target = latest if newer else None
-        b1, b2, _ = st.columns([1.2, 1.4, 2.4])
-        if b1.button(f"↻ Refresh to May {target}" if target else "↻ Rebuild from BLS",
-                     type="primary", key="us_refresh_btn", use_container_width=True):
+        with _btnrow():
+            go = st.button(f"↻ Refresh to May {target}" if target else "↻ Rebuild from BLS",
+                           type="primary", key="us_refresh_btn")
+            chk = st.button("🔍 Check for newer release", key="us_scan")
+        if go:
             st.session_state["_us_confirm"] = True
-        if b2.button("🔍 Check for newer release", key="us_scan", use_container_width=True):
+        if chk:
             with st.spinner("Scanning BLS…"):
                 st.session_state["_us_latest"] = usbuild.latest_available_year()
             st.rerun()
@@ -293,44 +342,67 @@ def _us_card(query):
             st.warning("This re-downloads ~65 MB from BLS and rebuilds the dataset (≈1–2 min). "
                        "The running app updates immediately; to persist across redeploys, "
                        "commit the regenerated `us_oews.json.gz`.")
-            cc1, cc2, _ = st.columns([1.2, 1, 2.8])
-            if cc1.button("✅ Confirm refresh", type="primary", key="us_confirm_yes",
-                          use_container_width=True):
+            with _btnrow():
+                yes = st.button("✅ Confirm refresh", type="primary", key="us_confirm_yes")
+                no = st.button("Cancel", key="us_confirm_no")
+            if yes:
                 st.session_state.pop("_us_confirm", None)
                 _run_us_refresh(usbuild, target)
-            if cc2.button("Cancel", key="us_confirm_no", use_container_width=True):
+            if no:
                 st.session_state.pop("_us_confirm", None)
                 st.rerun()
         if st.session_state.get("_us_refresh_error"):
             st.error(f"Last refresh failed: {st.session_state.pop('_us_refresh_error')}")
         res = st.session_state.get("_us_refresh_result")
         if res:
-            st.success(f"✅ Refreshed to May {res['year']} · {res['occupations']} occupations · "
-                       f"{res['scopes']} scopes · {res['rows']:,} rows · {_fmt_bytes(res['size'])}")
+            st.success(f"✅ Refreshed to May {res['year']} · {_n(res['occupations'])} occupations "
+                       f"· {_n(res['scopes'])} scopes · {_n(res['rows'])} rows · "
+                       f"{_fmt_bytes(res['size'])}")
 
 
 def _norway_card(query):
-    styrk = (_file_meta("styrk_labels.json").get("data") or {})
     if not _match(query, "norway", "ssb", "styrk", "live"):
         return
+    styrk = (_file_meta("styrk_labels.json").get("data") or {})
     with st.container(border=True, key="adcard_no"):
         st.markdown(
             _hdr("no", "Norway", "SSB", "live API + STYRK labels", _pill("green", "Up to date"))
             + _stats([("Latest data year", _norway_latest_year() or "—"),
                       ("STYRK labels built", styrk.get("built_at", "—"))])
             + ('<div class="ad-cap">Salaries fetched live from SSB table 11418 and disk-cached; '
-               "the bundled bilingual STYRK labels give instant dropdowns. No file to refresh — "
-               "rebuild labels offline via build_styrk_labels.py.</div>"),
+               "the bundled bilingual STYRK labels give instant dropdowns. Rebuilding re-fetches "
+               "the labels from SSB (EN + NO).</div>"),
             unsafe_allow_html=True)
-        st.caption("Labels rebuild offline (build_styrk_labels.py).")
+        with _btnrow():
+            go = st.button("↻ Rebuild labels", key="no_rebuild")
+        if go:
+            with st.status("Rebuilding STYRK labels…", expanded=True) as status:
+                try:
+                    from countries.norway import build as nobuild
+                    res = nobuild.build(log=status.write)
+                    try:
+                        from countries.norway import provider as noprov
+                        noprov._codes.clear()          # serve the new labels immediately
+                    except Exception:
+                        pass
+                    st.session_state["_no_labels_result"] = res
+                    status.update(label=f"Done — {res['built_at']}", state="complete")
+                except Exception as e:  # noqa: BLE001
+                    status.update(label="Rebuild failed", state="error")
+                    st.error(str(e))
+            st.rerun()
+        res = st.session_state.get("_no_labels_result")
+        if res:
+            st.success(f"✅ Labels rebuilt {res['built_at']} · {_n(res['codes'])} codes "
+                       f"({_n(res['leaves'])} occupations).")
 
 
 def _sweden_card(query):
+    if not _match(query, "sweden", "scb", "ssyk", "live"):
+        return
     occ = (_file_meta("occupations_cache.json").get("data") or {})
     ssyk = (_file_meta("ssyk_descriptions.json").get("data") or {})
     appset = (_file_meta("app_settings.json").get("data") or {})
-    if not _match(query, "sweden", "scb", "ssyk", "live"):
-        return
     with st.container(border=True, key="adcard_se"):
         st.markdown(
             _hdr("se", "Sweden", "SCB", "live API + stored codes & labels",
@@ -339,20 +411,36 @@ def _sweden_card(query):
                       ("SCB codes cached", (occ.get("cached_at") or "—")[:10]),
                       ("SSYK labels built", (ssyk.get("built_at") or "—")[:10])])
             + ('<div class="ad-cap">Salaries fetched live from SCB; occupation codes + SSYK '
-               "labels/translations are cached for fast, translated dropdowns. Code re-fetch and "
-               "the data-year check currently run from the Sweden page — migrating those here is "
-               "the next step.</div>"),
+               "labels/translations are cached for fast, translated dropdowns. Re-fetching "
+               "updates the occupation codes from the SCB API (EN + SV).</div>"),
             unsafe_allow_html=True)
-        st.caption("Code re-fetch currently lives on the Sweden page.")
+        with _btnrow():
+            go = st.button("↻ Re-fetch codes", key="se_refetch")
+        if go:
+            with st.spinner("Fetching occupation codes from SCB…"):
+                try:
+                    import sweden_codes
+                    ts = sweden_codes.refresh()
+                    # Sweden's page reads session-state first — drop its copies
+                    # so it reloads the fresh disk cache.
+                    for k in ("occupations_EN", "occupations_SV", "cache_ts"):
+                        st.session_state.pop(k, None)
+                    st.session_state["_se_codes_result"] = ts
+                except Exception as e:  # noqa: BLE001
+                    st.error(f"Re-fetch failed: {e}")
+            st.rerun()
+        res = st.session_state.get("_se_codes_result")
+        if res:
+            st.success(f"✅ SCB codes re-fetched {res}.")
 
 
 def _france_card(query):
+    if not _match(query, "france", "insee", "melodi", "microdata", "pcs", "live"):
+        return
     lbl = (_file_meta("pcs_labels.json").get("data") or {})
     micro_meta = _file_meta("pcs_microdata_percentiles.json")
     micro = micro_meta.get("data") or {}
     micro_year = micro.get("year", "—")
-    if not _match(query, "france", "insee", "melodi", "microdata", "pcs", "live"):
-        return
     frl = st.session_state.get("_fr_latest")
     try:
         my = int(str(micro_year)[:4])
@@ -374,8 +462,9 @@ def _france_card(query):
             html += (f'<div class="ad-alert">↻ INSEE publishes annual data through {frl} — '
                      f'the bundled microdata is {micro_year}.</div>')
         st.markdown(html, unsafe_allow_html=True)
-        _, b2, _sp = st.columns([0.01, 1.7, 2.3])
-        if b2.button("🔍 Check INSEE for a newer year", key="fr_scan", use_container_width=True):
+        with _btnrow():
+            chk = st.button("🔍 Check INSEE for a newer year", key="fr_scan")
+        if chk:
             with st.spinner("Querying INSEE Melodi…"):
                 try:
                     import france_data as fd
@@ -398,7 +487,7 @@ def _caches_card(query):
             '<div class="ad-cap" style="margin-top:8px;">Live-API sources cache fetched figures '
             "to disk. Clear to force a re-fetch of the latest published data on next view.</div>",
             unsafe_allow_html=True)
-        if rc.button("🗑 Clear data caches", key="clear_caches", use_container_width=True):
+        if rc.button("🗑 Clear data caches", key="clear_caches"):
             st.cache_data.clear()
             st.success("Cleared — fresh figures on next view.")
 
@@ -435,9 +524,14 @@ _ROLE_BADGE = {
 
 
 def _initials(name, email):
-    base = name or (email.split("@")[0] if email else "?")
+    base = (name or (email.split("@")[0] if email else "?")).strip()
     parts = base.replace(".", " ").replace("_", " ").split()
-    return ("".join(w[0] for w in parts[:2]) or base[:1]).upper()
+    if len(parts) >= 2:
+        return (parts[0][0] + parts[1][0]).upper()
+    b = parts[0] if parts else "?"
+    if len(b) > 1 and b[-1].isdigit():          # "kristoffer2" → "K2"
+        return (b[0] + b[-1]).upper()
+    return b[:2].upper()
 
 
 def users_section():
@@ -492,6 +586,7 @@ def users_section():
             st.rerun()
         if err:
             st.error(f"Could not list users: {err}")
+            st.caption("Supabase can be slow to respond — try ↻ Reload.")
             return
 
         _W = [2.6, 3, 1.7, 2.2, 1.2]
