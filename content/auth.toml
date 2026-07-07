@@ -14,7 +14,7 @@ checks   = [
   "An account is only needed for admin tools and beta users today",
   "Free while in beta",
 ]
-footer   = "SCB · INSEE · SSB · official statistics only"
+footer   = "SCB · INSEE · SSB · BLS · official statistics only"
 
 # The form on the right.
 [form]

@@ -423,7 +423,7 @@ with h_right:
             # Identity, then Admin + Log out as two equal, adjacent buttons.
             _who, _adm, _out = st.columns([1.7, 1, 1], vertical_alignment="center")
             with _adm:
-                if st.button("⚙ Admin", use_container_width=True, key="hdr_admin"):
+                if st.button(C["header"]["admin"], use_container_width=True, key="hdr_admin"):
                     st.switch_page("admin.py")
         else:
             _who, _out = st.columns([2.4, 1], vertical_alignment="center")

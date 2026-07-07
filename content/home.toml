@@ -12,8 +12,7 @@ badge = "BETA"                # little pill next to the wordmark
 sign_in        = "Sign in"
 create_account = "Create account"
 log_out        = "Log out"
-dev_menu       = "🧪 Dev"                       # admin-only preview menu
-dev_menu_note  = "In development · admin only"
+admin          = "⚙ Admin"                     # admin-only button → /admin panel
 
 [hero]
 eyebrow = "OFFICIAL STATISTICS · GLOBAL"
@@ -140,4 +139,4 @@ points  = [
 ]
 
 [footer]
-note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France)"
+note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France) · SSB (Norway) · BLS (United States)"
