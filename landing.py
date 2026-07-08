@@ -569,13 +569,14 @@ def _country_tile(col, *, key, iso, num, name, native, source, points, badges, c
         header = f"""
         <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
           <img class="se-flag" src="{flag_uri(iso)}" alt="{name} flag">
-          <div style="flex:1;min-width:0;">
+          <div style="flex:none;">
             <div style="white-space:nowrap;">
               <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{num}</span>
               <span style="font-weight:700;font-size:17px;">{name}</span></div>
             <div style="font-size:12px;color:#8A919D;margin-top:1px;">{native}</div>
           </div>
-          <div style="display:flex;gap:6px;flex:none;">{badge_html}</div>
+          <div style="display:flex;gap:4px 6px;flex:1;min-width:0;flex-wrap:wrap;
+               justify-content:flex-end;align-items:center;">{badge_html}</div>
         </div>"""
         st.markdown("".join(l.strip() for l in header.splitlines()), unsafe_allow_html=True)
         if cta.get("page"):
