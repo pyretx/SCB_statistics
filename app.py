@@ -52,12 +52,17 @@ try:
     from core import registry
 
     for _cfg in registry.all_countries():
-        # File-path pages (thin loaders in countries/<slug>/page.py) so other
-        # pages can link to them client-side (st.page_link keeps the session).
-        _pages.append(st.Page(f"countries/{_cfg.slug}/page.py",
-                              title=_cfg.name, url_path=_cfg.slug))
-except Exception:
-    pass
+        # File-path pages (thin loaders in countries/<slug>/page.py — the module
+        # dir MUST equal the slug) so other pages can link to them client-side
+        # (st.page_link keeps the session). Guard PER COUNTRY and log: one broken
+        # country must not silently unregister the ones after it.
+        try:
+            _pages.append(st.Page(f"countries/{_cfg.slug}/page.py",
+                                  title=_cfg.name, url_path=_cfg.slug))
+        except Exception as _e:
+            print(f"[registry] could not register page for '{_cfg.slug}': {_e}")
+except Exception as _e:
+    print(f"[registry] country registry unavailable: {_e}")
 
 pg = st.navigation(_pages, position="hidden")
 pg.run()

@@ -7,7 +7,7 @@ from __future__ import annotations
 import streamlit as st
 
 from .. import i18n
-from . import by_sex, distribution, leaderboard, overview, stats, trend, where
+from . import breakdown, by_sex, distribution, leaderboard, overview, stats, trend, where
 
 # id -> render_fn. cfg.tabs lists which to enable, in order.
 TABS = {
@@ -18,11 +18,17 @@ TABS = {
     "where": where.render,
     "leaderboard": leaderboard.render,
     "stats": stats.render,
+    # generic dimension breakdowns (one shared implementation, three ids) —
+    # enabled by listing the id in cfg.tabs + answering the dimension in the provider
+    "age": breakdown.render_age,
+    "education": breakdown.render_education,
+    "region": breakdown.render_region,
 }
 # Canonical framework tab names (the single standard; see docs/architecture.md).
 _FALLBACK = {"overview": "Overview", "distribution": "Salary distribution",
              "sex": "By gender", "trend": "Trend", "where": "Where do I stand?",
-             "leaderboard": "Leaderboard", "stats": "Basic statistics"}
+             "leaderboard": "Leaderboard", "stats": "Basic statistics",
+             "age": "By age", "education": "By education", "region": "By region"}
 
 
 _TAB_CSS = """

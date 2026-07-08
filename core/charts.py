@@ -134,6 +134,35 @@ def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,
     return theme.style_fig(fig, horizontal=True)
 
 
+def category_bar(df: pd.DataFrame, cfg, value_col: str, *, title: str | None = None):
+    """Grouped horizontal bars of ``value_col`` per category (dim_value) — the
+    shared chart behind the By age / By education / By region tabs. One trace
+    per occupation, categories in the order the provider returned them (age
+    bands ascending, education levels 1→7, regions north→south…)."""
+    d = df.dropna(subset=[value_col]).copy()
+    if d.empty:
+        return None
+    cats = list(dict.fromkeys(d["dim_value"]))          # provider order, deduped
+    fig = go.Figure()
+    for i, (name, g) in enumerate(d.groupby("occ_name", sort=False)):
+        col = theme.SERIES[i % len(theme.SERIES)]
+        by_cat = dict(zip(g["dim_value"], g[value_col]))
+        fig.add_trace(go.Bar(
+            y=cats, x=[by_cat.get(c) for c in cats], orientation="h",
+            name=str(name), marker_color=col,
+            hovertemplate="%{y}<br>%{x:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
+    if not fig.data:
+        return None
+    n_rows = len(cats)
+    fig.update_layout(
+        height=max(260, (26 + 20 * max(0, d["occ_name"].nunique() - 1)) * n_rows + 120),
+        barmode="group", margin=dict(l=8, r=8, t=40 if title else 8, b=8),
+        title=title, xaxis_title=None, yaxis_title=None,
+        yaxis=dict(categoryorder="array", categoryarray=cats[::-1]),
+        legend=dict(orientation="h", y=1.02, yanchor="bottom"))
+    return theme.style_fig(fig, horizontal=True)
+
+
 def position_curve(levs, vals, est, salary, cfg, *, you_label: str = "You",
                    x_title: str | None = None, title: str | None = None):
     """Percentile curve for one occupation with the user's salary marked (a star
