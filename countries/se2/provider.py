@@ -382,6 +382,14 @@ def _fetch_leaderboard(sector: str, sex: str, year: int, lang: str) -> pd.DataFr
     return pd.DataFrame(columns=["occ_code", "occ_name", "mean", "median", "count"])
 
 
+@st.cache_data(show_spinner=False)
+def _synonym_index() -> dict:
+    """{4-digit code: lowercased joined synonyms} for the sidebar search
+    (matches the legacy page's ssyk_synonym_index)."""
+    return {code: " | ".join((n.get("synonyms") or []) + (n.get("synonyms_en") or [])).lower()
+            for code, n in _ssyk_nodes().items() if len(code) == 4}
+
+
 # ── provider ─────────────────────────────────────────────────────────────────
 class Sweden2Provider(CountryProvider):
     def occupations(self, lang: str = "EN") -> dict[str, str]:
@@ -389,6 +397,20 @@ class Sweden2Provider(CountryProvider):
 
     def occupation_tree(self, lang: str = "EN") -> dict[str, str]:
         return _tree(lang)
+
+    def occupation_details(self, code: str, lang: str = "EN") -> dict:
+        """SSYK descriptions + synonyms (ssyk_descriptions.json) for the code
+        browser. English descriptions are auto-translated where no official
+        source exists (same note as the legacy page)."""
+        n = _ssyk_nodes().get(code, {})
+        desc = ((n.get("desc_en") or n.get("desc_sv")) if lang == "EN"
+                else (n.get("desc_sv") or n.get("desc_en")))
+        syn = ((n.get("synonyms_en") if lang == "EN" else n.get("synonyms"))
+               or n.get("synonyms") or [])
+        return {"description": desc, "synonyms": list(syn)}
+
+    def occupation_synonyms(self, lang: str = "EN") -> dict:
+        return _synonym_index()
 
     def occupation_stats(self, *, sector="0", occ_codes=(), sex="total",
                          years=(), dimension="total", year=None,

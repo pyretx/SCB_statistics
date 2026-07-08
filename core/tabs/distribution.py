@@ -10,7 +10,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .. import charts, i18n, states
+from .. import agg, charts, i18n, states
 
 _PCT_KEYS = ["p10", "p25", "median", "p75", "p90"]
 
@@ -47,6 +47,8 @@ def render(cfg, stats, query):
         d = cfg.provider.occupation_stats(sector=sector, occ_codes=occ, sex=sex,
                                           year=chart_year, lang=lang)
     tot = d[d["dimension"] == "total"]
+    if query.get("aggregate") and not tot.empty:
+        tot = agg.collapse_stats(tot, agg.agg_name(cfg, lang, len(occ)))
     if tot.empty:
         st.caption(i18n.t(cfg, "no_data_combo", lang))
         return
@@ -62,11 +64,25 @@ def render(cfg, stats, query):
     # canonical order, map labels back to keys
     keys = [key for key in avail if labels[key] in chosen] or avail
 
+    # ── Population backdrop (France-style): the all-employee centile curve ────
+    population = None
+    if caps.has_population_distribution:
+        try:
+            pop = cfg.provider.population_distribution(sector=sector, sex=sex,
+                                                       year=chart_year)
+            if pop is not None and not pop.empty:
+                population = [(int(r["percentile"]), float(r["value"]))
+                              for _, r in pop.iterrows()]
+        except Exception:
+            population = None
+
     # ── Chart ────────────────────────────────────────────────────────────────
     fig = charts.distribution_chart(
         tot, cfg, keys=keys, labels_map=labels, mean_label=labels.get("mean", "Average"),
         x_title=i18n.t(cfg, "x_percentile", lang, "Percentile"),
-        title=f"{i18n.t(cfg, 'distribution_title', lang)} · {cfg.currency_suffix}{cfg.per_label}")
+        title=f"{i18n.t(cfg, 'distribution_title', lang)} · {cfg.currency_suffix}{cfg.per_label}",
+        population=population,
+        population_label=i18n.t(cfg, "pop_curve", lang, "All employees"))
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
     if caps.has_quartiles and not caps.has_occupation_percentiles:

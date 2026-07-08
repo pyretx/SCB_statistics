@@ -11,7 +11,7 @@ import streamlit as st
 
 import theme
 
-from . import access, i18n, panels, sidebar, states, tabs
+from . import access, agg, i18n, panels, sidebar, states, tabs
 
 
 def _header(cfg, lang):
@@ -65,6 +65,21 @@ def render_country(cfg):
     if stats is None or stats.empty:
         states.no_data()
         return
+
+    # Aggregate-selection toggle (standard, Sweden-style): collapse several
+    # picked occupations into one headcount-weighted series across all tabs.
+    if len(occ_codes) > 1:
+        if st.toggle(i18n.t(cfg, "agg_toggle", lang,
+                            "Aggregate selection (headcount-weighted)"),
+                     key=f"{cfg.slug}_agg"):
+            query = {**query, "aggregate": True}
+            tot0 = stats[stats["dimension"] == "total"]
+            # current headcounts by series name — the trend tab's weights
+            st.session_state[f"{cfg.slug}_aggweights"] = {
+                str(r["occ_name"]): (float(r["count"]) if r["count"] == r["count"]
+                                     and r["count"] is not None else 0)
+                for _, r in tot0.iterrows()}
+            stats = agg.collapse_stats(stats, agg.agg_name(cfg, lang, len(occ_codes)))
 
     # A source can return rows with every salary cell null — e.g. an
     # occupation×sector combo the agency suppresses (SSB has no private-sector

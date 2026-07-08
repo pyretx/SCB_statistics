@@ -12,7 +12,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .. import charts, i18n, states
+from .. import agg, charts, i18n, states
 
 _TITLE_KEY = {"age": "tab_age", "education": "tab_education", "region": "tab_region"}
 _FALLBACK = {"age": "By age", "education": "By education", "region": "By region"}
@@ -24,16 +24,46 @@ def _render(cfg, stats, query, dim: str):
     st.subheader(i18n.t(cfg, _TITLE_KEY[dim], lang, _FALLBACK[dim]))
     occ = tuple(query.get("occ_codes", ()))
     years = [int(y) for y in query.get("years", ())] or [0]
+    aggregate = bool(query.get("aggregate"))
 
     # Chart year — only the years in the active selection (like Distribution).
-    yr = st.selectbox(i18n.t(cfg, "chart_year", lang, "Chart year"),
-                      sorted(set(years), reverse=True), key=f"{slug}_{dim}_year")
-    with states.loading():
-        df = cfg.provider.occupation_stats(
+    c1, c2 = st.columns([1, 2.4], vertical_alignment="bottom")
+    with c1:
+        yr = st.selectbox(i18n.t(cfg, "chart_year", lang, "Chart year"),
+                          sorted(set(years), reverse=True), key=f"{slug}_{dim}_year")
+    # Standard sex-split (the legacy Swedish by-age view): when the whole
+    # selection is "total" and the country has sex data, offer women/men traces.
+    split = False
+    if cfg.capabilities.has_sex and query.get("sex", "total") == "total":
+        with c2:
+            split = st.toggle(i18n.t(cfg, "split_sex", lang, "Split by sex"),
+                              key=f"{slug}_{dim}_split")
+
+    def fetch(sx):
+        return cfg.provider.occupation_stats(
             sector=query.get("sector", ""), occ_codes=occ,
-            sex=query.get("sex", "total"), dimension=dim, year=yr, lang=lang)
-    d = df[df["dimension"] == dim] if df is not None and not df.empty else pd.DataFrame()
+            sex=sx, dimension=dim, year=yr, lang=lang)
+
     val = "mean" if cfg.capabilities.has_mean else "median"
+    name = agg.agg_name(cfg, lang, len(occ))
+
+    def prep(df, suffix=""):
+        d0 = df[df["dimension"] == dim] if df is not None and not df.empty else pd.DataFrame()
+        if d0.empty:
+            return d0
+        if aggregate:
+            d0 = agg.collapse_stats(d0, name)
+        if suffix:
+            d0 = d0.assign(occ_name=d0["occ_name"] + " — " + suffix)
+        return d0
+
+    with states.loading():
+        if split:
+            d = pd.concat([prep(fetch("women"), i18n.t(cfg, "women", lang)),
+                           prep(fetch("men"), i18n.t(cfg, "men", lang))],
+                          ignore_index=True)
+        else:
+            d = prep(fetch(query.get("sex", "total")))
     if d.empty or val not in d or not d[val].notna().any():
         st.caption(i18n.t(cfg, "no_data_combo", lang))
         return

@@ -81,6 +81,17 @@ def _browse_body(cfg, lang, query=None, vk=None):
         if crumbs:
             st.caption(f"**{i18n.t(cfg, 'browser_hierarchy', lang)}:** "
                        + " › ".join(tree[c] for c in reversed(crumbs)))
+        # Rich metadata when the provider has it (SSYK descriptions/synonyms)
+        det = {}
+        try:
+            det = cfg.provider.occupation_details(cur, lang) or {}
+        except Exception:
+            det = {}
+        if det.get("description"):
+            st.markdown(det["description"])
+        if det.get("synonyms"):
+            syn = ", ".join(det["synonyms"][:15])
+            st.caption(f"**{i18n.t(cfg, 'also_known', lang, 'Also known as')}:** {syn}")
         kids = sorted(children.get(cur, []))
         if kids:
             rows = [{col_code: c, col_name: tree[c]} for c in kids]

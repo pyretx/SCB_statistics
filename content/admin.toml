@@ -78,6 +78,11 @@ desc    = "Salaries fetched live from SCB; occupation codes + SSYK labels/transl
 btn     = "↻ Re-fetch codes"
 done    = "✅ SCB codes re-fetched {ts}."
 failed  = "Re-fetch failed: {err}"
+extras_title = "Sweden v2 (/se2) — features beyond the framework standard"
+extras  = [
+  "🛂 Work-permit check — Migrationsverket rules, salary floor, market position (country-specific extra tab)",
+  "📖 SSYK descriptions & synonyms — shown in the code browser; synonyms searchable in the sidebar",
+]
 
 [data.france]
 name      = "France"
@@ -90,6 +95,13 @@ desc      = "Mean-salary series fetched live from INSEE Melodi; per-occupation p
 alert     = "↻ INSEE publishes annual data through {latest} — the bundled microdata is {year}."
 btn_check = "🔍 Check INSEE for a newer year"
 failed    = "INSEE check failed: {err}"
+extras_title = "France v2 (/fr2) — features beyond the framework standard"
+extras  = [
+  "📈 Long-run trend 1996→ — constant-euro series per broad PCS group (real-only trend, no CPI overlay needed)",
+  "👥 Population backdrop — the all-employee centile curve behind each salary-distribution chart",
+  "🗺 Régional breakdown — mean by région at PCS-group level (occupation-level régional data is not published)",
+  "🎂 Age bands — mean + headcount per age band from the annual Melodi dataset",
+]
 
 [users]
 create_heading = "Create user"

@@ -52,6 +52,8 @@ class Capabilities:
     has_age: bool = False
     has_education: bool = False
     has_trend: bool = False
+    trend_is_real: bool = False                 # trend values are constant-price (real)
+                                                # → single view, no CPI overlay (France)
     has_leaderboard: bool = False               # can rank ALL occupations by pay
     leaderboard_scope: int = 2                  # code-prefix length to scope the leaderboard
                                                 # to (STYRK sub-group=2; SOC minor=4)
@@ -76,6 +78,9 @@ class CountryConfig:
     period: str = "monthly"         # "monthly" | "annual" | "hourly"
     capabilities: Capabilities = field(default_factory=Capabilities)
     tabs: tuple[str, ...] = ()       # standard tab ids to enable (see core.tabs)
+    extra_tabs: dict = field(default_factory=dict)   # country-specific tabs appended
+                                     # after the standard ones: {id: render_fn(cfg,
+                                     # stats, query)}; label from i18n "tab_<id>"
     access: str = "internal"         # "public" | "registered" | "internal" | "restricted"
     fetch_mode: str = "reactive"     # "search" (commit button) | "reactive"
     labels: dict = field(default_factory=dict)   # flat, language-independent tile strings

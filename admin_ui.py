@@ -230,6 +230,20 @@ def _stats(pairs) -> str:
     return f'<div class="ad-stats">{items}</div>'
 
 
+def _extras_html(T: dict) -> str:
+    """'Beyond the framework standard' feature list for a country card — every
+    country-specific addition (extra tabs, hooks) is declared here (admin.toml)."""
+    items = T.get("extras") or []
+    if not items:
+        return ""
+    lis = "".join(f'<li style="margin:3px 0;">{x}</li>' for x in items)
+    return (f'<div class="ad-cap" style="margin-top:12px;">'
+            f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
+            f'letter-spacing:.1em;text-transform:uppercase;color:#98A0AC;">'
+            f'{T.get("extras_title", "Beyond the standard")}</span>'
+            f'<ul style="margin:6px 0 0;padding-left:18px;">{lis}</ul></div>')
+
+
 def _hdr(iso: str, name: str, src: str, typ: str, pill_html: str) -> str:
     return (f'<div class="ad-hd"><div class="ad-hdL">'
             f'<img class="ad-flag" src="{theme.flag_uri(iso)}" alt="">'
@@ -424,7 +438,8 @@ def _sweden_card(query, D):
             + _stats([(T["s_year"], appset.get("latest_data_year", 2025)),
                       (T["s_codes"], (occ.get("cached_at") or "—")[:10]),
                       (T["s_built"], (ssyk.get("built_at") or "—")[:10])])
-            + f'<div class="ad-cap">{T["desc"]}</div>',
+            + f'<div class="ad-cap">{T["desc"]}</div>'
+            + _extras_html(T),
             unsafe_allow_html=True)
         with _btnrow():
             go = st.button(T["btn"], key="se_refetch")
@@ -471,6 +486,7 @@ def _france_card(query, D):
         if newer:
             html += ('<div class="ad-alert">'
                      + T["alert"].format(latest=frl, year=micro_year) + '</div>')
+        html += _extras_html(T)
         st.markdown(html, unsafe_allow_html=True)
         with _btnrow():
             chk = st.button(T["btn_check"], key="fr_scan")

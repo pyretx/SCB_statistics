@@ -63,3 +63,14 @@ class CountryProvider:
     def leaderboard(self, *, sector: str = "", sex: str = "total",
                     year: int | None = None, lang: str = "EN") -> pd.DataFrame:
         return pd.DataFrame(columns=["occ_code", "occ_name", "mean", "median", "count"])
+
+    # Rich per-code metadata for the code browser: {"description": str|None,
+    # "synonyms": [str, …]}. Empty when the classification has none (Sweden's
+    # SSYK descriptions/synonyms are the first source).
+    def occupation_details(self, code: str, lang: str = "EN") -> dict:
+        return {}
+
+    # {leaf_code: "joined synonym text, lowercased"} — extends the sidebar's
+    # occupation search beyond names/codes. Empty by default.
+    def occupation_synonyms(self, lang: str = "EN") -> dict:
+        return {}

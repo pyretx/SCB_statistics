@@ -110,12 +110,18 @@ def _occupation_picker(cfg, k, lang) -> tuple[tuple[str, ...], str]:
             pool = {c: n for c, n in leaves.items() if c.startswith(scope)}
 
     # Free-text occupation search — overrides the drill-down, searching every
-    # occupation by name or code (Sweden's "Search occupations…").
+    # occupation by name, code or synonym (Sweden's "Search occupations…";
+    # synonyms come from the provider when the classification has them).
     q = st.text_input(i18n.t(cfg, "occ_search", lang), key=k("occsearch"),
                       placeholder=i18n.t(cfg, "occ_search", lang), label_visibility="collapsed")
     if q.strip():
         s = q.strip().lower()
-        pool = {c: n for c, n in leaves.items() if s in n.lower() or s in c.lower()}
+        try:
+            syn = prov.occupation_synonyms(lang) or {}
+        except Exception:
+            syn = {}
+        pool = {c: n for c, n in leaves.items()
+                if s in n.lower() or s in c.lower() or s in syn.get(c, "")}
         st.caption(i18n.t(cfg, "found_n", lang).format(n=len(pool)) if pool
                    else i18n.t(cfg, "no_match", lang))
 

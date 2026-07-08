@@ -9,7 +9,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .. import charts, i18n, states
+from .. import agg, charts, i18n, states
 
 _PCT_KEYS = ["p10", "p25", "median", "p75", "p90"]     # ascending → median centred
 
@@ -43,6 +43,9 @@ def render(cfg, stats, query):
             m = cfg.provider.occupation_stats(sector=query.get("sector", ""), occ_codes=occ,
                                               sex="men", years=tuple(query.get("years", ())), lang=lang)
         wt, mt = w[w["dimension"] == "total"], m[m["dimension"] == "total"]
+        if query.get("aggregate"):
+            name = agg.agg_name(cfg, lang, len(occ))
+            wt, mt = agg.collapse_stats(wt, name), agg.collapse_stats(mt, name)
         wmean = dict(zip(wt["occ_code"], wt["mean"]))
         mmean = dict(zip(mt["occ_code"], mt["mean"]))
 

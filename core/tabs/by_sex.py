@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-from .. import charts, i18n, states
+from .. import agg, charts, i18n, states
 
 
 def render(cfg, stats, query):
@@ -23,6 +23,9 @@ def render(cfg, stats, query):
                                               sex="women", years=years, lang=lang)
         men = cfg.provider.occupation_stats(sector=sector, occ_codes=occ,
                                             sex="men", years=years, lang=lang)
+    if query.get("aggregate"):
+        name = agg.agg_name(cfg, lang, len(occ))
+        women, men = agg.collapse_stats(women, name), agg.collapse_stats(men, name)
     val = "mean" if cfg.capabilities.has_mean else "median"
     # Always the two bars; the toggle just annotates women-as-%-of-men at the end
     # of each row (Sweden's behaviour), rather than replacing them.

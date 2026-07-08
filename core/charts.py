@@ -46,7 +46,8 @@ _PCT_ORDER = [("p10", "P10"), ("p25", "P25"), ("median", "Median"),
 
 def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict | None = None,
                        mean_label: str = "Mean", x_title: str | None = None,
-                       title: str | None = None):
+                       title: str | None = None, population=None,
+                       population_label: str = "All employees"):
     """THE standard salary-distribution chart (mirrors the Swedish page): one
     line+markers trace per occupation across the percentile points the source
     actually publishes (P10..P90, whichever exist), with the mean drawn as a
@@ -73,6 +74,24 @@ def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict 
     cats = labels + ([mean_label] if show_mean else [])
 
     fig = go.Figure()
+    # Population backdrop first (behind the occupation lines): the all-employee
+    # centile curve, grey dashed, only at the percentile points the chart shows.
+    if population:
+        pmap = {10: "p10", 25: "p25", 50: "median", 75: "p75", 90: "p90"}
+        lbl_by_col = {col: lbl for col, lbl in pct}
+        xs, ys = [], []
+        for lvl, val in sorted(population):
+            col = pmap.get(int(lvl))
+            if col in lbl_by_col:
+                xs.append(lbl_by_col[col])
+                ys.append(val)
+        if len(xs) >= 2:
+            fig.add_trace(go.Scatter(
+                x=xs, y=ys, mode="lines+markers", name=population_label,
+                line=dict(color="#B4BAC4", width=2, dash="dash"),
+                marker=dict(size=6, color="#B4BAC4"),
+                hovertemplate=population_label + "<br>%{y:,.0f} "
+                              + cfg.currency_suffix + "<extra></extra>"))
     for i, (_, row) in enumerate(d.iterrows()):
         col = theme.SERIES[i % len(theme.SERIES)]
         name = str(row["occ_name"])

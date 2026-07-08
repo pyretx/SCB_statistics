@@ -69,12 +69,19 @@ def render(cfg, stats, query):
         with states.loading():
             w = cfg.provider.leaderboard(sector=sector, sex="women", year=year, lang=lang)
             m = cfg.provider.leaderboard(sector=sector, sex="men", year=year, lang=lang)
-        g = (w[["occ_code", "occ_name", "median"]]
-             .merge(m[["occ_code", "median"]], on="occ_code", suffixes=("_w", "_m")).dropna())
-        g = g[g["median_m"] > 0]
-        g["val"] = (g["median_w"] / g["median_m"] * 100).round(1)
+        # rank on medians when the source publishes them per sex; otherwise fall
+        # back to means (e.g. France: percentiles exist only for both sexes)
+        basis = ("median" if (not w.empty and w["median"].notna().any()
+                              and not m.empty and m["median"].notna().any()) else "mean")
+        g = (w[["occ_code", "occ_name", basis]]
+             .merge(m[["occ_code", basis]], on="occ_code", suffixes=("_w", "_m")).dropna())
+        g = g[g[f"{basis}_m"] > 0]
+        g["val"] = (g[f"{basis}_w"] / g[f"{basis}_m"] * 100).round(1)
         ranked = g[["occ_code", "occ_name", "val"]]
         axis, value_fmt = i18n.t(cfg, "lead_gap_axis", lang, "Women % of men"), lambda v: f"{v:.1f} %"
+        if basis == "mean":
+            st.caption(i18n.t(cfg, "lead_gap_mean_note", lang,
+                              "Ranked on mean salary (medians aren't published per sex here)."))
     else:                                            # median / mean
         c1, c2 = st.columns(2)
         year = c1.selectbox(i18n.t(cfg, "x_year", lang, "Year"), years, key=k("lyear"))

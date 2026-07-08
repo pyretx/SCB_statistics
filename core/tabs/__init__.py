@@ -56,9 +56,11 @@ _TAB_CSS = """
 
 def render_tabs(cfg, stats, query):
     lang = query.get("lang", "EN")
-    enabled = [t for t in cfg.tabs if t in TABS] or ["overview"]
+    extra = getattr(cfg, "extra_tabs", None) or {}   # country-specific tabs, appended
+    fns = {**TABS, **extra}
+    enabled = ([t for t in cfg.tabs if t in TABS] + list(extra)) or ["overview"]
     if len(enabled) == 1:
-        TABS[enabled[0]](cfg, stats, query)
+        fns[enabled[0]](cfg, stats, query)
         return
     labels = {t: i18n.t(cfg, f"tab_{t}", lang, _FALLBACK.get(t, t)) for t in enabled}
     key = f"{cfg.slug}_activetab"
@@ -67,4 +69,4 @@ def render_tabs(cfg, stats, query):
                                   format_func=lambda t: labels[t],
                                   key=key, label_visibility="collapsed") or enabled[0]
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
-    TABS[active](cfg, stats, query)          # render ONLY the open tab (lazy)
+    fns[active](cfg, stats, query)           # render ONLY the open tab (lazy)

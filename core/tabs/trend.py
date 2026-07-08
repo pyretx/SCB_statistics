@@ -8,7 +8,7 @@ from __future__ import annotations
 import pandas as pd
 import streamlit as st
 
-from .. import charts, i18n, states
+from .. import agg, charts, i18n, states
 
 
 def _measure_keys(cfg) -> list[str]:
@@ -37,7 +37,10 @@ def trend_section(cfg, query, lang, k):
     st.subheader(i18n.t(cfg, "trend_over_time", lang, "Salary trend over time"))
     occ = tuple(query.get("occ_codes", ()))
     years = tuple(query.get("years", ()))
-    ms = _measure_keys(cfg)
+    real_only = getattr(cfg.capabilities, "trend_is_real", False)
+    # Real-only long series publish one measure (the mean) — don't offer
+    # percentile tracking the provider can't answer.
+    ms = ["mean"] if (real_only and cfg.capabilities.has_mean) else _measure_keys(cfg)
     if not ms:
         return
 
@@ -46,7 +49,9 @@ def trend_section(cfg, query, lang, k):
         di = ms.index("median") if "median" in ms else 0
         mkey = st.selectbox(i18n.t(cfg, "measure", lang, "Measure"), ms, index=di,
                             format_func=lambda kk: _mlabel(cfg, lang, kk), key=k("tmeasure"))
-    cpi = cfg.provider.cpi_annual(years)
+    # Real-only sources (constant prices, e.g. France's long series): no CPI
+    # overlay — the values already ARE inflation-adjusted.
+    cpi = {} if real_only else cfg.provider.cpi_annual(years)
     with states.loading():
         tr = cfg.provider.trend(sector=query.get("sector", ""), occ_codes=occ,
                                 sex=query.get("sex", "total"), years=years, lang=lang, measure=mkey)
@@ -55,16 +60,29 @@ def trend_section(cfg, query, lang, k):
         return
     tr = tr.copy()
     tr["year"] = tr["year"].astype(int)
+    if query.get("aggregate"):
+        # weights = current headcounts from the page's stats frame (constant
+        # across years — the toggle label owns the approximation)
+        w = {}
+        try:
+            s = st.session_state.get(f"{cfg.slug}_aggweights") or {}
+            w = dict(s)
+        except Exception:
+            pass
+        tr = agg.collapse_trend(tr, w, agg.agg_name(cfg, lang, len(occ)))
     base = int(tr["year"].min())
     cpi_base = cpi.get(base)
     suf = cfg.currency_suffix
     v_nom = i18n.t(cfg, "trend_nominal", lang)
     v_grow = i18n.t(cfg, "trend_growth", lang)
     v_real = i18n.t(cfg, "trend_real", lang)
-    views = [v_nom] + ([v_grow, v_real] if cpi_base else [])
+    if real_only:
+        views = [v_real]                       # values ARE constant-price already
+    else:
+        views = [v_nom] + ([v_grow, v_real] if cpi_base else [])
     with c2:
         view = (st.radio(i18n.t(cfg, "trend_view", lang), views, horizontal=True,
-                         key=k("trendview")) if len(views) > 1 else v_nom)
+                         key=k("trendview")) if len(views) > 1 else views[0])
 
     if view == v_grow and cpi_base:
         rows = []
@@ -92,8 +110,9 @@ def trend_section(cfg, query, lang, k):
                                  title=f"{v_real} · {suf}{cfg.per_label}")
     else:
         df = tr.rename(columns={"value_nominal": "value"})[["year", "series", "value"]]
+        head = v_real if real_only else _mlabel(cfg, lang, mkey)
         fig = charts.trend_lines(df, cfg, unit=suf, y_title=f"{suf}{cfg.per_label}",
-                                 title=f"{_mlabel(cfg, lang, mkey)} · {suf}{cfg.per_label}")
+                                 title=f"{head} · {suf}{cfg.per_label}")
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
 

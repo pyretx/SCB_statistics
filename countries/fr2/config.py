@@ -23,9 +23,11 @@ both sexes together).
 2. Narrow by PCS group → category, pick occupation(s), press **Search**.
 
 **Good to know**
-- This is **France v2** — the framework rebuild of the original France page.
-  The long-run (1951→) constant-euro series and the population distribution
-  view still live on the original page.
+- This is **France v2** — the framework rebuild of the original France page,
+  including the **long-run constant-euro trend** (1996→, per broad PCS group),
+  the **all-employee distribution backdrop**, and **age** / **régional**
+  breakdowns (régions at PCS-group level — occupation-level régional data is
+  not published).
 - Percentiles are **microdata estimates** ({yr}, both sexes); the mean and
   headcount are the latest official Melodi figures and can be a year newer.
 """.format(yr=_YR)
@@ -44,8 +46,10 @@ FD_SALAAN, deux sexes confondus).
 
 **À savoir**
 - Ceci est **France v2** — la version « framework » de la page France
-  d'origine. Les séries longues (1951→) en euros constants et la distribution
-  de la population restent sur la page d'origine.
+  d'origine, avec **l'évolution en euros constants** (1996→, par groupe PCS),
+  la **courbe de l'ensemble des salariés** en arrière-plan, et les vues par
+  **âge** / **région** (régions au niveau du groupe PCS — les données
+  régionales par profession ne sont pas publiées).
 - Les centiles sont des **estimations sur microdonnées** ({yr}, deux sexes) ;
   la moyenne et les effectifs sont les derniers chiffres officiels Melodi et
   peuvent être plus récents d'un an.
@@ -63,13 +67,16 @@ CONFIG = CountryConfig(
     currency="EUR", currency_suffix="€", period="monthly",
     capabilities=Capabilities(
         has_occupation_percentiles=True,      # microdata estimate (see notes)
+        has_population_distribution=True,     # all-employee centile backdrop
         has_mean=True, has_median=True,
-        has_sex=True,
+        has_sex=True, has_age=True, has_region=True,
+        has_trend=True, trend_is_real=True,   # 1951→ group series, constant euros
         has_leaderboard=True, leaderboard_scope=1,   # PCS group (1 char)
         sectors=("private", "public"),
         year_range=(_YR, _YR),                # one vintage; no year slider
     ),
-    tabs=("overview", "distribution", "where", "leaderboard", "sex"),
+    tabs=("overview", "distribution", "trend", "where", "leaderboard",
+          "sex", "age", "region"),
     access="internal",                        # admin/master only (FR2 beta)
     fetch_mode="search",
     landing=False,                            # no home tile — admin preview only
