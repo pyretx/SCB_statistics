@@ -137,6 +137,7 @@ you           = " (you)"
 all_countries = "All countries"
 role_master   = "👑 Master"
 role_admin    = "Admin"
+role_beta     = "Beta"
 role_standard = "Standard"
 
 master_fixed  = "👑 Master — role fixed."

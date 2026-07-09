@@ -66,6 +66,56 @@ UI: dict[str, dict[str, str]] = {
         "trend_col_real": "Real ({base})",
         "tab_where": "Where do I stand?", "tab_leaderboard": "Leaderboard",
         "tab_stats": "Basic statistics",
+        # Import-overlay tab (beta; visible to admins + beta testers only)
+        "tab_import_overlay": "Import overlay (beta)",
+        "io_header": "Import & compare your own salary data",
+        "io_privacy": "🔒 Imported data is processed in this session only — it is "
+                      "never uploaded to a server, saved to disk, or logged.",
+        "io_ref_year": "Reference data year",
+        "io_ref_occ": "Compare against occupation",
+        "io_no_ref_pct": "This source publishes no percentiles for the selection — "
+                         "the reference shows the average only; your import still "
+                         "plots the standard percentile curve.",
+        "io_show_on_chart": "Show on chart",
+        "io_show_ref": "Reference curve",
+        "io_show_proj": "Projection (aged to {year})",
+        "io_project_header": "Project the reference forward",
+        "io_project_caption": "Assumed % salary increase per year from {a} to {b}, "
+                              "compounded year-on-year (e.g. +3% then +4% → "
+                              "×1.03×1.04). Applied to every percentile and the average.",
+        "io_uplift": "Cumulative uplift {a}→{b}: {pct:+.1f}% (×{f:.3f})",
+        "io_import_header": "Import your data",
+        "io_upload": "Upload a file", "io_paste": "Paste numbers",
+        "io_paste_label": "Paste one salary per line",
+        "io_pasted": "Pasted salary",
+        "io_file": "File (.xlsx, .csv, .tsv, .txt)",
+        "io_parse_fail": "Couldn't parse that file: {err}",
+        "io_structure_title": "ℹ️ How should the file be structured?",
+        "io_structure_body": "One salary **per row**, in a **single column** (extra "
+                             "columns are fine — you choose which one). Any number "
+                             "format works: `55 600 kr`, `45 000,50`, `45,000.50`, "
+                             "`55k`. Header row optional.\n\n**Avoid:** totals/average/"
+                             "summary rows (they get counted as salaries), wide layouts "
+                             "(one person per column), and title rows above the header "
+                             "in Excel. You always see the parsed count and computed "
+                             "percentiles below **before** anything is drawn.",
+        "io_map_header": "1 · Map & configure",
+        "io_salary_col": "Salary column",
+        "io_weight_col": "Weight / headcount column (optional)",
+        "io_unit": "Unit of the values", "io_none": "— none —",
+        "io_bad_weights": "Weight column has missing/invalid values — ignoring weights.",
+        "io_no_values": "No usable numeric salaries found in that column.",
+        "io_skipped": "Skipped {n} row(s) that weren't valid numbers.",
+        "io_small_n": "Only {n} values — percentiles (especially the extremes) are "
+                      "unreliable at this sample size.",
+        "io_preview_header": "2 · Preview computed percentiles",
+        "io_col_measure": "Measure", "io_col_yours": "Your data",
+        "io_col_ref": "Reference ({year})",
+        "io_add_overlay": "➕ Add overlay to chart",
+        "io_remove_overlay": "✕ Remove overlay",
+        "io_trace_ref": "Official ({year})",
+        "io_trace_aged": "Projected to {year}",
+        "io_trace_yours": "Your data (n={n})",
         "stat_total": "Employees (selected)",
         "calc_occ": "Occupation", "calc_input": "Your monthly salary",
         "calc_rank": "Estimated position", "calc_you": "You",
@@ -156,6 +206,55 @@ UI: dict[str, dict[str, str]] = {
         "trend_col_real": "Realverdi ({base})",
         "tab_where": "Hvor står jeg?", "tab_leaderboard": "Toppliste",
         "tab_stats": "Nøkkeltall",
+        # Import-overlay-fane (beta)
+        "tab_import_overlay": "Importer og sammenlign (beta)",
+        "io_header": "Importer og sammenlign dine egne lønnsdata",
+        "io_privacy": "🔒 Importerte data behandles kun i denne økten — de lastes "
+                      "aldri opp, lagres eller logges.",
+        "io_ref_year": "Referanseår",
+        "io_ref_occ": "Sammenlign med yrke",
+        "io_no_ref_pct": "Kilden publiserer ingen persentiler for utvalget — "
+                         "referansen viser kun gjennomsnittet; importen tegner "
+                         "likevel standard persentilkurve.",
+        "io_show_on_chart": "Vis i diagrammet",
+        "io_show_ref": "Referansekurve",
+        "io_show_proj": "Fremskrivning (til {year})",
+        "io_project_header": "Fremskriv referansen",
+        "io_project_caption": "Antatt lønnsvekst i % per år fra {a} til {b}, "
+                              "sammensatt år for år (f.eks. +3 % så +4 % → "
+                              "×1,03×1,04). Gjelder alle persentiler og gjennomsnittet.",
+        "io_uplift": "Samlet økning {a}→{b}: {pct:+.1f}% (×{f:.3f})",
+        "io_import_header": "Importer dine data",
+        "io_upload": "Last opp en fil", "io_paste": "Lim inn tall",
+        "io_paste_label": "Lim inn én lønn per linje",
+        "io_pasted": "Innlimt lønn",
+        "io_file": "Fil (.xlsx, .csv, .tsv, .txt)",
+        "io_parse_fail": "Kunne ikke lese filen: {err}",
+        "io_structure_title": "ℹ️ Hvordan skal filen se ut?",
+        "io_structure_body": "Én lønn **per rad**, i **én kolonne** (flere kolonner er "
+                             "greit — du velger hvilken). Alle tallformater fungerer: "
+                             "`55 600 kr`, `45 000,50`, `45,000.50`, `55k`. Overskrift "
+                             "er valgfritt.\n\n**Unngå:** sum-/snitt-/totalrader (de "
+                             "telles som lønninger), brede oppsett (én person per "
+                             "kolonne) og tittelrader over overskriften i Excel. Du ser "
+                             "alltid antall og beregnede persentiler **før** noe tegnes.",
+        "io_map_header": "1 · Velg kolonner",
+        "io_salary_col": "Lønnskolonne",
+        "io_weight_col": "Vekt-/antallskolonne (valgfritt)",
+        "io_unit": "Enhet for verdiene", "io_none": "— ingen —",
+        "io_bad_weights": "Vektkolonnen har ugyldige verdier — vekter ignoreres.",
+        "io_no_values": "Fant ingen brukbare lønnstall i den kolonnen.",
+        "io_skipped": "Hoppet over {n} rad(er) som ikke var gyldige tall.",
+        "io_small_n": "Bare {n} verdier — persentilene (særlig ytterpunktene) er "
+                      "upålitelige med så lite utvalg.",
+        "io_preview_header": "2 · Forhåndsvis beregnede persentiler",
+        "io_col_measure": "Mål", "io_col_yours": "Dine data",
+        "io_col_ref": "Referanse ({year})",
+        "io_add_overlay": "➕ Legg til i diagrammet",
+        "io_remove_overlay": "✕ Fjern overlegg",
+        "io_trace_ref": "Offisiell ({year})",
+        "io_trace_aged": "Fremskrevet til {year}",
+        "io_trace_yours": "Dine data (n={n})",
         "stat_total": "Ansatte (utvalg)",
         "calc_occ": "Yrke", "calc_input": "Din månedslønn",
         "calc_rank": "Estimert plassering", "calc_you": "Deg",
@@ -246,6 +345,55 @@ UI: dict[str, dict[str, str]] = {
         "trend_col_real": "Real ({base})",
         "tab_where": "Var står jag?", "tab_leaderboard": "Topplista",
         "tab_stats": "Nyckeltal",
+        # Import-overlägg-flik (beta)
+        "tab_import_overlay": "Importera och jämför (beta)",
+        "io_header": "Importera och jämför dina egna lönedata",
+        "io_privacy": "🔒 Importerade data behandlas endast i denna session — de "
+                      "laddas aldrig upp, sparas eller loggas.",
+        "io_ref_year": "Referensår",
+        "io_ref_occ": "Jämför med yrke",
+        "io_no_ref_pct": "Källan publicerar inga percentiler för urvalet — "
+                         "referensen visar endast genomsnittet; importen ritar ändå "
+                         "standardpercentilkurvan.",
+        "io_show_on_chart": "Visa i diagrammet",
+        "io_show_ref": "Referenskurva",
+        "io_show_proj": "Framskrivning (till {year})",
+        "io_project_header": "Skriv fram referensen",
+        "io_project_caption": "Antagen löneökning i % per år från {a} till {b}, "
+                              "sammansatt år för år (t.ex. +3 % sedan +4 % → "
+                              "×1,03×1,04). Gäller alla percentiler och genomsnittet.",
+        "io_uplift": "Sammanlagd ökning {a}→{b}: {pct:+.1f}% (×{f:.3f})",
+        "io_import_header": "Importera dina data",
+        "io_upload": "Ladda upp en fil", "io_paste": "Klistra in tal",
+        "io_paste_label": "Klistra in en lön per rad",
+        "io_pasted": "Inklistrad lön",
+        "io_file": "Fil (.xlsx, .csv, .tsv, .txt)",
+        "io_parse_fail": "Kunde inte läsa filen: {err}",
+        "io_structure_title": "ℹ️ Hur ska filen vara uppbyggd?",
+        "io_structure_body": "En lön **per rad**, i **en kolumn** (fler kolumner går "
+                             "bra — du väljer vilken). Alla talformat fungerar: "
+                             "`55 600 kr`, `45 000,50`, `45,000.50`, `55k`. Rubrikrad "
+                             "är valfri.\n\n**Undvik:** summa-/snitt-/totalrader (de "
+                             "räknas som löner), breda upplägg (en person per kolumn) "
+                             "och titelrader ovanför rubriken i Excel. Du ser alltid "
+                             "antal och beräknade percentiler **innan** något ritas.",
+        "io_map_header": "1 · Välj kolumner",
+        "io_salary_col": "Lönekolumn",
+        "io_weight_col": "Vikt-/antalskolumn (valfritt)",
+        "io_unit": "Enhet för värdena", "io_none": "— ingen —",
+        "io_bad_weights": "Viktkolumnen har ogiltiga värden — vikter ignoreras.",
+        "io_no_values": "Hittade inga användbara lönetal i den kolumnen.",
+        "io_skipped": "Hoppade över {n} rad(er) som inte var giltiga tal.",
+        "io_small_n": "Endast {n} värden — percentilerna (särskilt ytterlägena) är "
+                      "opålitliga vid så litet urval.",
+        "io_preview_header": "2 · Förhandsgranska beräknade percentiler",
+        "io_col_measure": "Mått", "io_col_yours": "Dina data",
+        "io_col_ref": "Referens ({year})",
+        "io_add_overlay": "➕ Lägg till i diagrammet",
+        "io_remove_overlay": "✕ Ta bort överlägg",
+        "io_trace_ref": "Officiell ({year})",
+        "io_trace_aged": "Framskriven till {year}",
+        "io_trace_yours": "Dina data (n={n})",
         "stat_total": "Anställda (urval)",
         "calc_occ": "Yrke", "calc_input": "Din månadslön",
         "calc_rank": "Uppskattad position", "calc_you": "Du",
@@ -336,6 +484,58 @@ UI: dict[str, dict[str, str]] = {
         "trend_col_real": "Réel ({base})",
         "tab_where": "Où en suis-je ?", "tab_leaderboard": "Classement",
         "tab_stats": "Statistiques de base",
+        # Onglet superposition d'import (bêta)
+        "tab_import_overlay": "Importer et comparer (bêta)",
+        "io_header": "Importez et comparez vos propres données salariales",
+        "io_privacy": "🔒 Les données importées sont traitées dans cette session "
+                      "uniquement — jamais téléversées, enregistrées ni journalisées.",
+        "io_ref_year": "Année de référence",
+        "io_ref_occ": "Comparer au métier",
+        "io_no_ref_pct": "La source ne publie aucun centile pour cette sélection — "
+                         "la référence n'affiche que la moyenne ; votre import trace "
+                         "tout de même la courbe de centiles standard.",
+        "io_show_on_chart": "Afficher sur le graphique",
+        "io_show_ref": "Courbe de référence",
+        "io_show_proj": "Projection (jusqu'à {year})",
+        "io_project_header": "Projeter la référence",
+        "io_project_caption": "Hausse salariale supposée en % par an de {a} à {b}, "
+                              "composée d'année en année (ex. +3 % puis +4 % → "
+                              "×1,03×1,04). Appliquée à chaque centile et à la moyenne.",
+        "io_uplift": "Hausse cumulée {a}→{b} : {pct:+.1f}% (×{f:.3f})",
+        "io_import_header": "Importez vos données",
+        "io_upload": "Téléverser un fichier", "io_paste": "Coller des nombres",
+        "io_paste_label": "Collez un salaire par ligne",
+        "io_pasted": "Salaire collé",
+        "io_file": "Fichier (.xlsx, .csv, .tsv, .txt)",
+        "io_parse_fail": "Impossible de lire ce fichier : {err}",
+        "io_structure_title": "ℹ️ Comment structurer le fichier ?",
+        "io_structure_body": "Un salaire **par ligne**, dans **une seule colonne** "
+                             "(d'autres colonnes sont acceptées — vous choisissez "
+                             "laquelle). Tous les formats de nombres fonctionnent : "
+                             "`55 600 €`, `45 000,50`, `45,000.50`, `55k`. Ligne "
+                             "d'en-tête facultative.\n\n**À éviter :** lignes de "
+                             "total/moyenne (comptées comme des salaires), formats "
+                             "larges (une personne par colonne) et lignes de titre "
+                             "au-dessus de l'en-tête dans Excel. Le nombre analysé et "
+                             "les centiles calculés s'affichent **avant** tout tracé.",
+        "io_map_header": "1 · Choisir les colonnes",
+        "io_salary_col": "Colonne des salaires",
+        "io_weight_col": "Colonne de pondération/effectif (facultatif)",
+        "io_unit": "Unité des valeurs", "io_none": "— aucune —",
+        "io_bad_weights": "La colonne de pondération contient des valeurs invalides — "
+                          "pondérations ignorées.",
+        "io_no_values": "Aucun salaire numérique exploitable dans cette colonne.",
+        "io_skipped": "{n} ligne(s) ignorée(s) : nombres invalides.",
+        "io_small_n": "Seulement {n} valeurs — les centiles (surtout les extrêmes) "
+                      "sont peu fiables avec un si petit échantillon.",
+        "io_preview_header": "2 · Aperçu des centiles calculés",
+        "io_col_measure": "Mesure", "io_col_yours": "Vos données",
+        "io_col_ref": "Référence ({year})",
+        "io_add_overlay": "➕ Ajouter au graphique",
+        "io_remove_overlay": "✕ Retirer la superposition",
+        "io_trace_ref": "Officiel ({year})",
+        "io_trace_aged": "Projeté à {year}",
+        "io_trace_yours": "Vos données (n={n})",
         "stat_total": "Salariés (sélection)",
         "calc_occ": "Métier", "calc_input": "Votre salaire mensuel",
         "calc_rank": "Position estimée", "calc_you": "Vous",

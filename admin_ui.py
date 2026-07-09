@@ -564,6 +564,7 @@ def users_section():
     cfmt = lambda s: country_opts.get(s, s)          # noqa: E731
     role_badges = {"master": (U["role_master"], "#8A6A2A", "rgba(184,134,59,.16)"),
                    "admin": (U["role_admin"], "#0A63A6", "rgba(10,99,166,.10)"),
+                   "beta": (U.get("role_beta", "Beta"), "#166534", "rgba(22,163,74,.12)"),
                    "standard": (U["role_standard"], "#5B6472", "#EEF0F3")}
 
     # ── Create user card ──

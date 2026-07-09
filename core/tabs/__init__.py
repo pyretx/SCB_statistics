@@ -6,8 +6,9 @@ from __future__ import annotations
 
 import streamlit as st
 
-from .. import i18n
-from . import breakdown, by_sex, distribution, leaderboard, overview, stats, trend, where
+from .. import access, i18n
+from . import (breakdown, by_sex, distribution, import_overlay, leaderboard,
+               overview, stats, trend, where)
 
 # id -> render_fn. cfg.tabs lists which to enable, in order.
 TABS = {
@@ -23,12 +24,16 @@ TABS = {
     "age": breakdown.render_age,
     "education": breakdown.render_education,
     "region": breakdown.render_region,
+    "import_overlay": import_overlay.render,   # beta-gated (see render_tabs)
 }
+# Tab ids only admins/beta testers ever see in the tab bar.
+_BETA_TABS = {"import_overlay"}
 # Canonical framework tab names (the single standard; see docs/architecture.md).
 _FALLBACK = {"overview": "Overview", "distribution": "Salary distribution",
              "sex": "By gender", "trend": "Trend", "where": "Where do I stand?",
              "leaderboard": "Leaderboard", "stats": "Basic statistics",
-             "age": "By age", "education": "By education", "region": "By region"}
+             "age": "By age", "education": "By education", "region": "By region",
+             "import_overlay": "Import overlay (beta)"}
 
 
 _TAB_CSS = """
@@ -54,11 +59,21 @@ _TAB_CSS = """
 """
 
 
+def visible_tabs(cfg) -> list[str]:
+    """Tab ids the CURRENT USER gets, in order: cfg.tabs ∩ registry, then the
+    country's extra tabs — minus beta-gated ids for non-beta/non-admin users."""
+    extra = getattr(cfg, "extra_tabs", None) or {}
+    enabled = ([t for t in cfg.tabs if t in TABS] + list(extra)) or ["overview"]
+    if not access.is_beta_or_admin(cfg):
+        enabled = [t for t in enabled if t not in _BETA_TABS] or ["overview"]
+    return enabled
+
+
 def render_tabs(cfg, stats, query):
     lang = query.get("lang", "EN")
     extra = getattr(cfg, "extra_tabs", None) or {}   # country-specific tabs, appended
     fns = {**TABS, **extra}
-    enabled = ([t for t in cfg.tabs if t in TABS] + list(extra)) or ["overview"]
+    enabled = visible_tabs(cfg)
     if len(enabled) == 1:
         fns[enabled[0]](cfg, stats, query)
         return

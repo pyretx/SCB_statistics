@@ -1,15 +1,19 @@
 """Supabase-backed authentication + user management for the SCB Salary Explorer.
 
-Roles live in Supabase Auth `app_metadata.role` (master | admin | standard).
-`app_metadata` is writable only with the service_role key, so users cannot
-change their own role. The service_role key stays server-side (st.secrets).
+Roles live in Supabase Auth `app_metadata.role` (master | admin | beta |
+standard). `app_metadata` is writable only with the service_role key, so users
+cannot change their own role. The service_role key stays server-side
+(st.secrets). "beta" behaves like "standard" everywhere except that beta-gated
+features (e.g. the import-overlay tab) become visible — see
+core.access.is_beta_or_admin.
 """
 import os
 import tomllib
 import streamlit as st
 from supabase import create_client, Client
 
-ROLES = ("standard", "admin")  # roles an admin may assign (master is bootstrap-only)
+# roles an admin may assign (master is bootstrap-only)
+ROLES = ("standard", "beta", "admin")
 
 # Country markets a user may open, stored in app_metadata.countries (slugs like
 # "sweden"/"france"/"norway"). Gates access to `registered`/`restricted`

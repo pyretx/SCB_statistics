@@ -73,3 +73,10 @@ with _tr:
 
 st.write("")
 admin_ui.render_body(_section)
+
+# ── TEST (throwaway) — link to the import-overlay prototype. Remove this block
+# together with test_import_overlay.py and its app.py registration. ────────────
+st.divider()
+st.page_link("test_import_overlay.py",
+             label="Import-overlay prototype (test page)",
+             icon=":material/science:")

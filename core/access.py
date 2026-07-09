@@ -15,6 +15,20 @@ def _user():
     return st.session_state.get("auth_user")
 
 
+def is_beta_or_admin(cfg) -> bool:
+    """Whether the current user may see beta-gated features (e.g. the
+    import-overlay tab): admin/master, the global "beta" role, or a per-country
+    beta tester — a user whose app_metadata.countries grant includes this
+    country (the same definition the 'restricted' access tier uses)."""
+    u = _user()
+    if u is None:
+        return False
+    role = u.get("role", "")
+    if role in _ADMIN_ROLES or role == "beta":
+        return True
+    return cfg.slug in (u.get("countries") or [])
+
+
 def can_open(cfg) -> bool:
     """Whether the current user may open this country page."""
     u = _user()
