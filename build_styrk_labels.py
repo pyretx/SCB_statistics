@@ -12,6 +12,7 @@ code browser without touching SSB at runtime.
 
     python build_styrk_labels.py
 """
+import net_fix  # noqa: F401 — force IPv4 (broken local IPv6 = ~21s/connection)
 from countries.norway.build import build
 
 if __name__ == "__main__":

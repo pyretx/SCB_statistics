@@ -8,6 +8,9 @@ Global page config (page_config, logo, shared CSS) lives here, ONCE — country
 pages must not call st.set_page_config / st.logo themselves.
 """
 import os
+
+import net_fix  # noqa: F401 — force IPv4 BEFORE any HTTP client loads (broken
+#                  local IPv6 made every fresh API connection wait ~21s)
 import streamlit as st
 
 _ASSETS   = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")

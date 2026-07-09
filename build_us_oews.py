@@ -15,6 +15,7 @@ mutually-exclusive scope list:
 Run once (needs openpyxl locally; also a runtime dep now — see requirements):
     python build_us_oews.py
 """
+import net_fix  # noqa: F401 — force IPv4 (broken local IPv6 = ~21s/connection)
 from countries.us.build import build
 
 if __name__ == "__main__":
