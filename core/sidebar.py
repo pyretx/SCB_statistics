@@ -204,9 +204,14 @@ def render_sidebar(cfg) -> dict:
             if b1.button("🔍 " + i18n.t(cfg, "search", lang), type="primary",
                          use_container_width=True, key=k("go")):
                 st.session_state[k("committed")] = dict(live)
+                # Close any open exclusive view (User guide / Code browser) so
+                # the results render instead of the panel swallowing the run —
+                # the legacy Swedish page's behaviour.
+                st.session_state.pop(k("view"), None)
             if b2.button("✕ " + i18n.t(cfg, "clear", lang),
                          use_container_width=True, key=k("clear")):
                 st.session_state.pop(k("committed"), None)
+                st.session_state.pop(k("view"), None)
 
     if cfg.fetch_mode == "search":
         committed = st.session_state.get(k("committed"))

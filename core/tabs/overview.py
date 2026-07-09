@@ -28,6 +28,7 @@ def _pct_label(cfg, lang, key):
 def render(cfg, stats, query):
     lang = query.get("lang", "EN")
     caps = cfg.capabilities
+    slug = cfg.slug
     tot = stats[stats["dimension"] == "total"]
     if tot.empty:
         st.caption(i18n.t(cfg, "no_data_combo", lang))
@@ -35,13 +36,35 @@ def render(cfg, stats, query):
     suf = cfg.currency_suffix
     occ = tuple(query.get("occ_codes", ()))
 
+    # Year selector — defaults to the newest selected year (what the page
+    # already fetched); picking another year refetches that slice.
+    years = sorted({int(y) for y in query.get("years", ())}, reverse=True)
+    yr = None
+    if len(years) > 1:
+        c1, _sp = st.columns([1, 3])
+        yr = c1.selectbox(i18n.t(cfg, "chart_year", lang, "Chart year"), years,
+                          key=f"{slug}_ov_year")
+        cur = int(tot["year"].max()) if tot["year"].notna().any() else None
+        if cur is not None and yr != cur:
+            with states.loading():
+                d2 = cfg.provider.occupation_stats(
+                    sector=query.get("sector", ""), occ_codes=occ,
+                    sex=query.get("sex", "total"), year=yr, lang=lang)
+            if query.get("aggregate") and d2 is not None and not d2.empty:
+                d2 = agg.collapse_stats(d2, agg.agg_name(cfg, lang, len(occ)))
+            t2 = d2[d2["dimension"] == "total"] if d2 is not None else None
+            if t2 is not None and not t2.empty:
+                tot = t2
+
     wmean, mmean = {}, {}                          # women/men means for the F/M gap
     if caps.has_sex:
         with states.loading():
             w = cfg.provider.occupation_stats(sector=query.get("sector", ""), occ_codes=occ,
-                                              sex="women", years=tuple(query.get("years", ())), lang=lang)
+                                              sex="women", years=tuple(query.get("years", ())),
+                                              year=yr, lang=lang)
             m = cfg.provider.occupation_stats(sector=query.get("sector", ""), occ_codes=occ,
-                                              sex="men", years=tuple(query.get("years", ())), lang=lang)
+                                              sex="men", years=tuple(query.get("years", ())),
+                                              year=yr, lang=lang)
         wt, mt = w[w["dimension"] == "total"], m[m["dimension"] == "total"]
         if query.get("aggregate"):
             name = agg.agg_name(cfg, lang, len(occ))

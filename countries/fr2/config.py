@@ -12,47 +12,95 @@ from .provider import France2Provider, micro_year
 _YR = micro_year()
 
 _GUIDE_EN = """
-**What this shows.** Net monthly full-time-equivalent salaries for ~360 detailed
-occupations (PCS-ESE 2017) in France: the **mean** (live from INSEE's Melodi
-API, private or public sector) and an estimated **P10 / P25 / median / P75 /
-P90 distribution** per occupation (from INSEE's anonymised FD_SALAAN microdata,
-both sexes together).
+# 👋 Welcome to the French Salary Explorer
 
-**How to use it**
-1. Pick a **sector** (private / public) and optionally a **sex**.
-2. Narrow by PCS group → category, pick occupation(s), press **Search**.
+Look up **French salaries** by detailed occupation (PCS-ESE 2017) — official
+data from INSEE. No technical knowledge needed.
 
-**Good to know**
-- This is **France v2** — the framework rebuild of the original France page,
-  including the **long-run constant-euro trend** (1996→, per broad PCS group),
-  the **all-employee distribution backdrop**, and **age** / **régional**
-  breakdowns (régions at PCS-group level — occupation-level régional data is
-  not published).
-- Percentiles are **microdata estimates** ({yr}, both sexes); the mean and
-  headcount are the latest official Melodi figures and can be a year newer.
+## 🚀 Getting started — 3 steps
+1. **Choose your filters** in the left sidebar: sector (private / public),
+   optionally a sex, and an occupation.
+2. Click **🔍 Search**.
+3. **Read the results** in the tabs. Change a filter and search again to update.
+
+## 🔎 Finding the right occupation
+- Type in the **"Search occupations…"** box — it matches titles and codes.
+- Or drill down with **Group → Category** (PCS 1 → 2 characters).
+- Open the **Code browser** to explore the whole nomenclature.
+- Picked several occupations? Toggle **Aggregate selection** above the tabs.
+
+## 📈 Reading the salary charts
+- The **mean** comes live from INSEE's Melodi API (latest published year).
+- **P10 / P25 / Median / P75 / P90** are estimates from INSEE's anonymised
+  **FD_SALAAN microdata** ({yr}, both sexes together). For high-paying
+  occupations the top of the range can be blank — INSEE censors the open top
+  band.
+- The grey dashed line is the **all-employee distribution** — how the
+  occupation compares with everyone.
+
+## 🗂 The tabs
+- **Overview** — mean, estimated percentiles, women/men and the F/M gap.
+- **Salary distribution** — the percentile chart with the population backdrop.
+- **Trend** — constant-euro development since 1996 for the occupation's broad
+  PCS group (values are already inflation-adjusted).
+- **Where do I stand?** — enter a salary and see the estimated percentile.
+- **Leaderboard** — ranks all ~360 occupations by pay within a PCS group.
+- **By sex / age / region** — breakdowns (régions at PCS-GROUP level:
+  occupation-level régional data is not published).
+
+## ❓ Good to know
+- All figures are **net monthly full-time-equivalent** salaries (EUR).
+- The mean/headcount vintage can be a year newer than the microdata
+  percentiles — the caption shows both.
+- Interface in **English / Français** — switch at the top of the sidebar.
 """.format(yr=_YR)
 
 _GUIDE_FR = """
-**Ce que montre cette page.** Salaires nets mensuels en équivalent temps plein
-pour ~360 professions détaillées (PCS-ESE 2017) : la **moyenne** (en direct de
-l'API Melodi de l'INSEE, secteur privé ou public) et une **distribution estimée
-P10 / P25 / médiane / P75 / P90** par profession (microdonnées anonymisées
-FD_SALAAN, deux sexes confondus).
+# 👋 Bienvenue dans l'Explorateur des salaires
 
-**Mode d'emploi**
-1. Choisissez un **secteur** (privé / public) et éventuellement un **sexe**.
-2. Affinez par groupe → catégorie PCS, choisissez la ou les professions,
-   puis **Rechercher**.
+Consultez les **salaires français** par profession détaillée (PCS-ESE 2017) —
+données officielles INSEE. Aucune connaissance technique requise.
 
-**À savoir**
-- Ceci est **France v2** — la version « framework » de la page France
-  d'origine, avec **l'évolution en euros constants** (1996→, par groupe PCS),
-  la **courbe de l'ensemble des salariés** en arrière-plan, et les vues par
-  **âge** / **région** (régions au niveau du groupe PCS — les données
-  régionales par profession ne sont pas publiées).
-- Les centiles sont des **estimations sur microdonnées** ({yr}, deux sexes) ;
-  la moyenne et les effectifs sont les derniers chiffres officiels Melodi et
-  peuvent être plus récents d'un an.
+## 🚀 Pour commencer — 3 étapes
+1. **Choisissez vos filtres** dans le menu de gauche : secteur (privé /
+   public), éventuellement un sexe, et une profession.
+2. Cliquez sur **🔍 Rechercher**.
+3. **Lisez les résultats** dans les onglets. Modifiez un filtre et relancez la
+   recherche pour actualiser.
+
+## 🔎 Trouver la bonne profession
+- Tapez dans **« Rechercher un métier… »** — titres et codes sont reconnus.
+- Ou descendez par **Groupe → Catégorie** (PCS 1 → 2 caractères).
+- Ouvrez la **Nomenclature** pour parcourir tous les codes.
+- Plusieurs métiers choisis ? Activez **Agréger la sélection** au-dessus des
+  onglets.
+
+## 📈 Lire les graphiques
+- La **moyenne** vient en direct de l'API Melodi (dernière année publiée).
+- **P10 / P25 / Médiane / P75 / P90** sont des estimations sur les
+  **microdonnées FD_SALAAN** ({yr}, deux sexes confondus). Pour les métiers
+  très rémunérateurs, le haut de la distribution peut être vide — l'INSEE
+  censure la tranche supérieure ouverte.
+- La ligne grise en pointillés est la **distribution de l'ensemble des
+  salariés** — pour situer le métier par rapport à tous.
+
+## 🗂 Les onglets
+- **Aperçu** — moyenne, centiles estimés, femmes/hommes et écart F/H.
+- **Distribution des salaires** — le graphique par centile avec la courbe de
+  l'ensemble des salariés.
+- **Évolution** — en euros constants depuis 1996 pour le groupe PCS du métier
+  (valeurs déjà corrigées de l'inflation).
+- **Où en suis-je ?** — saisissez un salaire, voyez le centile estimé.
+- **Classement** — classe les ~360 métiers par salaire au sein d'un groupe.
+- **Par sexe / âge / région** — ventilations (régions au niveau du GROUPE
+  PCS : les données régionales par profession ne sont pas publiées).
+
+## ❓ À savoir
+- Tous les chiffres sont des salaires **nets mensuels en équivalent temps
+  plein** (EUR).
+- Le millésime moyenne/effectifs peut être plus récent d'un an que les
+  centiles microdonnées — la légende indique les deux.
+- Interface en **English / Français** — bascule en haut du menu.
 """.format(yr=_YR)
 
 CONFIG = CountryConfig(
@@ -76,7 +124,7 @@ CONFIG = CountryConfig(
         year_range=(_YR, _YR),                # one vintage; no year slider
     ),
     tabs=("overview", "distribution", "trend", "where", "leaderboard",
-          "sex", "age", "region"),
+          "sex", "age", "region", "import_overlay"),
     access="internal",                        # admin/master only (FR2 beta)
     fetch_mode="search",
     landing=False,                            # no home tile — admin preview only

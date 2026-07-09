@@ -155,176 +155,236 @@ def _tables_for(table_list, years: list[int]):
 
 
 # ── percentile (total) slice ─────────────────────────────────────────────────
+# SCB's API latency is per-CALL (~a flat round-trip whatever the size), so the
+# strategy is: as few calls as possible, each carrying as much as possible.
+# ONE call per table generation fetches ALL sexes (1 / 2 / 1+2) × the FULL year
+# span (2014→latest); the generations run in PARALLEL. Every year switch, the
+# overview (incl. its women/men gap), the by-gender tab, the distribution tab
+# AND the whole trend tab then slice this one disk-cached frame locally.
+_ALL_KON = ["1", "2", "1+2"]
+
+
+def _key_cols(df, occ_codes):
+    """Identify the occupation / sex / year key columns by VALUE (PxWeb returns
+    key columns in TABLE order, not query order)."""
+    occ_set, kon_set = set(occ_codes), set(_ALL_KON)
+    occ_c = kon_c = yr_c = None
+    for c in df.columns:
+        vals = set(df[c].astype(str).str.strip())
+        if occ_c is None and vals <= occ_set:
+            occ_c = c
+        elif kon_c is None and vals <= kon_set:
+            kon_c = c
+        elif yr_c is None and vals and all(v.isdigit() and len(v) == 4 for v in vals):
+            yr_c = c
+    return occ_c, kon_c, yr_c
+
+
+def _parallel(jobs):
+    """Run the per-table-generation fetches concurrently (SCB's latency is per
+    call, so two generations in flight ≈ the cost of one)."""
+    from concurrent.futures import ThreadPoolExecutor
+    if len(jobs) == 1:
+        return [jobs[0]()]
+    with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
+        return list(ex.map(lambda f: f(), jobs))
+
+
 @st.cache_data(show_spinner=False, persist="disk")
-def _fetch_pct(sector: str, occ_codes: tuple[str, ...], sex: str,
-               years: tuple[int, ...], lang: str) -> pd.DataFrame:
-    frames = []
-    for tname, yr, codes in _tables_for(PCT_TABLES, list(years)):
-        q = [
-            {"code": "Sektor", "selection": {"filter": "item", "values": [sector]}},
-            {"code": "Yrke2012", "selection": {"filter": "item", "values": list(occ_codes)}},
-            {"code": "Kon", "selection": {"filter": "item", "values": [SEX_CODE.get(sex, "1+2")]}},
-            {"code": "ContentsCode", "selection": {"filter": "item", "values": codes}},
-            {"code": "Tid", "selection": {"filter": "item", "values": [str(y) for y in yr]}},
-        ]
-        df = _post(tname, q, lang)
-        if df is None:
-            continue
-        keys = df.columns[:-len(codes)].tolist()
-        df.columns = keys + list(_MEASURES)
-        # key columns are [sector, occupation, sex, year] in query order
-        df = df.rename(columns={keys[1]: "occ", keys[3]: "yr"})
-        frames.append(df[["occ", "yr", *_MEASURES]])
+def _fetch_pct(sector: str, occ_codes: tuple[str, ...], lang: str) -> pd.DataFrame:
+    """Tidy [occ, kon, yr, mean…p90] for ALL sexes × ALL years, min. API calls."""
+    all_years = list(range(2014, latest_year() + 1))
+
+    def job(tname, yr, codes):
+        def run():
+            q = [
+                {"code": "Sektor", "selection": {"filter": "item", "values": [sector]}},
+                {"code": "Yrke2012", "selection": {"filter": "item", "values": list(occ_codes)}},
+                {"code": "Kon", "selection": {"filter": "item", "values": _ALL_KON}},
+                {"code": "ContentsCode", "selection": {"filter": "item", "values": codes}},
+                {"code": "Tid", "selection": {"filter": "item", "values": [str(y) for y in yr]}},
+            ]
+            df = _post(tname, q, lang)
+            if df is None:
+                return None
+            keys = df.columns[:-len(codes)].tolist()
+            df.columns = keys + list(_MEASURES)
+            occ_c, kon_c, yr_c = _key_cols(df[keys], occ_codes)
+            if not all((occ_c, kon_c, yr_c)):
+                return None
+            return df.rename(columns={occ_c: "occ", kon_c: "kon", yr_c: "yr"})[
+                ["occ", "kon", "yr", *_MEASURES]]
+        return run
+
+    frames = [f for f in _parallel([job(t, y, c) for t, y, c
+                                    in _tables_for(PCT_TABLES, all_years)])
+              if f is not None]
     if not frames:
         return pd.DataFrame()
     out = pd.concat(frames, ignore_index=True)
+    for c in ("occ", "kon"):
+        out[c] = out[c].astype(str).str.strip()
+    out["yr"] = pd.to_numeric(out["yr"], errors="coerce")
     for c in _MEASURES:
         out[c] = pd.to_numeric(out[c], errors="coerce")
     return out
 
 
 @st.cache_data(show_spinner=False, persist="disk")
-def _fetch_counts(sector: str, occ_codes: tuple[str, ...], sex: str,
-                  year: int, lang: str) -> dict:
-    """{occ_code: headcount} from the region table's national (SE) row — the
-    percentile table carries no count (same trick as the legacy page)."""
-    for tname, yr in _tables_for(REG_TABLES, [year]):
-        q = [
-            {"code": "Region", "selection": {"filter": "item", "values": ["SE"]}},
-            {"code": "Sektor", "selection": {"filter": "item", "values": [sector]}},
-            {"code": "Yrke2012", "selection": {"filter": "item", "values": list(occ_codes)}},
-            {"code": "Kon", "selection": {"filter": "item", "values": [SEX_CODE.get(sex, "1+2")]}},
-            {"code": "Tid", "selection": {"filter": "item", "values": [str(y) for y in yr]}},
-        ]
-        df = _post(tname, q, lang)
+def _fetch_counts(sector: str, occ_codes: tuple[str, ...], lang: str) -> dict:
+    """{(occ, kon, year): headcount} from the region table's national (SE) row —
+    the percentile table carries no count (same trick as the legacy page).
+    ALL sexes × ALL years, generations in parallel."""
+    all_years = list(range(2014, latest_year() + 1))
+
+    def job(tname, yr):
+        def run():
+            q = [
+                {"code": "Region", "selection": {"filter": "item", "values": ["SE"]}},
+                {"code": "Sektor", "selection": {"filter": "item", "values": [sector]}},
+                {"code": "Yrke2012", "selection": {"filter": "item", "values": list(occ_codes)}},
+                {"code": "Kon", "selection": {"filter": "item", "values": _ALL_KON}},
+                {"code": "Tid", "selection": {"filter": "item", "values": [str(y) for y in yr]}},
+            ]
+            return _post(tname, q, lang)
+        return run
+
+    out: dict = {}
+    for df in _parallel([job(t, y) for t, y in _tables_for(REG_TABLES, all_years)]):
         if df is None:
             continue
         cc = _count_col(df.columns, lang)
         if not cc:
             continue
-        occ_c = df.columns[2]                 # [region, sector, occupation, sex, year]
-        return {str(r[occ_c]).strip(): pd.to_numeric(r[cc], errors="coerce")
-                for _, r in df.iterrows()}
-    return {}
+        occ_c, kon_c, yr_c = _key_cols(df, occ_codes)
+        if not all((occ_c, kon_c, yr_c)):
+            continue
+        for _, r in df.iterrows():
+            out[(str(r[occ_c]).strip(), str(r[kon_c]).strip(), int(r[yr_c]))] = \
+                pd.to_numeric(r[cc], errors="coerce")
+    return out
 
 
 # ── dimension slices (age / region / education) ──────────────────────────────
-@st.cache_data(show_spinner=False, persist="disk")
-def _fetch_dim(dim: str, sector: str, occ_codes: tuple[str, ...], sex: str,
-               year: int, lang: str) -> pd.DataFrame:
-    """Tidy [occ, dim_value(display), mean, count] for one breakdown dimension."""
-    kon = SEX_CODE.get(sex, "1+2")
+def _dim_meta(dim: str, lang: str):
     if dim == "age":
-        tables, var, values = AGE_TABLES, "Alder", AGE_GROUPS
-        disp = {v: v for v in AGE_GROUPS}
-    elif dim == "region":
-        tables, var = REG_TABLES, "Region"
-        codes_map = REGIONS.get(lang, REGIONS["EN"])
-        values = list(codes_map)
-        disp = codes_map
-    elif dim == "education":
-        tables, var = EDU_TABLES, "UtbildningsNiva"
-        codes_map = EDU_LEVELS.get(lang, EDU_LEVELS["EN"])
-        values = list(codes_map)
-        disp = codes_map
-    else:
-        return pd.DataFrame()
+        return AGE_TABLES, "Alder", AGE_GROUPS, {v: v for v in AGE_GROUPS}
+    if dim == "region":
+        m = REGIONS.get(lang, REGIONS["EN"])
+        return REG_TABLES, "Region", list(m), m
+    if dim == "education":
+        m = EDU_LEVELS.get(lang, EDU_LEVELS["EN"])
+        return EDU_TABLES, "UtbildningsNiva", list(m), m
+    return None, None, [], {}
 
-    def run(kon_values: list[str]) -> pd.DataFrame | None:
-        for tname, yr in _tables_for(tables, [year]):
+
+@st.cache_data(show_spinner=False, persist="disk")
+def _fetch_dim_all(dim: str, sector: str, occ_codes: tuple[str, ...],
+                   lang: str) -> pd.DataFrame:
+    """Tidy [occ, dv(code), kon, yr, mean, count] — ALL sexes × ALL years in one
+    call per table generation (generations in parallel). Year/sex switches and
+    the split-by-sex toggle then slice locally, no extra API calls."""
+    tables, var, values, _ = _dim_meta(dim, lang)
+    if not tables:
+        return pd.DataFrame()
+    all_years = list(range(2014, latest_year() + 1))
+
+    def job(tname, yr):
+        def run():
             q = [
                 {"code": var, "selection": {"filter": "item", "values": values}},
                 {"code": "Sektor", "selection": {"filter": "item", "values": [sector]}},
                 {"code": "Yrke2012", "selection": {"filter": "item", "values": list(occ_codes)}},
-                {"code": "Kon", "selection": {"filter": "item", "values": kon_values}},
+                {"code": "Kon", "selection": {"filter": "item", "values": _ALL_KON}},
                 {"code": "Tid", "selection": {"filter": "item", "values": [str(y) for y in yr]}},
             ]
+            # the education table has no "1+2" total → retry with 1 & 2 only
             df = _post(tname, q, lang)
-            if df is not None:
-                return df
-        return None
+            if df is None:
+                q[3] = {"code": "Kon", "selection": {"filter": "item", "values": ["1", "2"]}}
+                df = _post(tname, q, lang)
+            return df
+        return run
 
-    df = run([kon])
-    both = False
-    if df is None and sex == "total":
-        # the education table has no "1+2" total — aggregate men + women instead
-        df = run(["1", "2"])
-        both = True
-    if df is None:
-        return pd.DataFrame()
-
-    sal = _salary_col(df.columns, lang)
-    if sal is None:
-        return pd.DataFrame()
-    cnt = _count_col(df.columns, lang)
-    # PxWeb returns key columns in TABLE order (not query order) — identify the
-    # occupation and dimension columns by their VALUES, never by position. The
-    # dimension column is the one overlapping MOST distinct category codes (a
-    # single-sex Kon column of {"2"} must not win over the education levels).
-    occ_set, dim_set = set(occ_codes), set(values)
-    occ_c = dim_c = None
-    best = 0
-    for c in df.columns:
-        vals_c = set(df[c].astype(str).str.strip())
-        if occ_c is None and vals_c <= occ_set:
-            occ_c = c
+    frames = []
+    for df in _parallel([job(t, y) for t, y in _tables_for(tables, all_years)]):
+        if df is None:
             continue
-        overlap = len(vals_c & dim_set)
-        if overlap > best:
-            best, dim_c = overlap, c
-    if occ_c is None or dim_c is None:
+        sal = _salary_col(df.columns, lang)
+        if sal is None:
+            continue
+        cnt = _count_col(df.columns, lang)
+        occ_c, kon_c, yr_c = _key_cols(df, occ_codes)
+        # dimension column: largest overlap with the expected category codes
+        dim_set, dim_c, best = set(values), None, 0
+        for c in df.columns:
+            if c in (occ_c, kon_c, yr_c):
+                continue
+            overlap = len(set(df[c].astype(str).str.strip()) & dim_set)
+            if overlap > best:
+                best, dim_c = overlap, c
+        if not all((occ_c, kon_c, yr_c, dim_c)):
+            continue
+        d = df.rename(columns={occ_c: "occ", kon_c: "kon", yr_c: "yr", dim_c: "dv"})
+        d["mean"] = pd.to_numeric(d[sal], errors="coerce")
+        d["count"] = pd.to_numeric(d[cnt], errors="coerce") if cnt else None
+        frames.append(d[["occ", "dv", "kon", "yr", "mean", "count"]])
+    if not frames:
         return pd.DataFrame()
-    df = df.rename(columns={dim_c: "dv", occ_c: "occ"})
-    df["mean"] = pd.to_numeric(df[sal], errors="coerce")
-    df["count"] = pd.to_numeric(df[cnt], errors="coerce") if cnt else None
+    out = pd.concat(frames, ignore_index=True)
+    for c in ("occ", "dv", "kon"):
+        out[c] = out[c].astype(str).str.strip()
+    out["yr"] = pd.to_numeric(out["yr"], errors="coerce")
+    return out
 
-    if both:                                   # headcount-weighted mean over the sexes
+
+def _fetch_dim(dim: str, sector: str, occ_codes: tuple[str, ...], sex: str,
+               year: int, lang: str) -> pd.DataFrame:
+    """[occ, dv(display), mean, count] for one (sex, year) — a local slice of
+    the all-sex/all-year frame. When the table has no '1+2' total (education),
+    the total is a headcount-weighted mean of men + women."""
+    _, _, values, disp = _dim_meta(dim, lang)
+    d = _fetch_dim_all(dim, sector, occ_codes, lang)
+    if d.empty:
+        return d
+    d = d[d["yr"] == year]
+    kon = SEX_CODE.get(sex, "1+2")
+    sl = d[d["kon"] == kon]
+    if sl.empty and sex == "total":            # aggregate 1 + 2, weighted
         rows = []
-        for (occ, dv), g in df.groupby(["occ", "dv"]):
+        for (occ, dv), g in d[d["kon"].isin(["1", "2"])].groupby(["occ", "dv"]):
             w = g["count"].fillna(0) if g["count"].notna().any() else pd.Series([1.0] * len(g))
             vals = g["mean"]
             tot = w.where(vals.notna(), 0).sum()
             mean = (vals.fillna(0) * w).sum() / tot if tot > 0 else vals.mean()
             rows.append({"occ": occ, "dv": dv, "mean": mean,
                          "count": g["count"].sum() if g["count"].notna().any() else None})
-        df = pd.DataFrame(rows)
-
-    # display labels + provider-side category order
+        sl = pd.DataFrame(rows)
+    if sl.empty:
+        return pd.DataFrame()
     order = {v: i for i, v in enumerate(values)}
-    df["dv"] = df["dv"].astype(str).str.strip()
-    df = df[df["dv"].isin(order)]
-    df["__o"] = df["dv"].map(order)
-    df["dv"] = df["dv"].map(lambda v: disp.get(v, v))
-    return df.sort_values(["occ", "__o"])[["occ", "dv", "mean", "count"]]
+    sl = sl[sl["dv"].isin(order)].copy()
+    sl["__o"] = sl["dv"].map(order)
+    sl["dv"] = sl["dv"].map(lambda v: disp.get(v, v))
+    return sl.sort_values(["occ", "__o"])[["occ", "dv", "mean", "count"]]
 
 
 # ── trend / CPI / leaderboard ────────────────────────────────────────────────
-@st.cache_data(show_spinner=False, persist="disk")
 def _fetch_trend(sector: str, occ_codes: tuple[str, ...], sex: str,
                  years: tuple[int, ...], lang: str, measure: str) -> pd.DataFrame:
-    mi = _MEASURES.index(measure if measure in _MEASURES else "mean")
-    frames = []
-    for tname, yr, codes in _tables_for(PCT_TABLES, sorted(set(int(y) for y in years))):
-        q = [
-            {"code": "Sektor", "selection": {"filter": "item", "values": [sector]}},
-            {"code": "Yrke2012", "selection": {"filter": "item", "values": list(occ_codes)}},
-            {"code": "Kon", "selection": {"filter": "item", "values": [SEX_CODE.get(sex, "1+2")]}},
-            {"code": "ContentsCode", "selection": {"filter": "item", "values": [codes[mi]]}},
-            {"code": "Tid", "selection": {"filter": "item", "values": [str(y) for y in yr]}},
-        ]
-        df = _post(tname, q, lang)
-        if df is None:
-            continue
-        keys = df.columns[:-1].tolist()
-        df = df.rename(columns={keys[1]: "occ", keys[3]: "yr", df.columns[-1]: "val"})
-        frames.append(df[["occ", "yr", "val"]])
-    if not frames:
+    """Trend = a slice of the SAME full-span percentile frame — no extra API
+    call, so measure/view switches in the trend tab are instant."""
+    m = measure if measure in _MEASURES else "mean"
+    d = _fetch_pct(sector, occ_codes, lang)
+    if d.empty:
         return model.empty_trend()
-    d = pd.concat(frames, ignore_index=True)
-    d["val"] = pd.to_numeric(d["val"], errors="coerce")
+    d = d[d["kon"] == SEX_CODE.get(sex, "1+2")]
+    if years:
+        want = {int(y) for y in years}
+        d = d[d["yr"].isin(want)]
     labels = _leaves(lang)
     rows = [{"country": "se2", "year": int(r["yr"]), "series": labels.get(r["occ"], r["occ"]),
-             "sex": sex, "value_nominal": r["val"], "value_real": None}
+             "sex": sex, "value_nominal": r[m], "value_real": None}
             for _, r in d.iterrows()]
     return pd.DataFrame(rows, columns=model.TREND_COLS)
 
@@ -435,11 +495,19 @@ class Sweden2Provider(CountryProvider):
             } for _, r in d.iterrows()]
             return pd.DataFrame(rows, columns=model.OCC_STAT_COLS)
 
-        d = _fetch_pct(sector or "0", occ_codes, sex, (yr,), lang)
-        counts = _fetch_counts(sector or "0", occ_codes, sex, yr, lang)
+        # Fire the two SCB fetches CONCURRENTLY on a cold cache (each is a flat
+        # ~full round-trip); both frames carry every sex × every year, so all
+        # subsequent slicing is local.
+        sec = sector or "0"
+        res = _parallel([lambda: _fetch_pct(sec, occ_codes, lang),
+                         lambda: _fetch_counts(sec, occ_codes, lang)])
+        d, counts = res[0], res[1]
+        kon = SEX_CODE.get(sex, "1+2")
+        if not d.empty:
+            d = d[(d["yr"] == yr) & (d["kon"] == kon)]
         rows = []
         for occ in occ_codes:
-            sl = d[d["occ"].astype(str).str.strip() == occ] if not d.empty else d
+            sl = d[d["occ"] == occ] if not d.empty else d
             v = sl.iloc[0] if sl is not None and not sl.empty else {}
             rows.append({
                 "country": "se2", "year": yr, "occ_code": occ,
@@ -452,7 +520,7 @@ class Sweden2Provider(CountryProvider):
                 "p25": v.get("p25") if len(v) else None,
                 "p75": v.get("p75") if len(v) else None,
                 "p90": v.get("p90") if len(v) else None,
-                "count": counts.get(occ),
+                "count": counts.get((occ, kon, yr)),
                 "source_name": "Statistics Sweden (SCB)",
                 "source_url": f"https://api.scb.se/OV0104/v1/doris/en/ssd/{TABLE_BASE}",
                 "notes": "",
