@@ -6,93 +6,121 @@ from __future__ import annotations
 from core.model import CountryConfig, Capabilities
 from .provider import NorwayProvider
 
-_GUIDE_EN = """
-# 👋 Welcome to the Norwegian Salary Explorer
+# Structured guides (the approved User-Guide design; rendered by core/panels.py)
+_GUIDE_EN = {
+    "title": "How to use the Norwegian Salary Explorer",
+    "source": "Statistics Norway (SSB) · Monthly earnings by occupation (STYRK-08) · table 11418",
+    "intro": "Look up Norwegian salaries by occupation — official data from Statistics "
+             "Norway, no technical knowledge needed. This guide covers the three-step "
+             "flow, finding occupations, and how to read the charts.",
+    "steps_title": "Getting started — three steps",
+    "steps": [
+        ("Choose your filters",
+         "In the left sidebar: sector (all, private + public enterprises, or local / "
+         "central government), sex, and a year range (2015 onward)."),
+        ("Search",
+         "Pick one or more occupations, then press the blue Search button at the "
+         "bottom of the sidebar."),
+        ("Read the results",
+         "Explore the tabs on the right. Change any filter and search again to "
+         "update the charts."),
+    ],
+    "find_title": "Finding the right occupation",
+    "find": [
+        ("Search box", "Type in the “Search occupations…” box — it matches both job "
+                       "titles and STYRK codes."),
+        ("Drill down", "Or narrow step by step with Occupational field → Area → Group "
+                       "(STYRK 1 → 2 → 3 digit)."),
+        ("Code browser", "Open the Code browser to explore the entire STYRK-08 "
+                         "classification tree."),
+        ("Aggregate", "Picked several occupations? Toggle Aggregate selection above "
+                      "the tabs to merge them into one headcount-weighted series."),
+    ],
+    "charts_title": "Reading the salary charts",
+    "charts_intro": "SSB publishes quartiles, not the full percentile range. "
+                    "Every chart shows three points (the average is a separate ♦ marker):",
+    "pcts": [("P25", 32, "a quarter earn less"),
+             ("MED", 52, "half earn less"),
+             ("P75", 72, "a quarter earn more")],
+    "notes_title": "Good to know",
+    "notes": [
+        "Figures are gross monthly earnings (NOK), converted to full-time equivalents.",
+        "Some occupation × sector combinations aren’t published (e.g. ambulance "
+        "workers in the private sector) — try All sectors.",
+        "Small groups can be suppressed by SSB for privacy — a missing year is not an error.",
+        "The mean can sit above the median when a few high salaries pull the average up.",
+        "Interface in English / Norsk — switch at the top of the sidebar.",
+    ],
+    "tabs_title": "The tabs",
+    "tabs": [
+        ("Overview", "The key figures at a glance, with a year selector."),
+        ("Salary distribution", "The quartile chart, plus raw data + CSV export."),
+        ("Trend", "Development over time: nominal, growth vs inflation (CPI), or "
+                  "real (constant prices)."),
+        ("Where do I stand?", "Enter a salary and see roughly where it falls."),
+        ("Leaderboard", "Ranks all occupations by pay, gender gap or growth."),
+        ("By gender", "Women vs men, with a women-as-%-of-men view."),
+    ],
+    "footer": "All figures are gross monthly earnings from SSB table 11418, updated annually.",
+}
 
-Look up **Norwegian salaries** by occupation — official data from Statistics
-Norway (SSB), table 11418. No technical knowledge needed.
-
-## 🚀 Getting started — 3 steps
-1. **Choose your filters** in the left sidebar: sector (all, private + public
-   enterprises, or local / central government), sex and a year range (2015→).
-2. Click **🔍 Search**.
-3. **Read the results** in the tabs. Change a filter and search again to update.
-
-## 🔎 Finding the right occupation
-- Type in the **"Search occupations…"** box — it matches job titles and codes.
-- Or drill down with **Occupational field → Area → Group** (STYRK 1 → 2 → 3
-  digit).
-- Open the **Code browser** to explore the whole STYRK-08 classification.
-- Picked several occupations? Toggle **Aggregate selection** above the tabs to
-  merge them into one headcount-weighted series.
-
-## 📈 Reading the salary charts
-SSB publishes **quartiles**, not the full percentile range:
-- **P25** — a quarter earn less than this.
-- **Median (P50)** — the middle salary; half earn more, half less.
-- **P75** — a quarter earn more.
-- **Average** — shown as a separate ♦ marker.
-
-## 🗂 The tabs
-- **Overview** — the key figures at a glance, with a year selector.
-- **Salary distribution** — the quartile chart, plus raw data + CSV export.
-- **Trend** — development over time: nominal, growth vs inflation (CPI), or
-  real (constant prices).
-- **Where do I stand?** — enter a salary and see roughly where it falls.
-- **Leaderboard** — ranks all occupations by pay, gender gap or growth.
-- **By gender** — women vs men, with a women-as-%-of-men view.
-
-## ❓ Good to know
-- Figures are **gross monthly earnings** (NOK), converted to full-time
-  equivalents.
-- Some occupation × sector combinations aren't published (e.g. ambulance
-  workers in the private sector) — try **All sectors**.
-- Interface in **English / Norsk** — switch at the top of the sidebar.
-"""
-
-_GUIDE_NO = """
-# 👋 Velkommen til den norske lønnsutforskeren
-
-Slå opp **norske lønninger** per yrke — offisielle data fra Statistisk
-sentralbyrå (SSB), tabell 11418. Ingen tekniske forkunnskaper kreves.
-
-## 🚀 Kom i gang — 3 steg
-1. **Velg filtrene dine** i menyen til venstre: sektor (alle, privat +
-   offentlig eide foretak, eller kommune / stat), kjønn og et årsintervall
-   (2015→).
-2. Klikk **🔍 Søk**.
-3. **Les resultatene** i fanene. Endre et filter og søk igjen for å oppdatere.
-
-## 🔎 Finn riktig yrke
-- Skriv i **«Søk yrker…»**-feltet — det matcher yrkestitler og koder.
-- Eller bor deg ned via **Yrkesfelt → Yrkesområde → Yrkesgruppe** (STYRK
-  1 → 2 → 3 siffer).
-- Åpne **Kodeoversikt** for å utforske hele STYRK-08-klassifiseringen.
-- Valgt flere yrker? Slå på **Aggreger utvalget** over fanene for å slå dem
-  sammen til én serie vektet etter antall ansatte.
-
-## 📈 Lese lønnsdiagrammene
-SSB publiserer **kvartiler**, ikke hele persentilspennet:
-- **P25** — en fjerdedel tjener mindre enn dette.
-- **Median (P50)** — midtlønnen; halvparten tjener mer, halvparten mindre.
-- **P75** — en fjerdedel tjener mer.
-- **Gjennomsnitt** — vises som egen ♦-markør.
-
-## 🗂 Fanene
-- **Oversikt** — nøkkeltallene samlet, med årsvelger.
-- **Lønnsfordeling** — kvartildiagrammet, pluss rådata + CSV-eksport.
-- **Trend** — utvikling over tid: nominelt, vekst mot inflasjon (KPI) eller
-  realverdi (faste priser).
-- **Hvor står jeg?** — oppgi en lønn og se omtrent hvor den ligger.
-- **Toppliste** — rangerer alle yrker etter lønn, kjønnsgap eller vekst.
-- **Etter kjønn** — kvinner mot menn, med kvinner-i-%-av-menn-visning.
-
-## ❓ Verdt å vite
-- Tallene er **brutto månedslønn** (NOK), omregnet til heltidsekvivalenter.
-- Enkelte kombinasjoner av yrke × sektor er ikke publisert (f.eks.
-  ambulansepersonell i privat sektor) — prøv **Alle sektorer**.
-- Grensesnitt på **English / Norsk** — bytt øverst i menyen.
-"""
+_GUIDE_NO = {
+    "title": "Slik bruker du den norske lønnsutforskeren",
+    "source": "Statistisk sentralbyrå (SSB) · Månedslønn etter yrke (STYRK-08) · tabell 11418",
+    "intro": "Slå opp norske lønninger per yrke — offisielle data fra Statistisk "
+             "sentralbyrå, ingen tekniske forkunnskaper kreves. Denne veiledningen "
+             "dekker tre-stegs-flyten, hvordan du finner yrker, og hvordan du leser "
+             "diagrammene.",
+    "steps_title": "Kom i gang — tre steg",
+    "steps": [
+        ("Velg filtrene dine",
+         "I menyen til venstre: sektor (alle, privat + offentlig eide foretak, eller "
+         "kommune / stat), kjønn og et årsintervall (fra 2015)."),
+        ("Søk",
+         "Velg ett eller flere yrker, og trykk på den blå Søk-knappen nederst i menyen."),
+        ("Les resultatene",
+         "Utforsk fanene til høyre. Endre et filter og søk igjen for å oppdatere "
+         "diagrammene."),
+    ],
+    "find_title": "Finn riktig yrke",
+    "find": [
+        ("Søkefelt", "Skriv i «Søk yrker…»-feltet — det matcher både yrkestitler og "
+                     "STYRK-koder."),
+        ("Bor deg ned", "Eller avgrens steg for steg med Yrkesfelt → Yrkesområde → "
+                        "Yrkesgruppe (STYRK 1 → 2 → 3 siffer)."),
+        ("Kodeoversikt", "Åpne Kodeoversikt for å utforske hele STYRK-08-treet."),
+        ("Aggreger", "Valgt flere yrker? Slå på Aggreger utvalget over fanene for å "
+                     "slå dem sammen til én serie vektet etter antall ansatte."),
+    ],
+    "charts_title": "Lese lønnsdiagrammene",
+    "charts_intro": "SSB publiserer kvartiler, ikke hele persentilspennet. Hvert "
+                    "diagram viser tre punkter (gjennomsnittet er en egen ♦-markør):",
+    "pcts": [("P25", 32, "en fjerdedel tjener mindre"),
+             ("MED", 52, "halvparten tjener mindre"),
+             ("P75", 72, "en fjerdedel tjener mer")],
+    "notes_title": "Verdt å vite",
+    "notes": [
+        "Tallene er brutto månedslønn (NOK), omregnet til heltidsekvivalenter.",
+        "Enkelte kombinasjoner av yrke × sektor er ikke publisert (f.eks. "
+        "ambulansepersonell i privat sektor) — prøv Alle sektorer.",
+        "Små grupper kan være skjult av SSB av personvernhensyn — et manglende år "
+        "er ikke en feil.",
+        "Gjennomsnittet kan ligge over medianen når noen få høye lønninger drar "
+        "snittet opp.",
+        "Grensesnitt på English / Norsk — bytt øverst i menyen.",
+    ],
+    "tabs_title": "Fanene",
+    "tabs": [
+        ("Oversikt", "Nøkkeltallene samlet, med årsvelger."),
+        ("Lønnsfordeling", "Kvartildiagrammet, pluss rådata + CSV-eksport."),
+        ("Trend", "Utvikling over tid: nominelt, vekst mot inflasjon (KPI) eller "
+                  "realverdi (faste priser)."),
+        ("Hvor står jeg?", "Oppgi en lønn og se omtrent hvor den ligger."),
+        ("Toppliste", "Rangerer alle yrker etter lønn, kjønnsgap eller vekst."),
+        ("Etter kjønn", "Kvinner mot menn, med kvinner-i-%-av-menn-visning."),
+    ],
+    "footer": "Alle tall er brutto månedslønn fra SSB tabell 11418, oppdatert årlig.",
+}
 
 CONFIG = CountryConfig(
     slug="norway",

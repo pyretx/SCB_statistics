@@ -126,122 +126,142 @@ _WP_SV = {
 
 _SECTOR_CODES = ("0", "1-3", "1", "2", "3", "4-5", "4", "5")
 
-_GUIDE_EN = """
-# 👋 Welcome to the Swedish Salary Explorer
+# Structured guides (the approved User-Guide design; rendered by core/panels.py)
+_GUIDE_EN = {
+    "title": "How to use the Swedish Salary Explorer",
+    "source": f"Statistics Sweden (SCB) · Wage structure statistics (SSYK 2012) · 2014–{latest_year()}",
+    "intro": "Look up Swedish salaries by occupation and check work-permit salary "
+             "requirements — official data from Statistics Sweden, no technical "
+             "knowledge needed. This guide covers the three-step flow, finding "
+             "occupations, and how to read the charts.",
+    "steps_title": "Getting started — three steps",
+    "steps": [
+        ("Choose your filters",
+         "In the left sidebar: sector (all, public or private), sex, and a year "
+         "range (2014 onward)."),
+        ("Search",
+         "Pick one or more occupations, then press the blue Search button at the "
+         "bottom of the sidebar."),
+        ("Read the results",
+         "Explore the tabs on the right. Change any filter and search again to "
+         "update the charts."),
+    ],
+    "find_title": "Finding the right occupation",
+    "find": [
+        ("Search box", "Type in the “Search occupations…” box — it matches job "
+                       "titles, SSYK codes and common alternative titles (synonyms)."),
+        ("Drill down", "Or narrow step by step with Major group → Sub-group → Minor "
+                       "group (SSYK 1 → 2 → 3 digit)."),
+        ("Code browser", "Open the Code browser to explore every SSYK code with its "
+                         "description and synonyms."),
+        ("Aggregate", "Picked several occupations? Toggle Aggregate selection above "
+                      "the tabs to merge them into one headcount-weighted series."),
+    ],
+    "charts_title": "Reading the salary charts",
+    "charts_intro": "Salaries are shown as percentiles — a wide gap between P10 and "
+                    "P90 means pay varies a lot in that job (the average is a "
+                    "separate ♦ marker):",
+    "pcts": [("P10", 22, "10% earn less"),
+             ("P25", 36, "a quarter earn less"),
+             ("MED", 52, "half earn less"),
+             ("P75", 68, "a quarter earn more"),
+             ("P90", 84, "only 10% earn more")],
+    "notes_title": "Good to know",
+    "notes": [
+        "Figures are gross monthly salaries (SEK), converted to full-time equivalents.",
+        "Some small groups show “–” — SCB suppresses figures for very small groups.",
+        "SSYK descriptions are auto-translated from Swedish where no official "
+        "English version exists.",
+        "Interface in English / Svenska — switch at the top of the sidebar; data "
+        "labels follow the language too.",
+    ],
+    "tabs_title": "The tabs",
+    "tabs": [
+        ("Overview", "The key figures at a glance, with a year selector."),
+        ("Salary distribution", "The percentile chart, plus raw data + CSV export."),
+        ("Trend", "Development over time: nominal, growth vs inflation (KPI), or "
+                  "real (constant prices)."),
+        ("Where do I stand?", "Enter a salary and see which percentile it falls in."),
+        ("Leaderboard", "Ranks the occupations in your selected group by pay, "
+                        "gender gap or growth."),
+        ("By gender", "Women vs men, with a women-as-%-of-men view."),
+        ("Age / education / region", "Breakdowns by age band, education level and "
+                                     "NUTS-2 région, with an optional split by sex."),
+        ("Work permit check", "Checks a proposed salary against the Migrationsverket "
+                              "floor, the occupation's own pay range and exempt/banned "
+                              "lists — always confirm against the collective agreement."),
+    ],
+    "footer": f"All figures are from SCB's wage structure statistics, 2014–{latest_year()}, "
+              "updated annually.",
+}
 
-Look up **Swedish salaries** by occupation and check **work-permit salary
-requirements** — official data from Statistics Sweden (SCB). No technical
-knowledge needed.
-
-## 🚀 Getting started — 3 steps
-1. **Choose your filters** in the left sidebar: sector, sex, year range and an
-   occupation.
-2. Click **🔍 Search**.
-3. **Read the results** in the tabs that appear. Change any filter and click
-   Search again to update.
-
-## 🔎 Finding the right occupation
-- Type in the **"Search occupations…"** box — it matches job titles, codes and
-  common alternative titles (synonyms).
-- Or drill down with **Major group → Sub-group → Minor group**.
-- Not sure of the code? Open the **Code browser** to browse every SSYK code
-  with a description and its own search box.
-- Picked several occupations? Toggle **Aggregate selection** above the tabs to
-  merge them into one headcount-weighted series.
-
-## 📈 Reading the salary charts
-Salaries are shown as **percentiles**:
-- **P10** — 10% earn less than this (the lower end).
-- **Median (P50)** — the middle salary; half earn more, half less.
-- **P90** — only 10% earn more (the top end).
-- **Average** — shown as a separate ♦ marker.
-
-A wide gap between P10 and P90 means salaries vary a lot in that job.
-
-## 🗂 The tabs
-- **Overview** — the key figures at a glance, with a year selector.
-- **Salary distribution** — the percentile chart, plus raw data + CSV export.
-- **Trend** — development over time: nominal, growth vs inflation, or real
-  (constant prices).
-- **Where do I stand?** — enter a salary and see which percentile it falls in.
-- **Leaderboard** — ranks the occupations in your selected group by pay,
-  gender gap or growth.
-- **By gender / age / education / region** — breakdowns, with an optional
-  women-vs-men split.
-- **🛂 Work permit check** — checks a proposed salary against the
-  Migrationsverket floor, the occupation's own pay range, and exempt/banned
-  lists. ✅ pass, ⚠️ caution or ❌ fail, with the numbers. *Always confirm
-  against the relevant collective agreement.*
-
-## 🌐 Language
-Use the **English / Svenska** switch at the top of the sidebar — it changes
-both the interface and the data labels.
-
-## ❓ Good to know
-- Data: **SCB Wage Structure Statistics**, 2014 → the latest published year.
-  Figures are gross monthly salaries, converted to full-time equivalents.
-- Some small groups show "–" — SCB suppresses figures for very small groups.
-- SSYK descriptions are **auto-translated** from Swedish where no official
-  English version exists.
-"""
-
-_GUIDE_SV = """
-# 👋 Välkommen till Svensk löneutforskare
-
-Slå upp **svenska löner** per yrke och kontrollera **lönekrav för
-arbetstillstånd** — officiell data från SCB. Inga tekniska kunskaper behövs.
-
-## 🚀 Kom igång — 3 steg
-1. **Välj dina filter** i sidofältet till vänster: sektor, kön, årsintervall
-   och ett yrke.
-2. Klicka på **🔍 Sök**.
-3. **Läs resultaten** i flikarna som visas. Ändra ett filter och sök igen för
-   att uppdatera.
-
-## 🔎 Hitta rätt yrke
-- Skriv i rutan **”Sök yrken…”** — den matchar yrkestitlar, koder och vanliga
-  alternativa titlar (synonymer).
-- Eller borra dig ner via **Yrkesområde → Huvudgrupp → Yrkesgrupp**.
-- Osäker på koden? Öppna **Kodbläddraren** och bläddra bland alla SSYK-koder
-  med beskrivning och egen sökruta.
-- Valt flera yrken? Slå på **Aggregera urvalet** ovanför flikarna för att slå
-  ihop dem till en serie viktad efter antal anställda.
-
-## 📈 Läsa lönediagrammen
-Löner visas som **percentiler**:
-- **P10** — 10 % tjänar mindre än detta (den lägre delen).
-- **Median (P50)** — mittlönen; hälften tjänar mer, hälften mindre.
-- **P90** — bara 10 % tjänar mer (toppen).
-- **Medelvärde** — visas som en egen ♦-markör.
-
-Stort avstånd mellan P10 och P90 betyder att lönerna varierar mycket i yrket.
-
-## 🗂 Flikarna
-- **Översikt** — nyckeltalen i ett svep, med årsväljare.
-- **Lönefördelning** — percentildiagrammet, plus rådata + CSV-export.
-- **Trend** — utveckling över tid: nominellt, tillväxt mot inflation eller
-  realt (fasta priser).
-- **Var står jag?** — ange en lön och se vilken percentil den hamnar på.
-- **Topplista** — rangordnar yrkena i din valda grupp efter lön, lönegap
-  eller tillväxt.
-- **Efter kön / ålder / utbildning / region** — uppdelningar, med valbar
-  kvinnor-mot-män-vy.
-- **🛂 Arbetstillståndskoll** — kontrollerar en föreslagen lön mot
-  Migrationsverkets golv, yrkets eget lönespann och undantags-/förbudslistor.
-  ✅ godkänt, ⚠️ varning eller ❌ underkänt, med siffror. *Stäm alltid av mot
-  relevant kollektivavtal.*
-
-## 🌐 Språk
-Använd **English / Svenska**-växlaren högst upp i sidofältet — den byter både
-gränssnitt och dataetiketter.
-
-## ❓ Bra att veta
-- Data: **SCB:s lönestrukturstatistik**, 2014 → senaste publicerade år.
-  Siffrorna är heltidsekvivalenta bruttolöner per månad.
-- Små grupper kan visa ”–” — SCB döljer siffror för mycket små grupper.
-- SSYK-beskrivningar är **automatöversatta** från svenska där ingen officiell
-  engelsk version finns.
-"""
+_GUIDE_SV = {
+    "title": "Så använder du Svensk löneutforskare",
+    "source": f"Statistiska centralbyrån (SCB) · Lönestrukturstatistik (SSYK 2012) · 2014–{latest_year()}",
+    "intro": "Slå upp svenska löner per yrke och kontrollera lönekrav för "
+             "arbetstillstånd — officiell data från SCB, inga tekniska kunskaper "
+             "behövs. Guiden går igenom tre-stegs-flödet, hur du hittar yrken och "
+             "hur du läser diagrammen.",
+    "steps_title": "Kom igång — tre steg",
+    "steps": [
+        ("Välj dina filter",
+         "I sidofältet till vänster: sektor (alla, offentlig eller privat), kön "
+         "och ett årsintervall (från 2014)."),
+        ("Sök",
+         "Välj ett eller flera yrken och tryck på den blå Sök-knappen längst ner "
+         "i sidofältet."),
+        ("Läs resultaten",
+         "Utforska flikarna till höger. Ändra ett filter och sök igen för att "
+         "uppdatera diagrammen."),
+    ],
+    "find_title": "Hitta rätt yrke",
+    "find": [
+        ("Sökruta", "Skriv i rutan ”Sök yrken…” — den matchar yrkestitlar, "
+                    "SSYK-koder och vanliga alternativa titlar (synonymer)."),
+        ("Borra ner", "Eller avgränsa steg för steg via Yrkesområde → Huvudgrupp → "
+                      "Yrkesgrupp (SSYK 1 → 2 → 3 siffror)."),
+        ("Kodbläddrare", "Öppna Kodbläddraren för att utforska varje SSYK-kod med "
+                         "beskrivning och synonymer."),
+        ("Aggregera", "Valt flera yrken? Slå på Aggregera urvalet ovanför flikarna "
+                      "för att slå ihop dem till en serie viktad efter antal anställda."),
+    ],
+    "charts_title": "Läsa lönediagrammen",
+    "charts_intro": "Löner visas som percentiler — stort avstånd mellan P10 och P90 "
+                    "betyder att lönerna varierar mycket i yrket (medelvärdet är en "
+                    "egen ♦-markör):",
+    "pcts": [("P10", 22, "10 % tjänar mindre"),
+             ("P25", 36, "en fjärdedel tjänar mindre"),
+             ("MED", 52, "hälften tjänar mindre"),
+             ("P75", 68, "en fjärdedel tjänar mer"),
+             ("P90", 84, "bara 10 % tjänar mer")],
+    "notes_title": "Bra att veta",
+    "notes": [
+        "Siffrorna är heltidsekvivalenta bruttolöner per månad (SEK).",
+        "Små grupper kan visa ”–” — SCB döljer siffror för mycket små grupper.",
+        "SSYK-beskrivningar är automatöversatta från svenska där ingen officiell "
+        "engelsk version finns.",
+        "Gränssnitt på English / Svenska — växla högst upp i sidofältet; även "
+        "dataetiketterna följer språket.",
+    ],
+    "tabs_title": "Flikarna",
+    "tabs": [
+        ("Översikt", "Nyckeltalen i ett svep, med årsväljare."),
+        ("Lönefördelning", "Percentildiagrammet, plus rådata + CSV-export."),
+        ("Trend", "Utveckling över tid: nominellt, tillväxt mot inflation (KPI) "
+                  "eller realt (fasta priser)."),
+        ("Var står jag?", "Ange en lön och se vilken percentil den hamnar på."),
+        ("Topplista", "Rangordnar yrkena i din valda grupp efter lön, lönegap "
+                      "eller tillväxt."),
+        ("Efter kön", "Kvinnor mot män, med kvinnor-i-%-av-män-vy."),
+        ("Ålder / utbildning / region", "Uppdelningar efter åldersgrupp, "
+                                        "utbildningsnivå och region, med valbar könsuppdelning."),
+        ("Arbetstillståndskoll", "Kontrollerar en föreslagen lön mot Migrationsverkets "
+                                 "golv, yrkets eget lönespann och undantags-/förbudslistor — "
+                                 "stäm alltid av mot kollektivavtalet."),
+    ],
+    "footer": f"Alla siffror kommer från SCB:s lönestrukturstatistik, 2014–{latest_year()}, "
+              "uppdateras årligen.",
+}
 
 CONFIG = CountryConfig(
     slug="se2",

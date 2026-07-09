@@ -18,48 +18,67 @@ def _scope_label(code: str, name: str) -> str:
 
 _region_labels = {f"sector_{code}": _scope_label(code, name) for code, name in _regions.items()}
 
-_GUIDE_EN = """
-# 👋 Welcome to the US Salary Explorer
-
-Look up **US wages** by occupation — official data from the U.S. Bureau of
-Labor Statistics **OEWS** program (May 2024). No technical knowledge needed.
-
-## 🚀 Getting started — 3 steps
-1. Pick a **Location / industry** — United States (national), a state, or a
-   nationwide **industry** (`Industry · …`, e.g. *Hospitals*). Location and
-   industry are separate cuts, so you choose one or the other, not both.
-2. Narrow by **occupation field** (SOC major → minor → broad), pick one or
-   more **occupations**, and click **🔍 Search**.
-3. **Read the results** in the tabs. Change a filter and search again.
-
-## 🔎 Finding the right occupation
-- Type in the **"Search occupations…"** box — it matches job titles and codes.
-- Or drill down the SOC hierarchy level by level.
-- Open the **Code browser** to explore the whole SOC-2018 classification.
-- Picked several occupations? Toggle **Aggregate selection** above the tabs to
-  merge them into one employment-weighted series.
-
-## 📈 Reading the wage charts
-Wages are shown as **percentiles**:
-- **P10** — 10% earn less than this (the lower end).
-- **Median (P50)** — the middle wage; half earn more, half less.
-- **P90** — only 10% earn more (the top end).
-- **Average** — shown as a separate ♦ marker.
-
-## 🗂 The tabs
-- **Overview** — the key figures at a glance, plus employment.
-- **Salary distribution** — the percentile chart, raw data + CSV export.
-- **Where do I stand?** — enter an annual wage and see which percentile it
-  falls in.
-- **Leaderboard** — ranks all ~830 occupations by pay within a SOC group.
-
-## ❓ Good to know
-- Figures are **annual** wages (USD) plus **employment** counts.
-- Very high wages are **top-coded** by BLS (shown blank when a percentile is
-  at or above the top code, $239,200/yr in 2024).
-- OEWS has **no gender, age or education** breakdown and is a single annual
-  snapshot, so those tabs and the trend view don't appear.
-"""
+# Structured guide (the approved User-Guide design; rendered by core/panels.py)
+_GUIDE_EN = {
+    "title": "How to use the US Salary Explorer",
+    "source": "U.S. Bureau of Labor Statistics · OEWS (SOC-2018) · May 2024 · annual USD",
+    "intro": "Look up US wages by occupation — official data from the Bureau of "
+             "Labor Statistics OEWS program, no technical knowledge needed. This "
+             "guide covers the three-step flow, finding occupations, and how to "
+             "read the charts.",
+    "steps_title": "Getting started — three steps",
+    "steps": [
+        ("Pick a location / industry",
+         "United States (national), a state, or a nationwide industry "
+         "(“Industry · …”, e.g. Hospitals). Location and industry are separate "
+         "cuts — one or the other, not both."),
+        ("Search",
+         "Pick one or more occupations, then press the blue Search button at the "
+         "bottom of the sidebar."),
+        ("Read the results",
+         "Explore the tabs on the right. Change any filter and search again to "
+         "update the charts."),
+    ],
+    "find_title": "Finding the right occupation",
+    "find": [
+        ("Search box", "Type in the “Search occupations…” box — it matches both "
+                       "job titles and SOC codes."),
+        ("Drill down", "Or narrow step by step with Major → Minor → Broad group "
+                       "(the SOC hierarchy)."),
+        ("Code browser", "Open the Code browser to explore the whole SOC-2018 "
+                         "classification tree."),
+        ("Aggregate", "Picked several occupations? Toggle Aggregate selection above "
+                      "the tabs to merge them into one employment-weighted series."),
+    ],
+    "charts_title": "Reading the wage charts",
+    "charts_intro": "Wages are shown as percentiles — a wide gap between P10 and "
+                    "P90 means pay varies a lot in that job (the average is a "
+                    "separate ♦ marker):",
+    "pcts": [("P10", 22, "10% earn less"),
+             ("P25", 36, "a quarter earn less"),
+             ("MED", 52, "half earn less"),
+             ("P75", 68, "a quarter earn more"),
+             ("P90", 84, "only 10% earn more")],
+    "notes_title": "Good to know",
+    "notes": [
+        "Figures are annual wages (USD) plus employment counts.",
+        "Very high wages are top-coded by BLS — a percentile at or above the top "
+        "code ($239,200/yr in 2024) is shown blank.",
+        "OEWS has no gender, age or education breakdown and is a single annual "
+        "snapshot, so those tabs and the trend view don't appear.",
+        "Industry cuts (NAICS) are national only — BLS does not publish "
+        "state × industry.",
+    ],
+    "tabs_title": "The tabs",
+    "tabs": [
+        ("Overview", "The key figures at a glance, plus employment."),
+        ("Salary distribution", "The percentile chart, plus raw data + CSV export."),
+        ("Where do I stand?", "Enter an annual wage and see which percentile it "
+                              "falls in."),
+        ("Leaderboard", "Ranks all ~830 occupations by pay within a SOC group."),
+    ],
+    "footer": "All figures are from the BLS OEWS May 2024 release, updated annually.",
+}
 
 CONFIG = CountryConfig(
     slug="us",

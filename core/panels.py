@@ -19,12 +19,125 @@ def _back(cfg, lang, vk):
         st.rerun()
 
 
+_GUIDE_CSS = """
+<style>
+.gd-eyebrow{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  letter-spacing:.16em;color:#0A63A6;text-transform:uppercase;margin-bottom:10px;}
+.gd-title{font-size:28px;font-weight:800;letter-spacing:-.02em;color:#0C1119;
+  line-height:1.15;margin:0 0 8px;}
+.gd-source{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#98A0AC;
+  margin-bottom:16px;}
+.gd-intro{font-size:16px;color:#4A525F;line-height:1.6;max-width:640px;margin-bottom:8px;}
+.gd-sec{margin-top:34px;}
+.gd-num{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  color:#0A63A6;margin-bottom:6px;}
+.gd-h{font-size:20px;font-weight:700;color:#0C1119;margin:0 0 14px;}
+.gd-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;}
+.gd-card{background:#fff;border:1px solid #E7E9ED;border-radius:14px;padding:20px;}
+.gd-card0{background:#fff;border:1px solid #E7E9ED;border-radius:14px;overflow:hidden;}
+.gd-step-num{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;
+  color:#0A63A6;margin-bottom:8px;}
+.gd-step-t{font-weight:700;font-size:15px;letter-spacing:-.01em;color:#0C1119;margin-bottom:7px;}
+.gd-step-d{font-size:13.5px;color:#5B6472;line-height:1.5;}
+.gd-row{display:flex;gap:14px;padding:14px 18px;border-top:1px solid #EEF0F3;}
+.gd-row:first-child{border-top:none;}
+.gd-lbl{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+  color:#0A63A6;width:150px;flex:0 0 auto;padding-top:2px;letter-spacing:.04em;
+  text-transform:uppercase;}
+.gd-txt{font-size:13.5px;color:#4A525F;line-height:1.5;}
+.gd-chart-intro{font-size:14px;color:#4A525F;line-height:1.55;margin-bottom:14px;}
+.gd-prow{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.gd-prow:last-child{margin-bottom:0;}
+.gd-plbl{font-family:'JetBrains Mono',monospace;font-size:11px;color:#98A0AC;
+  width:34px;flex:0 0 auto;}
+.gd-track{flex:1 1 0;height:9px;border-radius:5px;background:#EEF0F3;overflow:hidden;}
+.gd-fill{height:100%;border-radius:5px;background:#94AAC0;}
+.gd-fill.med{background:#0A63A6;}
+.gd-pdesc{font-size:12.5px;color:#5B6472;flex:0 0 auto;}
+.gd-notes{list-style:none;margin:0;padding:0;}
+.gd-notes li{display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.5;
+  margin-bottom:8px;}
+.gd-notes li::before{content:'';width:5px;height:5px;border-radius:50%;background:#0A63A6;
+  margin-top:8px;flex:0 0 auto;opacity:.7;}
+.gd-footer{font-size:12.5px;color:#8A919D;margin-top:34px;padding-top:16px;
+  border-top:1px solid #EEF0F3;}
+</style>
+"""
+
+
+def _guide_html(cfg, g: dict, lang: str) -> str:
+    """Structured guide (the approved User-Guide design): eyebrow · title ·
+    source · intro, then numbered sections — step cards, label rows,
+    percentile-bar explainer + good-to-know, tab rows — and a footer."""
+    eyebrow = f"{i18n.t(cfg, 'user_guide', lang)} · {cfg.name}"
+    h = [_GUIDE_CSS,
+         f'<div class="gd-eyebrow">{eyebrow}</div>',
+         f'<div class="gd-title">{g.get("title", "")}</div>']
+    if g.get("source"):
+        h.append(f'<div class="gd-source">{g["source"]}</div>')
+    if g.get("intro"):
+        h.append(f'<div class="gd-intro">{g["intro"]}</div>')
+
+    n = 0
+
+    def sec(title):
+        nonlocal n
+        n += 1
+        return (f'<div class="gd-sec"><div class="gd-num">{n:02d}</div>'
+                f'<div class="gd-h">{title}</div>')
+
+    if g.get("steps"):
+        h.append(sec(g.get("steps_title", "Getting started")))
+        cards = "".join(
+            f'<div class="gd-card"><div class="gd-step-num">{i + 1}</div>'
+            f'<div class="gd-step-t">{t}</div><div class="gd-step-d">{d}</div></div>'
+            for i, (t, d) in enumerate(g["steps"]))
+        h.append(f'<div class="gd-steps">{cards}</div></div>')
+
+    if g.get("find"):
+        h.append(sec(g.get("find_title", "Finding the right occupation")))
+        rows = "".join(f'<div class="gd-row"><div class="gd-lbl">{l}</div>'
+                       f'<div class="gd-txt">{d}</div></div>' for l, d in g["find"])
+        h.append(f'<div class="gd-card0">{rows}</div></div>')
+
+    if g.get("pcts") or g.get("notes"):
+        h.append(sec(g.get("charts_title", "Reading the salary charts")))
+        if g.get("charts_intro"):
+            h.append(f'<div class="gd-chart-intro">{g["charts_intro"]}</div>')
+        if g.get("pcts"):
+            prows = "".join(
+                f'<div class="gd-prow"><span class="gd-plbl">{l}</span>'
+                f'<div class="gd-track"><div class="gd-fill{" med" if l.upper().startswith("MED") else ""}"'
+                f' style="width:{w}%"></div></div>'
+                f'<span class="gd-pdesc">{d}</span></div>'
+                for l, w, d in g["pcts"])
+            h.append(f'<div class="gd-card" style="margin-bottom:14px;">{prows}</div>')
+        if g.get("notes"):
+            items = "".join(f"<li><span>{x}</span></li>" for x in g["notes"])
+            h.append(f'<div class="gd-card"><div class="gd-step-t" style="margin-bottom:10px;">'
+                     f'{g.get("notes_title", "Good to know")}</div>'
+                     f'<ul class="gd-notes">{items}</ul></div>')
+        h.append("</div>")
+
+    if g.get("tabs"):
+        h.append(sec(g.get("tabs_title", "The tabs")))
+        rows = "".join(f'<div class="gd-row"><div class="gd-lbl">{l}</div>'
+                       f'<div class="gd-txt">{d}</div></div>' for l, d in g["tabs"])
+        h.append(f'<div class="gd-card0">{rows}</div></div>')
+
+    if g.get("footer"):
+        h.append(f'<div class="gd-footer">{g["footer"]}</div>')
+    return "".join(h)
+
+
 def _guide(cfg, lang, vk):
     _back(cfg, lang, vk)
-    st.markdown(f"## {i18n.t(cfg, 'user_guide', lang)}")
-    md = cfg.guide.get(lang) or cfg.guide.get("EN") or ""
-    if md:
-        st.markdown(md)
+    g = cfg.guide.get(lang) or cfg.guide.get("EN") or ""
+    if isinstance(g, dict):                      # structured guide (the design)
+        st.markdown(_guide_html(cfg, g, lang), unsafe_allow_html=True)
+    elif g:                                      # legacy markdown fallback
+        st.markdown(f"## {i18n.t(cfg, 'user_guide', lang)}")
+        st.markdown(g)
     else:
         st.info("—")
 
