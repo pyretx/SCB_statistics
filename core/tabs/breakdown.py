@@ -42,7 +42,8 @@ def _render(cfg, stats, query, dim: str):
     def fetch(sx):
         return cfg.provider.occupation_stats(
             sector=query.get("sector", ""), occ_codes=occ,
-            sex=sx, dimension=dim, year=yr, lang=lang)
+            sex=sx, dimension=dim, years=tuple(query.get("years", ())),
+            year=yr, lang=lang)
 
     val = "mean" if cfg.capabilities.has_mean else "median"
     name = agg.agg_name(cfg, lang, len(occ))

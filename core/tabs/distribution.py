@@ -44,7 +44,10 @@ def render(cfg, stats, query):
                                   years, key=k("dyear")) if years else None
 
     with states.loading():
+        # years = the sidebar selection (the provider's fetch scope);
+        # year = the slice to show. Providers that fetch per-year ignore years.
         d = cfg.provider.occupation_stats(sector=sector, occ_codes=occ, sex=sex,
+                                          years=tuple(query.get("years", ())),
                                           year=chart_year, lang=lang)
     tot = d[d["dimension"] == "total"]
     if query.get("aggregate") and not tot.empty:

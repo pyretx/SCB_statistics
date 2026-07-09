@@ -155,13 +155,21 @@ def _tables_for(table_list, years: list[int]):
 
 
 # ── percentile (total) slice ─────────────────────────────────────────────────
-# SCB's API latency is per-CALL (~a flat round-trip whatever the size), so the
-# strategy is: as few calls as possible, each carrying as much as possible.
-# ONE call per table generation fetches ALL sexes (1 / 2 / 1+2) × the FULL year
-# span (2014→latest); the generations run in PARALLEL. Every year switch, the
-# overview (incl. its women/men gap), the by-gender tab, the distribution tab
-# AND the whole trend tab then slice this one disk-cached frame locally.
+# Fetch scope = the user's YEAR SELECTION (like the legacy page), not the full
+# table span. ONE call per table generation still carries ALL sexes (1/2/1+2)
+# because the Overview's women/men gap and the By-gender tab always need them —
+# fetching sexes separately would triple the calls. Generations run in
+# PARALLEL; every year-pill switch, the by-gender tab, the overview gap AND the
+# trend tab (over the selected years) slice the disk-cached frame locally.
 _ALL_KON = ["1", "2", "1+2"]
+
+
+def _scope(years, year) -> tuple:
+    """The fetch scope: the sorted selected years, else the single asked year."""
+    ys = sorted({int(y) for y in years}) if years else []
+    if year and int(year) not in ys:
+        ys = sorted(set(ys) | {int(year)})
+    return tuple(ys) if ys else (latest_year(),)
 
 
 def _key_cols(df, occ_codes):
@@ -191,9 +199,10 @@ def _parallel(jobs):
 
 
 @st.cache_data(show_spinner=False, persist="disk")
-def _fetch_pct(sector: str, occ_codes: tuple[str, ...], lang: str) -> pd.DataFrame:
-    """Tidy [occ, kon, yr, mean…p90] for ALL sexes × ALL years, min. API calls."""
-    all_years = list(range(2014, latest_year() + 1))
+def _fetch_pct(sector: str, occ_codes: tuple[str, ...], years: tuple[int, ...],
+               lang: str) -> pd.DataFrame:
+    """Tidy [occ, kon, yr, mean…p90] — ALL sexes × the SELECTED years."""
+    all_years = list(years)
 
     def job(tname, yr, codes):
         def run():
@@ -231,11 +240,12 @@ def _fetch_pct(sector: str, occ_codes: tuple[str, ...], lang: str) -> pd.DataFra
 
 
 @st.cache_data(show_spinner=False, persist="disk")
-def _fetch_counts(sector: str, occ_codes: tuple[str, ...], lang: str) -> dict:
+def _fetch_counts(sector: str, occ_codes: tuple[str, ...], years: tuple[int, ...],
+                  lang: str) -> dict:
     """{(occ, kon, year): headcount} from the region table's national (SE) row —
     the percentile table carries no count (same trick as the legacy page).
-    ALL sexes × ALL years, generations in parallel."""
-    all_years = list(range(2014, latest_year() + 1))
+    ALL sexes × the SELECTED years, generations in parallel."""
+    all_years = list(years)
 
     def job(tname, yr):
         def run():
@@ -280,14 +290,14 @@ def _dim_meta(dim: str, lang: str):
 
 @st.cache_data(show_spinner=False, persist="disk")
 def _fetch_dim_all(dim: str, sector: str, occ_codes: tuple[str, ...],
-                   lang: str) -> pd.DataFrame:
-    """Tidy [occ, dv(code), kon, yr, mean, count] — ALL sexes × ALL years in one
-    call per table generation (generations in parallel). Year/sex switches and
-    the split-by-sex toggle then slice locally, no extra API calls."""
+                   years: tuple[int, ...], lang: str) -> pd.DataFrame:
+    """Tidy [occ, dv(code), kon, yr, mean, count] — ALL sexes × the SELECTED
+    years in one call per table generation (generations in parallel). Year/sex
+    switches and the split-by-sex toggle then slice locally, no extra calls."""
     tables, var, values, _ = _dim_meta(dim, lang)
     if not tables:
         return pd.DataFrame()
-    all_years = list(range(2014, latest_year() + 1))
+    all_years = list(years)
 
     def job(tname, yr):
         def run():
@@ -339,12 +349,12 @@ def _fetch_dim_all(dim: str, sector: str, occ_codes: tuple[str, ...],
 
 
 def _fetch_dim(dim: str, sector: str, occ_codes: tuple[str, ...], sex: str,
-               year: int, lang: str) -> pd.DataFrame:
+               years: tuple[int, ...], year: int, lang: str) -> pd.DataFrame:
     """[occ, dv(display), mean, count] for one (sex, year) — a local slice of
-    the all-sex/all-year frame. When the table has no '1+2' total (education),
-    the total is a headcount-weighted mean of men + women."""
+    the all-sex/selected-years frame. When the table has no '1+2' total
+    (education), the total is a headcount-weighted mean of men + women."""
     _, _, values, disp = _dim_meta(dim, lang)
-    d = _fetch_dim_all(dim, sector, occ_codes, lang)
+    d = _fetch_dim_all(dim, sector, occ_codes, years, lang)
     if d.empty:
         return d
     d = d[d["yr"] == year]
@@ -372,10 +382,10 @@ def _fetch_dim(dim: str, sector: str, occ_codes: tuple[str, ...], sex: str,
 # ── trend / CPI / leaderboard ────────────────────────────────────────────────
 def _fetch_trend(sector: str, occ_codes: tuple[str, ...], sex: str,
                  years: tuple[int, ...], lang: str, measure: str) -> pd.DataFrame:
-    """Trend = a slice of the SAME full-span percentile frame — no extra API
-    call, so measure/view switches in the trend tab are instant."""
+    """Trend over the SELECTED years = a slice of the same percentile frame —
+    no extra API call, so measure/view switches in the trend tab are instant."""
     m = measure if measure in _MEASURES else "mean"
-    d = _fetch_pct(sector, occ_codes, lang)
+    d = _fetch_pct(sector, occ_codes, _scope(years, None), lang)
     if d.empty:
         return model.empty_trend()
     d = d[d["kon"] == SEX_CODE.get(sex, "1+2")]
@@ -479,10 +489,11 @@ class Sweden2Provider(CountryProvider):
         if not occ_codes:
             return model.empty_occ_stats()
         yr = int(year or (years[-1] if years else latest_year()))
+        scope = _scope(years, yr)
         labels = _leaves(lang)
 
         if dimension != "total":
-            d = _fetch_dim(dimension, sector or "0", occ_codes, sex, yr, lang)
+            d = _fetch_dim(dimension, sector or "0", occ_codes, sex, scope, yr, lang)
             rows = [{
                 "country": "se2", "year": yr, "occ_code": r["occ"],
                 "occ_name": labels.get(str(r["occ"]).strip(), r["occ"]),
@@ -495,12 +506,11 @@ class Sweden2Provider(CountryProvider):
             } for _, r in d.iterrows()]
             return pd.DataFrame(rows, columns=model.OCC_STAT_COLS)
 
-        # Fire the two SCB fetches CONCURRENTLY on a cold cache (each is a flat
-        # ~full round-trip); both frames carry every sex × every year, so all
-        # subsequent slicing is local.
+        # Fire the two SCB fetches CONCURRENTLY on a cold cache; both frames
+        # carry every sex × the selected years, so all slicing is local.
         sec = sector or "0"
-        res = _parallel([lambda: _fetch_pct(sec, occ_codes, lang),
-                         lambda: _fetch_counts(sec, occ_codes, lang)])
+        res = _parallel([lambda: _fetch_pct(sec, occ_codes, scope, lang),
+                         lambda: _fetch_counts(sec, occ_codes, scope, lang)])
         d, counts = res[0], res[1]
         kon = SEX_CODE.get(sex, "1+2")
         if not d.empty:

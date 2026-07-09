@@ -203,7 +203,8 @@ def render(cfg, stats, query):
             with states.loading():
                 d2 = cfg.provider.occupation_stats(
                     sector=query.get("sector", ""), occ_codes=occ,
-                    sex=query.get("sex", "total"), year=yr, lang=lang)
+                    sex=query.get("sex", "total"),
+                    years=tuple(query.get("years", ())), year=yr, lang=lang)
             if query.get("aggregate") and d2 is not None and not d2.empty:
                 d2 = agg.collapse_stats(d2, agg.agg_name(cfg, lang, len(occ)))
             t2 = d2[d2["dimension"] == "total"] if d2 is not None else None
