@@ -263,6 +263,13 @@ st.markdown("""
   /* Small flag in the live-preview card — same cover fix. */
   .se-flag-sm { width:34px !important; height:24px !important; border-radius:5px;
                 object-fit:cover !important; display:block; border:1px solid rgba(0,0,0,.08); }
+  /* Header Admin/Log-out buttons: keep icon + label on ONE row so the two
+     buttons always share the same height — without this the flex content
+     wraps at narrow widths (the gear landed above "Admin"). */
+  .st-key-hdr_admin button, .st-key-hdr_logout button {
+    flex-wrap: nowrap !important; white-space: nowrap !important; }
+  .st-key-hdr_admin button p, .st-key-hdr_logout button p {
+    white-space: nowrap !important; }
   .se-cta-off { display:flex; width:100%; align-items:center; justify-content:center;
                 background:#F4F5F7; color:#8A919D; font-weight:600; font-size:14px; padding:10px;
                 border-radius:9px; border:1px solid #E7E9ED; white-space:nowrap; }
@@ -421,9 +428,10 @@ with h_right:
         # jump. Non-admins just see their identity + Log out.
         if _role in ("admin", "master"):
             # Identity, then Admin + Log out as two equal, adjacent buttons.
-            _who, _adm, _out = st.columns([1.7, 1, 1], vertical_alignment="center")
+            _who, _adm, _out = st.columns([1.3, 1.1, 1], vertical_alignment="center")
             with _adm:
-                if st.button(C["header"]["admin"], use_container_width=True, key="hdr_admin"):
+                if st.button(C["header"]["admin"], icon=":material/settings:",
+                             use_container_width=True, key="hdr_admin"):
                     st.switch_page("admin.py")
         else:
             _who, _out = st.columns([2.4, 1], vertical_alignment="center")

@@ -12,7 +12,7 @@ badge = "BETA"                # little pill next to the wordmark
 sign_in        = "Sign in"
 create_account = "Create account"
 log_out        = "Log out"
-admin          = "⚙ Admin"                     # admin-only button → /admin panel
+admin          = "Admin"                       # admin-only button → /admin panel (gear icon added in code)
 
 [hero]
 eyebrow = "OFFICIAL STATISTICS · GLOBAL"
