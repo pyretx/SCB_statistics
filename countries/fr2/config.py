@@ -21,7 +21,7 @@ _GUIDE_EN = {
     "steps_title": "Getting started — three steps",
     "steps": [
         ("Choose your filters",
-         "In the left sidebar: sector (private / public) and optionally a sex."),
+         "In the left sidebar: sector (private / public) and optionally a gender."),
         ("Search",
          "Pick one or more occupations, then press the blue Search button at the "
          "bottom of the sidebar."),
@@ -43,7 +43,7 @@ _GUIDE_EN = {
     "charts_title": "Reading the salary charts",
     "charts_intro": "The mean comes live from INSEE's Melodi API; the percentiles are "
                     f"estimates from the anonymised FD_SALAAN microdata ({_YR}, both "
-                    "sexes together). The grey dashed line is the all-employee "
+                    "genders together). The grey dashed line is the all-employee "
                     "distribution — how the occupation compares with everyone:",
     "pcts": [("P10", 22, "10% earn less"),
              ("P25", 36, "a quarter earn less"),
@@ -67,7 +67,7 @@ _GUIDE_EN = {
                   "PCS group (values are already inflation-adjusted)."),
         ("Where do I stand?", "Enter a salary and see the estimated percentile."),
         ("Leaderboard", "Ranks all ~360 occupations by pay within a PCS group."),
-        ("By sex / age / region", "Breakdowns — régions at PCS-GROUP level "
+        ("By gender / age / region", "Breakdowns — régions at PCS-GROUP level "
                                   "(occupation-level régional data is not published)."),
     ],
     "footer": "Means and headcounts come live from INSEE Melodi; percentiles from the "

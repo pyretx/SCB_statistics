@@ -137,7 +137,7 @@ _GUIDE_EN = {
     "steps_title": "Getting started — three steps",
     "steps": [
         ("Choose your filters",
-         "In the left sidebar: sector (all, public or private), sex, and a year "
+         "In the left sidebar: sector (all, public or private), gender, and a year "
          "range (2014 onward)."),
         ("Search",
          "Pick one or more occupations, then press the blue Search button at the "
@@ -186,7 +186,7 @@ _GUIDE_EN = {
                         "gender gap or growth."),
         ("By gender", "Women vs men, with a women-as-%-of-men view."),
         ("Age / education / region", "Breakdowns by age band, education level and "
-                                     "NUTS-2 région, with an optional split by sex."),
+                                     "NUTS-2 région, with an optional split by gender."),
         ("Work permit check", "Checks a proposed salary against the Migrationsverket "
                               "floor, the occupation's own pay range and exempt/banned "
                               "lists — always confirm against the collective agreement."),

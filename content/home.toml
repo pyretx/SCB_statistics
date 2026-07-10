@@ -93,7 +93,7 @@ source       = "SCB · official"
 iso          = "se"
 points       = [
   "Salary percentiles P10–P90 · ~430 occupations (SSYK)",
-  "Sector, sex, age, region & education breakdowns",
+  "Sector, gender, age, region & education breakdowns",
   "Work-permit salary check · Migrationsverket rules",
 ]
 page         = "scb_salaries.py"
@@ -131,7 +131,7 @@ source  = "SSB · official"
 badge   = "Beta"
 points  = [
   "Mean & median salary · ~400 occupations (STYRK-08)",
-  "Sector & sex breakdowns · quartiles",
+  "Sector & gender breakdowns · quartiles",
   "Monthly earnings · 2015–2024",
 ]
 

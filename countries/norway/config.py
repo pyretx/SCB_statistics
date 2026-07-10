@@ -17,7 +17,7 @@ _GUIDE_EN = {
     "steps": [
         ("Choose your filters",
          "In the left sidebar: sector (all, private + public enterprises, or local / "
-         "central government), sex, and a year range (2015 onward)."),
+         "central government), gender, and a year range (2015 onward)."),
         ("Search",
          "Pick one or more occupations, then press the blue Search button at the "
          "bottom of the sidebar."),
@@ -150,7 +150,7 @@ CONFIG = CountryConfig(
     classification="STYRK-08",
     bullets=(
         "Mean &amp; median salary · ~400 occupations (STYRK-08)",
-        "Sector &amp; sex breakdowns · quartiles",
+        "Sector &amp; gender breakdowns · quartiles",
         "Monthly earnings · 2015–2024",
     ),
     # flat, language-independent strings the landing tile reads
