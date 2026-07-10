@@ -169,8 +169,7 @@ def _app_base_url():
         pass
     return None
 
-# Country grid — content-driven (edit content/home.toml → [[countries.tiles]]).
-COUNTRIES = C["countries"]["tiles"]
+# Country catalog — content-driven (edit content/home.toml → [countries].catalog).
 
 
 @st.cache_data(show_spinner=False, persist="disk", ttl=86400)
@@ -603,100 +602,161 @@ with hc2:
 st.write("")
 st.write("")
 
-# ── Select a country ───────────────────────────────────────────────────────
-st.markdown(f"""
-<div class="se-mono" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:{BLUE};margin-bottom:10px;">
-  {C["countries"]["eyebrow"]}
-</div>
+# ── Select a country — the catalog: search + region filter + compact grid ───
+# Design: "Salary Explorer Landing 40" export (r13 cards, 34×25 flag frames,
+# mono source line, blue Soon pill, pill-group region filter, 12px grid gaps).
+_CATALOG = C["countries"]["catalog"]
+_CAT_REGIONS = C["countries"]["regions"]
+_STATUS_ORDER = {"live": 0, "beta": 1, "soon": 2}
+
+_LOCK_SVG = ('<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0A63A6"'
+             ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+             '<rect x="4" y="11" width="16" height="10" rx="2"/>'
+             '<path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>')
+_ARROW_SVG = ('<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#0A63A6"'
+              ' stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">'
+              '<path d="M5 12h14"/><path d="M12 5l7 7-7 7"/></svg>')
+
+st.markdown("""
+<style>
+  /* country rows — keyed containers so a full-card page_link overlay can sit on top */
+  [class*="st-key-cr_"]{position:relative;background:#fff;border:1px solid #E7E9ED;
+    border-radius:13px;padding:12px 16px;min-height:65px;justify-content:center;gap:0;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;}
+  [class*="st-key-cr_"]:has([data-testid="stPageLink"]):hover{border-color:#C9D2DC;
+    box-shadow:0 12px 26px -20px rgba(16,21,31,.40);transform:translateY(-1px);}
+  .cat-row{display:flex;align-items:center;gap:12px;}
+  .cat-flag{width:34px;height:25px;border-radius:5px;overflow:hidden;flex:none;
+    border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.08);display:block;}
+  .cat-flag img{width:100%;height:100%;object-fit:cover;display:block;}
+  .cat-mid{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1;}
+  .cat-nm{font-size:14.5px;font-weight:600;color:#0C1119;letter-spacing:-.01em;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cat-src{font-size:10.5px;color:#98A0AC;text-transform:uppercase;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis;}
+  .cat-ic{display:flex;align-items:center;gap:7px;flex:none;}
+  .cat-pill{font-size:10.5px;font-weight:600;color:#0A63A6;background:rgba(10,99,166,.10);
+    border-radius:20px;padding:4px 9px;}
+  .cat-pill-b{color:#B26A00;background:rgba(178,106,0,.13);}
+  .cat-hd{display:flex;align-items:center;gap:14px;margin:26px 0 12px;
+    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+    letter-spacing:.14em;color:#8A919D;text-transform:uppercase;}
+  .cat-hline{flex:1;height:1px;background:#E7E9ED;}
+  .cat-count{font-weight:400;color:#B4BAC4;letter-spacing:.02em;}
+  /* the page_link overlay: absolute over the card, its own layout slot removed.
+     width/height forced — Streamlit sets an inline width on the element
+     container, which beats inset:0 and collapsed the click area to 16px. */
+  [class*="st-key-cr_"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
+    position:absolute;inset:0;margin:0;width:100% !important;height:100% !important;}
+  [class*="st-key-cr_"] [data-testid="stPageLink"]{position:absolute;inset:0;
+    width:100% !important;height:100% !important;}
+  [class*="st-key-cr_"] [data-testid="stPageLink"] a{position:absolute;inset:0;
+    width:100% !important;height:100% !important;
+    background:transparent !important;border-radius:13px;}
+  [class*="st-key-cr_"] [data-testid="stPageLink"] a p,
+  [class*="st-key-cr_"] [data-testid="stPageLink"] a span{display:none;}
+  /* search box (design: white, r11, #DDE1E6 border, magnifier) */
+  .st-key-cat_search [data-baseweb="input"]{border:1px solid #DDE1E6;border-radius:11px;
+    background:#fff;}
+  .st-key-cat_search input{border-radius:11px;font-size:14px;
+    padding:11px 14px 11px 38px !important;
+    background:#fff url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='15' height='15' viewBox='0 0 24 24' fill='none' stroke='%2398A0AC' stroke-width='2.2' stroke-linecap='round'><circle cx='11' cy='11' r='7'/><path d='M21 21l-4.3-4.3'/></svg>") no-repeat 13px center;}
+  /* region pills: grey track, white active pill w/ blue text */
+  .st-key-cat_region [data-testid="stButtonGroup"] > div[role="radiogroup"]{
+    background:#EDEFF2;border-radius:11px;padding:4px;gap:4px;display:inline-flex;
+    flex-wrap:nowrap;}
+  .st-key-cat_region [data-testid="stButtonGroup"] button{border:none !important;
+    background:transparent !important;border-radius:8px !important;
+    padding:7px 14px !important;font-size:13px !important;font-weight:600 !important;
+    color:#7A828F !important;box-shadow:none !important;white-space:nowrap !important;}
+  .st-key-cat_region [data-testid="stButtonGroup"] button p{white-space:nowrap !important;
+    font-size:13px !important;}
+  .st-key-cat_region [data-testid="stButtonGroup"]
+    button[data-testid="stBaseButton-segmented_controlActive"]{background:#fff !important;
+    color:#0A63A6 !important;box-shadow:0 1px 3px rgba(16,21,31,.10) !important;}
+  /* sign-in pill (right of the heading, signed-out only) */
+  .st-key-cat_signin button{background:#fff !important;border:1px solid #DDE1E6 !important;
+    border-radius:10px !important;padding:9px 14px !important;min-height:0 !important;
+    color:#5B6472 !important;font-weight:500 !important;float:right;}
+  .st-key-cat_signin button p{font-size:13px !important;white-space:nowrap !important;}
+</style>
 """, unsafe_allow_html=True)
-st.subheader(C["countries"]["heading"])
-st.write("")
 
-# Native columns + a keyed st.container per card so the CTA can be a real
-# st.page_link. That navigates *client-side* (no full-page reload), which keeps
-# st.session_state — so an admin who signed in here stays signed in on Sweden /
-# France. (A raw <a href> reloads the app and silently drops the session.)
-def _country_tile(col, *, key, iso, num, name, native, source, points, badges, cta):
-    """Render one country card. `badges` = list of (text, fg, bg); `cta` has a
-    `label` and, when openable, a `page` (real client-side page-link) — else it
-    renders the greyed Notify/Locked chip."""
-    with col, st.container(border=True, key=key):
-        badge_html = "".join(
-            f'<div style="background:{bg};color:{fg};font-size:11px;font-weight:600;'
-            f'padding:4px 10px;border-radius:20px;flex:none;">{txt}</div>'
-            for txt, fg, bg in badges)
-        header = f"""
-        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-          <img class="se-flag" src="{flag_uri(iso)}" alt="{name} flag">
-          <div style="flex:none;">
-            <div style="white-space:nowrap;">
-              <span class="se-mono" style="font-size:11px;color:#B4BAC4;margin-right:7px;">{num}</span>
-              <span style="font-weight:700;font-size:17px;">{name}</span></div>
-            <div style="font-size:12px;color:#8A919D;margin-top:1px;">{native}</div>
-          </div>
-          <div style="display:flex;gap:4px 6px;flex:1;min-width:0;flex-wrap:wrap;
-               justify-content:flex-end;align-items:center;">{badge_html}</div>
-        </div>"""
-        st.markdown("".join(l.strip() for l in header.splitlines()), unsafe_allow_html=True)
-        if cta.get("page"):
-            st.page_link(cta["page"], label=cta["label"])
-        else:
-            st.markdown(f'<div class="se-cta-off">{cta["label"]}</div>', unsafe_allow_html=True)
-        blist = "".join(
-            '<li style="display:flex;gap:10px;font-size:13.5px;color:#4A525F;line-height:1.4;">'
-            '<span style="width:5px;height:5px;border-radius:50%;background:#0A63A6;margin-top:7px;'
-            f'flex:none;opacity:.7;"></span><span>{p}</span></li>' for p in points)
+_hd_l, _hd_r = st.columns([1.5, 1], vertical_alignment="center")
+with _hd_l:
+    st.markdown(f"""
+    <div class="se-mono" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:{BLUE};margin-bottom:10px;">
+      {C["countries"]["eyebrow"]}
+    </div>
+    """, unsafe_allow_html=True)
+    st.subheader(C["countries"]["heading"])
+with _hd_r:
+    if not st.session_state.get("auth_user"):
+        if st.button(f'🔒 {C["countries"]["signin_note"]} :blue[**{C["countries"]["signin_cta"]}**]',
+                     key="cat_signin"):
+            st.session_state["_show_auth"] = True
+            st.session_state["_auth_mode"] = A["form"]["mode_sign_in"]
+            st.rerun()
+
+_ct_l, _ct_r = st.columns([1.0, 1.6], vertical_alignment="center")
+with _ct_l:
+    _cat_q = (st.text_input("Search countries", key="cat_search",
+                            label_visibility="collapsed",
+                            placeholder=C["countries"]["search_ph"].format(n=len(_CATALOG)))
+              or "").strip().lower()
+with _ct_r:
+    _reg_opts = ["all"] + [r["key"] for r in _CAT_REGIONS]
+    _reg_lbl = {"all": C["countries"]["region_all"],
+                **{r["key"]: r["label"] for r in _CAT_REGIONS}}
+    _cat_reg = st.segmented_control("Region", _reg_opts,
+                                    format_func=lambda k: _reg_lbl[k], default="all",
+                                    key="cat_region", label_visibility="collapsed") or "all"
+
+
+def _catalog_row(col, c):
+    """One compact country card. live/beta + access → whole card is a page_link;
+    otherwise inert (Soon pill / lock)."""
+    status = c.get("status", "soon")
+    cfg = _registry.get(c["slug"]) if (c.get("slug") and _registry) else None
+    openable = bool(cfg is not None and _access and _access.can_open(cfg))
+    word = C["countries"]["planned" if status == "soon" else "official"]
+    if status == "soon":
+        right = f'<span class="cat-pill">{C["countries"]["soon_badge"]}</span>'
+    else:
+        right = (f'<span class="cat-pill cat-pill-b">{C["countries"]["beta_badge"]}</span>'
+                 if status == "beta" else "")
+        right += ("" if openable else _LOCK_SVG) + _ARROW_SVG
+    with col, st.container(key=f"cr_{c['iso']}"):
         st.markdown(
-            '<ul style="list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px;">'
-            + blist + '</ul>', unsafe_allow_html=True)
-        st.markdown(f'<div class="se-source">{source}</div>', unsafe_allow_html=True)
+            f'<div class="cat-row">'
+            f'<span class="cat-flag"><img src="{flag_uri(c["iso"])}" alt=""></span>'
+            f'<span class="cat-mid"><span class="cat-nm">{c["name"]}</span>'
+            f'<span class="cat-src se-mono">{c["source"]} · {word}</span></span>'
+            f'<span class="cat-ic">{right}</span></div>', unsafe_allow_html=True)
+        if openable:
+            st.page_link(f"countries/{c['slug']}/page.py", label=c["name"])
 
 
-# One ordered list of ALL country tiles — released markets (content/home.toml)
-# first, then gated framework betas (registry + editable [countries.gated.<slug>]).
-# They share a single 3-per-row grid so every tile is the same size and the rows
-# fill left-to-right (Sweden · France · Norway / United States …).
-_tiles = []
-for c in COUNTRIES:
-    _tiles.append(dict(
-        key=f"cc_{c['num']}", iso=c["iso"], num=c["num"], name=c["name"],
-        native=c["native"], source=c["source"], points=c["points"],
-        badges=[(c["badge_text"], c["badge_color"], c["badge_bg"])],
-        cta=({"page": c["page"], "label": C["countries"]["open_cta"].format(name=c["name"])}
-             if c["live"] else {"label": C["countries"]["notify_cta"]})))
-
-_signed_in = st.session_state.get("auth_user") is not None
-_fw = [c for c in (_registry.all_countries() if _registry else [])
-       if getattr(c, "landing", False)]
-_gated = C["countries"].get("gated", {})
-for _i, c in enumerate(_fw):
-    # Signed-out visitors only ever see the public countries (Sweden/France) —
-    # registered-tier ("Live") and beta countries appear after signing in.
-    if not _signed_in and c.access != "public":
+for _r in _CAT_REGIONS:
+    if _cat_reg != "all" and _r["key"] != _cat_reg:
         continue
-    g = _gated.get(c.slug, {})
-    _name = g.get("name", c.name)
-    _unlocked = bool(_access and _access.can_open(c))
-    _btxt = g.get("badge", c.L("badge", "Beta"))
-    _badges = [(_btxt, "#1B8A5A", "rgba(27,138,90,.12)") if _btxt.lower() == "live"
-               else (_btxt, "#B26A00", "rgba(178,106,0,.13)")]
-    if not _unlocked:
-        _badges.append(("🔒 Locked", "#8A919D", "#F1F3F6"))
-    _tiles.append(dict(
-        key=f"cc_fw_{c.slug}", iso=c.iso, num=g.get("num", f"{3 + _i:02d}"),
-        name=_name, native=g.get("native", c.native),
-        source=g.get("source", c.L("source_short", c.source_name)),
-        points=g.get("points") or list(c.bullets), badges=_badges,
-        cta=({"page": f"countries/{c.slug}/page.py",
-              "label": C["countries"]["open_cta"].format(name=_name)}
-             if _unlocked else {"label": C["countries"]["locked_cta"]})))
-
-# Render 3 per row (each row is its own st.columns so the equal-height CSS applies
-# within the row; a short final row keeps 1/3-width tiles, no stretching).
-for _i in range(0, len(_tiles), 3):
-    _cols = st.columns(3, gap="medium")
-    for _col, _t in zip(_cols, _tiles[_i:_i + 3]):
-        _country_tile(_col, **_t)
+    _rows = [c for c in _CATALOG if c["region"] == _r["key"]]
+    _shown = sorted(
+        [c for c in _rows
+         if not _cat_q or _cat_q in c["name"].lower() or _cat_q in c["source"].lower()],
+        key=lambda c: (_STATUS_ORDER.get(c.get("status", "soon"), 3), c["name"]))
+    if not _shown:
+        continue
+    _live_n = sum(1 for c in _rows if c.get("status") == "live")
+    st.markdown(
+        f'<div class="cat-hd"><span>{_r["label"]}</span><span class="cat-hline"></span>'
+        f'<span class="cat-count">'
+        f'{C["countries"]["live_fmt"].format(live=_live_n, total=len(_rows))}</span></div>',
+        unsafe_allow_html=True)
+    for _j in range(0, len(_shown), 4):
+        _cat_cols = st.columns(4, gap="small")
+        for _cat_col, _c in zip(_cat_cols, _shown[_j:_j + 4]):
+            _catalog_row(_cat_col, _c)
 
 st.write("")
 st.divider()

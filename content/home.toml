@@ -76,75 +76,83 @@ year     = "2025"
 fallback = { p10 = 40200, p25 = 45300, median = 51800, p75 = 60000, p90 = 69900 }
 
 [countries]
-eyebrow    = "SELECT A COUNTRY"
-heading    = "Where do you want to look?"
-open_cta   = "Open {name} →"    # {name} is replaced with the country name
-notify_cta = "Notify me"        # shown on not-yet-live tiles
-locked_cta = "🔒 Locked"        # shown on locked (beta) tiles
+eyebrow     = "SELECT A COUNTRY"
+heading     = "Where do you want to look?"
+search_ph   = "Search {n} countries…"   # {n} = number of catalog entries
+signin_note = "A free account is required to open the data."
+signin_cta  = "Sign in →"
+official    = "official"                # source word on live/beta rows
+planned     = "planned"                 # source word on "soon" rows
+soon_badge  = "Soon"
+beta_badge  = "Beta"
+live_fmt    = "{live} LIVE · {total}"   # region-header counter
+region_all  = "All"
 
-# One [[countries.tiles]] block per card in the top grid. `points` are the
-# bullet lines. name/native/source/points/badge_text are TEXT (edit freely);
-# num/iso/page/live/badge colours are wiring/styling (leave unless you know).
-[[countries.tiles]]
-num          = "01"
-name         = "Sweden"
-native       = "Sverige"
-source       = "SCB · official"
-iso          = "se"
-points       = [
-  "Salary percentiles P10–P90 · ~430 occupations (SSYK)",
-  "Sector, gender, age, region & education breakdowns",
-  "Work-permit salary check · Migrationsverket rules",
-]
-page         = "countries/se2/page.py"
-live         = true
-badge_text   = "Live"
-badge_color  = "#1B8A5A"
-badge_bg     = "rgba(27,138,90,.12)"
-
-[[countries.tiles]]
-num          = "02"
-name         = "France"
-native       = "République française"
-source       = "INSEE · official"
-iso          = "fr"
-points       = [
-  "Mean salaries & estimated percentiles · 360+ occupations (PCS)",
-  "Gender, age & region breakdowns · all-employee backdrop",
-  "Inflation-adjusted trends since 1996",
-]
-page         = "countries/fr2/page.py"
-live         = true
-badge_text   = "Live"
-badge_color  = "#1B8A5A"
-badge_bg     = "rgba(27,138,90,.12)"
-
-# ── Gated / beta tiles (the second row of framework countries, e.g. Norway) ──
-# Keyed by the country's slug. Text is editable here; whether the tile shows as
-# open or "🔒 Locked" is decided by the app (admin / granted users only). name,
-# native and source fall back to the country's own config if left out here.
-[countries.gated.norway]
-num     = "03"
-name    = "Norway"
-native  = "Norge"
-source  = "SSB · official"
-badge   = "Live"
-points  = [
-  "Mean & median salary · ~400 occupations (STYRK-08)",
-  "Sector & gender breakdowns · quartiles",
-  "Monthly earnings · 2015–2024",
+# Region filter pills, in display order.
+regions = [
+  { key = "europe",   label = "Europe" },
+  { key = "americas", label = "Americas" },
+  { key = "apac",     label = "Asia-Pacific" },
+  { key = "mea",      label = "Middle East & Africa" },
 ]
 
-[countries.gated.us]
-num     = "04"
-name    = "United States"
-native  = "United States"
-source  = "BLS OEWS · official"
-badge   = "Live"
-points  = [
-  "P10–P90 + mean · ~830 occupations (SOC-2018)",
-  "National + all 50 states",
-  "Annual wages + employment · BLS OEWS 2024",
+# ── Country catalog — one line per country ───────────────────────────────────
+# status: "live" (open per access rules) | "beta" (beta users + admins) |
+# "soon" (locked, not clickable). live/beta entries need the framework `slug`.
+# `source` = agency shown as "SOURCE · official/planned". Flag: assets/flags/<iso>.svg.
+catalog = [
+  # Europe — live
+  { name = "Sweden",  iso = "se", region = "europe", source = "SCB",   status = "live", slug = "se2" },
+  { name = "France",  iso = "fr", region = "europe", source = "INSEE", status = "live", slug = "fr2" },
+  { name = "Norway",  iso = "no", region = "europe", source = "SSB",   status = "live", slug = "norway" },
+  # Europe — planned
+  { name = "Austria",        iso = "at", region = "europe", source = "STATISTIK.AT", status = "soon" },
+  { name = "Belgium",        iso = "be", region = "europe", source = "STATBEL",      status = "soon" },
+  { name = "Croatia",        iso = "hr", region = "europe", source = "DZS",          status = "soon" },
+  { name = "Czechia",        iso = "cz", region = "europe", source = "ISPV",         status = "soon" },
+  { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "soon" },
+  { name = "Estonia",        iso = "ee", region = "europe", source = "STAT.EE",      status = "soon" },
+  { name = "Finland",        iso = "fi", region = "europe", source = "STAT.FI",      status = "soon" },
+  { name = "Germany",        iso = "de", region = "europe", source = "DESTATIS",     status = "soon" },
+  { name = "Greece",         iso = "gr", region = "europe", source = "ELSTAT",       status = "soon" },
+  { name = "Hungary",        iso = "hu", region = "europe", source = "KSH",          status = "soon" },
+  { name = "Iceland",        iso = "is", region = "europe", source = "HAGSTOFA",     status = "soon" },
+  { name = "Ireland",        iso = "ie", region = "europe", source = "CSO",          status = "soon" },
+  { name = "Italy",          iso = "it", region = "europe", source = "ISTAT",        status = "soon" },
+  { name = "Latvia",         iso = "lv", region = "europe", source = "CSB",          status = "soon" },
+  { name = "Lithuania",      iso = "lt", region = "europe", source = "OSP",          status = "soon" },
+  { name = "Netherlands",    iso = "nl", region = "europe", source = "CBS",          status = "soon" },
+  { name = "Poland",         iso = "pl", region = "europe", source = "GUS",          status = "soon" },
+  { name = "Portugal",       iso = "pt", region = "europe", source = "INE PT",       status = "soon" },
+  { name = "Slovakia",       iso = "sk", region = "europe", source = "SUSR",         status = "soon" },
+  { name = "Slovenia",       iso = "si", region = "europe", source = "SURS",         status = "soon" },
+  { name = "Spain",          iso = "es", region = "europe", source = "INE",          status = "soon" },
+  { name = "Switzerland",    iso = "ch", region = "europe", source = "BFS",          status = "soon" },
+  { name = "United Kingdom", iso = "gb", region = "europe", source = "ONS",          status = "soon" },
+  # Americas — live
+  { name = "United States",  iso = "us", region = "americas", source = "BLS OEWS", status = "live", slug = "us" },
+  # Americas — planned
+  { name = "Argentina",      iso = "ar", region = "americas", source = "INDEC",   status = "soon" },
+  { name = "Brazil",         iso = "br", region = "americas", source = "IBGE",    status = "soon" },
+  { name = "Canada",         iso = "ca", region = "americas", source = "STATCAN", status = "soon" },
+  { name = "Chile",          iso = "cl", region = "americas", source = "INE CL",  status = "soon" },
+  { name = "Colombia",       iso = "co", region = "americas", source = "DANE",    status = "soon" },
+  { name = "Mexico",         iso = "mx", region = "americas", source = "INEGI",   status = "soon" },
+  # Asia-Pacific — planned
+  { name = "Australia",      iso = "au", region = "apac", source = "ABS",      status = "soon" },
+  { name = "China",          iso = "cn", region = "apac", source = "NBS",      status = "soon" },
+  { name = "India",          iso = "in", region = "apac", source = "MOSPI",    status = "soon" },
+  { name = "Japan",          iso = "jp", region = "apac", source = "E-STAT",   status = "soon" },
+  { name = "New Zealand",    iso = "nz", region = "apac", source = "STATS NZ", status = "soon" },
+  { name = "Singapore",      iso = "sg", region = "apac", source = "SINGSTAT", status = "soon" },
+  { name = "South Korea",    iso = "kr", region = "apac", source = "KOSIS",    status = "soon" },
+  # Middle East & Africa — planned
+  { name = "Israel",               iso = "il", region = "mea", source = "CBS IL",   status = "soon" },
+  { name = "Qatar",                iso = "qa", region = "mea", source = "PSA",      status = "soon" },
+  { name = "Saudi Arabia",         iso = "sa", region = "mea", source = "GASTAT",   status = "soon" },
+  { name = "South Africa",         iso = "za", region = "mea", source = "STATS SA", status = "soon" },
+  { name = "Türkiye",              iso = "tr", region = "mea", source = "TÜIK",     status = "soon" },
+  { name = "United Arab Emirates", iso = "ae", region = "mea", source = "FCSC",     status = "soon" },
 ]
 
 [footer]
