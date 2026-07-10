@@ -263,6 +263,24 @@ st.markdown("""
   /* Small flag in the live-preview card — same cover fix. */
   .se-flag-sm { width:34px !important; height:24px !important; border-radius:5px;
                 object-fit:cover !important; display:block; border:1px solid rgba(0,0,0,.08); }
+  /* ── "Watch the demo" pitch-video button (design tokens from the export):
+     white pill, blue 30px play circle (::before), mono duration chip (::after). */
+  .st-key-hero_video button { display:inline-flex; align-items:center; gap:11px;
+     margin-top:10px; font-size:14.5px; font-weight:600; color:#0C1119 !important;
+     background:#fff !important; border:1px solid #DDE1E6 !important;
+     padding:10px 18px 10px 12px !important; border-radius:12px !important;
+     box-shadow:0 2px 8px rgba(16,21,31,.06); width:auto; }
+  .st-key-hero_video button:hover { border-color:#C9CFD8 !important;
+     box-shadow:0 4px 12px rgba(16,21,31,.10); }
+  .st-key-hero_video button::before { content:''; width:30px; height:30px;
+     border-radius:50%; flex:0 0 auto; background:#0A63A6
+     url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 4.5v15l13-7.5z'/></svg>")
+     center/12px 12px no-repeat; }
+  .st-key-hero_video button::after { content:'';
+     font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
+     color:#98A0AC; }  /* content set dynamically from home.toml at render */
+  .st-key-hero_video button p { font-size:14.5px !important; font-weight:600 !important;
+     color:#0C1119 !important; white-space:nowrap; }
   /* Header Admin/Log-out buttons: keep icon + label on ONE row so the two
      buttons always share the same height — without this the flex content
      wraps at narrow widths (the gear landed above "Admin"). */
@@ -474,6 +492,18 @@ with h_right:
 if st.session_state.get("_show_auth"):
     _auth_dialog()
 
+
+@st.dialog(C["hero"].get("video", {}).get("label", "Watch the demo"), width="large")
+def _video_dialog():
+    # Reset the flag immediately: the X-dismiss triggers a rerun, and with the
+    # flag cleared the dialog isn't re-invoked (video plays without reruns).
+    st.session_state["_show_video"] = False
+    st.video(C["hero"]["video"]["file"], autoplay=True)
+
+
+if st.session_state.get("_show_video"):
+    _video_dialog()
+
 st.divider()
 
 # ── Hero ───────────────────────────────────────────────────────────────────
@@ -499,7 +529,19 @@ with hc1:
     <p style="margin:20px 0 0;font-size:17px;line-height:1.55;color:#5B6472;max-width:520px;">
       {_hero["intro"]}
     </p>
-    <div style="display:flex;gap:0;margin-top:34px;flex-wrap:wrap;align-items:stretch;">
+    """, unsafe_allow_html=True)
+    # ── Pitch-video button (content/home.toml → [hero.video]); opens the pop-up.
+    _vid = _hero.get("video", {})
+    if _vid.get("file") and os.path.exists(_vid["file"]):
+        if _vid.get("duration"):
+            st.markdown(f"<style>.st-key-hero_video button::after"
+                        f"{{content:'{_vid['duration']}';}}</style>",
+                        unsafe_allow_html=True)
+        if st.button(_vid.get("label", "Watch the demo"), key="hero_video"):
+            st.session_state["_show_video"] = True
+            st.rerun()
+    st.markdown(f"""
+    <div style="display:flex;gap:0;margin-top:24px;flex-wrap:wrap;align-items:stretch;">
       {_stats_html}
     </div>
     """, unsafe_allow_html=True)

@@ -30,6 +30,14 @@ label = "occupations"
 value = "100%"
 label = "official sources"
 
+# The pitch-video button under the hero intro. `file` is repo-relative; the
+# video opens in a pop-up and starts playing. Update `duration` if the video
+# changes (shown as the little mono chip on the button).
+[hero.video]
+label    = "Watch the demo"
+duration = "1:00"
+file     = "assets/video/Salary Explorer low.mp4"
+
 # The live-preview card (right of the hero). Each slide previews one occupation.
 # occ_code/year: leave occ_code = "" to skip the live fetch and just show the
 # fallback figures (used for the France slide). fallback = the numbers shown if
