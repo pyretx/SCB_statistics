@@ -168,6 +168,18 @@ def style_fig(fig, horizontal: bool = False):
         colorway=SERIES,
         legend=dict(font=dict(family=FONT, size=12, color=AXIS_TITLE)),
     )
+    # Title + horizontal top legend both live in the top margin and overlap when
+    # the margin is a single strip. Give each its own band: the title pinned to
+    # the very top of the figure, the legend just above the plot area, and a top
+    # margin tall enough for both.
+    if (fig.layout.title and fig.layout.title.text
+            and fig.layout.legend and fig.layout.legend.orientation == "h"):
+        cur_t = fig.layout.margin.t if fig.layout.margin.t is not None else 80
+        fig.update_layout(
+            title=dict(yref="container", yanchor="top", y=1, pad=dict(t=10)),
+            legend=dict(yanchor="bottom", y=1.0),
+            margin=dict(t=max(cur_t, 96)),
+        )
     fig.update_xaxes(**x_grid, linecolor=TRACK,
                      tickfont=dict(family=MONO, size=11, color=TICK),
                      title_font=dict(family=FONT, size=13, color=AXIS_TITLE))
