@@ -647,19 +647,30 @@ st.markdown("""
     border-radius:20px;padding:3px 8px;}
   .cat-pill-b{color:#B26A00;background:rgba(178,106,0,.13);}
   .cat-pill-live{color:#1B8A5A;background:rgba(27,138,90,.12);}
-  /* hover info card (live/beta rows): old-tile bullets + a lock note when gated */
-  .cat-tip{display:none;position:absolute;left:0;top:calc(100% + 8px);width:300px;
-    z-index:80;background:#fff;border:1px solid #E7E9ED;border-radius:12px;
-    padding:13px 15px;box-shadow:0 18px 40px -18px rgba(16,21,31,.35);
-    pointer-events:none;text-align:left;}
+  /* cards keep their 1/4 width when the live filter hides row siblings
+     (Streamlit columns are flexible and would stretch the survivors otherwise);
+     media-scoped so Streamlit's own mobile column stacking still works */
+  @media (min-width: 641px){
+    [data-testid="stColumn"]:has([class*="st-key-cr_"]){
+      flex:0 0 calc(25% - 12px) !important;min-width:calc(25% - 12px) !important;}
+  }
+  /* hover info card (live/beta rows): a gap-free wrapper (padding-top instead of
+     a margin) so the pointer can travel INTO the card without losing :hover —
+     the locked note at the top is a real ?signin=1 link */
+  .cat-tip{display:none;position:absolute;left:0;top:100%;width:300px;
+    z-index:80;padding-top:8px;pointer-events:auto;}
+  .cat-tip-box{background:#fff;border:1px solid #E7E9ED;border-radius:12px;
+    padding:13px 15px;box-shadow:0 18px 40px -18px rgba(16,21,31,.35);text-align:left;}
   [class*="st-key-cr_"]:hover .cat-tip{display:block;}
   [class*="st-key-cr_"]:hover{z-index:90;}
   .cat-tip ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
   .cat-tip li{display:flex;gap:9px;font-size:12.5px;color:#4A525F;line-height:1.35;}
   .cat-tip li::before{content:"";width:5px;height:5px;border-radius:50%;
     background:#0A63A6;opacity:.7;margin-top:6px;flex:none;}
-  .cat-tip-note{display:flex;align-items:center;gap:7px;margin-top:10px;padding-top:9px;
-    border-top:1px solid #EEF0F3;font-size:12px;font-weight:600;color:#0A63A6;}
+  .cat-tip-note{display:flex;align-items:center;gap:7px;margin:0 0 10px;
+    padding:0 0 9px;border-bottom:1px solid #EEF0F3;font-size:12px;font-weight:600;
+    color:#0A63A6 !important;text-decoration:none !important;}
+  a.cat-tip-note:hover{color:#0B72C2 !important;}
   .cat-hd{display:flex;align-items:center;gap:14px;margin:26px 0 12px;
     font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
     letter-spacing:.14em;color:#8A919D;text-transform:uppercase;}
@@ -759,9 +770,16 @@ def _catalog_row(col, c):
         lis = "".join(f"<li>{p}</li>" for p in info)
         note = ""
         if not openable:
+            # note at the TOP; for live rows it's a real link into the sign-in
+            # dialog (?signin=1) — beta access isn't granted by signing in, so
+            # the beta note stays plain text
             note_txt = C["countries"]["beta_note" if status == "beta" else "locked_note"]
-            note = f'<div class="cat-tip-note">{_LOCK_SVG}{note_txt}</div>'
-        tip = f'<div class="cat-tip"><ul>{lis}</ul>{note}</div>'
+            if status == "live":
+                note = (f'<a class="cat-tip-note" href="?signin=1" target="_self">'
+                        f'{_LOCK_SVG}{note_txt}</a>')
+            else:
+                note = f'<div class="cat-tip-note">{_LOCK_SVG}{note_txt}</div>'
+        tip = f'<div class="cat-tip"><div class="cat-tip-box">{note}<ul>{lis}</ul></div></div>'
     with col, st.container(key=f"cr_{c['iso']}"):
         st.markdown(
             f'<div class="cat-row">'
