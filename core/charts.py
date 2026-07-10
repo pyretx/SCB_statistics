@@ -47,7 +47,9 @@ _PCT_ORDER = [("p10", "P10"), ("p25", "P25"), ("median", "Median"),
 def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict | None = None,
                        mean_label: str = "Mean", x_title: str | None = None,
                        title: str | None = None, population=None,
-                       population_label: str = "All employees"):
+                       population_label: str = "All employees",
+                       projection_factor: float | None = None,
+                       projection_label: str = "Projected"):
     """THE standard salary-distribution chart (mirrors the Swedish page): one
     line+markers trace per occupation across the percentile points the source
     actually publishes (P10..P90, whichever exist), with the mean drawn as a
@@ -56,8 +58,11 @@ def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict 
 
     ``keys`` — restrict to these measure keys (subset of p10/p25/median/p75/p90/
     mean), in canonical order; None = all present. ``labels_map`` — key→x-label.
-    Horizontal legend on top, ``hovermode='x unified'``, theme-styled — identical
-    look to scb_salaries.py's Percentile distribution tab."""
+    ``projection_factor`` — when set (>1), each occupation also gets a dotted
+    companion trace (and a faded mean diamond) lifted by the factor — the
+    forward-projection ("aged to today") feature shared with the import-overlay
+    tab. Horizontal legend on top, ``hovermode='x unified'``, theme-styled —
+    identical look to scb_salaries.py's Percentile distribution tab."""
     d = stats[stats["dimension"] == "total"].copy()
     if d.empty:
         return None
@@ -92,6 +97,7 @@ def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict 
                 marker=dict(size=6, color="#B4BAC4"),
                 hovertemplate=population_label + "<br>%{y:,.0f} "
                               + cfg.currency_suffix + "<extra></extra>"))
+    proj = projection_factor if projection_factor and projection_factor > 1.0 else None
     for i, (_, row) in enumerate(d.iterrows()):
         col = theme.SERIES[i % len(theme.SERIES)]
         name = str(row["occ_name"])
@@ -100,6 +106,13 @@ def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict 
             fig.add_trace(go.Scatter(
                 x=labels, y=ys, mode="lines+markers", name=name,
                 line=dict(color=col, width=2.5), marker=theme.series_marker(col)))
+            # projected companion: same series color, dotted, triangle markers
+            if proj:
+                fig.add_trace(go.Scatter(
+                    x=labels, y=[y * proj if pd.notna(y) else y for y in ys],
+                    mode="lines+markers", name=f"{name} · {projection_label}",
+                    line=dict(color=col, width=2, dash="dot"),
+                    marker=dict(size=7, symbol="triangle-up", color=col)))
         # mean — standalone diamond, disconnected from the percentile line
         if show_mean and pd.notna(row["mean"]):
             fig.add_trace(go.Scatter(
@@ -108,6 +121,14 @@ def distribution_chart(stats: pd.DataFrame, cfg, *, keys=None, labels_map: dict 
                             line=dict(width=1, color="white")),
                 hovertemplate=f"{name}<br>{mean_label} %{{y:,.0f}} "
                               + cfg.currency_suffix + "<extra></extra>"))
+            if proj:
+                fig.add_trace(go.Scatter(
+                    x=[mean_label], y=[row["mean"] * proj], mode="markers",
+                    showlegend=False, opacity=0.55,
+                    marker=dict(size=12, symbol="diamond", color=col,
+                                line=dict(width=1, color="white")),
+                    hovertemplate=f"{name} · {projection_label}<br>{mean_label} "
+                                  f"%{{y:,.0f}} " + cfg.currency_suffix + "<extra></extra>"))
     if not fig.data:
         return None
     fig.update_layout(

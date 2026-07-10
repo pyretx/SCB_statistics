@@ -28,6 +28,7 @@ import streamlit as st
 import theme
 
 from .. import agg, charts, i18n, states
+from . import projection
 
 # canonical percentile columns of the normalized model ↔ percentile levels
 _PCT_LEVELS = [("p10", 10), ("p25", 25), ("median", 50), ("p75", 75), ("p90", 90)]
@@ -192,34 +193,17 @@ def render(cfg, stats, query):
     ref_by_level = {lv: float(row[c]) for c, lv in pct}
     cat_by_level = dict(zip(levels, cats))
 
-    # ── Visibility toggles + forward projection (aging) ───────────────────────
+    # ── Visibility toggles + forward projection (shared block, see projection.py)
     this_year = date.today().year
-    proj_years = list(range(int(ref_year) + 1, this_year + 1)) if ref_year else []
+    proj_years = projection.years_to_project(ref_year)
 
     st.markdown(f"**{T('io_show_on_chart', 'Show on chart')}**")
     tc = st.columns(2)
     show_ref = tc[0].toggle(T("io_show_ref", "Reference curve"), value=True,
                             key=k("show_ref"))
-    show_aged = (tc[1].toggle(T("io_show_proj", "Projection (aged to {year})")
-                              .format(year=this_year), value=False, key=k("show_aged"))
+    show_aged = (projection.toggle(cfg, lang, k("show_aged"), container=tc[1])
                  if proj_years else False)
-
-    factor = 1.0
-    if proj_years:
-        with st.expander(T("io_project_header", "Project the reference forward"),
-                         expanded=show_aged):
-            st.caption(T("io_project_caption",
-                         "Assumed % salary increase per year from {a} to {b}, "
-                         "compounded year-on-year (e.g. +3% then +4% → ×1.03×1.04). "
-                         "Applied to every percentile and the average.")
-                       .format(a=ref_year, b=this_year))
-            sc = st.columns(len(proj_years))
-            for c, y in zip(sc, proj_years):
-                p = c.slider(f"{y} (%)", min_value=0.0, max_value=15.0, value=3.0,
-                             step=0.5, key=k(f"age_{y}"))
-                factor *= 1 + p / 100
-            st.caption(T("io_uplift", "Cumulative uplift {a}→{b}: {pct:+.1f}% (×{f:.3f})")
-                       .format(a=ref_year, b=this_year, pct=(factor - 1) * 100, f=factor))
+    factor = projection.slider_block(cfg, lang, k, ref_year, expanded=show_aged)
 
     # ── Import wizard (map & confirm before anything hits the chart) ──────────
     st.divider()

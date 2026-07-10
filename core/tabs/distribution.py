@@ -11,6 +11,7 @@ import pandas as pd
 import streamlit as st
 
 from .. import agg, charts, i18n, states
+from . import projection
 
 _PCT_KEYS = ["p10", "p25", "median", "p75", "p90"]
 
@@ -67,6 +68,20 @@ def render(cfg, stats, query):
     # canonical order, map labels back to keys
     keys = [key for key in avail if labels[key] in chosen] or avail
 
+    # ── Forward projection (aging) — the import-overlay tab's feature, shared ─
+    # One compounded %-per-year slider from the chart year to today; when the
+    # toggle is on every occupation gets a dotted companion trace (and a faded
+    # mean diamond) lifted by the cumulative factor.
+    proj_factor, proj_label = None, ""
+    if projection.years_to_project(chart_year):
+        show_proj = projection.toggle(cfg, lang, k("dproj_show"))
+        factor = projection.slider_block(cfg, lang, lambda n: k(f"dproj_{n}"),
+                                         chart_year, expanded=show_proj)
+        if show_proj and factor > 1.0:
+            proj_factor = factor
+            proj_label = i18n.t(cfg, "io_trace_aged", lang, "Projected to {year}") \
+                .format(year=projection.years_to_project(chart_year)[-1])
+
     # ── Population backdrop (France-style): the all-employee centile curve ────
     population = None
     if caps.has_population_distribution:
@@ -85,7 +100,8 @@ def render(cfg, stats, query):
         x_title=i18n.t(cfg, "x_percentile", lang, "Percentile"),
         title=f"{i18n.t(cfg, 'distribution_title', lang)} · {cfg.currency_suffix}{cfg.per_label}",
         population=population,
-        population_label=i18n.t(cfg, "pop_curve", lang, "All employees"))
+        population_label=i18n.t(cfg, "pop_curve", lang, "All employees"),
+        projection_factor=proj_factor, projection_label=proj_label)
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
     if caps.has_quartiles and not caps.has_occupation_percentiles:
