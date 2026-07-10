@@ -14,6 +14,8 @@ from __future__ import annotations
 import os
 import base64
 
+import content as _content
+
 # App logo mark (blue rounded square + white globe) as a data URI, so the sidebar
 # brand link can render the real logo image rather than a material glyph.
 _ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
@@ -31,6 +33,10 @@ def flag_uri(code: str) -> str:
 
 
 LOGO_URI = _svg_uri(os.path.join(_ASSETS, "logo_mark.svg"))
+
+# Brand tagline ("POWERED BY QVISTIN") — lives in content/home.toml [brand] and
+# renders as a second line under the wordmark wherever the brand mark appears.
+TAGLINE = _content.load("home").get("brand", {}).get("tagline", "")
 
 # ── Tokens (design-system.md §1) ─────────────────────────────────────────────
 ACCENT      = "#0A63A6"   # primary line / bar
@@ -126,9 +132,14 @@ SIDEBAR_CSS = """
     color:transparent !important; font-size:0 !important; box-sizing:border-box; }
   [data-testid="stSidebar"] [data-testid="stPageLink"] p {
     font-weight:700 !important; font-size:16px !important; color:#0C1119 !important;
-    letter-spacing:-.01em; }
+    letter-spacing:-.01em; line-height:1.15 !important; }
+  /* Brand tagline — second line under the wordmark, inside the same link. */
+  [data-testid="stSidebar"] [data-testid="stPageLink"] p::after {
+    content:"__TAGLINE__"; display:block; font-family:'JetBrains Mono',monospace;
+    font-size:8px; font-weight:600; letter-spacing:.14em; color:#8A919D;
+    line-height:1.2; margin-top:2px; }
 </style>
-""".replace("__LOGO_URI__", LOGO_URI)
+""".replace("__LOGO_URI__", LOGO_URI).replace("__TAGLINE__", TAGLINE)
 
 
 def series_marker(color: str) -> dict:

@@ -5,8 +5,9 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 [brand]
-name  = "Salary Explorer"     # wordmark, top-left
-badge = "BETA"                # little pill next to the wordmark
+name    = "Salary Explorer"     # wordmark, top-left
+badge   = "BETA"                # little pill next to the wordmark
+tagline = "POWERED BY QVISTIN"  # small mono line under the wordmark (start page, sidebars, admin)
 
 [header]                      # top-right controls
 sign_in        = "Sign in"

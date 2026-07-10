@@ -21,7 +21,9 @@ _role = (_u or {}).get("role", "")
 
 # All static text lives in content/admin.toml (+ the brand name in home.toml).
 _H = content.load("admin")["header"]
-_BRAND = content.load("home").get("brand", {}).get("name", "Salary Explorer")
+_B = content.load("home").get("brand", {})
+_BRAND = _B.get("name", "Salary Explorer")
+_TAGLINE = _B.get("tagline", "")
 
 
 def _logo_uri() -> str:
@@ -38,14 +40,23 @@ _bl, _br = st.columns([3, 1], vertical_alignment="center")
 with _br:
     st.page_link("landing.py", label=_H["back"], icon=":material/arrow_back:")
 with _bl:
+    _tag_html = (f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:8px;'
+                 f'font-weight:600;letter-spacing:.14em;color:#8A919D;line-height:1.2;">'
+                 f'{_TAGLINE}</span>' if _TAGLINE else "")
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:11px;">
       <img src="{_logo_uri()}" alt="{_BRAND}" style="width:32px;height:32px;flex:none;
            border-radius:8px;box-shadow:0 2px 6px rgba(10,99,166,.35);">
-      <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;color:#0C1119;">{_BRAND}</span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
-            letter-spacing:.08em;color:#0A63A6;background:rgba(10,99,166,.10);padding:3px 8px;
-            border-radius:5px;">{_H["badge"]}</span>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;color:#0C1119;
+                line-height:1.15;">{_BRAND}</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;
+                letter-spacing:.08em;color:#0A63A6;background:rgba(10,99,166,.10);padding:3px 8px;
+                border-radius:5px;">{_H["badge"]}</span>
+        </div>
+        {_tag_html}
+      </div>
     </div>
     """, unsafe_allow_html=True)
 

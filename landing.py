@@ -421,13 +421,22 @@ h_left, h_right = st.columns([2, 1], vertical_alignment="center")
 with h_left:
     # Mockup logo mark: blue rounded square with a globe glyph, tight to the
     # wordmark (a single flex row — no column gap to blow the spacing out).
+    _tagline = C["brand"].get("tagline", "")
+    _tag_html = (f'<span class="se-mono" style="font-size:8px;font-weight:600;'
+                 f'letter-spacing:.14em;color:#8A919D;line-height:1.2;">{_tagline}</span>'
+                 if _tagline else "")
     st.markdown(f"""
     <div style="display:flex;align-items:center;gap:11px;">
       <img src="{LOGO_URI}" alt="Salary Explorer" style="width:32px;height:32px;flex:none;
            border-radius:8px;box-shadow:0 2px 6px rgba(10,99,166,.35);">
-      <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;">{C["brand"]["name"]}</span>
-      <span class="se-mono" style="font-size:10px;font-weight:600;letter-spacing:.06em;
-            color:{BLUE};background:rgba(10,99,166,.10);padding:3px 7px;border-radius:5px;">{C["brand"]["badge"]}</span>
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;line-height:1.15;">{C["brand"]["name"]}</span>
+          <span class="se-mono" style="font-size:10px;font-weight:600;letter-spacing:.06em;
+                color:{BLUE};background:rgba(10,99,166,.10);padding:3px 7px;border-radius:5px;">{C["brand"]["badge"]}</span>
+        </div>
+        {_tag_html}
+      </div>
     </div>
     """, unsafe_allow_html=True)
 with h_right:
