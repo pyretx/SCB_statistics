@@ -21,6 +21,19 @@ import france_data as fd
 import theme
 import auth
 
+# ── Admin gate — this is the LEGACY build (FR_OLD, /france-old), kept for admin
+# reference only (reachable from the Admin panel). The public French explorer
+# is the framework build at countries/fr2 (/france).
+if (st.session_state.get("auth_user") or {}).get("role", "") not in ("admin", "master"):
+    st.info("🔒 This legacy page is available to administrators only. "
+            "The French Salary Explorer has moved:")
+    st.page_link("countries/fr2/page.py", label="Open the French Salary Explorer",
+                 icon=":material/arrow_forward:")
+    st.page_link("landing.py", label="← Back to home")
+    st.stop()
+st.markdown("🕰️ *Legacy build (admin reference) — the public page is "
+            "[/france](/france).*")
+
 _FR_LOGO = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                         "assets", "logo_france.png")   # blue-white-red bars
 
@@ -346,7 +359,7 @@ with st.sidebar:
     with _logo_col:
         st.page_link("landing.py", label="Salary Explorer", icon=":material/language:")
     with _sw_col:
-        auth.country_switcher("france")
+        auth.country_switcher("fr2")
     auth.sidebar_identity()   # show who's signed in (avatar + name + role) + Log out
     st.markdown('<div style="height:1px;background:#EEF0F3;margin:12px 0 4px;"></div>',
                 unsafe_allow_html=True)

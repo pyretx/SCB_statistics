@@ -1,8 +1,9 @@
-"""Sweden v2 config — the legacy scb_salaries.py rebuilt on the framework.
+"""Sweden config — THE public Swedish Salary Explorer, on the framework.
 
-access='internal' → admin/master ONLY (the SE2 beta the legacy page is compared
-against; see docs/se2-fr2-parity.md). landing=False keeps it off the home grid;
-admins reach it from the admin panel's Open-a-country or /se2.
+Replaced the legacy scb_salaries.py as the user-facing Sweden page (the legacy
+build stays registered admin-only as /sweden-old; see docs/se2-fr2-parity.md).
+access='public' + url_path='sweden'; the landing page's fixed Sweden tile links
+here, so landing=False (no extra gated tile).
 """
 from __future__ import annotations
 
@@ -265,7 +266,7 @@ _GUIDE_SV = {
 
 CONFIG = CountryConfig(
     slug="se2",
-    name="Sweden v2",
+    name="Sweden",
     native="Sverige",
     iso="se",
     eyebrow="OFFICIAL STATISTICS · SWEDEN",
@@ -285,21 +286,22 @@ CONFIG = CountryConfig(
     tabs=("overview", "distribution", "trend", "where", "leaderboard",
           "sex", "age", "education", "region", "import_overlay"),
     extra_tabs={"workpermit": workpermit.render},   # Sweden-specific extra tab
-    access="internal",                        # admin/master only (SE2 beta)
+    access="public",                          # THE public Sweden page
+    url_path="sweden",                        # serves /sweden (slug stays "se2")
     fetch_mode="search",
-    landing=False,                            # no home tile — admin preview only
+    landing=False,                            # the fixed landing tile links here
     classification="SSYK 2012",
-    labels={"badge": "Beta", "source_short": "SCB · official"},
+    labels={"badge": "Live", "source_short": "SCB · official"},
     languages=(("EN", "English"), ("SV", "Svenska")),
     i18n={
         "EN": {
-            "title": "Swedish Salary Explorer (v2)",
+            "title": "Swedish Salary Explorer",
             "caption": f"SCB salary structure statistics · monthly SEK · 2014–{latest_year()}",
             **{f"sector_{c}": n for c, n in SECTORS["EN"].items()},
             **_WP_EN,
         },
         "SV": {
-            "title": "Svensk löneutforskare (v2)",
+            "title": "Svensk löneutforskare",
             "caption": f"SCB:s lönestrukturstatistik · månadslön SEK · 2014–{latest_year()}",
             **{f"sector_{c}": n for c, n in SECTORS["SV"].items()},
             **_WP_SV,

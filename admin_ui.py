@@ -271,9 +271,9 @@ def _kpi(col, key, icon, color, tint, num, label):
 
 
 def _country_links() -> list[tuple[str, str, str, str]]:
-    """[(slug, name, iso, page)] — released markets first, then framework countries."""
-    links = [("sweden", "Sweden", "se", "scb_salaries.py"),
-             ("france", "France", "fr", "france.py")]
+    """[(slug, name, iso, page)] — framework countries (registry order: the
+    public Sweden/France first), then the legacy builds (admin-only pages)."""
+    links = []
     try:
         from core import registry
         for c in registry.all_countries():
@@ -281,6 +281,8 @@ def _country_links() -> list[tuple[str, str, str, str]]:
                 links.append((c.slug, c.name, c.iso, f"countries/{c.slug}/page.py"))
     except Exception:
         pass
+    links += [("sweden_old", "Sweden (legacy)", "se", "scb_salaries.py"),
+              ("france_old", "France (legacy)", "fr", "france.py")]
     return links
 
 

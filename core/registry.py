@@ -12,10 +12,10 @@ from .access import can_open
 
 # Framework-driven countries, in nav order. Add a country by dropping its module
 # under countries/<name>/ (config.py exposing CONFIG) and listing it here.
-# se2/fr2 are the admin-only v2 rebuilds of the legacy pages (Phase 5 —
-# see docs/se2-fr2-parity.md); the legacy pages stay registered in app.py.
+# se2/fr2 ARE the public Sweden/France pages (serving /sweden + /france); the
+# legacy builds stay registered admin-only in app.py (/sweden-old, /france-old).
 # NOTE: module dir MUST equal the config's slug (app.py builds page paths from it).
-_COUNTRY_MODULES = ["demo", "norway", "us", "se2", "fr2"]
+_COUNTRY_MODULES = ["demo", "se2", "fr2", "norway", "us"]
 
 
 def all_countries() -> list:

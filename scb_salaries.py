@@ -9,6 +9,19 @@ from datetime import datetime
 import auth
 import theme
 
+# ── Admin gate — this is the LEGACY build (SE_OLD, /sweden-old), kept for admin
+# reference only (reachable from the Admin panel). The public Swedish explorer
+# is the framework build at countries/se2 (/sweden).
+if (st.session_state.get("auth_user") or {}).get("role", "") not in ("admin", "master"):
+    st.info("🔒 This legacy page is available to administrators only. "
+            "The Swedish Salary Explorer has moved:")
+    st.page_link("countries/se2/page.py", label="Open the Swedish Salary Explorer",
+                 icon=":material/arrow_forward:")
+    st.page_link("landing.py", label="← Back to home")
+    st.stop()
+st.markdown("🕰️ *Legacy build (admin reference) — the public page is "
+            "[/sweden](/sweden).*")
+
 # ── SSYK 2012 hierarchy labels ─────────────────────────────────────────────────
 
 MAJOR_GROUPS = {
@@ -1349,7 +1362,7 @@ with st.sidebar:
     with _logo_col:
         st.page_link("landing.py", label="Salary Explorer", icon=":material/language:")
     with _sw_col:
-        auth.country_switcher("sweden")
+        auth.country_switcher("se2")
     auth.sidebar_identity()   # show who's signed in (avatar + name + role) + Log out
     st.markdown('<div style="height:1px;background:#EEF0F3;margin:12px 0 4px;"></div>',
                 unsafe_allow_html=True)

@@ -78,22 +78,22 @@ def country_switcher(current: str):
     locked, until an admin grants them access."""
     import theme
 
-    # Released (legacy) markets + framework landing countries + coming-soon.
-    items = [
-        {"slug": "sweden", "name": "Sweden", "iso": "se", "page": "scb_salaries.py", "state": "open"},
-        {"slug": "france", "name": "France", "iso": "fr", "page": "france.py", "state": "open"},
-    ]
+    # Framework countries in registry order (se2/fr2 = the public Sweden/France;
+    # public or landing-tiled countries appear, gated ones greyed 🔒). The legacy
+    # builds are deliberately NOT listed — admins reach them from the Admin panel.
+    items = []
     try:
         from core import registry, access as _acc
         for c in registry.all_countries():
-            if not getattr(c, "landing", False):        # skip the throwaway demo
+            if c.slug == "demo":
                 continue
+            if not (getattr(c, "landing", False) or c.access == "public"):
+                continue                                 # unreleased, tile-less
             items.append({"slug": c.slug, "name": c.name, "iso": c.iso,
                           "page": f"countries/{c.slug}/page.py",
                           "state": "open" if _acc.can_open(c) else "locked"})
     except Exception:
         pass
-    items.append({"slug": "us", "name": "United States", "iso": "us", "page": None, "state": "soon"})
 
     label = next((it["name"] for it in items if it["slug"] == current), "Country")
 

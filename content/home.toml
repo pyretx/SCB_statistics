@@ -96,7 +96,7 @@ points       = [
   "Sector, gender, age, region & education breakdowns",
   "Work-permit salary check · Migrationsverket rules",
 ]
-page         = "scb_salaries.py"
+page         = "countries/se2/page.py"
 live         = true
 badge_text   = "Live"
 badge_color  = "#1B8A5A"
@@ -109,11 +109,11 @@ native       = "République française"
 source       = "INSEE · official"
 iso          = "fr"
 points       = [
-  "Mean salaries · 361 detailed occupations (PCS)",
-  "Wage distribution by socio-professional group",
-  "Inflation-adjusted trends, series since 1951",
+  "Mean salaries & estimated percentiles · 360+ occupations (PCS)",
+  "Gender, age & region breakdowns · all-employee backdrop",
+  "Inflation-adjusted trends since 1996",
 ]
-page         = "france.py"
+page         = "countries/fr2/page.py"
 live         = true
 badge_text   = "Live"
 badge_color  = "#1B8A5A"

@@ -82,6 +82,8 @@ class CountryConfig:
                                      # after the standard ones: {id: render_fn(cfg,
                                      # stats, query)}; label from i18n "tab_<id>"
     access: str = "internal"         # "public" | "registered" | "internal" | "restricted"
+    url_path: str = ""               # public URL path override (default: the slug) —
+                                     # lets e.g. slug "se2" serve at /sweden
     fetch_mode: str = "reactive"     # "search" (commit button) | "reactive"
     labels: dict = field(default_factory=dict)   # flat, language-independent tile strings
     provider: object = None          # a core.provider.CountryProvider instance

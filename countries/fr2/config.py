@@ -1,7 +1,9 @@
-"""France v2 config — the legacy france.py rebuilt on the framework.
+"""France config — THE public French Salary Explorer, on the framework.
 
-access='internal' → admin/master ONLY (the FR2 beta the legacy page is compared
-against; see docs/se2-fr2-parity.md). landing=False keeps it off the home grid.
+Replaced the legacy france.py as the user-facing France page (the legacy build
+stays registered admin-only as /france-old; see docs/se2-fr2-parity.md).
+access='public' + url_path='france'; the landing page's fixed France tile links
+here, so landing=False (no extra gated tile).
 """
 from __future__ import annotations
 
@@ -142,7 +144,7 @@ _GUIDE_FR = {
 
 CONFIG = CountryConfig(
     slug="fr2",
-    name="France v2",
+    name="France",
     native="République française",
     iso="fr",
     eyebrow="OFFICIAL STATISTICS · FRANCE",
@@ -162,20 +164,21 @@ CONFIG = CountryConfig(
     ),
     tabs=("overview", "distribution", "trend", "where", "leaderboard",
           "sex", "age", "region", "import_overlay"),
-    access="internal",                        # admin/master only (FR2 beta)
+    access="public",                          # THE public France page
+    url_path="france",                        # serves /france (slug stays "fr2")
     fetch_mode="search",
-    landing=False,                            # no home tile — admin preview only
+    landing=False,                            # the fixed landing tile links here
     classification="PCS-ESE 2017",
-    labels={"badge": "Beta", "source_short": "INSEE · official"},
+    labels={"badge": "Live", "source_short": "INSEE · official"},
     languages=(("EN", "English"), ("FR", "Français")),
     i18n={
         "EN": {
-            "title": "French Salary Explorer (v2)",
+            "title": "French Salary Explorer",
             "caption": f"INSEE net FTE monthly salaries · EUR · means live, percentiles {_YR} microdata",
             "sector_private": "Private sector", "sector_public": "Public sector",
         },
         "FR": {
-            "title": "Explorateur des salaires (v2)",
+            "title": "Explorateur des salaires",
             "caption": f"Salaires nets mensuels EQTP · EUR · moyennes en direct, centiles microdonnées {_YR}",
             "sector_private": "Secteur privé", "sector_public": "Secteur public",
         },

@@ -130,7 +130,7 @@ _CAROUSEL_TPL = """<!DOCTYPE html><html><head><meta charset="utf-8">
 # Country-card CTAs are real <a href="?country=..."> links inside HTML (so the
 # whole card can be one styled block with a scoped :hover, per design-system §6).
 # JS can't call Python, so navigation rides a URL query param routed here.
-_ROUTES = {"sweden": "scb_salaries.py", "france": "france.py"}
+_ROUTES = {"sweden": "countries/se2/page.py", "france": "countries/fr2/page.py"}
 if st.query_params.get("country") in _ROUTES:
     st.switch_page(_ROUTES[st.query_params["country"]])
 

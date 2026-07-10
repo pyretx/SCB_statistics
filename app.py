@@ -43,8 +43,11 @@ st.markdown("""
 _pages = [
     st.Page("landing.py",      title="Home",   default=True),
     st.Page("admin.py",        title="Admin",  url_path="admin"),
-    st.Page("scb_salaries.py", title="Sweden", url_path="sweden"),
-    st.Page("france.py",       title="France", url_path="france"),
+    # Legacy builds (SE_OLD / FR_OLD) — admin-only, reachable from the Admin
+    # panel. The public Sweden/France pages are the framework builds below
+    # (countries/se2 + countries/fr2, serving /sweden and /france).
+    st.Page("scb_salaries.py", title="Sweden (legacy)", url_path="sweden-old"),
+    st.Page("france.py",       title="France (legacy)", url_path="france-old"),
     # TEST (throwaway): import-overlay prototype, linked from the Admin panel.
     # Remove this line together with test_import_overlay.py.
     st.Page("test_import_overlay.py", title="Import test", url_path="import-test"),
@@ -64,7 +67,8 @@ try:
         # country must not silently unregister the ones after it.
         try:
             _pages.append(st.Page(f"countries/{_cfg.slug}/page.py",
-                                  title=_cfg.name, url_path=_cfg.slug))
+                                  title=_cfg.name,
+                                  url_path=getattr(_cfg, "url_path", "") or _cfg.slug))
         except Exception as _e:
             print(f"[registry] could not register page for '{_cfg.slug}': {_e}")
 except Exception as _e:
