@@ -296,7 +296,13 @@ def overview_section():
     c1, c2, c3, c4 = st.columns(4)
     _kpi(c1, "users", _IC_USERS, "#0A63A6", "rgba(10,99,166,.10)", n_users, O["kpi_users"])
     _kpi(c2, "countries", _IC_GLOBE, "#1B8A5A", "rgba(27,138,90,.12)", len(links), O["kpi_countries"])
-    _kpi(c3, "live", _IC_ZAP, "#B26A00", "rgba(178,106,0,.13)", 3, O["kpi_live"])
+    try:
+        from core import registry as _reg
+        n_live = sum(1 for c in _reg.all_countries()
+                     if c.access in ("public", "registered"))
+    except Exception:
+        n_live = "—"
+    _kpi(c3, "live", _IC_ZAP, "#B26A00", "rgba(178,106,0,.13)", n_live, O["kpi_live"])
     _kpi(c4, "updates", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, O["kpi_updates"])
     if uerr:
         st.caption(O["users_error"].format(err=uerr))

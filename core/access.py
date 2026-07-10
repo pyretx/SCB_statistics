@@ -1,8 +1,11 @@
 """Access-tier gate for country pages (see docs/architecture.md).
 
-Tiers: public (anyone) · registered (any signed-in user, still free) · internal
-(admin/master only) · restricted (explicit app_metadata.countries allow-list).
-Releasing or gating a country is a config change (cfg.access), never code.
+Tiers: public (anyone — Sweden/France) · registered (any signed-in user, still
+free — the "Live" countries) · internal (admin/master only) · restricted (the
+BETA tier: admins, the global "beta" role, or a per-country
+app_metadata.countries grant). Releasing or gating a country is a config change
+(cfg.access), never code. Signed-out visitors only ever SEE the public
+countries — landing tiles and the sidebar switcher hide the rest.
 """
 from __future__ import annotations
 
@@ -41,8 +44,8 @@ def can_open(cfg) -> bool:
     if access == "internal":
         return role in _ADMIN_ROLES
     if access == "restricted":
-        allowed = (u or {}).get("countries", [])
-        return role in _ADMIN_ROLES or cfg.slug in allowed
+        # The BETA tier — admins, the global "beta" role, per-country testers.
+        return is_beta_or_admin(cfg)
     return False
 
 

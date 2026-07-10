@@ -665,14 +665,21 @@ for c in COUNTRIES:
         cta=({"page": c["page"], "label": C["countries"]["open_cta"].format(name=c["name"])}
              if c["live"] else {"label": C["countries"]["notify_cta"]})))
 
+_signed_in = st.session_state.get("auth_user") is not None
 _fw = [c for c in (_registry.all_countries() if _registry else [])
        if getattr(c, "landing", False)]
 _gated = C["countries"].get("gated", {})
 for _i, c in enumerate(_fw):
+    # Signed-out visitors only ever see the public countries (Sweden/France) —
+    # registered-tier ("Live") and beta countries appear after signing in.
+    if not _signed_in and c.access != "public":
+        continue
     g = _gated.get(c.slug, {})
     _name = g.get("name", c.name)
     _unlocked = bool(_access and _access.can_open(c))
-    _badges = [(g.get("badge", c.L("badge", "Beta")), "#B26A00", "rgba(178,106,0,.13)")]
+    _btxt = g.get("badge", c.L("badge", "Beta"))
+    _badges = [(_btxt, "#1B8A5A", "rgba(27,138,90,.12)") if _btxt.lower() == "live"
+               else (_btxt, "#B26A00", "rgba(178,106,0,.13)")]
     if not _unlocked:
         _badges.append(("🔒 Locked", "#8A919D", "#F1F3F6"))
     _tiles.append(dict(

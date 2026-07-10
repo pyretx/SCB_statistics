@@ -22,10 +22,10 @@ intro   = "One clean interface over official government statistics - percentiles
 
 # The three KPI figures under the hero headline.
 [[hero.stats]]
-value = "2"
+value = "4"
 label = "countries live"
 [[hero.stats]]
-value = "790+"
+value = "2 000+"
 label = "occupations"
 [[hero.stats]]
 value = "100%"
@@ -128,7 +128,7 @@ num     = "03"
 name    = "Norway"
 native  = "Norge"
 source  = "SSB · official"
-badge   = "Beta"
+badge   = "Live"
 points  = [
   "Mean & median salary · ~400 occupations (STYRK-08)",
   "Sector & gender breakdowns · quartiles",
@@ -140,7 +140,7 @@ num     = "04"
 name    = "United States"
 native  = "United States"
 source  = "BLS OEWS · official"
-badge   = "Beta"
+badge   = "Live"
 points  = [
   "P10–P90 + mean · ~830 occupations (SOC-2018)",
   "National + all 50 states",

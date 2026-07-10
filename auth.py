@@ -79,8 +79,10 @@ def country_switcher(current: str):
     import theme
 
     # Framework countries in registry order (se2/fr2 = the public Sweden/France;
-    # public or landing-tiled countries appear, gated ones greyed 🔒). The legacy
-    # builds are deliberately NOT listed — admins reach them from the Admin panel.
+    # public or landing-tiled countries appear, gated ones greyed 🔒). Signed-out
+    # visitors only see the public countries. The legacy builds are deliberately
+    # NOT listed — admins reach them from the Admin panel.
+    signed_in = st.session_state.get("auth_user") is not None
     items = []
     try:
         from core import registry, access as _acc
@@ -89,6 +91,8 @@ def country_switcher(current: str):
                 continue
             if not (getattr(c, "landing", False) or c.access == "public"):
                 continue                                 # unreleased, tile-less
+            if not signed_in and c.access != "public":
+                continue                                 # anonymous: SE + FR only
             items.append({"slug": c.slug, "name": c.name, "iso": c.iso,
                           "page": f"countries/{c.slug}/page.py",
                           "state": "open" if _acc.can_open(c) else "locked"})

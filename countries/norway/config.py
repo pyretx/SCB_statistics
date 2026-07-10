@@ -1,6 +1,6 @@
 """Norway config — the entire country-specific surface (this + provider.py).
-access='restricted' → admin/master or a user granted "norway" (beta tester) can
-open /norway while it's WIP; everyone else sees the landing tile as Locked."""
+access='registered' → LIVE for every signed-in user (free account); signed-out
+visitors don't see Norway at all (landing tile + switcher hide it)."""
 from __future__ import annotations
 
 from core.model import CountryConfig, Capabilities
@@ -144,7 +144,7 @@ CONFIG = CountryConfig(
     # standard order (docs/architecture.md); Basic statistics is merged into Overview
     tabs=("overview", "distribution", "trend", "where", "leaderboard", "sex",
           "import_overlay"),
-    access="restricted",
+    access="registered",                    # LIVE — any signed-in user
     fetch_mode="search",                    # commit-on-Search, like Sweden
     landing=True,                           # show a gated tile on the landing page
     classification="STYRK-08",
@@ -155,7 +155,7 @@ CONFIG = CountryConfig(
     ),
     # flat, language-independent strings the landing tile reads
     labels={
-        "badge": "Beta",
+        "badge": "Live",
         "source_short": "SSB · official",
     },
     # in-app strings that follow the language toggle (generic UI comes from

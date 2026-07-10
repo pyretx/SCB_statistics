@@ -1,6 +1,7 @@
 """US config — BLS OEWS. Percentiles + mean + employment; SOC 4-level hierarchy;
 a per-state Location filter (the framework's sector slot). No sex/trend/age in
-OEWS. access='restricted' → admin/master or granted users only (beta)."""
+OEWS. access='registered' → LIVE for every signed-in user (free account);
+signed-out visitors don't see the US at all (landing tile + switcher hide it)."""
 from __future__ import annotations
 
 from core.model import CountryConfig, Capabilities
@@ -99,11 +100,11 @@ CONFIG = CountryConfig(
         year_range=(2024, 2024),                # single OEWS snapshot
     ),
     tabs=("overview", "distribution", "where", "leaderboard", "import_overlay"),
-    access="restricted",
+    access="registered",                    # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="SOC-2018",
-    labels={"badge": "Beta", "source_short": "BLS OEWS · official"},
+    labels={"badge": "Live", "source_short": "BLS OEWS · official"},
     languages=(("EN", "English"),),
     i18n={"EN": {
         "title": "US Salary Explorer",
