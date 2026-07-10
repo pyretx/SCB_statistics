@@ -143,6 +143,14 @@ if st.query_params.get("confirmed"):
     st.session_state["_auth_mode"] = A["form"]["mode_sign_in"]
     del st.query_params["confirmed"]
 
+# The catalog's "free account required — Sign in →" pill is an HTML link (so it
+# can carry the same lock SVG as the country rows); it lands here. Only shown
+# signed-out, so the full-page reload costs no session.
+if st.query_params.get("signin"):
+    st.session_state["_show_auth"] = True
+    st.session_state["_auth_mode"] = A["form"]["mode_sign_in"]
+    del st.query_params["signin"]
+
 
 def _app_base_url():
     """Public base URL of this app (for the confirmation-email redirect). Prefer
@@ -625,7 +633,7 @@ st.markdown("""
     transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;}
   [class*="st-key-cr_"]:has([data-testid="stPageLink"]):hover{border-color:#C9D2DC;
     box-shadow:0 12px 26px -20px rgba(16,21,31,.40);transform:translateY(-1px);}
-  .cat-row{display:flex;align-items:center;gap:12px;}
+  .cat-row{display:flex;align-items:center;gap:10px;}
   .cat-flag{width:34px;height:25px;border-radius:5px;overflow:hidden;flex:none;
     border:1px solid rgba(0,0,0,.08);box-shadow:0 1px 3px rgba(0,0,0,.08);display:block;}
   .cat-flag img{width:100%;height:100%;object-fit:cover;display:block;}
@@ -634,10 +642,24 @@ st.markdown("""
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .cat-src{font-size:10.5px;color:#98A0AC;text-transform:uppercase;white-space:nowrap;
     overflow:hidden;text-overflow:ellipsis;}
-  .cat-ic{display:flex;align-items:center;gap:7px;flex:none;}
+  .cat-ic{display:flex;align-items:center;gap:6px;flex:none;}
   .cat-pill{font-size:10.5px;font-weight:600;color:#0A63A6;background:rgba(10,99,166,.10);
-    border-radius:20px;padding:4px 9px;}
+    border-radius:20px;padding:3px 8px;}
   .cat-pill-b{color:#B26A00;background:rgba(178,106,0,.13);}
+  .cat-pill-live{color:#1B8A5A;background:rgba(27,138,90,.12);}
+  /* hover info card (live/beta rows): old-tile bullets + a lock note when gated */
+  .cat-tip{display:none;position:absolute;left:0;top:calc(100% + 8px);width:300px;
+    z-index:80;background:#fff;border:1px solid #E7E9ED;border-radius:12px;
+    padding:13px 15px;box-shadow:0 18px 40px -18px rgba(16,21,31,.35);
+    pointer-events:none;text-align:left;}
+  [class*="st-key-cr_"]:hover .cat-tip{display:block;}
+  [class*="st-key-cr_"]:hover{z-index:90;}
+  .cat-tip ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;}
+  .cat-tip li{display:flex;gap:9px;font-size:12.5px;color:#4A525F;line-height:1.35;}
+  .cat-tip li::before{content:"";width:5px;height:5px;border-radius:50%;
+    background:#0A63A6;opacity:.7;margin-top:6px;flex:none;}
+  .cat-tip-note{display:flex;align-items:center;gap:7px;margin-top:10px;padding-top:9px;
+    border-top:1px solid #EEF0F3;font-size:12px;font-weight:600;color:#0A63A6;}
   .cat-hd{display:flex;align-items:center;gap:14px;margin:26px 0 12px;
     font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
     letter-spacing:.14em;color:#8A919D;text-transform:uppercase;}
@@ -674,11 +696,14 @@ st.markdown("""
   .st-key-cat_region [data-testid="stButtonGroup"]
     button[data-testid="stBaseButton-segmented_controlActive"]{background:#fff !important;
     color:#0A63A6 !important;box-shadow:0 1px 3px rgba(16,21,31,.10) !important;}
-  /* sign-in pill (right of the heading, signed-out only) */
-  .st-key-cat_signin button{background:#fff !important;border:1px solid #DDE1E6 !important;
-    border-radius:10px !important;padding:9px 14px !important;min-height:0 !important;
-    color:#5B6472 !important;font-weight:500 !important;float:right;}
-  .st-key-cat_signin button p{font-size:13px !important;white-space:nowrap !important;}
+  /* sign-in pill (right of the heading, signed-out only) — HTML link so it can
+     carry the same lock SVG as the country rows; lands on ?signin=1 */
+  .cat-signin{display:inline-flex;align-items:center;gap:8px;float:right;
+    background:#fff;border:1px solid #DDE1E6;border-radius:10px;padding:9px 14px;
+    font-size:13px;color:#5B6472 !important;text-decoration:none !important;
+    white-space:nowrap;}
+  .cat-signin b{color:#0A63A6;font-weight:600;}
+  .cat-signin:hover{border-color:#C9D2DC;box-shadow:0 6px 16px -12px rgba(16,21,31,.35);}
 </style>
 """, unsafe_allow_html=True)
 
@@ -692,11 +717,10 @@ with _hd_l:
     st.subheader(C["countries"]["heading"])
 with _hd_r:
     if not st.session_state.get("auth_user"):
-        if st.button(f'🔒 {C["countries"]["signin_note"]} :blue[**{C["countries"]["signin_cta"]}**]',
-                     key="cat_signin"):
-            st.session_state["_show_auth"] = True
-            st.session_state["_auth_mode"] = A["form"]["mode_sign_in"]
-            st.rerun()
+        st.markdown(
+            f'<a class="cat-signin" href="?signin=1" target="_self">{_LOCK_SVG}'
+            f'<span>{C["countries"]["signin_note"]}</span>'
+            f'<b>{C["countries"]["signin_cta"]}</b></a>', unsafe_allow_html=True)
 
 _ct_l, _ct_r = st.columns([1.0, 1.6], vertical_alignment="center")
 with _ct_l:
@@ -715,7 +739,8 @@ with _ct_r:
 
 def _catalog_row(col, c):
     """One compact country card. live/beta + access → whole card is a page_link;
-    otherwise inert (Soon pill / lock)."""
+    otherwise inert (Soon pill / lock). Live/beta rows get a hover info card
+    (the old tiles' bullets; locked rows add the account-required note)."""
     status = c.get("status", "soon")
     cfg = _registry.get(c["slug"]) if (c.get("slug") and _registry) else None
     openable = bool(cfg is not None and _access and _access.can_open(cfg))
@@ -723,16 +748,27 @@ def _catalog_row(col, c):
     if status == "soon":
         right = f'<span class="cat-pill">{C["countries"]["soon_badge"]}</span>'
     else:
-        right = (f'<span class="cat-pill cat-pill-b">{C["countries"]["beta_badge"]}</span>'
-                 if status == "beta" else "")
-        right += ("" if openable else _LOCK_SVG) + _ARROW_SVG
+        pill_cls = "cat-pill-b" if status == "beta" else "cat-pill-live"
+        badge = C["countries"]["beta_badge" if status == "beta" else "live_badge"]
+        # openable → arrow; locked → lock only (the arrow would just crowd the name)
+        right = (f'<span class="cat-pill {pill_cls}">{badge}</span>'
+                 + (_ARROW_SVG if openable else _LOCK_SVG))
+    tip = ""
+    info = C["countries"].get("info", {}).get(c["iso"])
+    if status in ("live", "beta") and info:
+        lis = "".join(f"<li>{p}</li>" for p in info)
+        note = ""
+        if not openable:
+            note_txt = C["countries"]["beta_note" if status == "beta" else "locked_note"]
+            note = f'<div class="cat-tip-note">{_LOCK_SVG}{note_txt}</div>'
+        tip = f'<div class="cat-tip"><ul>{lis}</ul>{note}</div>'
     with col, st.container(key=f"cr_{c['iso']}"):
         st.markdown(
             f'<div class="cat-row">'
             f'<span class="cat-flag"><img src="{flag_uri(c["iso"])}" alt=""></span>'
             f'<span class="cat-mid"><span class="cat-nm">{c["name"]}</span>'
             f'<span class="cat-src se-mono">{c["source"]} · {word}</span></span>'
-            f'<span class="cat-ic">{right}</span></div>', unsafe_allow_html=True)
+            f'<span class="cat-ic">{right}</span></div>{tip}', unsafe_allow_html=True)
         if openable:
             st.page_link(f"countries/{c['slug']}/page.py", label=c["name"])
 
@@ -741,9 +777,10 @@ for _r in _CAT_REGIONS:
     if _cat_reg != "all" and _r["key"] != _cat_reg:
         continue
     _rows = [c for c in _CATALOG if c["region"] == _r["key"]]
+    # prefix match ("s" → all countries starting with S) — same rule as the
+    # client-side live filter below, which handles keystrokes without a rerun
     _shown = sorted(
-        [c for c in _rows
-         if not _cat_q or _cat_q in c["name"].lower() or _cat_q in c["source"].lower()],
+        [c for c in _rows if not _cat_q or c["name"].lower().startswith(_cat_q)],
         key=lambda c: (_STATUS_ORDER.get(c.get("status", "soon"), 3), c["name"]))
     if not _shown:
         continue
@@ -757,6 +794,58 @@ for _r in _CAT_REGIONS:
         _cat_cols = st.columns(4, gap="small")
         for _cat_col, _c in zip(_cat_cols, _shown[_j:_j + 4]):
             _catalog_row(_cat_col, _c)
+
+# ── Live search-as-you-type ──────────────────────────────────────────────────
+# Streamlit text_input only commits on Enter/blur; this small script (same-origin
+# iframe → parent document) filters the rendered cards on every keystroke:
+# prefix match on the country name or source, hides emptied rows and region
+# headers. The committed (Enter) value then reruns with the same rule.
+components.html("""
+<script>
+(function () {
+  const doc = window.parent.document;
+  let last = null;
+  function apply() {
+    const inp = doc.querySelector('.st-key-cat_search input');
+    if (!inp) return;
+    if (!inp.dataset.liveBound) { inp.dataset.liveBound = '1';
+      inp.addEventListener('input', apply); }
+    const q = (inp.value || '').trim().toLowerCase();
+    const cards = [...doc.querySelectorAll('[class*="st-key-cr_"]')];
+    if (q === last && cards.every(c => c.dataset.liveSeen)) return;
+    last = q;
+    cards.forEach(c => {
+      c.dataset.liveSeen = '1';
+      const nm = (c.querySelector('.cat-nm') || {textContent: ''}).textContent.toLowerCase();
+      const show = !q || nm.startsWith(q);
+      const col = c.closest('[data-testid="stColumn"]');
+      if (col) col.style.display = show ? '' : 'none';
+    });
+    const rows = [...doc.querySelectorAll('[data-testid="stHorizontalBlock"]')]
+      .filter(r => r.querySelector('[class*="st-key-cr_"]'));
+    const hdrs = [...doc.querySelectorAll('.cat-hd')]
+      .map(h => h.closest('[data-testid="stElementContainer"]')).filter(Boolean);
+    const items = [...hdrs.map(el => ({t: 'h', el})), ...rows.map(el => ({t: 'r', el}))]
+      .sort((a, b) => (a.el.compareDocumentPosition(b.el) & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1);
+    let curH = null, any = false;
+    items.forEach(it => {
+      if (it.t === 'h') {
+        if (curH) curH.style.display = any ? '' : 'none';
+        curH = it.el; any = false;
+      } else {
+        const vis = [...it.el.querySelectorAll('[data-testid="stColumn"]')]
+          .some(col => col.style.display !== 'none' && col.querySelector('[class*="st-key-cr_"]'));
+        it.el.style.display = vis ? '' : 'none';
+        any = any || vis;
+      }
+    });
+    if (curH) curH.style.display = any ? '' : 'none';
+  }
+  setInterval(apply, 700);   // rebind + reapply after Streamlit rerenders
+  apply();
+})();
+</script>
+""", height=0)
 
 st.write("")
 st.divider()

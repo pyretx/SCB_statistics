@@ -87,6 +87,9 @@ soon_badge  = "Soon"
 beta_badge  = "Beta"
 live_fmt    = "{live} LIVE · {total}"   # region-header counter
 region_all  = "All"
+live_badge  = "Live"
+locked_note = "Free account required — sign in to open."
+beta_note   = "Beta — available to beta testers and admins."
 
 # Region filter pills, in display order.
 regions = [
@@ -153,6 +156,29 @@ catalog = [
   { name = "South Africa",         iso = "za", region = "mea", source = "STATS SA", status = "soon" },
   { name = "Türkiye",              iso = "tr", region = "mea", source = "TÜIK",     status = "soon" },
   { name = "United Arab Emirates", iso = "ae", region = "mea", source = "FCSC",     status = "soon" },
+]
+
+# Hover info for live/beta rows (keyed by iso) — shown in the tooltip card.
+[countries.info]
+se = [
+  "Salary percentiles P10–P90 · ~430 occupations (SSYK)",
+  "Sector, gender, age, region & education breakdowns",
+  "Work-permit salary check · Migrationsverket rules",
+]
+fr = [
+  "Mean salaries & estimated percentiles · 360+ occupations (PCS)",
+  "Gender, age & region breakdowns · all-employee backdrop",
+  "Inflation-adjusted trends since 1996",
+]
+no = [
+  "Mean & median salary · ~400 occupations (STYRK-08)",
+  "Sector & gender breakdowns · quartiles",
+  "Monthly earnings · 2015–2024",
+]
+us = [
+  "P10–P90 + mean · ~830 occupations (SOC-2018)",
+  "National + all 50 states + 346 industries",
+  "Annual wages + employment · BLS OEWS 2024",
 ]
 
 [footer]
