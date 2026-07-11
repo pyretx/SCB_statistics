@@ -208,18 +208,50 @@ def _micro_year() -> int:
         return 0
 
 
+def _fd_salaan_published(year: int):
+    """insee.fr publication id of 'Description des emplois salariés en <year> —
+    Fichier détail', or None when that vintage isn't published yet. Uses the
+    site's Solr search API (the query needs the full body, not just ?q=)."""
+    q = f"Description des emplois salariés en {year}"
+    r = requests.post("https://www.insee.fr/fr/solr/consultation",
+                      params={"q": q},
+                      json={"q": q, "start": 0, "rows": 20, "facets": [],
+                            "filters": [], "sortFields": []},
+                      headers={"User-Agent": "Mozilla/5.0 (salary-explorer; research)"},
+                      timeout=30)
+    r.raise_for_status()
+    for d in r.json().get("documents", []):
+        if (d.get("titre") == q
+                and (d.get("famille") or {}).get("libelleFr") == "Fichier détail"):
+            return d.get("id")
+    return None
+
+
 def _check_france_micro() -> SourceStatus:
-    import france_data as fd
     my = _micro_year()
+    if not my:
+        raise RuntimeError("bundled pcs_microdata_percentiles.json missing/unreadable")
     s = SourceStatus("france_micro", "France", "INSEE · microdata",
-                     current=str(my or "—"), can_auto=False,
-                     note=_notes().get("france", ""))
-    latest = fd.fetch_available_year("private")
-    if latest is None:
-        raise RuntimeError("INSEE Melodi probe failed")
+                     current=str(my), can_auto=False)
+    # "Latest available" = the newest PUBLISHED fichier détail (the file our
+    # percentiles come from) — NOT Melodi's means year, which runs ~1 year
+    # ahead by design and used to make this row misleading.
+    latest, pub = my, None
+    try:
+        for y in (my + 1, my + 2):
+            pid = _fd_salaan_published(y)
+            if pid:
+                latest, pub = y, pid
+    except Exception:
+        pass          # search degraded — stay at current, no false alarms
     s.latest = str(latest)
-    s.latest_raw = int(latest)
-    s.update_available = bool(my and int(latest) > my)
+    s.latest_raw = latest
+    s.update_available = latest > my
+    if s.update_available:
+        s.note = _notes().get("france_found", "").format(
+            year=latest, url=f"https://www.insee.fr/fr/statistiques/{pub}")
+    else:
+        s.note = _notes().get("france_lag", "")
     return s
 
 
@@ -330,7 +362,19 @@ def _check_us_data() -> SourceStatus:
     info = usbuild.bundled_info()
     s = SourceStatus("us_data", "United States", "BLS OEWS",
                      current=f"May {info.get('year', '—')}")
-    latest = usbuild.latest_available_year()
+    try:
+        latest = usbuild.latest_available_year()
+    except RuntimeError as e:
+        if "403" in str(e):
+            # Known condition, not an outage: BLS (Akamai) blocks datacenter
+            # IPs, so a VPS deploy can never run this check. Calm info state
+            # instead of a red 'unavailable' row on every check.
+            s.update_available = None
+            s.can_auto = False
+            s.note = (_notes().get("us_blocked", "").format(current=s.current)
+                      or str(e))
+            return s
+        raise
     if latest is None:
         raise RuntimeError("BLS probe returned no release year")
     s.latest = f"May {latest}"

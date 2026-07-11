@@ -483,8 +483,11 @@ def _check_lines(D, keys):
             note = f" {s.note}" if s.note else ""
             st.warning(D["chk_upd"].format(source=s.source, current=s.current,
                                            latest=s.latest) + note)
+        elif s.update_available is None and s.note:
+            st.info(f"{s.source} — {s.note}")   # e.g. BLS blocks this server
         else:
-            st.caption(D["chk_ok"].format(source=s.source, current=s.current))
+            line = D["chk_ok"].format(source=s.source, current=s.current)
+            st.caption(line + (f" · {s.note}" if s.note else ""))
 
 
 def _check_button(D, iso, keys):
