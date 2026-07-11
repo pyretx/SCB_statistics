@@ -302,41 +302,103 @@ def _catalog_counts():
         return "—", "—", "—", "—"
 
 
-def _check_all_updates():
-    """Probe every refreshable source for newer data and set the SAME session
-    flags the Data-sources cards derive their pills from. Runs only when the
+def _run_update_check():
+    """Probe every source via the shared service (updates.check_all — the same
+    functions the per-source card buttons call) and mirror the results into the
+    session flags the Data-sources card pills derive from. Runs only when the
     admin presses the button — never on page load, so entering the panel stays
     instant no matter how many countries exist."""
-    try:
-        from countries.us import build as usbuild
-        latest = usbuild.latest_available_year()
-        st.session_state["_us_latest"] = latest
-        info = usbuild.bundled_info()
-        st.session_state["_us_upd"] = bool(latest and info.get("year")
-                                           and latest > info["year"])
-    except Exception:
-        pass
-    try:
-        import france_data as fd
-        frl = fd.fetch_available_year("private")
-        st.session_state["_fr_latest"] = frl
-        micro = (_file_meta("pcs_microdata_percentiles.json").get("data") or {})
-        try:
-            my = int(str(micro.get("year", 0))[:4])
-        except (TypeError, ValueError):
-            my = 0
-        st.session_state["_fr_upd"] = bool(frl and frl > my)
-    except Exception:
-        pass
-    try:
-        import sweden_codes
-        y = sweden_codes.fetch_available_year()
-        cur = int(sweden_codes.load_app_settings().get("latest_data_year", 2025))
-        st.session_state["_se_upd"] = bool(y and y > cur)
-    except Exception:
-        pass
+    import updates as upd
+    results = upd.check_all()
+    st.session_state["_upd_results"] = results
+    by_key = {s.key: s for s in results}
+    if by_key.get("us") and by_key["us"].latest_raw:
+        st.session_state["_us_latest"] = by_key["us"].latest_raw
+    st.session_state["_us_upd"] = bool(by_key.get("us")
+                                       and by_key["us"].update_available)
+    if by_key.get("france") and by_key["france"].latest_raw:
+        st.session_state["_fr_latest"] = by_key["france"].latest_raw
+    st.session_state["_fr_upd"] = bool(by_key.get("france")
+                                       and by_key["france"].update_available)
+    st.session_state["_se_upd"] = bool(by_key.get("sweden")
+                                       and by_key["sweden"].update_available)
     import datetime as _dt
     st.session_state["_upd_checked_at"] = _dt.datetime.now().strftime("%H:%M")
+
+
+def _updates_card():
+    """The global update table: one row per source (country · source · current ·
+    latest · update available · status · select), then Update-selected with an
+    explicit confirmation. Rendered only after a check has run this session."""
+    results = st.session_state.get("_upd_results")
+    if not results:
+        return
+    import pandas as pd
+    import updates as upd
+    U = _A()["updates"]
+    by_key = {s.key: s for s in results}
+    st.write("")
+    with st.container(border=True, key="adcard_updates"):
+        st.markdown(f"#### {U['heading']}")
+        st.caption(U["caption"].format(t=st.session_state.get("_upd_checked_at", "—")))
+        rows = []
+        for s in results:
+            rows.append({
+                U["col_select"]: False,
+                U["col_country"]: s.country,
+                U["col_source"]: s.source,
+                U["col_current"]: s.current,
+                U["col_latest"]: s.latest or "—",
+                U["col_upd"]: (U["v_yes"] if s.update_available
+                               else U["v_no"] if s.update_available is False
+                               else U["v_na"]),
+                U["col_status"]: (U["o_unavailable"] + " — " + s.error if s.error
+                                  else s.note),
+            })
+        df = pd.DataFrame(rows)
+        other_cols = [c for c in df.columns if c != U["col_select"]]
+        edited = st.data_editor(
+            df, hide_index=True, use_container_width=True, key="adm_upd_table",
+            column_config={U["col_select"]: st.column_config.CheckboxColumn(
+                U["col_select"], help=U["none_selected"])},
+            disabled=other_cols)
+        sel_keys = [results[i].key for i, v in enumerate(edited[U["col_select"]]) if v]
+
+        if st.button(U["btn_update"], type="primary", key="adm_upd_go"):
+            if sel_keys:
+                st.session_state["_upd_confirm"] = sel_keys
+            else:
+                st.info(U["none_selected"])
+        pending = st.session_state.get("_upd_confirm")
+        if pending:
+            names = ", ".join(by_key[k].country for k in pending if k in by_key)
+            st.warning(U["confirm"].format(names=names))
+            with _btnrow():
+                yes = st.button(U["btn_confirm"], type="primary", key="adm_upd_yes")
+                no = st.button(U["btn_cancel"], key="adm_upd_no")
+            if yes:
+                st.session_state.pop("_upd_confirm", None)
+                with st.status(U["running"], expanded=True) as box:
+                    outcomes = upd.update_many(pending, by_key, log=box.write)
+                    box.update(state="complete")
+                st.session_state["_upd_outcomes"] = outcomes
+                if any(o.outcome == upd.OUT_UPDATED for o in outcomes):
+                    st.cache_data.clear()          # serve the fresh data everywhere
+                _run_update_check()                # re-probe so the table is honest
+                st.rerun()
+            if no:
+                st.session_state.pop("_upd_confirm", None)
+                st.rerun()
+        for o in st.session_state.get("_upd_outcomes", []):
+            lbl = U.get(f"o_{o.outcome}", o.outcome)
+            country = by_key[o.key].country if o.key in by_key else o.key
+            line = f"{lbl} — **{country}**" + (f" · {o.message}" if o.message else "")
+            if o.outcome == "updated":
+                st.success(line)
+            elif o.outcome in ("failed", "validation_failed", "unavailable"):
+                st.error(line)
+            else:
+                st.info(line)
 
 
 def overview_section():
@@ -358,12 +420,15 @@ def overview_section():
     with c6:
         if st.button(O["btn_check"], key="adm_check_updates", help=O["check_help"]):
             with st.spinner(O["checking"]):
-                _check_all_updates()
+                _run_update_check()
+            st.session_state.pop("_upd_outcomes", None)
             st.rerun()
         if st.session_state.get("_upd_checked_at"):
             st.caption(O["upd_checked"].format(t=st.session_state["_upd_checked_at"]))
     if uerr:
         st.caption(O["users_error"].format(err=uerr))
+
+    _updates_card()
 
     st.write("")
     flag_css = ""
@@ -392,22 +457,20 @@ def overview_section():
 
 # ── Section: Data sources ────────────────────────────────────────────────────
 def _run_us_refresh(usbuild, target):
-    T = _A()["data"]["us"]
+    """Country-specific US update — same shared pipeline as the global table."""
+    import updates as upd
     with st.status("…", expanded=True) as status:
-        try:
-            res = usbuild.build(year=target, log=status.write)
-            try:
-                from countries.us import provider as usprov
-                usprov._load.clear()
-            except Exception:
-                pass
-            st.session_state["_us_refresh_result"] = res
+        res = upd.update("us", upd.SourceStatus("us", "United States", "BLS OEWS",
+                                                latest_raw=target),
+                         log=status.write)
+        if res.outcome == upd.OUT_UPDATED:
+            st.session_state["_us_refresh_msg"] = res.message
             st.session_state.pop("_us_latest", None)
             st.session_state.pop("_us_upd", None)
-            status.update(label=f"May {res['year']} ✓", state="complete")
-        except Exception as e:  # noqa: BLE001
-            status.update(label=T["failed"].format(err=""), state="error")
-            st.session_state["_us_refresh_error"] = str(e)
+            status.update(label=res.message + " ✓", state="complete")
+        else:
+            status.update(label="✗", state="error")
+            st.session_state["_us_refresh_error"] = res.message
     st.rerun()
 
 
@@ -443,7 +506,8 @@ def _us_card(query, D):
             st.session_state["_us_confirm"] = True
         if chk:
             with st.spinner("…"):
-                st.session_state["_us_latest"] = usbuild.latest_available_year()
+                import updates as upd
+                st.session_state["_us_latest"] = upd.check("us").latest_raw
             st.rerun()
 
         if st.session_state.get("_us_confirm"):
@@ -459,11 +523,8 @@ def _us_card(query, D):
                 st.rerun()
         if st.session_state.get("_us_refresh_error"):
             st.error(T["failed"].format(err=st.session_state.pop("_us_refresh_error")))
-        res = st.session_state.get("_us_refresh_result")
-        if res:
-            st.success(T["refreshed"].format(
-                year=res["year"], occ=_n(res["occupations"]), scopes=_n(res["scopes"]),
-                rows=_n(res["rows"]), size=_fmt_bytes(res["size"])))
+        if st.session_state.get("_us_refresh_msg"):
+            st.success(st.session_state["_us_refresh_msg"])
 
 
 def _norway_card(query, D):
@@ -538,12 +599,14 @@ def _sweden_card(query, D):
         if res:
             st.success(T["done"].format(ts=res))
 
-        # ── Data-year check (was the legacy page's dialog): live 'Tid' metadata
-        # from SCB → update app_settings.json, which both Sweden builds read. ──
+        # ── Data-year check — the shared service's Sweden probe/updater (same
+        # pipeline as the Overview table): SCB 'Tid' metadata → app_settings.json,
+        # which both Sweden builds read. ──────────────────────────────────────
+        import updates as upd
         cur = int(appset.get("latest_data_year", 2025))
         if chk:
             with st.spinner("…"):
-                st.session_state["_se_year_found"] = sweden_codes.fetch_available_year()
+                st.session_state["_se_year_found"] = upd.check("sweden").latest_raw
                 st.session_state["_se_year_checked"] = True
         if st.session_state.get("_se_year_checked"):
             found = st.session_state.get("_se_year_found")
@@ -554,12 +617,14 @@ def _sweden_card(query, D):
                 yc1, yc2 = st.columns(2)
                 if yc1.button(T["y_update"].format(found=found), key="se_year_upd",
                               type="primary"):
-                    s = sweden_codes.load_app_settings()
-                    sweden_codes.save_app_settings({**s, "latest_data_year": int(found)})
-                    st.cache_data.clear()   # drop cached fetches so the new year loads
+                    res = upd.update("sweden")
+                    if res.outcome == upd.OUT_UPDATED:
+                        st.cache_data.clear()   # drop cached fetches → new year loads
+                        st.session_state["_se_year_done"] = int(found)
+                    else:
+                        st.session_state["_se_year_err"] = res.message
                     for k in ("_se_year_found", "_se_year_checked"):
                         st.session_state.pop(k, None)
-                    st.session_state["_se_year_done"] = int(found)
                     st.rerun()
                 if yc2.button(T["y_keep"].format(cur=cur), key="se_year_keep"):
                     for k in ("_se_year_found", "_se_year_checked"):
@@ -569,6 +634,8 @@ def _sweden_card(query, D):
                 st.success(T["y_uptodate"].format(cur=cur))
             else:
                 st.warning(T["y_older"].format(found=found, cur=cur))
+        if st.session_state.get("_se_year_err"):
+            st.error(st.session_state.pop("_se_year_err"))
         if st.session_state.get("_se_year_done"):
             st.success(T["y_done"].format(found=st.session_state["_se_year_done"]))
 
@@ -604,11 +671,12 @@ def _france_card(query, D):
             chk = st.button(T["btn_check"], key="fr_scan")
         if chk:
             with st.spinner("…"):
-                try:
-                    import france_data as fd
-                    st.session_state["_fr_latest"] = fd.fetch_available_year("private")
-                except Exception as e:  # noqa: BLE001
-                    st.session_state["_fr_err"] = str(e)
+                import updates as upd
+                s = upd.check("france")
+                if s.error:
+                    st.session_state["_fr_err"] = s.error
+                else:
+                    st.session_state["_fr_latest"] = s.latest_raw
             st.rerun()
         if st.session_state.get("_fr_err"):
             st.error(T["failed"].format(err=st.session_state.pop("_fr_err")))
@@ -645,6 +713,38 @@ def data_section():
     _sweden_card(query, D)
     _france_card(query, D)
     _caches_card(query, D)
+
+    # Live search-as-you-type (same behaviour as the landing catalog): a
+    # same-origin iframe script prefix-matches the card's country name on every
+    # keystroke — no Enter needed. The committed value still reruns server-side
+    # (keyword matching, e.g. "melodi"/"oews").
+    import streamlit.components.v1 as _components
+    _components.html("""
+    <script>
+    (function () {
+      const doc = window.parent.document;
+      let last = null;
+      function apply() {
+        const inp = doc.querySelector('.st-key-ds_search input');
+        if (!inp) return;
+        if (!inp.dataset.liveBound) { inp.dataset.liveBound = '1';
+          inp.addEventListener('input', apply); }
+        const q = (inp.value || '').trim().toLowerCase();
+        const cards = [...doc.querySelectorAll('[class*="st-key-adcard_"]')]
+          .filter(c => c.querySelector('.ad-name'));
+        if (q === last && cards.every(c => c.dataset.liveSeen)) return;
+        last = q;
+        cards.forEach(c => {
+          c.dataset.liveSeen = '1';
+          const nm = c.querySelector('.ad-name').textContent.trim().toLowerCase();
+          c.style.display = (!q || nm.startsWith(q)) ? '' : 'none';
+        });
+      }
+      setInterval(apply, 700);
+      apply();
+    })();
+    </script>
+    """, height=0)
     if query.strip() and not any(_match(query, *t) for t in (
             (D["us"]["name"], "us", D["us"]["source"], D["us"]["type"], "soc"),
             (D["norway"]["name"], D["norway"]["source"], "styrk", D["norway"]["type"]),

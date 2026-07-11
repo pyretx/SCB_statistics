@@ -171,6 +171,38 @@ pw_updated    = "Password updated."
 edit_help     = "Edit user"
 del_help      = "Delete user"
 
+# ── Global update check (Overview) — the results table + selected updates ─────
+[updates]
+heading       = "Data-source updates"
+caption       = "Checked {t} · select the sources to update, then press Update selected."
+col_select    = "Update"
+col_country   = "Country"
+col_source    = "Data source"
+col_current   = "Current data"
+col_latest    = "Latest available"
+col_upd       = "Update available"
+col_status    = "Status / notes"
+v_yes         = "Yes"
+v_no          = "No"
+v_na          = "—"
+btn_update    = "⬇ Update selected countries"
+none_selected = "Tick at least one source in the Update column first."
+confirm       = "About to update: **{names}**. Each source is replaced only after a successful download + validation — a failure leaves the current data untouched and does not stop the other selected sources."
+btn_confirm   = "✅ Yes, update now"
+btn_cancel    = "Cancel"
+running       = "Updating…"
+o_updated           = "✅ Updated"
+o_up_to_date        = "✔ Already up to date"
+o_manual            = "✋ Manual step required"
+o_failed            = "❌ Update failed"
+o_validation_failed = "⚠ Validation failed"
+o_unavailable       = "🌐 Source unavailable"
+
+[updates.notes]
+norway         = "Live API — salaries always current; STYRK labels can be rebuilt on the source card."
+france         = "Percentiles come from INSEE microdata (FD_SALAAN) — a manual download, rebuilt offline. Means stay live via Melodi."
+sweden_restart = "The Sweden page's year range picks the new year up on the next app restart/redeploy."
+
 # ── Work-permit rules editor (Sweden) — was the legacy page's admin editor ────
 [wp]
 heading  = "Work permit rules · Sweden"
