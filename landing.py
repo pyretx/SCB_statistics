@@ -317,12 +317,17 @@ st.markdown("""
                           background:rgba(255,255,255,.16); display:flex; align-items:center;
                           justify-content:center; font-size:12px; }
   /* ── Header identity → profile dialog: buttons can't hold HTML, so an
-     invisible button stretched over the whole chip makes name+avatar clickable. */
-  .st-key-hdr_idwrap{ position:relative; border-radius:11px; }
-  .st-key-hdr_idwrap:hover{ background:rgba(10,99,166,.06); }
-  .st-key-hdr_idwrap .st-key-hdr_profile{ position:absolute; inset:0; z-index:3; }
+     invisible button stretched over the whole chip makes name+avatar clickable.
+     Explicit width/height (not inset) — Streamlit's element containers carry
+     fixed emotion sizes that inset alone can't override, and the 36px avatar
+     overflows the 20px-tall wrapper. */
+  .st-key-hdr_idwrap{ position:relative; }
+  .st-key-hdr_idwrap .st-key-hdr_profile{ position:absolute; top:0; left:0;
+     width:100% !important; height:36px !important; z-index:3; }
   .st-key-hdr_idwrap .st-key-hdr_profile button{ width:100%; height:100%; min-height:0;
      opacity:0; cursor:pointer; }
+  .st-key-hdr_idwrap:has(.st-key-hdr_profile button:hover) .se-hdr-nm{
+     text-decoration:underline; }
   /* Profile dialog: mono field labels + value rows (admin-panel look). */
   .se-prow{ display:flex; justify-content:space-between; align-items:center; gap:18px;
             padding:11px 2px; border-bottom:1px solid #EEF0F3; }
@@ -554,8 +559,8 @@ with h_right:
             st.markdown(f"""
             <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;">
               <div style="text-align:right;line-height:1.16;min-width:0;">
-                <div style="font-weight:600;font-size:13.5px;color:#0C1119;overflow:hidden;
-                            text-overflow:ellipsis;">{_nm}</div>
+                <div class="se-hdr-nm" style="font-weight:600;font-size:13.5px;color:#0C1119;
+                            overflow:hidden;text-overflow:ellipsis;">{_nm}</div>
                 <div class="se-mono" style="font-size:10px;letter-spacing:.10em;color:{_rc};
                      text-transform:uppercase;font-weight:600;">{_role}</div>
               </div>
