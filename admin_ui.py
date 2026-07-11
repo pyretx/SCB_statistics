@@ -271,8 +271,8 @@ def _kpi(col, key, icon, color, tint, num, label):
 
 
 def _country_links() -> list[tuple[str, str, str, str]]:
-    """[(slug, name, iso, page)] — framework countries (registry order: the
-    public Sweden/France first), then the legacy builds (admin-only pages)."""
+    """[(slug, name, iso, page)] — framework countries, registry order (the
+    public Sweden/France first)."""
     links = []
     try:
         from core import registry
@@ -281,9 +281,62 @@ def _country_links() -> list[tuple[str, str, str, str]]:
                 links.append((c.slug, c.name, c.iso, f"countries/{c.slug}/page.py"))
     except Exception:
         pass
-    links += [("sweden_old", "Sweden (legacy)", "se", "scb_salaries.py"),
-              ("france_old", "France (legacy)", "fr", "france.py")]
     return links
+
+
+# Decommissioned builds — admin-only reference pages, shown in their own card.
+_LEGACY_LINKS = [("sweden_old", "Sweden (legacy)", "se", "scb_salaries.py"),
+                 ("france_old", "France (legacy)", "fr", "france.py")]
+
+
+def _catalog_counts():
+    """(total, live, beta, planned) from the landing catalog (home.toml) — the
+    single source of truth for country statuses."""
+    try:
+        import content
+        cat = content.load("home").get("countries", {}).get("catalog", [])
+        live = sum(1 for c in cat if c.get("status") == "live")
+        beta = sum(1 for c in cat if c.get("status") == "beta")
+        return len(cat), live, beta, len(cat) - live - beta
+    except Exception:
+        return "—", "—", "—", "—"
+
+
+def _check_all_updates():
+    """Probe every refreshable source for newer data and set the SAME session
+    flags the Data-sources cards derive their pills from. Runs only when the
+    admin presses the button — never on page load, so entering the panel stays
+    instant no matter how many countries exist."""
+    try:
+        from countries.us import build as usbuild
+        latest = usbuild.latest_available_year()
+        st.session_state["_us_latest"] = latest
+        info = usbuild.bundled_info()
+        st.session_state["_us_upd"] = bool(latest and info.get("year")
+                                           and latest > info["year"])
+    except Exception:
+        pass
+    try:
+        import france_data as fd
+        frl = fd.fetch_available_year("private")
+        st.session_state["_fr_latest"] = frl
+        micro = (_file_meta("pcs_microdata_percentiles.json").get("data") or {})
+        try:
+            my = int(str(micro.get("year", 0))[:4])
+        except (TypeError, ValueError):
+            my = 0
+        st.session_state["_fr_upd"] = bool(frl and frl > my)
+    except Exception:
+        pass
+    try:
+        import sweden_codes
+        y = sweden_codes.fetch_available_year()
+        cur = int(sweden_codes.load_app_settings().get("latest_data_year", 2025))
+        st.session_state["_se_upd"] = bool(y and y > cur)
+    except Exception:
+        pass
+    import datetime as _dt
+    st.session_state["_upd_checked_at"] = _dt.datetime.now().strftime("%H:%M")
 
 
 def overview_section():
@@ -291,34 +344,50 @@ def overview_section():
     users, uerr = _load_users()
     n_users = len(users) if users is not None else "—"
     links = _country_links()
-    updates = sum(1 for k in ("_us_upd", "_fr_upd") if st.session_state.get(k))
+    n_total, n_live, n_beta, n_plan = _catalog_counts()
+    updates = sum(1 for k in ("_us_upd", "_fr_upd", "_se_upd")
+                  if st.session_state.get(k))
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
     _kpi(c1, "users", _IC_USERS, "#0A63A6", "rgba(10,99,166,.10)", n_users, O["kpi_users"])
-    _kpi(c2, "countries", _IC_GLOBE, "#1B8A5A", "rgba(27,138,90,.12)", len(links), O["kpi_countries"])
-    try:
-        from core import registry as _reg
-        n_live = sum(1 for c in _reg.all_countries()
-                     if c.access in ("public", "registered"))
-    except Exception:
-        n_live = "—"
-    _kpi(c3, "live", _IC_ZAP, "#B26A00", "rgba(178,106,0,.13)", n_live, O["kpi_live"])
-    _kpi(c4, "updates", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, O["kpi_updates"])
+    _kpi(c2, "countries", _IC_GLOBE, "#0A63A6", "rgba(10,99,166,.10)", n_total, O["kpi_countries"])
+    _kpi(c3, "live", _IC_ZAP, "#1B8A5A", "rgba(27,138,90,.12)", n_live, O["kpi_live"])
+    _kpi(c4, "beta", _IC_ZAP, "#B26A00", "rgba(178,106,0,.13)", n_beta, O["kpi_beta"])
+    _kpi(c5, "planned", _IC_GLOBE, "#5B6472", "rgba(91,100,114,.10)", n_plan, O["kpi_planned"])
+    _kpi(c6, "updates", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, O["kpi_updates"])
+    with c6:
+        if st.button(O["btn_check"], key="adm_check_updates", help=O["check_help"]):
+            with st.spinner(O["checking"]):
+                _check_all_updates()
+            st.rerun()
+        if st.session_state.get("_upd_checked_at"):
+            st.caption(O["upd_checked"].format(t=st.session_state["_upd_checked_at"]))
     if uerr:
         st.caption(O["users_error"].format(err=uerr))
 
     st.write("")
+    flag_css = ""
     with st.container(border=True, key="adcard_open"):
         st.markdown(f"#### {O['open_heading']}")
         st.caption(O["open_caption"])
         cols = st.columns(4)
-        flag_css = ""
         for i, (slug, name, iso, page) in enumerate(links):
             with cols[i % 4], st.container(key=f"adtile_{slug}"):
                 st.page_link(page, label=name)
             flag_css += (f".st-key-adtile_{slug} [data-testid='stPageLink'] a"
                          f"{{background-image:url('{theme.flag_uri(iso)}');}}\n")
-        st.markdown(f"<style>{flag_css}</style>", unsafe_allow_html=True)
+
+    st.write("")
+    with st.container(border=True, key="adcard_legacy"):
+        st.markdown(f"#### {O['legacy_heading']}")
+        st.caption(O["legacy_caption"])
+        cols = st.columns(4)
+        for i, (slug, name, iso, page) in enumerate(_LEGACY_LINKS):
+            with cols[i % 4], st.container(key=f"adtile_{slug}"):
+                st.page_link(page, label=name)
+            flag_css += (f".st-key-adtile_{slug} [data-testid='stPageLink'] a"
+                         f"{{background-image:url('{theme.flag_uri(iso)}');}}\n")
+    st.markdown(f"<style>{flag_css}</style>", unsafe_allow_html=True)
 
 
 # ── Section: Data sources ────────────────────────────────────────────────────
