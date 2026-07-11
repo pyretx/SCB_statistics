@@ -316,6 +316,20 @@ st.markdown("""
   .se-authcheck .se-tick{ flex:none; width:22px; height:22px; border-radius:50%;
                           background:rgba(255,255,255,.16); display:flex; align-items:center;
                           justify-content:center; font-size:12px; }
+  /* ── Header identity → profile dialog: buttons can't hold HTML, so an
+     invisible button stretched over the whole chip makes name+avatar clickable. */
+  .st-key-hdr_idwrap{ position:relative; border-radius:11px; }
+  .st-key-hdr_idwrap:hover{ background:rgba(10,99,166,.06); }
+  .st-key-hdr_idwrap .st-key-hdr_profile{ position:absolute; inset:0; z-index:3; }
+  .st-key-hdr_idwrap .st-key-hdr_profile button{ width:100%; height:100%; min-height:0;
+     opacity:0; cursor:pointer; }
+  /* Profile dialog: mono field labels + value rows (admin-panel look). */
+  .se-prow{ display:flex; justify-content:space-between; align-items:center; gap:18px;
+            padding:11px 2px; border-bottom:1px solid #EEF0F3; }
+  .se-plbl{ font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.11em;
+            text-transform:uppercase; color:#98A0AC; }
+  .se-pval{ font-weight:600; font-size:14px; color:#0C1119; text-align:right; min-width:0;
+            overflow:hidden; text-overflow:ellipsis; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -420,6 +434,69 @@ def _auth_dialog():
             st.rerun()
 
 
+# White person glyph for the profile dialog's avatar circle (lucide-ish, same
+# stroke style as the admin panel's KPI icons).
+_PROFILE_ICON = ('<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" '
+                 'stroke-linecap="round" stroke-linejoin="round" width="30" height="30">'
+                 '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>'
+                 '<circle cx="12" cy="7" r="4"/></svg>')
+
+
+@st.dialog(A["profile"]["title"])
+def _profile_dialog():
+    """Read-only profile (opened by clicking your name in the header): person
+    icon, name / e-mail / account type, and the 'join the beta program' ask.
+    No editing or password reset yet — that comes later."""
+    P = A["profile"]
+    u = st.session_state.get("auth_user") or {}
+    email = u.get("email", "")
+    name = u.get("name") or (email.split("@")[0] if email else P["no_name"])
+    role = u.get("role", "standard")
+    rc = "#B8863B" if role in ("admin", "master") else BLUE
+    acct = P.get(f"type_{role}", role.capitalize())
+    st.markdown(f"""
+    <div style="display:flex;flex-direction:column;align-items:center;gap:5px;
+                padding:4px 0 14px;">
+      <div style="width:64px;height:64px;border-radius:50%;background:{rc};
+           display:flex;align-items:center;justify-content:center;
+           box-shadow:0 6px 18px {rc}55;margin-bottom:7px;">{_PROFILE_ICON}</div>
+      <div style="font-weight:700;font-size:18px;color:#0C1119;">{name}</div>
+      <div class="se-mono" style="font-size:10px;letter-spacing:.12em;color:{rc};
+           text-transform:uppercase;font-weight:600;">{acct}</div>
+    </div>
+    <div class="se-prow"><span class="se-plbl">{P["f_name"]}</span>
+      <span class="se-pval">{u.get("name") or P["no_name"]}</span></div>
+    <div class="se-prow"><span class="se-plbl">{P["f_email"]}</span>
+      <span class="se-pval">{email or P["no_name"]}</span></div>
+    <div class="se-prow" style="border-bottom:none;"><span class="se-plbl">{P["f_type"]}</span>
+      <span class="se-pval">{acct}</span></div>
+    """, unsafe_allow_html=True)
+
+    # ── Beta program: the one action on this page. Standard users may ask to
+    # join; the request lands in the admin panel (Users → Beta requests).
+    st.markdown(f'<div class="se-plbl" style="margin:16px 0 2px;">{P["beta_heading"]}</div>',
+                unsafe_allow_html=True)
+    st.caption(P["beta_caption"])
+    if role in ("admin", "master"):
+        st.caption(P["beta_admin"])
+    elif role == "beta":
+        st.success(P["beta_member"])
+    elif u.get("beta_requested"):
+        st.info(P["beta_pending"].format(date=u["beta_requested"]))
+    else:
+        if st.button(P["beta_button"], type="primary", use_container_width=True,
+                     key="_prof_beta"):
+            try:
+                stamp = auth.request_beta(u["id"])
+                st.session_state["auth_user"]["beta_requested"] = stamp
+                st.rerun()
+            except Exception as e:  # noqa: BLE001
+                st.error(P["beta_failed"].format(err=e))
+    if st.button(P["close"], key="_prof_close"):
+        st.session_state["_show_profile"] = False
+        st.rerun()
+
+
 # ── Header ─────────────────────────────────────────────────────────────────
 # Nested columns so the button pair shares its own row and doesn't get
 # squeezed by the outer ratio (a flat 5-way split made "Create account" wrap
@@ -452,7 +529,9 @@ with h_right:
         # Logged in: show who you are (name + role + avatar initials) instead of
         # the sign-in buttons, with a Log out control.
         _email = _hu.get("email", "")
-        _nm = _email.split("@")[0] if _email else "Account"
+        # Prefer the real full name (sign_in carries user_metadata.full_name);
+        # sessions from before that change fall back to the email prefix.
+        _nm = _hu.get("name") or (_email.split("@")[0] if _email else "Account")
         _ini = ("".join(w[0] for w in _nm.replace(".", " ").replace("_", " ").split()[:2])
                 or _nm[:1]).upper()
         _role = _hu.get("role", "standard")
@@ -469,7 +548,9 @@ with h_right:
                     st.switch_page("admin.py")
         else:
             _who, _out = st.columns([2.4, 1], vertical_alignment="center")
-        with _who:
+        with _who, st.container(key="hdr_idwrap"):
+            # The chip itself + an invisible overlay button (see the
+            # .st-key-hdr_idwrap CSS) — clicking your name opens the profile.
             st.markdown(f"""
             <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;">
               <div style="text-align:right;line-height:1.16;min-width:0;">
@@ -483,6 +564,10 @@ with h_right:
                    font-weight:700;font-size:13px;">{_ini}</div>
             </div>
             """, unsafe_allow_html=True)
+            if st.button(A["profile"]["title"], key="hdr_profile",
+                         help=A["profile"]["title"]):
+                st.session_state["_show_profile"] = True
+                st.rerun()
         with _out:
             if st.button(C["header"]["log_out"], use_container_width=True, key="hdr_logout"):
                 st.session_state.pop("auth_user", None)
@@ -507,6 +592,9 @@ with h_right:
 # only inside the button's `if` block would close it the instant you type.
 if st.session_state.get("_show_auth"):
     _auth_dialog()
+
+if st.session_state.get("_show_profile"):
+    _profile_dialog()
 
 
 @st.dialog(C["hero"].get("video", {}).get("label", "Watch the demo"), width="large")

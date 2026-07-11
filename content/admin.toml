@@ -24,6 +24,7 @@ kpi_live      = "Live countries"
 kpi_beta      = "Beta countries"
 kpi_planned   = "Planned countries"
 kpi_updates   = "Updates available"
+kpi_beta_req  = "Beta requests"
 upd_checked   = "Last checked {t}"
 upd_never     = "No check run yet — run one from Data sources."
 users_error   = "⚠ Could not load users: {err}"
@@ -73,6 +74,15 @@ s_built = "STYRK labels built"
 desc    = "Salaries fetched live from SSB table 11418 and disk-cached; the bundled bilingual STYRK labels give instant dropdowns. Rebuilding re-fetches the labels from SSB (EN + NO)."
 btn     = "↻ Rebuild labels"
 done    = "✅ Labels rebuilt {built} · {codes} codes ({leaves} occupations)."
+# Data-year check (pinned year in app_settings.json, like Sweden)
+btn_year   = "📅 Check data year"
+y_fail     = "Couldn't reach SSB. Try again in a moment."
+y_newer    = "SSB now publishes data up to **{found}** (app currently uses {cur})."
+y_update   = "✅ Update to {found}"
+y_keep     = "Keep {cur}"
+y_uptodate = "Already up to date — SSB's newest year is {cur}."
+y_older    = "SSB's newest reported year is {found}, older than the current setting ({cur}). Keeping {cur}."
+y_done     = "✅ Data year updated to {found} — year sliders and charts roll forward. The Norway page picks the new year range up on the next app restart/redeploy."
 
 [data.sweden]
 name    = "Sweden"
@@ -121,6 +131,18 @@ extras  = [
 ]
 
 [users]
+# ── Beta program requests (users ask from their profile dialog) ──
+br_heading   = "Beta requests"
+br_caption   = "Users who asked to join the beta program from their profile. Accept switches them to the Beta role; Decline keeps them Standard (they can ask again). You can always change any user's role later from the table below."
+br_empty     = "No pending beta requests."
+br_requested = "requested {date}"
+br_accept    = "✅ Accept"
+br_decline   = "Decline"
+br_accepted  = "{email} is now a beta user."
+br_declined  = "Declined — {email} stays standard."
+br_failed    = "Could not update: {err}"
+badge_requested = "beta requested"
+
 create_heading = "Create user"
 f_name         = "Name"
 f_email        = "Email"
@@ -202,7 +224,7 @@ o_validation_failed = "⚠ Validation failed"
 o_unavailable       = "🌐 Source unavailable"
 
 [updates.notes]
-norway_data    = "Live API — every query reads SSB directly; nothing stored can lag."
+norway_restart = "The Norway page's year range picks the new year up on the next app restart/redeploy."
 france_api     = "Live API — means & headcounts read INSEE Melodi directly."
 france         = "Percentiles come from INSEE microdata (FD_SALAAN) — a manual download, rebuilt offline. Means stay live via Melodi."
 sweden_restart = "The Sweden page's year range picks the new year up on the next app restart/redeploy."

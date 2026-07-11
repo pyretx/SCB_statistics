@@ -158,14 +158,20 @@ def _countries_of(meta: dict) -> list:
 
 
 def sign_in(email: str, password: str):
-    """Return (user_dict, error). user_dict = {id, email, role, countries}."""
+    """Return (user_dict, error). user_dict = {id, email, name, role, countries,
+    beta_requested} — beta_requested is the ISO date the user asked to join the
+    beta program (from their profile dialog), or None."""
     try:
         res = _client(service=False).auth.sign_in_with_password(
             {"email": email, "password": password})
         u = res.user
         meta = u.app_metadata or {}
-        return {"id": u.id, "email": u.email, "role": meta.get("role", "standard"),
-                "countries": _countries_of(meta)}, None
+        umeta = u.user_metadata or {}
+        return {"id": u.id, "email": u.email,
+                "name": umeta.get("full_name") or umeta.get("name") or "",
+                "role": meta.get("role", "standard"),
+                "countries": _countries_of(meta),
+                "beta_requested": meta.get("beta_requested")}, None
     except Exception as e:
         return None, str(e)
 
@@ -226,6 +232,7 @@ def list_users(retries: int = 1) -> list[dict]:
             "name":  name,
             "role":  meta.get("role", "standard"),
             "countries": _countries_of(meta),
+            "beta_requested": meta.get("beta_requested"),
         })
     out.sort(key=lambda r: ({"master": 0, "admin": 1, "standard": 2}.get(r["role"], 3), r["email"]))
     return out
@@ -269,6 +276,27 @@ def set_role(user_id: str, role: str):
 def set_countries(user_id: str, countries):
     """Set which country markets a user may open (app_metadata.countries)."""
     _set_app_metadata(user_id, countries=list(countries))
+
+
+def request_beta(user_id: str) -> str:
+    """A signed-in user asks to join the beta program (profile dialog). Stored
+    as app_metadata.beta_requested = ISO date — written server-side with the
+    service key, so users still can't touch their own role. Returns the stamp."""
+    import datetime as _dt
+    stamp = _dt.date.today().isoformat()
+    _set_app_metadata(user_id, beta_requested=stamp)
+    return stamp
+
+
+def resolve_beta_request(user_id: str, accept: bool):
+    """Admin decision on a pending beta request: accept switches the user's
+    role to 'beta'; either way the pending flag is cleared (a declined user may
+    ask again from their profile). Admins can always change the role later via
+    set_role — this is just the request workflow."""
+    changes: dict = {"beta_requested": None}
+    if accept:
+        changes["role"] = "beta"
+    _set_app_metadata(user_id, **changes)
 
 
 def set_password(user_id: str, new_password: str):

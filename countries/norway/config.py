@@ -4,7 +4,10 @@ visitors don't see Norway at all (landing tile + switcher hide it)."""
 from __future__ import annotations
 
 from core.model import CountryConfig, Capabilities
+from .build import latest_year
 from .provider import NorwayProvider
+
+_YR = latest_year()   # pinned in app_settings.json; bumped via the admin panel
 
 # Structured guides (the approved User-Guide design; rendered by core/panels.py)
 _GUIDE_EN = {
@@ -139,7 +142,7 @@ CONFIG = CountryConfig(
         has_mean=True, has_median=True, has_sex=True, has_trend=True,
         has_leaderboard=True,
         sectors=("all", "private", "local", "central"),
-        year_range=(2015, 2024),
+        year_range=(2015, _YR),
     ),
     # standard order (docs/architecture.md); Basic statistics is merged into Overview
     tabs=("overview", "distribution", "trend", "where", "leaderboard", "sex",
@@ -151,7 +154,7 @@ CONFIG = CountryConfig(
     bullets=(
         "Mean &amp; median salary · ~400 occupations (STYRK-08)",
         "Sector &amp; gender breakdowns · quartiles",
-        "Monthly earnings · 2015–2024",
+        f"Monthly earnings · 2015–{_YR}",
     ),
     # flat, language-independent strings the landing tile reads
     labels={

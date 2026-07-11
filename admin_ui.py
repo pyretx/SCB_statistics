@@ -168,15 +168,6 @@ def _file_meta(name: str) -> dict:
     return out
 
 
-def _norway_latest_year():
-    try:
-        from core import registry
-        yr = getattr(registry.get("norway").capabilities, "year_range", None)
-        return yr[1] if yr else None
-    except Exception:
-        return None
-
-
 def _fmt_bytes(n) -> str:
     return f"{n / 1e6:.2f} MB" if n else "—"
 
@@ -418,15 +409,20 @@ def overview_section():
     import updates as upd
     rec = upd.last_check()
     updates = len(rec["updates_available"]) if rec else 0
+    # Pending beta-program requests (users ask from their profile dialog;
+    # accepted/declined in Users → Beta requests).
+    n_betareq = sum(1 for u in (users or []) if u.get("beta_requested"))
 
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
     _kpi(c1, "users", _IC_USERS, "#0A63A6", "rgba(10,99,166,.10)", n_users, O["kpi_users"])
     _kpi(c2, "countries", _IC_GLOBE, "#0A63A6", "rgba(10,99,166,.10)", n_total, O["kpi_countries"])
     _kpi(c3, "live", _IC_ZAP, "#1B8A5A", "rgba(27,138,90,.12)", n_live, O["kpi_live"])
     _kpi(c4, "beta", _IC_ZAP, "#B26A00", "rgba(178,106,0,.13)", n_beta, O["kpi_beta"])
     _kpi(c5, "planned", _IC_GLOBE, "#5B6472", "rgba(91,100,114,.10)", n_plan, O["kpi_planned"])
-    _kpi(c6, "updates", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, O["kpi_updates"])
-    with c6:
+    _kpi(c6, "betareq", _IC_USERS, "#B26A00", "rgba(178,106,0,.13)", n_betareq,
+         O["kpi_beta_req"])
+    _kpi(c7, "updates", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, O["kpi_updates"])
+    with c7:
         st.caption(O["upd_checked"].format(t=rec["checked_at"]) if rec
                    else O["upd_never"])
     if uerr:
@@ -458,6 +454,50 @@ def overview_section():
 
 
 # ── Section: Data sources ────────────────────────────────────────────────────
+def _year_check_flow(T, prefix, svc_key, cur, chk):
+    """Shared pinned-data-year check/update flow (the Sweden and Norway cards):
+    probe via the update service → newer? Update-to-X / Keep confirm → service
+    update → outcome messages. ``T`` supplies the y_* labels; widget/session
+    keys are namespaced by ``prefix``."""
+    import updates as upd
+    kf, kc = f"_{prefix}_year_found", f"_{prefix}_year_checked"
+    kd, ke = f"_{prefix}_year_done", f"_{prefix}_year_err"
+    if chk:
+        with st.spinner("…"):
+            st.session_state[kf] = upd.check(svc_key).latest_raw
+            st.session_state[kc] = True
+    if st.session_state.get(kc):
+        found = st.session_state.get(kf)
+        if found is None:
+            st.error(T["y_fail"])
+        elif found > cur:
+            st.info(T["y_newer"].format(found=found, cur=cur))
+            yc1, yc2 = st.columns(2)
+            if yc1.button(T["y_update"].format(found=found),
+                          key=f"{prefix}_year_upd", type="primary"):
+                res = upd.update(svc_key)
+                if res.outcome == upd.OUT_UPDATED:
+                    st.cache_data.clear()   # drop cached fetches → new year loads
+                    st.session_state[kd] = int(found)
+                else:
+                    st.session_state[ke] = res.message
+                for k in (kf, kc):
+                    st.session_state.pop(k, None)
+                st.rerun()
+            if yc2.button(T["y_keep"].format(cur=cur), key=f"{prefix}_year_keep"):
+                for k in (kf, kc):
+                    st.session_state.pop(k, None)
+                st.rerun()
+        elif found == cur:
+            st.success(T["y_uptodate"].format(cur=cur))
+        else:
+            st.warning(T["y_older"].format(found=found, cur=cur))
+    if st.session_state.get(ke):
+        st.error(st.session_state.pop(ke))
+    if st.session_state.get(kd):
+        st.success(T["y_done"].format(found=st.session_state[kd]))
+
+
 def _run_us_refresh(usbuild, target):
     """Country-specific US update — same shared pipeline as the global table."""
     import updates as upd
@@ -534,16 +574,18 @@ def _norway_card(query, D):
     T = D["norway"]
     if not _match(query, T["name"], T["source"], "styrk", T["type"]):
         return
+    from countries.norway.build import latest_year as _no_year
     styrk = (_file_meta("styrk_labels.json").get("data") or {})
     with st.container(border=True, key="adcard_no"):
         st.markdown(
             _hdr("no", T["name"], T["source"], T["type"], _pill("green", D["pill_ok"]))
-            + _stats([(T["s_year"], _norway_latest_year() or "—"),
+            + _stats([(T["s_year"], _no_year()),
                       (T["s_built"], styrk.get("built_at", "—"))])
             + f'<div class="ad-cap">{T["desc"]}</div>',
             unsafe_allow_html=True)
         with _btnrow():
             go = st.button(T["btn"], key="no_rebuild")
+            chk = st.button(T["btn_year"], key="no_yearchk")
         if go:
             with st.status("…", expanded=True) as status:
                 try:
@@ -564,6 +606,8 @@ def _norway_card(query, D):
         if res:
             st.success(T["done"].format(built=res["built_at"], codes=_n(res["codes"]),
                                         leaves=_n(res["leaves"])))
+        # Pinned data-year check — same shared flow as the Sweden card.
+        _year_check_flow(T, "no", "norway_data", _no_year(), chk)
 
 
 def _sweden_card(query, D):
@@ -602,45 +646,10 @@ def _sweden_card(query, D):
         if res:
             st.success(T["done"].format(ts=res))
 
-        # ── Data-year check — the shared service's Sweden probe/updater (same
-        # pipeline as the Overview table): SCB 'Tid' metadata → app_settings.json,
-        # which both Sweden builds read. ──────────────────────────────────────
-        import updates as upd
-        cur = int(appset.get("latest_data_year", 2025))
-        if chk:
-            with st.spinner("…"):
-                st.session_state["_se_year_found"] = upd.check("sweden_data").latest_raw
-                st.session_state["_se_year_checked"] = True
-        if st.session_state.get("_se_year_checked"):
-            found = st.session_state.get("_se_year_found")
-            if found is None:
-                st.error(T["y_fail"])
-            elif found > cur:
-                st.info(T["y_newer"].format(found=found, cur=cur))
-                yc1, yc2 = st.columns(2)
-                if yc1.button(T["y_update"].format(found=found), key="se_year_upd",
-                              type="primary"):
-                    res = upd.update("sweden_data")
-                    if res.outcome == upd.OUT_UPDATED:
-                        st.cache_data.clear()   # drop cached fetches → new year loads
-                        st.session_state["_se_year_done"] = int(found)
-                    else:
-                        st.session_state["_se_year_err"] = res.message
-                    for k in ("_se_year_found", "_se_year_checked"):
-                        st.session_state.pop(k, None)
-                    st.rerun()
-                if yc2.button(T["y_keep"].format(cur=cur), key="se_year_keep"):
-                    for k in ("_se_year_found", "_se_year_checked"):
-                        st.session_state.pop(k, None)
-                    st.rerun()
-            elif found == cur:
-                st.success(T["y_uptodate"].format(cur=cur))
-            else:
-                st.warning(T["y_older"].format(found=found, cur=cur))
-        if st.session_state.get("_se_year_err"):
-            st.error(st.session_state.pop("_se_year_err"))
-        if st.session_state.get("_se_year_done"):
-            st.success(T["y_done"].format(found=st.session_state["_se_year_done"]))
+        # ── Pinned data-year check — the shared flow (service key sweden_data):
+        # SCB 'Tid' metadata → app_settings.json, which both Sweden builds read.
+        _year_check_flow(T, "se", "sweden_data",
+                         int(appset.get("latest_data_year", 2025)), chk)
 
         # ── Country-specific admin (beyond the standard check/update) ─────────
         st.markdown(f'<div class="ad-lbl" style="margin-top:12px;">'
@@ -811,6 +820,52 @@ def users_section():
                    "beta": (U.get("role_beta", "Beta"), "#166534", "rgba(22,163,74,.12)"),
                    "standard": (U["role_standard"], "#5B6472", "#EEF0F3")}
 
+    # ── Beta requests card — pending asks from the profile dialog. Accept
+    # switches the user to the beta role; either way the request is cleared
+    # (the role stays editable any time via the ✏️ popover below). ──
+    users, _ = _load_users()
+    pending = [u for u in (users or []) if u.get("beta_requested")]
+    with st.container(border=True, key="adcard_betareq"):
+        st.markdown(
+            f'#### {U["br_heading"]} '
+            f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;'
+            f'color:#98A0AC;font-weight:400;">&nbsp;&nbsp;{len(pending)}</span>',
+            unsafe_allow_html=True)
+        st.caption(U["br_caption"])
+        if st.session_state.get("_br_msg"):
+            st.success(st.session_state.pop("_br_msg"))
+        if not pending:
+            st.caption(U["br_empty"])
+        for u in pending:
+            b_user, b_email, b_date, b_ok, b_no = st.columns(
+                [2.6, 3, 1.7, 1.2, 1.2], vertical_alignment="center")
+            b_user.markdown(
+                f'<div class="ad-user"><div class="ad-av" style="background:#0A63A6;">'
+                f'{_initials(u.get("name"), u["email"])}</div>'
+                f'<span class="ad-uname">{u.get("name") or U["no_name"]}</span></div>',
+                unsafe_allow_html=True)
+            b_email.markdown(f'<span class="ad-email">{u["email"]}</span>',
+                             unsafe_allow_html=True)
+            b_date.markdown(f'<span class="ad-access">'
+                            f'{U["br_requested"].format(date=u["beta_requested"])}</span>',
+                            unsafe_allow_html=True)
+            ok = b_ok.button(U["br_accept"], key=f"br_ok_{u['id']}", type="primary",
+                             use_container_width=True)
+            no = b_no.button(U["br_decline"], key=f"br_no_{u['id']}",
+                             use_container_width=True)
+            if ok or no:
+                try:
+                    auth.resolve_beta_request(u["id"], accept=ok)
+                    _invalidate_users()
+                    st.session_state["_br_msg"] = (
+                        U["br_accepted"] if ok else U["br_declined"]
+                    ).format(email=u["email"])
+                    st.rerun()
+                except Exception as e:  # noqa: BLE001
+                    st.error(U["br_failed"].format(err=e))
+
+    st.write("")
+
     # ── Create user card ──
     with st.container(border=True, key="adcard_create"):
         st.markdown(f"#### {U['create_heading']}")
@@ -891,8 +946,12 @@ def users_section():
             c_email.markdown(f'<span class="ad-email">{u["email"]}</span>', unsafe_allow_html=True)
             txt, fg, bg = role_badges.get(u["role"], (u["role"], "#5B6472", "#EEF0F3"))
             you = U["you"] if u["id"] == me.get("id") else ""
+            # Amber marker while a beta request is pending (handled in the card above).
+            req = ('' if not u.get("beta_requested") else
+                   f' <span class="ad-badge" style="color:#B26A00;'
+                   f'background:rgba(178,106,0,.14);">{U["badge_requested"]}</span>')
             c_role.markdown(f'<span class="ad-badge" style="color:{fg};background:{bg};">'
-                            f'{txt}</span>{you}', unsafe_allow_html=True)
+                            f'{txt}</span>{req}{you}', unsafe_allow_html=True)
             acc = (U["all_countries"] if u["role"] in _ADMIN_ROLES
                    else ", ".join(cfmt(s) for s in u.get("countries", [])) or "—")
             c_acc.markdown(f'<span class="ad-access">🌐 {acc}</span>', unsafe_allow_html=True)

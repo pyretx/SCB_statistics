@@ -32,6 +32,31 @@ create_button   = "Create account"
 terms           = "By continuing you agree to the Terms and acknowledge the Privacy Policy."
 close           = "Close"
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  PROFILE DIALOG  —  opens when a signed-in user clicks their name (top right).
+#  Read-only for now (no editing / password reset yet) + the beta-program ask.
+# ─────────────────────────────────────────────────────────────────────────────
+[profile]
+title   = "Your profile"
+f_name  = "Name"
+f_email = "E-mail"
+f_type  = "Account type"
+no_name = "—"
+
+type_master   = "Master"
+type_admin    = "Admin"
+type_beta     = "Beta"
+type_standard = "Standard"
+
+beta_heading = "Beta program"
+beta_caption = "Beta members see new countries and features before everyone else."
+beta_button  = "I would like to participate in the beta program"
+beta_pending = "✅ Request sent {date} — an administrator will review it."
+beta_member  = "You're in the beta program — beta features are enabled for your account."
+beta_admin   = "Admin accounts already include every beta feature."
+beta_failed  = "Could not send the request: {err}"
+close        = "Close"
+
 # Feedback messages. {err} is replaced with the underlying reason.
 [messages]
 confirmed      = "✅ Thanks for confirming your registration — please sign in below."

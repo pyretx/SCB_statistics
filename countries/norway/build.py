@@ -18,6 +18,35 @@ BASE = "https://data.ssb.no/api/v0/{lang}/table/11418"
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(_ROOT, "styrk_labels.json")
 
+# ── Norway's pinned data year — same pattern as Sweden's latest_data_year:
+# salaries are fetched live from SSB, but the app pins the displayed year range
+# in app_settings.json (key "norway_latest_year"); the admin panel's update
+# service bumps it when SSB publishes a new year. ─────────────────────────────
+_APP_SETTINGS = os.path.join(_ROOT, "app_settings.json")
+DEFAULT_LATEST_YEAR = 2024
+
+
+def latest_year() -> int:
+    """The pinned newest Norway data year (app_settings.json, shared file)."""
+    try:
+        with open(_APP_SETTINGS, encoding="utf-8") as f:
+            return int(json.load(f).get("norway_latest_year", DEFAULT_LATEST_YEAR))
+    except Exception:
+        return DEFAULT_LATEST_YEAR
+
+
+def save_latest_year(year: int):
+    """Bump the pinned year (preserves every other key in the shared file)."""
+    data = {}
+    try:
+        with open(_APP_SETTINGS, encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        pass
+    data["norway_latest_year"] = int(year)
+    with open(_APP_SETTINGS, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
+
 # SSB's table variable omits the 1-digit roll-up for majors 0 and 3, so the
 # major-group drill-down would miss two labels. Fill any absent 1-digit code
 # with the standard STYRK-08 major-group name (ISCO-08 aligned).

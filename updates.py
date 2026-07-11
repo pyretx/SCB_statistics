@@ -196,31 +196,62 @@ def _update_france_micro(status, log) -> UpdateResult:
                         _notes().get("france", "Manual microdata download required."))
 
 
-# ── Norway · SSB API — fully live (reachability check only) ───────────────────
+# ── Norway · SSB data year — same pattern as Sweden: salaries are fetched
+#    live, but the app pins the displayed year range (app_settings.json,
+#    "norway_latest_year"), so a new SSB year needs this explicit bump. ────────
 _SSB_TABLE_URL = "https://data.ssb.no/api/v0/en/table/11418"
 
 
-def _check_norway_data() -> SourceStatus:
-    s = SourceStatus("norway_data", "Norway", "SSB · API",
-                     current="live", latest="live", update_available=False,
-                     can_auto=False, note=_notes().get("norway_data", ""))
+def _ssb_meta() -> dict:
+    """One plain GET on the 11418 table metadata (no long retries — checks)."""
     r = requests.get(_SSB_TABLE_URL, timeout=30)
-    if r.status_code != 200:
-        raise RuntimeError(f"SSB API answered HTTP {r.status_code}")
+    r.raise_for_status()
+    return r.json()
+
+
+def _ssb_latest_year() -> int | None:
+    tid = next(v for v in _ssb_meta()["variables"] if v["code"] == "Tid")
+    yrs = [int(v) for v in tid["values"] if str(v).isdigit()]
+    return max(yrs) if yrs else None
+
+
+def _check_norway_data() -> SourceStatus:
+    from countries.norway.build import latest_year
+    cur = latest_year()
+    s = SourceStatus("norway_data", "Norway", "SSB · data year", current=str(cur))
+    latest = _ssb_latest_year()
+    if latest is None:
+        raise RuntimeError("SSB metadata probe returned no years")
+    s.latest = str(latest)
+    s.latest_raw = int(latest)
+    s.update_available = latest > cur
+    if s.update_available:
+        s.note = _notes().get("norway_restart", "")
     return s
 
 
 def _update_norway_data(status, log) -> UpdateResult:
-    return UpdateResult("norway_data", OUT_UP_TO_DATE,
-                        _notes().get("norway_data", "Live API — always current."))
+    from countries.norway.build import latest_year, save_latest_year
+    target = status.latest_raw if status and status.latest_raw else _ssb_latest_year()
+    if target is None:
+        return UpdateResult("norway_data", OUT_UNAVAILABLE,
+                            "SSB metadata probe returned no years")
+    if not (2000 < int(target) < 2100):
+        return UpdateResult("norway_data", OUT_VALIDATION,
+                            f"implausible year from SSB: {target!r}")
+    cur = latest_year()
+    if int(target) <= cur:
+        return UpdateResult("norway_data", OUT_UP_TO_DATE, str(cur))
+    log(f"norway_latest_year {cur} → {target}")
+    save_latest_year(int(target))
+    return UpdateResult("norway_data", OUT_UPDATED,
+                        f"{target} · {_notes().get('norway_restart', '')}".strip(" ·"))
 
 
 # ── Norway · STYRK labels — diff the live SSB list vs styrk_labels.json ───────
 def _fetch_styrk_light() -> dict[str, str]:
     """One plain GET (no long retries — this is a check, not a build)."""
-    r = requests.get(_SSB_TABLE_URL, timeout=30)
-    r.raise_for_status()
-    yrke = next(v for v in r.json()["variables"] if v["code"] == "Yrke")
+    yrke = next(v for v in _ssb_meta()["variables"] if v["code"] == "Yrke")
     return {c: t for c, t in zip(yrke["values"], yrke["valueTexts"])
             if c.isdigit() and 1 <= len(c) <= 4}
 
@@ -314,7 +345,7 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
          "france_micro": ("France", "INSEE · microdata"),
-         "norway_data": ("Norway", "SSB · API"),
+         "norway_data": ("Norway", "SSB · data year"),
          "norway_labels": ("Norway", "SSB · STYRK labels"),
          "us_data": ("United States", "BLS OEWS")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",

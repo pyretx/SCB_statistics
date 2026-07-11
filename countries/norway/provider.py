@@ -242,7 +242,8 @@ class NorwayProvider(CountryProvider):
     def occupation_stats(self, *, sector="all", occ_codes=(), sex="total",
                          years=(), dimension="total", year=None,
                          lang="EN") -> pd.DataFrame:
-        yr = int(year or (years[-1] if years else 2024))
+        from .build import latest_year
+        yr = int(year or (years[-1] if years else latest_year()))
         return _fetch(sector, tuple(occ_codes), sex, yr, lang)
 
     def trend(self, *, sector="all", occ_codes=(), sex="total", years=(),
@@ -253,4 +254,5 @@ class NorwayProvider(CountryProvider):
         return _fetch_cpi_annual(tuple(years))
 
     def leaderboard(self, *, sector="all", sex="total", year=None, lang="EN") -> pd.DataFrame:
-        return _fetch_leaderboard(sector, sex, int(year or 2024), lang)
+        from .build import latest_year
+        return _fetch_leaderboard(sector, sex, int(year or latest_year()), lang)
