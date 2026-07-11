@@ -215,7 +215,7 @@ restart_step   = "Final step on the server: run `{cmd}` (~10 s, no rebuild) — 
 commit_step    = "Runtime update — lives until the next redeploy; commit {file} to make it permanent."
 us_backend     = "⚠ BLS blocks this server's IP — run this update from the dev machine (it works there), then commit us_oews.json.gz."
 france_api     = "Live API — means & headcounts read INSEE Melodi directly."
-france         = "Percentiles come from INSEE microdata (FD_SALAAN). Import the new vintage on the France source card: paste the INSEE parquet URL or upload the downloaded file."
+france         = "Melodi means run ~1 year ahead of the microdata cycle by design — the 2023 fichier détail appeared 2026-03, so expect the 2024 file around 2027-03. When INSEE publishes it, import it on the France source card (parquet URL or upload)."
 
 # ── Work-permit rules editor (Sweden) — was the legacy page's admin editor ────
 [wp]
