@@ -495,7 +495,8 @@ def _year_check_flow(T, prefix, svc_key, cur, chk):
     if st.session_state.get(ke):
         st.error(st.session_state.pop(ke))
     if st.session_state.get(kd):
-        st.success(T["y_done"].format(found=st.session_state[kd]))
+        st.success(T["y_done"].format(found=st.session_state[kd],
+                                      cmd=upd.restart_command()))
 
 
 def _run_us_refresh(usbuild, target):

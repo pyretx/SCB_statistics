@@ -59,7 +59,7 @@ alert       = "↻ May {latest} available — newer than the bundled May {year}.
 btn_refresh = "↻ Refresh to May {year}"
 btn_rebuild = "↻ Rebuild from BLS"
 btn_check   = "🔍 Check for newer release"
-confirm     = "This re-downloads ~65 MB from BLS and rebuilds the dataset (≈1–2 min). The running app updates immediately; to persist across redeploys, commit the regenerated `us_oews.json.gz`."
+confirm     = "This re-downloads ~65 MB from BLS and rebuilds the dataset (≈1–2 min). The running app updates immediately; to persist across redeploys, commit the regenerated `us_oews.json.gz`. ⚠ On the server this download fails — BLS blocks datacenter IPs — so run the refresh from the dev machine."
 btn_confirm = "✅ Confirm refresh"
 btn_cancel  = "Cancel"
 refreshed   = "✅ Refreshed to May {year} · {occ} occupations · {scopes} scopes · {rows} rows · {size}"
@@ -82,7 +82,7 @@ y_update   = "✅ Update to {found}"
 y_keep     = "Keep {cur}"
 y_uptodate = "Already up to date — SSB's newest year is {cur}."
 y_older    = "SSB's newest reported year is {found}, older than the current setting ({cur}). Keeping {cur}."
-y_done     = "✅ Data year updated to {found} — year sliders and charts roll forward. The Norway page picks the new year range up on the next app restart/redeploy."
+y_done     = "✅ Data year updated to {found} — charts roll forward. Final step on the server: run `{cmd}` (~10 s, no rebuild) so the year-slider range picks it up."
 
 [data.sweden]
 name    = "Sweden"
@@ -103,7 +103,7 @@ y_update   = "✅ Update to {found}"
 y_keep     = "Keep {cur}"
 y_uptodate = "Already up to date — SCB's newest year is {cur}."
 y_older    = "SCB's newest reported year is {found}, older than the current setting ({cur}). Keeping {cur}."
-y_done     = "✅ Data year updated to {found} — year sliders, charts, leaderboard and the work-permit check roll forward. The Sweden page picks the new year range up on the next app restart/redeploy."
+y_done     = "✅ Data year updated to {found} — charts, leaderboard and the work-permit check roll forward. Final step on the server: run `{cmd}` (~10 s, no rebuild) so the year-slider range picks it up."
 btn_wp     = "⚙ Work permit rules"
 extras_title = "Sweden (/sweden, framework) — features beyond the framework standard"
 extras  = [
@@ -134,7 +134,7 @@ imp_confirm    = "This replaces the bundled {cur} percentile estimates with {new
 btn_confirm    = "✅ Import now"
 btn_cancel     = "Cancel"
 imp_running    = "Importing microdata…"
-imp_done       = "✅ Microdata imported: {year} · {occ} occupations ({censored} with a censored top band)."
+imp_done       = "✅ Microdata imported: {year} · {occ} occupations ({censored} with a censored top band). Lives until the next redeploy — commit pcs_microdata_percentiles.json to make it permanent."
 imp_failed     = "Import failed: {err}"
 extras_title = "France (/france, framework) — features beyond the framework standard"
 extras  = [
@@ -238,10 +238,13 @@ o_validation_failed = "⚠ Validation failed"
 o_unavailable       = "🌐 Source unavailable"
 
 [updates.notes]
-norway_restart = "The Norway page's year range picks the new year up on the next app restart/redeploy."
+# {cmd} = this environment's restart command (docker restart scb-dev/-test/-prod)
+restart_step   = "Final step on the server: run `{cmd}` (~10 s, no rebuild) — the year-slider range picks the new year up then."
+# {file} = the regenerated data file
+commit_step    = "Runtime update — lives until the next redeploy; commit {file} to make it permanent."
+us_backend     = "⚠ BLS blocks this server's IP — run this update from the dev machine (it works there), then commit us_oews.json.gz."
 france_api     = "Live API — means & headcounts read INSEE Melodi directly."
 france         = "Percentiles come from INSEE microdata (FD_SALAAN). Import the new vintage on the France source card: paste the INSEE parquet URL or upload the downloaded file."
-sweden_restart = "The Sweden page's year range picks the new year up on the next app restart/redeploy."
 
 # ── Work-permit rules editor (Sweden) — was the legacy page's admin editor ────
 [wp]

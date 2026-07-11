@@ -72,6 +72,37 @@ def _notes() -> dict:
         return {}
 
 
+def server_container() -> str:
+    """This environment's docker container name (scb-dev / scb-test / scb-prod),
+    derived from the [app] url secret; scb-dev when unknown (local dev)."""
+    try:
+        import re
+        import tomllib
+        with open(os.path.join(_ROOT, ".streamlit", "secrets.toml"), "rb") as f:
+            url = tomllib.load(f).get("app", {}).get("url", "")
+        m = re.match(r"https?://(scb(?:-\w+)?)\.", url)
+        if m:
+            return "scb-prod" if m.group(1) == "scb" else m.group(1)
+    except Exception:
+        pass
+    return "scb-dev"
+
+
+def restart_command() -> str:
+    """The final-step command shown after data-year updates."""
+    return f"docker restart {server_container()}"
+
+
+def _restart_note() -> str:
+    return _notes().get("restart_step", "Final step on the server: run `{cmd}` "
+                        "(~10 s, no rebuild).").format(cmd=restart_command())
+
+
+def _commit_note(file: str) -> str:
+    return _notes().get("commit_step", "Runtime update — commit {file} to keep "
+                        "it after the next redeploy.").format(file=file)
+
+
 # ── Sweden · SCB data year — salaries are fetched live, but the app pins the
 #    displayed year (sliders/pills/leaderboard/work-permit bench) in
 #    app_settings.json, so a new SCB year needs this explicit bump. ───────────
@@ -86,7 +117,7 @@ def _check_sweden_data() -> SourceStatus:
     s.latest_raw = int(latest)
     s.update_available = latest > cur
     if s.update_available:
-        s.note = _notes().get("sweden_restart", "")
+        s.note = _restart_note()
     return s
 
 
@@ -106,7 +137,7 @@ def _update_sweden_data(status, log) -> UpdateResult:
     s = sweden_codes.load_app_settings()
     sweden_codes.save_app_settings({**s, "latest_data_year": int(target)})
     return UpdateResult("sweden_data", OUT_UPDATED,
-                        f"{target} · {_notes().get('sweden_restart', '')}".strip(" ·"))
+                        f"{target} · {_restart_note()}")
 
 
 # ── Sweden · SSYK occupation labels — diff the live SCB list vs the cache ─────
@@ -144,7 +175,8 @@ def _update_sweden_labels(status, log) -> UpdateResult:
     log("re-fetching SSYK labels (EN + SV) from SCB …")
     ts = sweden_codes.refresh()          # validates counts BEFORE the atomic swap
     n = len(sweden_codes.occupation_names("EN"))
-    return UpdateResult("sweden_labels", OUT_UPDATED, f"{ts} · {n} codes")
+    return UpdateResult("sweden_labels", OUT_UPDATED,
+                        f"{ts} · {n} codes · {_commit_note('occupations_cache.json')}")
 
 
 # ── France · Melodi API — fully live (reachability check only) ────────────────
@@ -226,7 +258,7 @@ def _check_norway_data() -> SourceStatus:
     s.latest_raw = int(latest)
     s.update_available = latest > cur
     if s.update_available:
-        s.note = _notes().get("norway_restart", "")
+        s.note = _restart_note()
     return s
 
 
@@ -245,7 +277,7 @@ def _update_norway_data(status, log) -> UpdateResult:
     log(f"norway_latest_year {cur} → {target}")
     save_latest_year(int(target))
     return UpdateResult("norway_data", OUT_UPDATED,
-                        f"{target} · {_notes().get('norway_restart', '')}".strip(" ·"))
+                        f"{target} · {_restart_note()}")
 
 
 # ── Norway · STYRK labels — diff the live SSB list vs styrk_labels.json ───────
@@ -288,7 +320,8 @@ def _update_norway_labels(status, log) -> UpdateResult:
     except Exception:
         pass
     return UpdateResult("norway_labels", OUT_UPDATED,
-                        f"{res['built_at']} · {res['codes']} codes ({res['leaves']} occupations)")
+                        f"{res['built_at']} · {res['codes']} codes ({res['leaves']} "
+                        f"occupations) · {_commit_note('styrk_labels.json')}")
 
 
 # ── United States · BLS OEWS — bundled build, full auto pipeline ──────────────
@@ -303,6 +336,10 @@ def _check_us_data() -> SourceStatus:
     s.latest = f"May {latest}"
     s.latest_raw = int(latest)
     s.update_available = bool(info.get("year") and latest > info["year"])
+    if s.update_available:
+        # BLS (Akamai) blocks datacenter IPs — from the server this update
+        # fails; the admin must run it from the dev machine and commit.
+        s.note = _notes().get("us_backend", "")
     return s
 
 
@@ -329,7 +366,7 @@ def _update_us_data(status, log) -> UpdateResult:
         pass
     return UpdateResult("us_data", OUT_UPDATED,
                         f"May {res['year']} · {res['occupations']} occupations · "
-                        f"{res['scopes']} scopes")
+                        f"{res['scopes']} scopes · {_commit_note('us_oews.json.gz')}")
 
 
 # ── Service API ───────────────────────────────────────────────────────────────
