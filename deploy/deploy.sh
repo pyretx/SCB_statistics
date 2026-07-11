@@ -14,6 +14,13 @@ echo "==> Deploying '${ENV}' from ${DIR}"
 cd "$DIR"
 git pull --ff-only
 cd deploy
+
+# Bind-mounted runtime files must exist as FILES before `up` — Docker would
+# otherwise create directories at these paths and break the app's writes.
+for f in scb-wp-rules.json scb-ssyk-overrides.json scb-app-settings.json \
+         scb-guide.json scb-update-checks.json; do
+  [ -f "/root/$f" ] || echo '{}' > "/root/$f"
+done
 # --force-recreate: rebuilding with the same image tag does NOT change Compose's
 # config hash, so without it Compose leaves the OLD container running and the new
 # code never goes live. Force the container swap on every deploy.

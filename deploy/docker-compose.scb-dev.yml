@@ -22,6 +22,7 @@ services:
       - /root/scb-ssyk-overrides.json:/app/ssyk_overrides.json:rw
       - /root/scb-app-settings.json:/app/app_settings.json:rw
       - /root/scb-guide.json:/app/guide.json:rw
+      - /root/scb-update-checks.json:/app/update_checks.json:rw
     networks:
       - traefik
     labels:
