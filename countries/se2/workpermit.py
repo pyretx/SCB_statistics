@@ -50,6 +50,13 @@ def load_rules() -> dict:
     return rules
 
 
+def save_rules(rules: dict):
+    """Persist the rule set (the admin panel's Work-permit editor writes here;
+    same file/shape the legacy page's editor used)."""
+    with open(RULES_FILE, "w", encoding="utf-8") as f:
+        json.dump(rules, f, ensure_ascii=False, indent=2)
+
+
 def _floor(rules, ssyk: str, permit_type: str, is_transition: bool, app_date_iso: str):
     """(floor_sek, basis_key) — the applicable salary floor (legacy wp_floor)."""
     if permit_type == "blue":

@@ -449,12 +449,13 @@ def _sweden_card(query, D):
             + f'<div class="ad-cap">{T["desc"]}</div>'
             + _extras_html(T),
             unsafe_allow_html=True)
+        import sweden_codes
         with _btnrow():
             go = st.button(T["btn"], key="se_refetch")
+            chk = st.button(T["btn_year"], key="se_yearchk")
         if go:
             with st.spinner("…"):
                 try:
-                    import sweden_codes
                     ts = sweden_codes.refresh()
                     # Sweden's page reads session-state first — drop its copies
                     # so it reloads the fresh disk cache.
@@ -467,6 +468,40 @@ def _sweden_card(query, D):
         res = st.session_state.get("_se_codes_result")
         if res:
             st.success(T["done"].format(ts=res))
+
+        # ── Data-year check (was the legacy page's dialog): live 'Tid' metadata
+        # from SCB → update app_settings.json, which both Sweden builds read. ──
+        cur = int(appset.get("latest_data_year", 2025))
+        if chk:
+            with st.spinner("…"):
+                st.session_state["_se_year_found"] = sweden_codes.fetch_available_year()
+                st.session_state["_se_year_checked"] = True
+        if st.session_state.get("_se_year_checked"):
+            found = st.session_state.get("_se_year_found")
+            if found is None:
+                st.error(T["y_fail"])
+            elif found > cur:
+                st.info(T["y_newer"].format(found=found, cur=cur))
+                yc1, yc2 = st.columns(2)
+                if yc1.button(T["y_update"].format(found=found), key="se_year_upd",
+                              type="primary"):
+                    s = sweden_codes.load_app_settings()
+                    sweden_codes.save_app_settings({**s, "latest_data_year": int(found)})
+                    st.cache_data.clear()   # drop cached fetches so the new year loads
+                    for k in ("_se_year_found", "_se_year_checked"):
+                        st.session_state.pop(k, None)
+                    st.session_state["_se_year_done"] = int(found)
+                    st.rerun()
+                if yc2.button(T["y_keep"].format(cur=cur), key="se_year_keep"):
+                    for k in ("_se_year_found", "_se_year_checked"):
+                        st.session_state.pop(k, None)
+                    st.rerun()
+            elif found == cur:
+                st.success(T["y_uptodate"].format(cur=cur))
+            else:
+                st.warning(T["y_older"].format(found=found, cur=cur))
+        if st.session_state.get("_se_year_done"):
+            st.success(T["y_done"].format(found=st.session_state["_se_year_done"]))
 
 
 def _france_card(query, D):
@@ -712,8 +747,110 @@ def users_section():
                         st.error(str(e))
 
 
+# ── Section: Work-permit rules (Sweden) ──────────────────────────────────────
+def _wp_code_list(W, title, caption, state_key, names):
+    """Interactive SSYK-code list: row per code (name + 🗑), plus an add box.
+    Edits live in session_state; the form's Save rules button persists them."""
+    st.markdown(f"**{title}**")
+    st.caption(caption)
+    codes = st.session_state[state_key]
+    if codes:
+        for code in sorted(codes):
+            r1, r2, r3 = st.columns([2, 6, 1])
+            r1.write(code)
+            r2.write(names.get(code, "—"))
+            if r3.button("🗑", key=f"{state_key}_del_{code}", help=W["remove_help"]):
+                st.session_state[state_key] = [c for c in codes if c != code]
+                st.rerun()
+    else:
+        st.caption(W["none"])
+    a1, a2 = st.columns([5, 1])
+    newc = a1.text_input(title, key=f"{state_key}_add_{len(codes)}",
+                         placeholder=W["add_ph"], label_visibility="collapsed")
+    if a2.button(W["btn_add"], key=f"{state_key}_addbtn"):
+        nc = newc.strip()
+        if nc and nc not in codes:
+            st.session_state[state_key] = codes + [nc]
+        st.rerun()
+
+
+def wp_section():
+    """Work-permit rules editor — migrated from the legacy Sweden page. Reads/
+    writes the SAME wp_rules.json via countries/se2's workpermit module, so the
+    framework Work-permit tab and this editor always agree."""
+    W = _A()["wp"]
+    import sweden_codes
+    from countries.se2 import workpermit as wp
+    rules = wp.load_rules()
+    names = sweden_codes.occupation_names("EN")
+    for sk, src in (("adm_wp_exempt", "exempt_ssyk"),
+                    ("adm_wp_banned_full", "banned_full"),
+                    ("adm_wp_banned_partial", "banned_partial")):
+        if sk not in st.session_state:
+            st.session_state[sk] = list(rules[src])
+
+    with st.container(border=True, key="adcard_wp"):
+        st.markdown(f"#### {W['heading']}")
+        st.caption(W["caption"])
+        with st.form("adm_wp_form"):
+            c1, c2, c3 = st.columns(3)
+            as_of = c1.text_input(W["f_asof"], rules["as_of"], help=W["h_asof"])
+            median = c2.number_input(W["f_median"], value=int(rules["median"]),
+                                     step=100, help=W["h_median"])
+            bench = c3.number_input(W["f_bench"], value=int(rules["bench_year"]),
+                                    step=1, help=W["h_bench"])
+            c4, c5, c6 = st.columns(3)
+            pg = c4.number_input(W["f_general"], value=float(rules["pct_general"]) * 100,
+                                 step=1.0, help=W["h_general"])
+            pt = c5.number_input(W["f_transition"],
+                                 value=float(rules["pct_transition"]) * 100,
+                                 step=1.0, help=W["h_transition"])
+            pe = c6.number_input(W["f_exempt"], value=float(rules["pct_exempt"]) * 100,
+                                 step=1.0, help=W["h_exempt"])
+            c7, c8 = st.columns(2)
+            blue = c7.number_input(W["f_blue"], value=int(rules["blue_card_floor"]),
+                                   step=100, help=W["h_blue"])
+            tend = c8.text_input(W["f_transition_end"], rules["transition_end"],
+                                 help=W["h_transition_end"])
+            saved = st.form_submit_button(W["btn_save"], type="primary")
+        if saved:
+            new = dict(rules)
+            new.update({
+                "as_of": as_of.strip(), "median": int(median), "bench_year": int(bench),
+                "pct_general": round(pg / 100, 4), "pct_transition": round(pt / 100, 4),
+                "pct_exempt": round(pe / 100, 4), "blue_card_floor": int(blue),
+                "transition_end": tend.strip(),
+                "exempt_ssyk": sorted(st.session_state["adm_wp_exempt"]),
+                "banned_full": sorted(st.session_state["adm_wp_banned_full"]),
+                "banned_partial": sorted(st.session_state["adm_wp_banned_partial"]),
+            })
+            try:
+                wp.save_rules(new)
+                for sk in ("adm_wp_exempt", "adm_wp_banned_full", "adm_wp_banned_partial"):
+                    st.session_state.pop(sk, None)
+                st.session_state["_adm_wp_saved"] = True
+                st.rerun()
+            except Exception as e:  # noqa: BLE001
+                st.error(W["save_failed"].format(err=e))
+        if st.session_state.pop("_adm_wp_saved", False):
+            st.success(W["saved"])
+
+    st.write("")
+    with st.container(border=True, key="adcard_wp_lists"):
+        st.markdown(f"#### {W['lists_heading']}")
+        st.caption(W["lists_caption"])
+        _wp_code_list(W, W["l_exempt_t"], W["l_exempt_c"], "adm_wp_exempt", names)
+        st.divider()
+        _wp_code_list(W, W["l_banned_full_t"], W["l_banned_full_c"],
+                      "adm_wp_banned_full", names)
+        st.divider()
+        _wp_code_list(W, W["l_banned_partial_t"], W["l_banned_partial_c"],
+                      "adm_wp_banned_partial", names)
+
+
 # ── Orchestrator ─────────────────────────────────────────────────────────────
-SECTIONS = {"overview": overview_section, "data": data_section, "users": users_section}
+SECTIONS = {"overview": overview_section, "data": data_section,
+            "users": users_section, "wp": wp_section}
 
 
 def section_selector() -> str:
