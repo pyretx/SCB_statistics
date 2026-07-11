@@ -16,7 +16,6 @@ go_home = "Go to home"
 overview = "Overview"
 data     = "Data sources"
 users    = "Users"
-wp       = "Work permit"
 
 [overview]
 kpi_users     = "Registered users"
@@ -25,10 +24,8 @@ kpi_live      = "Live countries"
 kpi_beta      = "Beta countries"
 kpi_planned   = "Planned countries"
 kpi_updates   = "Updates available"
-btn_check     = "↻ Check for updates"
-check_help    = "Probes BLS, INSEE and SCB for newer data (runs only when pressed — never on page load)."
-checking      = "Probing the data sources…"
-upd_checked   = "Checked {t}"
+upd_checked   = "Last checked {t}"
+upd_never     = "No check run yet — run one from Data sources."
 users_error   = "⚠ Could not load users: {err}"
 open_heading  = "Open a country"
 open_caption  = "Jump straight into any country page, including admin-only previews."
@@ -37,6 +34,7 @@ legacy_caption = "Legacy builds kept for admin reference — superseded by the f
 
 [data]
 caption        = "Each source shows its latest data year and how it refreshes."
+specific_heading = "Country-specific"
 pill_ok        = "Up to date"
 pill_update    = "Update available"
 search_ph      = "🔍  Search sources — country, agency, classification…"
@@ -96,6 +94,7 @@ y_keep     = "Keep {cur}"
 y_uptodate = "Already up to date — SCB's newest year is {cur}."
 y_older    = "SCB's newest reported year is {found}, older than the current setting ({cur}). Keeping {cur}."
 y_done     = "✅ Data year updated to {found} — year sliders, charts, leaderboard and the work-permit check roll forward. The Sweden page picks the new year range up on the next app restart/redeploy."
+btn_wp     = "⚙ Work permit rules"
 extras_title = "Sweden (/sweden, framework) — features beyond the framework standard"
 extras  = [
   "🛂 Work-permit check — Migrationsverket rules, salary floor, market position (country-specific extra tab)",
@@ -173,6 +172,9 @@ del_help      = "Delete user"
 
 # ── Global update check (Overview) — the results table + selected updates ─────
 [updates]
+btn_check     = "↻ Check all sources for updates"
+check_help    = "Probes BLS, INSEE and SCB for newer data (runs only when pressed — never on page load)."
+checking      = "Probing the data sources…"
 heading       = "Data-source updates"
 caption       = "Checked {t} · select the sources to update, then press Update selected."
 col_select    = "Update"
@@ -205,6 +207,7 @@ sweden_restart = "The Sweden page's year range picks the new year up on the next
 
 # ── Work-permit rules editor (Sweden) — was the legacy page's admin editor ────
 [wp]
+back     = "← Back to data sources"
 heading  = "Work permit rules · Sweden"
 caption  = "The figures the Work-permit check uses (saved to wp_rules.json — overrides the built-in defaults and applies immediately across the app)."
 f_asof            = "Rules valid from (YYYY-MM-DD)"

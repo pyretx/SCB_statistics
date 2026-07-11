@@ -310,6 +310,7 @@ def _run_update_check():
     instant no matter how many countries exist."""
     import updates as upd
     results = upd.check_all()
+    upd.record_check(results)              # persist "last checked" across restarts
     st.session_state["_upd_results"] = results
     by_key = {s.key: s for s in results}
     if by_key.get("us") and by_key["us"].latest_raw:
@@ -407,8 +408,10 @@ def overview_section():
     n_users = len(users) if users is not None else "—"
     links = _country_links()
     n_total, n_live, n_beta, n_plan = _catalog_counts()
-    updates = sum(1 for k in ("_us_upd", "_fr_upd", "_se_upd")
-                  if st.session_state.get(k))
+    # Last PERSISTED full check (run from Data sources) — survives restarts.
+    import updates as upd
+    rec = upd.last_check()
+    updates = len(rec["updates_available"]) if rec else 0
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
     _kpi(c1, "users", _IC_USERS, "#0A63A6", "rgba(10,99,166,.10)", n_users, O["kpi_users"])
@@ -418,17 +421,10 @@ def overview_section():
     _kpi(c5, "planned", _IC_GLOBE, "#5B6472", "rgba(91,100,114,.10)", n_plan, O["kpi_planned"])
     _kpi(c6, "updates", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", updates, O["kpi_updates"])
     with c6:
-        if st.button(O["btn_check"], key="adm_check_updates", help=O["check_help"]):
-            with st.spinner(O["checking"]):
-                _run_update_check()
-            st.session_state.pop("_upd_outcomes", None)
-            st.rerun()
-        if st.session_state.get("_upd_checked_at"):
-            st.caption(O["upd_checked"].format(t=st.session_state["_upd_checked_at"]))
+        st.caption(O["upd_checked"].format(t=rec["checked_at"]) if rec
+                   else O["upd_never"])
     if uerr:
         st.caption(O["users_error"].format(err=uerr))
-
-    _updates_card()
 
     st.write("")
     flag_css = ""
@@ -639,6 +635,14 @@ def _sweden_card(query, D):
         if st.session_state.get("_se_year_done"):
             st.success(T["y_done"].format(found=st.session_state["_se_year_done"]))
 
+        # ── Country-specific admin (beyond the standard check/update) ─────────
+        st.markdown(f'<div class="ad-lbl" style="margin-top:12px;">'
+                    f'{D["specific_heading"]}</div>', unsafe_allow_html=True)
+        with _btnrow():
+            if st.button(T["btn_wp"], key="se_wp_open"):
+                st.session_state["_show_wp_editor"] = True
+                st.rerun()
+
 
 def _france_card(query, D):
     T = D["france"]
@@ -700,12 +704,33 @@ def _caches_card(query, D):
 def data_section():
     st.markdown(CSS, unsafe_allow_html=True)
     D = _A()["data"]
+
+    # Country-specific editor opened from a source card (e.g. Sweden's
+    # Work-permit rules) takes over the section until Back is pressed.
+    if st.session_state.get("_show_wp_editor"):
+        if st.button(_A()["wp"]["back"], key="wp_back"):
+            st.session_state.pop("_show_wp_editor", None)
+            st.rerun()
+        wp_section()
+        return
+
     tl, tr = st.columns([2.4, 1], vertical_alignment="center")
     tl.caption(D["caption"])
     tr.markdown('<div style="text-align:right;font-size:12px;color:#7A828F;">'
                 f'<span class="ad-pill ad-green" style="padding:2px 8px;">{D["pill_ok"]}</span>&nbsp;'
                 f'<span class="ad-pill ad-amber" style="padding:2px 8px;">{D["pill_update"]}</span></div>',
                 unsafe_allow_html=True)
+
+    # ── Global update check (the shared service) + the results table ─────────
+    U = _A()["updates"]
+    if st.button(U["btn_check"], key="adm_check_updates", help=U["check_help"]):
+        with st.spinner(U["checking"]):
+            _run_update_check()
+        st.session_state.pop("_upd_outcomes", None)
+        st.rerun()
+    _updates_card()
+    st.write("")
+
     query = st.text_input("Search data sources", key="ds_search",
                           placeholder=D["search_ph"], label_visibility="collapsed")
     _us_card(query, D)
@@ -1018,8 +1043,10 @@ def wp_section():
 
 
 # ── Orchestrator ─────────────────────────────────────────────────────────────
+# (The Work-permit editor is not a top-level section — it's Sweden's
+# country-specific action, opened from the Sweden data-source card.)
 SECTIONS = {"overview": overview_section, "data": data_section,
-            "users": users_section, "wp": wp_section}
+            "users": users_section}
 
 
 def section_selector() -> str:

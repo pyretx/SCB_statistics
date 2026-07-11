@@ -215,6 +215,39 @@ def check_all() -> list[SourceStatus]:
     return [check(k) for k in SOURCE_ORDER]
 
 
+# ── Check log (update_checks.json, git-ignored) — survives restarts so the
+# admin Overview can show when the last full check ran and what it found. ─────
+CHECK_LOG = os.path.join(_ROOT, "update_checks.json")
+
+
+def record_check(results: list) -> dict:
+    """Persist a full-check result (called by the global check, not the
+    per-source card buttons — those are partial views)."""
+    import datetime
+    data = {
+        "checked_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "updates_available": [s.key for s in results if s.update_available],
+        "sources": {s.key: {"current": s.current, "latest": s.latest,
+                            "update_available": s.update_available,
+                            "error": s.error} for s in results},
+    }
+    try:
+        with open(CHECK_LOG, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+    return data
+
+
+def last_check() -> dict | None:
+    """The most recent recorded full check, or None if none has run yet."""
+    try:
+        with open(CHECK_LOG, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
 def update(key: str, status: SourceStatus | None = None,
            log=lambda m: None) -> UpdateResult:
     """Run one source's update pipeline (download → validate → process → swap).

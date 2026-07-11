@@ -23,3 +23,6 @@ guide.json
 # OS
 Thumbs.db
 .DS_Store
+
+# Runtime update-check log (admin panel 'last checked' state)
+update_checks.json
