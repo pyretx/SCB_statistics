@@ -701,6 +701,63 @@ def _france_card(query, D):
         if st.session_state.get("_fr_err"):
             st.error(T["failed"].format(err=st.session_state.pop("_fr_err")))
 
+        # ── Country-specific admin: import a new FD_SALAAN microdata vintage.
+        # INSEE distributes it per publication page (no stable URL), so the
+        # admin pastes the parquet link (downloaded server-side) or uploads the
+        # file; the shipped build validates before the atomic swap. ───────────
+        from countries.fr2 import build as frbuild
+        st.markdown(f'<div class="ad-lbl" style="margin-top:12px;">'
+                    f'{D["specific_heading"]}</div>', unsafe_allow_html=True)
+        st.caption(T["imp_caption"])
+        url = st.text_input(T["imp_url_label"], key="fr_micro_url",
+                            placeholder=T["imp_url_ph"])
+        up = st.file_uploader(T["imp_file_label"], type=["parquet"],
+                              key="fr_micro_file")
+        _src = up if up is not None else (url.strip() or None)
+        _guess = frbuild.infer_year(getattr(up, "name", "") or url or "")
+        ycol, bcol = st.columns([1, 2.4], vertical_alignment="bottom")
+        yr_in = ycol.number_input(T["imp_year_label"], min_value=2001,
+                                  max_value=2099,
+                                  value=int(_guess or (my + 1 if my else 2024)),
+                                  step=1, key="fr_micro_year")
+        if bcol.button(T["imp_btn"], key="fr_micro_go", type="primary"):
+            if _src is None:
+                st.session_state["_fr_micro_nosrc"] = True
+            else:
+                st.session_state["_fr_micro_confirm"] = True
+                st.session_state.pop("_fr_micro_nosrc", None)
+        if st.session_state.pop("_fr_micro_nosrc", False):
+            st.info(T["imp_need_src"])
+        if st.session_state.get("_fr_micro_confirm"):
+            st.warning(T["imp_confirm"].format(cur=micro_year, new=int(yr_in)))
+            with _btnrow():
+                yes = st.button(T["btn_confirm"], type="primary", key="fr_micro_yes")
+                no = st.button(T["btn_cancel"], key="fr_micro_no")
+            if yes:
+                st.session_state.pop("_fr_micro_confirm", None)
+                with st.status(T["imp_running"], expanded=True) as box:
+                    try:
+                        res = frbuild.build(_src, year=int(yr_in), log=box.write)
+                        st.cache_data.clear()      # serve the new estimates now
+                        st.session_state["_fr_micro_result"] = res
+                        st.session_state.pop("_fr_latest", None)
+                        st.session_state.pop("_fr_upd", None)
+                        box.update(label=f"{res['year']} ✓", state="complete")
+                    except Exception as e:  # noqa: BLE001
+                        box.update(label="✗", state="error")
+                        st.session_state["_fr_micro_err"] = str(e)
+                st.rerun()
+            if no:
+                st.session_state.pop("_fr_micro_confirm", None)
+                st.rerun()
+        if st.session_state.get("_fr_micro_err"):
+            st.error(T["imp_failed"].format(err=st.session_state.pop("_fr_micro_err")))
+        res = st.session_state.get("_fr_micro_result")
+        if res:
+            st.success(T["imp_done"].format(year=res["year"],
+                                            occ=_n(res["occupations"]),
+                                            censored=res["censored"]))
+
 
 def _caches_card(query, D):
     if not _match(query, D["caches_title"], "clear", D["caches_type"]):
