@@ -313,16 +313,16 @@ def _run_update_check():
     upd.record_check(results)              # persist "last checked" across restarts
     st.session_state["_upd_results"] = results
     by_key = {s.key: s for s in results}
-    if by_key.get("us") and by_key["us"].latest_raw:
-        st.session_state["_us_latest"] = by_key["us"].latest_raw
-    st.session_state["_us_upd"] = bool(by_key.get("us")
-                                       and by_key["us"].update_available)
-    if by_key.get("france") and by_key["france"].latest_raw:
-        st.session_state["_fr_latest"] = by_key["france"].latest_raw
-    st.session_state["_fr_upd"] = bool(by_key.get("france")
-                                       and by_key["france"].update_available)
-    st.session_state["_se_upd"] = bool(by_key.get("sweden")
-                                       and by_key["sweden"].update_available)
+    if by_key.get("us_data") and by_key["us_data"].latest_raw:
+        st.session_state["_us_latest"] = by_key["us_data"].latest_raw
+    st.session_state["_us_upd"] = bool(by_key.get("us_data")
+                                       and by_key["us_data"].update_available)
+    if by_key.get("france_micro") and by_key["france_micro"].latest_raw:
+        st.session_state["_fr_latest"] = by_key["france_micro"].latest_raw
+    st.session_state["_fr_upd"] = bool(by_key.get("france_micro")
+                                       and by_key["france_micro"].update_available)
+    st.session_state["_se_upd"] = bool(by_key.get("sweden_data")
+                                       and by_key["sweden_data"].update_available)
     import datetime as _dt
     st.session_state["_upd_checked_at"] = _dt.datetime.now().strftime("%H:%M")
 
@@ -342,8 +342,14 @@ def _updates_card():
     with st.container(border=True, key="adcard_updates"):
         st.markdown(f"#### {U['heading']}")
         st.caption(U["caption"].format(t=st.session_state.get("_upd_checked_at", "—")))
+        # Only rows that need attention: an update available, or a failed probe.
+        # Everything current stays out of the way (a green all-clear instead).
+        shown = [s for s in results if s.update_available or s.error]
+        if not shown:
+            st.success(U["all_ok"])
+            return
         rows = []
-        for s in results:
+        for s in shown:
             rows.append({
                 U["col_select"]: False,
                 U["col_country"]: s.country,
@@ -363,7 +369,7 @@ def _updates_card():
             column_config={U["col_select"]: st.column_config.CheckboxColumn(
                 U["col_select"], help=U["none_selected"])},
             disabled=other_cols)
-        sel_keys = [results[i].key for i, v in enumerate(edited[U["col_select"]]) if v]
+        sel_keys = [shown[i].key for i, v in enumerate(edited[U["col_select"]]) if v]
 
         if st.button(U["btn_update"], type="primary", key="adm_upd_go"):
             if sel_keys:
@@ -456,8 +462,9 @@ def _run_us_refresh(usbuild, target):
     """Country-specific US update — same shared pipeline as the global table."""
     import updates as upd
     with st.status("…", expanded=True) as status:
-        res = upd.update("us", upd.SourceStatus("us", "United States", "BLS OEWS",
-                                                latest_raw=target),
+        res = upd.update("us_data",
+                         upd.SourceStatus("us_data", "United States", "BLS OEWS",
+                                          latest_raw=target),
                          log=status.write)
         if res.outcome == upd.OUT_UPDATED:
             st.session_state["_us_refresh_msg"] = res.message
@@ -503,7 +510,7 @@ def _us_card(query, D):
         if chk:
             with st.spinner("…"):
                 import updates as upd
-                st.session_state["_us_latest"] = upd.check("us").latest_raw
+                st.session_state["_us_latest"] = upd.check("us_data").latest_raw
             st.rerun()
 
         if st.session_state.get("_us_confirm"):
@@ -602,7 +609,7 @@ def _sweden_card(query, D):
         cur = int(appset.get("latest_data_year", 2025))
         if chk:
             with st.spinner("…"):
-                st.session_state["_se_year_found"] = upd.check("sweden").latest_raw
+                st.session_state["_se_year_found"] = upd.check("sweden_data").latest_raw
                 st.session_state["_se_year_checked"] = True
         if st.session_state.get("_se_year_checked"):
             found = st.session_state.get("_se_year_found")
@@ -613,7 +620,7 @@ def _sweden_card(query, D):
                 yc1, yc2 = st.columns(2)
                 if yc1.button(T["y_update"].format(found=found), key="se_year_upd",
                               type="primary"):
-                    res = upd.update("sweden")
+                    res = upd.update("sweden_data")
                     if res.outcome == upd.OUT_UPDATED:
                         st.cache_data.clear()   # drop cached fetches → new year loads
                         st.session_state["_se_year_done"] = int(found)
@@ -676,7 +683,7 @@ def _france_card(query, D):
         if chk:
             with st.spinner("…"):
                 import updates as upd
-                s = upd.check("france")
+                s = upd.check("france_micro")
                 if s.error:
                     st.session_state["_fr_err"] = s.error
                 else:

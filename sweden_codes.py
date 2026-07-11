@@ -39,6 +39,12 @@ def refresh() -> str:
         "SV": fetch_occupations("SV"),
         "cached_at": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
     }
+    # Validate BEFORE the swap — an implausibly small list means SCB answered
+    # with something broken; keep the current cache in that case.
+    if len(data["EN"]) < 300 or len(data["SV"]) < 300:
+        raise ValueError(f"implausible occupation list from SCB "
+                         f"(EN {len(data['EN'])}, SV {len(data['SV'])}) — "
+                         f"keeping the current cache")
     tmp = CACHE_FILE + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)

@@ -188,6 +188,7 @@ v_yes         = "Yes"
 v_no          = "No"
 v_na          = "—"
 btn_update    = "⬇ Update selected countries"
+all_ok        = "✅ All data sources are up to date — nothing needs attention."
 none_selected = "Tick at least one source in the Update column first."
 confirm       = "About to update: **{names}**. Each source is replaced only after a successful download + validation — a failure leaves the current data untouched and does not stop the other selected sources."
 btn_confirm   = "✅ Yes, update now"
@@ -201,7 +202,8 @@ o_validation_failed = "⚠ Validation failed"
 o_unavailable       = "🌐 Source unavailable"
 
 [updates.notes]
-norway         = "Live API — salaries always current; STYRK labels can be rebuilt on the source card."
+norway_data    = "Live API — every query reads SSB directly; nothing stored can lag."
+france_api     = "Live API — means & headcounts read INSEE Melodi directly."
 france         = "Percentiles come from INSEE microdata (FD_SALAAN) — a manual download, rebuilt offline. Means stay live via Melodi."
 sweden_restart = "The Sweden page's year range picks the new year up on the next app restart/redeploy."
 
