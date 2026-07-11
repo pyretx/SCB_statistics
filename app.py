@@ -48,9 +48,6 @@ _pages = [
     # (countries/se2 + countries/fr2, serving /sweden and /france).
     st.Page("scb_salaries.py", title="Sweden (legacy)", url_path="sweden-old"),
     st.Page("france.py",       title="France (legacy)", url_path="france-old"),
-    # TEST (throwaway): import-overlay prototype, linked from the Admin panel.
-    # Remove this line together with test_import_overlay.py.
-    st.Page("test_import_overlay.py", title="Import test", url_path="import-test"),
 ]
 
 # Framework-driven country pages (docs/architecture.md) register themselves from

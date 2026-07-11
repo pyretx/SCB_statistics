@@ -1,7 +1,7 @@
 """Import-overlay tab (beta) — compare an uploaded/pasted salary list against
 the selected occupation's official distribution.
 
-Promoted from the standalone prototype (test_import_overlay.py). Standard
+Promoted from a standalone prototype (since deleted). Standard
 framework tab, but BETA-GATED: core.tabs.render_tabs only lists it for
 admin/master users and beta testers (users with the country in their
 app_metadata.countries grant) — see core.access.is_beta_or_admin.
