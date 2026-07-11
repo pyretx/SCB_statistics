@@ -302,18 +302,7 @@ def _run_update_check():
     import updates as upd
     results = upd.check_all()
     upd.record_check(results)              # persist "last checked" across restarts
-    st.session_state["_upd_results"] = results
-    by_key = {s.key: s for s in results}
-    if by_key.get("us_data") and by_key["us_data"].latest_raw:
-        st.session_state["_us_latest"] = by_key["us_data"].latest_raw
-    st.session_state["_us_upd"] = bool(by_key.get("us_data")
-                                       and by_key["us_data"].update_available)
-    if by_key.get("france_micro") and by_key["france_micro"].latest_raw:
-        st.session_state["_fr_latest"] = by_key["france_micro"].latest_raw
-    st.session_state["_fr_upd"] = bool(by_key.get("france_micro")
-                                       and by_key["france_micro"].update_available)
-    st.session_state["_se_upd"] = bool(by_key.get("sweden_data")
-                                       and by_key["sweden_data"].update_available)
+    st.session_state["_upd_results"] = results   # cards + table read this
     import datetime as _dt
     st.session_state["_upd_checked_at"] = _dt.datetime.now().strftime("%H:%M")
 
@@ -454,68 +443,61 @@ def overview_section():
 
 
 # ── Section: Data sources ────────────────────────────────────────────────────
-def _year_check_flow(T, prefix, svc_key, cur, chk):
-    """Shared pinned-data-year check/update flow (the Sweden and Norway cards):
-    probe via the update service → newer? Update-to-X / Keep confirm → service
-    update → outcome messages. ``T`` supplies the y_* labels; widget/session
-    keys are namespaced by ``prefix``."""
+# One consistent model on every country card: a single "Check for updates"
+# button that probes the country's sub-sources and merges the results into the
+# global update table — the table is the ONLY place updates run.
+def _upd_results_map() -> dict:
+    return {s.key: s for s in st.session_state.get("_upd_results", [])}
+
+
+def _country_check(keys):
+    """Probe this country's sub-sources and merge them into the global table
+    results (keeping SOURCE_ORDER), so the table shows anything actionable."""
     import updates as upd
-    kf, kc = f"_{prefix}_year_found", f"_{prefix}_year_checked"
-    kd, ke = f"_{prefix}_year_done", f"_{prefix}_year_err"
+    merged = _upd_results_map()
+    for k in keys:
+        merged[k] = upd.check(k)
+    st.session_state["_upd_results"] = [merged[k] for k in upd.SOURCE_ORDER
+                                        if k in merged]
+
+
+def _country_pill(D, keys) -> str:
+    """Green/amber status pill from the latest check results (green until a
+    check has found something)."""
+    res = _upd_results_map()
+    newer = any(res[k].update_available for k in keys if k in res)
+    return _pill("amber", D["pill_update"]) if newer else _pill("green", D["pill_ok"])
+
+
+def _check_lines(D, keys):
+    """Per-sub-source result lines under the card's Check button."""
+    res = _upd_results_map()
+    for k in keys:
+        s = res.get(k)
+        if s is None:
+            continue
+        if s.error:
+            st.error(D["chk_err"].format(source=s.source, err=s.error))
+        elif s.update_available:
+            note = f" {s.note}" if s.note else ""
+            st.warning(D["chk_upd"].format(source=s.source, current=s.current,
+                                           latest=s.latest) + note)
+        else:
+            st.caption(D["chk_ok"].format(source=s.source, current=s.current))
+
+
+def _check_button(D, iso, keys):
+    """The standard card action: 🔍 Check for updates + result lines."""
+    with _btnrow():
+        chk = st.button(D["btn_check"], key=f"{iso}_check")
     if chk:
         with st.spinner("…"):
-            st.session_state[kf] = upd.check(svc_key).latest_raw
-            st.session_state[kc] = True
-    if st.session_state.get(kc):
-        found = st.session_state.get(kf)
-        if found is None:
-            st.error(T["y_fail"])
-        elif found > cur:
-            st.info(T["y_newer"].format(found=found, cur=cur))
-            yc1, yc2 = st.columns(2)
-            if yc1.button(T["y_update"].format(found=found),
-                          key=f"{prefix}_year_upd", type="primary"):
-                res = upd.update(svc_key)
-                if res.outcome == upd.OUT_UPDATED:
-                    st.cache_data.clear()   # drop cached fetches → new year loads
-                    st.session_state[kd] = int(found)
-                else:
-                    st.session_state[ke] = res.message
-                for k in (kf, kc):
-                    st.session_state.pop(k, None)
-                st.rerun()
-            if yc2.button(T["y_keep"].format(cur=cur), key=f"{prefix}_year_keep"):
-                for k in (kf, kc):
-                    st.session_state.pop(k, None)
-                st.rerun()
-        elif found == cur:
-            st.success(T["y_uptodate"].format(cur=cur))
-        else:
-            st.warning(T["y_older"].format(found=found, cur=cur))
-    if st.session_state.get(ke):
-        st.error(st.session_state.pop(ke))
-    if st.session_state.get(kd):
-        st.success(T["y_done"].format(found=st.session_state[kd],
-                                      cmd=upd.restart_command()))
+            _country_check(keys)
+        st.rerun()
+    _check_lines(D, keys)
 
 
-def _run_us_refresh(usbuild, target):
-    """Country-specific US update — same shared pipeline as the global table."""
-    import updates as upd
-    with st.status("…", expanded=True) as status:
-        res = upd.update("us_data",
-                         upd.SourceStatus("us_data", "United States", "BLS OEWS",
-                                          latest_raw=target),
-                         log=status.write)
-        if res.outcome == upd.OUT_UPDATED:
-            st.session_state["_us_refresh_msg"] = res.message
-            st.session_state.pop("_us_latest", None)
-            st.session_state.pop("_us_upd", None)
-            status.update(label=res.message + " ✓", state="complete")
-        else:
-            status.update(label="✗", state="error")
-            st.session_state["_us_refresh_error"] = res.message
-    st.rerun()
+_US_KEYS = ["us_data"]
 
 
 def _us_card(query, D):
@@ -525,50 +507,19 @@ def _us_card(query, D):
         return
     info = usbuild.bundled_info()
     c = info.get("counts", {})
-    latest = st.session_state.get("_us_latest")
-    newer = bool(latest and info.get("year") and latest > info["year"])
-    st.session_state["_us_upd"] = newer
-    pill = _pill("amber", D["pill_update"]) if newer else _pill("green", D["pill_ok"])
     with st.container(border=True, key="adcard_us"):
-        html = _hdr("us", T["name"], T["source"], T["type"], pill)
+        html = _hdr("us", T["name"], T["source"], T["type"],
+                    _country_pill(D, _US_KEYS))
         html += _stats([(T["s_year"], f"May {info.get('year', '—')}"),
                         (T["s_occ"], _n(c.get("occupations", "—"))),
                         (T["s_scopes"], _n(c.get("scopes", "—"))),
                         (T["s_size"], _fmt_bytes(info.get("size")))])
         html += f'<div class="ad-cap">{T["desc"].format(built=info.get("built_at", "—"))}</div>'
-        if newer:
-            html += ('<div class="ad-alert">'
-                     + T["alert"].format(latest=latest, year=info["year"]) + '</div>')
         st.markdown(html, unsafe_allow_html=True)
+        _check_button(D, "us", _US_KEYS)
 
-        target = latest if newer else None
-        with _btnrow():
-            go = st.button(T["btn_refresh"].format(year=target) if target else T["btn_rebuild"],
-                           type="primary", key="us_refresh_btn")
-            chk = st.button(T["btn_check"], key="us_scan")
-        if go:
-            st.session_state["_us_confirm"] = True
-        if chk:
-            with st.spinner("…"):
-                import updates as upd
-                st.session_state["_us_latest"] = upd.check("us_data").latest_raw
-            st.rerun()
 
-        if st.session_state.get("_us_confirm"):
-            st.warning(T["confirm"])
-            with _btnrow():
-                yes = st.button(T["btn_confirm"], type="primary", key="us_confirm_yes")
-                no = st.button(T["btn_cancel"], key="us_confirm_no")
-            if yes:
-                st.session_state.pop("_us_confirm", None)
-                _run_us_refresh(usbuild, target)
-            if no:
-                st.session_state.pop("_us_confirm", None)
-                st.rerun()
-        if st.session_state.get("_us_refresh_error"):
-            st.error(T["failed"].format(err=st.session_state.pop("_us_refresh_error")))
-        if st.session_state.get("_us_refresh_msg"):
-            st.success(st.session_state["_us_refresh_msg"])
+_NO_KEYS = ["norway_data", "norway_labels"]
 
 
 def _norway_card(query, D):
@@ -579,36 +530,15 @@ def _norway_card(query, D):
     styrk = (_file_meta("styrk_labels.json").get("data") or {})
     with st.container(border=True, key="adcard_no"):
         st.markdown(
-            _hdr("no", T["name"], T["source"], T["type"], _pill("green", D["pill_ok"]))
+            _hdr("no", T["name"], T["source"], T["type"], _country_pill(D, _NO_KEYS))
             + _stats([(T["s_year"], _no_year()),
                       (T["s_built"], styrk.get("built_at", "—"))])
             + f'<div class="ad-cap">{T["desc"]}</div>',
             unsafe_allow_html=True)
-        with _btnrow():
-            go = st.button(T["btn"], key="no_rebuild")
-            chk = st.button(T["btn_year"], key="no_yearchk")
-        if go:
-            with st.status("…", expanded=True) as status:
-                try:
-                    from countries.norway import build as nobuild
-                    res = nobuild.build(log=status.write)
-                    try:
-                        from countries.norway import provider as noprov
-                        noprov._codes.clear()          # serve the new labels immediately
-                    except Exception:
-                        pass
-                    st.session_state["_no_labels_result"] = res
-                    status.update(label=res["built_at"] + " ✓", state="complete")
-                except Exception as e:  # noqa: BLE001
-                    status.update(label="✗", state="error")
-                    st.error(str(e))
-            st.rerun()
-        res = st.session_state.get("_no_labels_result")
-        if res:
-            st.success(T["done"].format(built=res["built_at"], codes=_n(res["codes"]),
-                                        leaves=_n(res["leaves"])))
-        # Pinned data-year check — same shared flow as the Sweden card.
-        _year_check_flow(T, "no", "norway_data", _no_year(), chk)
+        _check_button(D, "no", _NO_KEYS)
+
+
+_SE_KEYS = ["sweden_data", "sweden_labels"]
 
 
 def _sweden_card(query, D):
@@ -620,37 +550,14 @@ def _sweden_card(query, D):
     appset = (_file_meta("app_settings.json").get("data") or {})
     with st.container(border=True, key="adcard_se"):
         st.markdown(
-            _hdr("se", T["name"], T["source"], T["type"], _pill("green", D["pill_ok"]))
+            _hdr("se", T["name"], T["source"], T["type"], _country_pill(D, _SE_KEYS))
             + _stats([(T["s_year"], appset.get("latest_data_year", 2025)),
                       (T["s_codes"], (occ.get("cached_at") or "—")[:10]),
                       (T["s_built"], (ssyk.get("built_at") or "—")[:10])])
             + f'<div class="ad-cap">{T["desc"]}</div>'
             + _extras_html(T),
             unsafe_allow_html=True)
-        import sweden_codes
-        with _btnrow():
-            go = st.button(T["btn"], key="se_refetch")
-            chk = st.button(T["btn_year"], key="se_yearchk")
-        if go:
-            with st.spinner("…"):
-                try:
-                    ts = sweden_codes.refresh()
-                    # Sweden's page reads session-state first — drop its copies
-                    # so it reloads the fresh disk cache.
-                    for k in ("occupations_EN", "occupations_SV", "cache_ts"):
-                        st.session_state.pop(k, None)
-                    st.session_state["_se_codes_result"] = ts
-                except Exception as e:  # noqa: BLE001
-                    st.error(T["failed"].format(err=e))
-            st.rerun()
-        res = st.session_state.get("_se_codes_result")
-        if res:
-            st.success(T["done"].format(ts=res))
-
-        # ── Pinned data-year check — the shared flow (service key sweden_data):
-        # SCB 'Tid' metadata → app_settings.json, which both Sweden builds read.
-        _year_check_flow(T, "se", "sweden_data",
-                         int(appset.get("latest_data_year", 2025)), chk)
+        _check_button(D, "se", _SE_KEYS)
 
         # ── Country-specific admin (beyond the standard check/update) ─────────
         st.markdown(f'<div class="ad-lbl" style="margin-top:12px;">'
@@ -661,6 +568,9 @@ def _sweden_card(query, D):
                 st.rerun()
 
 
+_FR_KEYS = ["france_api", "france_micro"]
+
+
 def _france_card(query, D):
     T = D["france"]
     if not _match(query, T["name"], T["source"], "melodi", "microdata", "pcs", T["type"]):
@@ -669,38 +579,16 @@ def _france_card(query, D):
     micro_meta = _file_meta("pcs_microdata_percentiles.json")
     micro = micro_meta.get("data") or {}
     micro_year = micro.get("year", "—")
-    frl = st.session_state.get("_fr_latest")
-    try:
-        my = int(str(micro_year)[:4])
-    except (TypeError, ValueError):
-        my = 0
-    newer = bool(frl and frl > my)
-    st.session_state["_fr_upd"] = newer
-    pill = _pill("amber", D["pill_update"]) if newer else _pill("green", D["pill_ok"])
     with st.container(border=True, key="adcard_fr"):
-        html = _hdr("fr", T["name"], T["source"], T["type"], pill)
+        html = _hdr("fr", T["name"], T["source"], T["type"],
+                    _country_pill(D, _FR_KEYS))
         html += _stats([(T["s_year"], micro_year),
                         (T["s_built"], lbl.get("built_at", "—")),
                         (T["s_size"], _fmt_bytes(micro_meta.get("size")))])
         html += f'<div class="ad-cap">{T["desc"]}</div>'
-        if newer:
-            html += ('<div class="ad-alert">'
-                     + T["alert"].format(latest=frl, year=micro_year) + '</div>')
         html += _extras_html(T)
         st.markdown(html, unsafe_allow_html=True)
-        with _btnrow():
-            chk = st.button(T["btn_check"], key="fr_scan")
-        if chk:
-            with st.spinner("…"):
-                import updates as upd
-                s = upd.check("france_micro")
-                if s.error:
-                    st.session_state["_fr_err"] = s.error
-                else:
-                    st.session_state["_fr_latest"] = s.latest_raw
-            st.rerun()
-        if st.session_state.get("_fr_err"):
-            st.error(T["failed"].format(err=st.session_state.pop("_fr_err")))
+        _check_button(D, "fr", _FR_KEYS)
 
         # ── Country-specific admin: import a new FD_SALAAN microdata vintage.
         # INSEE distributes it per publication page (no stable URL), so the
@@ -716,10 +604,14 @@ def _france_card(query, D):
                               key="fr_micro_file")
         _src = up if up is not None else (url.strip() or None)
         _guess = frbuild.infer_year(getattr(up, "name", "") or url or "")
+        try:
+            _my = int(str(micro_year)[:4])
+        except (TypeError, ValueError):
+            _my = 0
         ycol, bcol = st.columns([1, 2.4], vertical_alignment="bottom")
         yr_in = ycol.number_input(T["imp_year_label"], min_value=2001,
                                   max_value=2099,
-                                  value=int(_guess or (my + 1 if my else 2024)),
+                                  value=int(_guess or (_my + 1 if _my else 2024)),
                                   step=1, key="fr_micro_year")
         if bcol.button(T["imp_btn"], key="fr_micro_go", type="primary"):
             if _src is None:
@@ -741,8 +633,8 @@ def _france_card(query, D):
                         res = frbuild.build(_src, year=int(yr_in), log=box.write)
                         st.cache_data.clear()      # serve the new estimates now
                         st.session_state["_fr_micro_result"] = res
-                        st.session_state.pop("_fr_latest", None)
-                        st.session_state.pop("_fr_upd", None)
+                        # refresh the France rows so pill + table reflect the import
+                        _country_check(_FR_KEYS)
                         box.update(label=f"{res['year']} ✓", state="complete")
                     except Exception as e:  # noqa: BLE001
                         box.update(label="✗", state="error")
