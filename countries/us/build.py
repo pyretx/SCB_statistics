@@ -23,6 +23,11 @@ import zipfile
 import requests
 
 BASE = "https://www.bls.gov/oes/special-requests"
+# Keep the honest, identifying User-Agent: bls.gov (Akamai) SERVES it (200)
+# but 403s spoofed browser UAs (TLS-fingerprint mismatch → bot score) — tested
+# both. Note Akamai also IP-blocks many datacenter ranges regardless of
+# headers, so a VPS deploy may see 403 while the same code works elsewhere;
+# latest_available_year surfaces that as a clear error.
 _UA = {"User-Agent": "Mozilla/5.0 (salary-explorer; research)"}
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(_ROOT, "us_oews.json.gz")
@@ -115,23 +120,34 @@ def bundled_info(path: str = OUT) -> dict:
         return {}
 
 
-def _has_release(year: int) -> bool:
+def _release_status(year: int):
+    """HTTP status for the year's national zip, or the error string on a
+    connection-level failure."""
     try:
         r = requests.get(_urls(year)["nat"], headers=_UA, stream=True, timeout=30)
-        ok = r.status_code == 200
         r.close()
-        return ok
-    except Exception:
-        return False
+        return r.status_code
+    except Exception as e:  # noqa: BLE001
+        return f"{type(e).__name__}: {e}"
 
 
 def latest_available_year(after: int | None = None, look_ahead: int = 3) -> int | None:
     """Newest reference year BLS has published (scanning forward from the bundled
-    year). Used by the admin auto-scan to flag when a refresh is worthwhile."""
+    year). Used by the admin auto-scan to flag when a refresh is worthwhile.
+
+    Raises RuntimeError when even the KNOWN bundled year doesn't answer 200 —
+    that means BLS is unreachable or blocking this server (Akamai commonly 403s
+    datacenter IPs), which must surface as 'source unavailable', not as
+    'no newer release'."""
     start = int(after or bundled_info().get("year") or BUNDLED_YEAR)
-    newest = start if _has_release(start) else None
+    st = _release_status(start)
+    if st != 200:
+        raise RuntimeError(
+            f"BLS did not serve the known {start} file (got: {st}) — "
+            f"unreachable, or blocking this server's IP/User-Agent")
+    newest = start
     for y in range(start + 1, start + look_ahead + 1):
-        if _has_release(y):
+        if _release_status(y) == 200:
             newest = y
     return newest
 
