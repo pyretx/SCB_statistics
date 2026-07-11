@@ -336,7 +336,8 @@ def _updates_card():
                 U["col_source"]: s.source,
                 U["col_current"]: s.current,
                 U["col_latest"]: s.latest or "—",
-                U["col_upd"]: (U["v_yes"] if s.update_available
+                U["col_upd"]: (U["v_manual"] if s.update_available and not s.can_auto
+                               else U["v_yes"] if s.update_available
                                else U["v_no"] if s.update_available is False
                                else U["v_na"]),
                 U["col_status"]: (U["o_unavailable"] + " — " + s.error if s.error
