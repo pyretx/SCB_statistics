@@ -21,10 +21,15 @@ import theme
 from .. import agg, i18n, states
 
 # Measures shown, canonical order (only those the row actually has).
-_MEASURES = [("mean", "m_average", "Average"), ("p25", None, "P25"),
-             ("median", "m_median", "Median (P50)"), ("p75", None, "P75")]
-_PCTS = [("p25", None, "P25"), ("median", "m_median", "Median (P50)"),
-         ("p75", None, "P75")]
+# All measures in canonical order; each renderer keeps only the ones the row
+# actually has, so quartile countries (DK/NO/IS) show P25·MED·P75 and decile
+# countries (FI: P10·MED·P90) show their deciles — no measure is hardcoded away.
+_MEASURES = [("mean", "m_average", "Average"), ("p10", None, "P10"),
+             ("p25", None, "P25"), ("median", "m_median", "Median (P50)"),
+             ("p75", None, "P75"), ("p90", None, "P90")]
+_PCTS = [("p10", None, "P10"), ("p25", None, "P25"),
+         ("median", "m_median", "Median (P50)"),
+         ("p75", None, "P75"), ("p90", None, "P90")]
 
 _CSS = """
 <style>
