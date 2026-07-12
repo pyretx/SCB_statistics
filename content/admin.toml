@@ -16,6 +16,7 @@ go_home = "Go to home"
 overview = "Overview"
 data     = "Data sources"
 users    = "Users"
+feedback = "Feedback"
 
 [overview]
 kpi_users     = "Registered users"
@@ -192,6 +193,34 @@ btn_pw        = "Update password"
 pw_updated    = "Password updated."
 edit_help     = "Edit user"
 del_help      = "Delete user"
+
+# ── Beta feedback management (admin panel → Feedback) ─────────────────────────
+[feedback]
+caption     = "{total} submissions · {open} open (New / Reviewing). Admin notes are private — beta users never see them."
+heading     = "Feedback"
+empty       = "Nothing matches the filters — or no feedback yet."
+flt_all     = "All"
+flt_status  = "Status"
+flt_type    = "Feedback type"
+flt_country = "Country"
+col_date    = "Date"
+col_type    = "Type"
+col_country = "Country"
+col_title   = "Title"
+col_impact  = "Impact"
+col_user    = "User"
+col_status  = "Status"
+open_label  = "Open — full submission & admin notes"
+m_page      = "Page"
+m_contact   = "May contact"
+m_version   = "App version"
+yes         = "yes"
+no          = "no"
+f_status    = "Status"
+f_notes     = "Admin notes (private)"
+notes_ph    = "Internal notes — the submitter never sees these."
+btn_save    = "💾 Save"
+saved       = "Saved."
 
 # ── Global update check (Overview) — the results table + selected updates ─────
 [updates]

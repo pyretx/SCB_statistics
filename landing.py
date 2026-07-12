@@ -631,6 +631,9 @@ with h_right:
             if st.button(C["header"]["log_out"], use_container_width=True, key="hdr_logout"):
                 st.session_state.pop("auth_user", None)
                 st.rerun()
+        # Beta feedback entry (beta users + admins only; hidden otherwise).
+        import feedback as _feedback
+        _feedback.feedback_entry(page="home", key="hdr_fb_open")
     else:
         hr_signin, hr_signup = st.columns(2)
         with hr_signin:

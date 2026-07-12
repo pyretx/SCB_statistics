@@ -97,6 +97,17 @@ Hostinger wildcard, so `scb-test.` / `scb-dev.` resolve automatically.
 | test | test   | /srv/scb-test   | scb-test   | scb-test.srv950186.hstgr.cloud       |
 | dev  | dev    | /srv/scb-dev    | scb-dev    | scb-dev.srv950186.hstgr.cloud        |
 
+## Database migrations (Supabase SQL)
+
+There is no automated migration runner. SQL files live under `deploy/sql/` and
+are applied **manually, once**, in the Supabase dashboard (SQL Editor → New
+query → paste → Run). The project is shared across dev/test/prod, so each file
+is run exactly once regardless of environment. Applied so far:
+
+| File | Purpose |
+|------|---------|
+| `deploy/sql/2026-07-12_beta_feedback.sql` | `beta_feedback` table + RLS (in-app beta feedback form + admin Feedback tab) |
+
 ## Auth: the confirmation-email popup (`[app] url`)
 
 For the "Thanks for confirming — please sign in" popup to work, the app must send

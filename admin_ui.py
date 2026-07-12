@@ -1099,6 +1099,105 @@ def users_section():
         st.dialog(U["del_title"])(_delete_dialog)()
 
 
+# ── Section: Beta feedback ───────────────────────────────────────────────────
+_FB_STATUS_COLORS = {"New": ("#0A63A6", "rgba(10,99,166,.10)"),
+                     "Reviewing": ("#B26A00", "rgba(178,106,0,.14)"),
+                     "Planned": ("#6B4FA0", "rgba(107,79,160,.12)"),
+                     "Resolved": ("#1B8A5A", "rgba(27,138,90,.12)"),
+                     "Closed": ("#8A919D", "#F1F3F6")}
+_FB_IMPACT_COLORS = {"Minor": ("#5B6472", "#EEF0F3"),
+                     "Significant": ("#B26A00", "rgba(178,106,0,.14)"),
+                     "Blocking": ("#C0453A", "rgba(192,69,58,.12)")}
+
+
+def feedback_section():
+    """Beta-feedback management: filterable table (newest first) + per-item
+    detail with status + PRIVATE admin notes (never shown to users)."""
+    st.markdown(CSS, unsafe_allow_html=True)
+    import feedback as fb
+    FB = _A()["feedback"]
+    rows, err = fb.list_feedback()
+    if err:
+        st.error(err)
+        return
+    open_n = sum(1 for r in rows if r.get("status") in ("New", "Reviewing"))
+    st.caption(FB["caption"].format(total=len(rows), open=open_n))
+
+    allv = FB["flt_all"]
+    f1, f2, f3 = st.columns(3)
+    fstat = f1.selectbox(FB["flt_status"], [allv] + fb.STATUSES, key="fb_f_status")
+    ftype = f2.selectbox(FB["flt_type"], [allv] + fb.TYPES, key="fb_f_type")
+    ctry_opts = sorted({r.get("country") or fb.GENERAL for r in rows})
+    fctry = f3.selectbox(FB["flt_country"], [allv] + ctry_opts, key="fb_f_country")
+    shown = [r for r in rows
+             if (fstat == allv or r.get("status") == fstat)
+             and (ftype == allv or r.get("feedback_type") == ftype)
+             and (fctry == allv or (r.get("country") or fb.GENERAL) == fctry)]
+
+    st.write("")
+    with st.container(border=True, key="adcard_feedback"):
+        st.markdown(f"#### {FB['heading']}")
+        if st.session_state.get("_fb_admin_msg"):
+            st.success(st.session_state.pop("_fb_admin_msg"))
+        if not shown:
+            st.caption(FB["empty"])
+            return
+        _W = [1.5, 1.4, 1.3, 3.2, 1.2, 2.2, 1.2]
+        head = st.columns(_W)
+        for col, cap in zip(head, (FB["col_date"], FB["col_type"], FB["col_country"],
+                                   FB["col_title"], FB["col_impact"],
+                                   FB["col_user"], FB["col_status"])):
+            col.markdown(f'<div class="ad-th">{cap}</div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:1px;background:#EEF0F3;margin:6px 0 2px;"></div>',
+                    unsafe_allow_html=True)
+
+        for r in shown:                         # already newest-first
+            fid = r["id"]
+            c1, c2, c3, c4, c5, c6, c7 = st.columns(_W, vertical_alignment="center")
+            c1.markdown(f'<span class="ad-access">'
+                        f'{str(r.get("created_at", ""))[:16].replace("T", " ")}</span>',
+                        unsafe_allow_html=True)
+            c2.markdown(f'<span class="ad-access">{r.get("feedback_type", "—")}</span>',
+                        unsafe_allow_html=True)
+            c3.markdown(f'<span class="ad-access">{r.get("country") or fb.GENERAL}</span>',
+                        unsafe_allow_html=True)
+            c4.markdown(f'<span class="ad-uname">{r.get("title", "")}</span>',
+                        unsafe_allow_html=True)
+            ifg, ibg = _FB_IMPACT_COLORS.get(r.get("impact"), ("#5B6472", "#EEF0F3"))
+            c5.markdown(f'<span class="ad-badge" style="color:{ifg};background:{ibg};">'
+                        f'{r.get("impact", "—")}</span>', unsafe_allow_html=True)
+            c6.markdown(f'<span class="ad-email">{r.get("user_email") or "—"}</span>',
+                        unsafe_allow_html=True)
+            sfg, sbg = _FB_STATUS_COLORS.get(r.get("status"), ("#5B6472", "#EEF0F3"))
+            c7.markdown(f'<span class="ad-badge" style="color:{sfg};background:{sbg};">'
+                        f'{r.get("status", "—")}</span>', unsafe_allow_html=True)
+
+            with st.expander(FB["open_label"]):
+                st.text(r.get("description", ""))
+                meta = [f'{FB["m_page"]}: {r.get("page") or "—"}',
+                        f'{FB["m_contact"]}: '
+                        + (FB["yes"] if r.get("permission_to_contact") else FB["no"])]
+                if r.get("app_version"):
+                    meta.append(f'{FB["m_version"]}: {r["app_version"]}')
+                st.caption(" · ".join(meta))
+                e1, e2 = st.columns([1, 2.4])
+                nstat = e1.selectbox(
+                    FB["f_status"], fb.STATUSES,
+                    index=fb.STATUSES.index(r["status"])
+                    if r.get("status") in fb.STATUSES else 0,
+                    key=f"fbs_{fid}")
+                nnotes = e2.text_area(FB["f_notes"], value=r.get("admin_notes") or "",
+                                      height=80, key=f"fbn_{fid}",
+                                      placeholder=FB["notes_ph"])
+                if st.button(FB["btn_save"], key=f"fbsave_{fid}", type="primary"):
+                    uerr = fb.update_feedback(fid, status=nstat, admin_notes=nnotes)
+                    if uerr:
+                        st.error(uerr)
+                    else:
+                        st.session_state["_fb_admin_msg"] = FB["saved"]
+                        st.rerun()
+
+
 # ── Section: Work-permit rules (Sweden) ──────────────────────────────────────
 def _wp_code_list(W, title, caption, state_key, names):
     """Interactive SSYK-code list: row per code (name + 🗑), plus an add box.
@@ -1204,7 +1303,7 @@ def wp_section():
 # (The Work-permit editor is not a top-level section — it's Sweden's
 # country-specific action, opened from the Sweden data-source card.)
 SECTIONS = {"overview": overview_section, "data": data_section,
-            "users": users_section}
+            "users": users_section, "feedback": feedback_section}
 
 
 def section_selector() -> str:

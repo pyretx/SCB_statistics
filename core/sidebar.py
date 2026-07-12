@@ -166,6 +166,10 @@ def render_sidebar(cfg) -> dict:
         tree = cfg.provider.occupation_tree(lang) if cfg.provider else {}
         has_tree = caps.has_occupation_hierarchy and any(len(c) < 4 for c in tree)
         _guide_browser_buttons(cfg, k, lang, has_tree)
+        # Beta feedback entry (beta users + admins only; hidden otherwise).
+        import feedback as _feedback
+        _feedback.feedback_entry(page=cfg.slug, country=cfg.name, cfg=cfg,
+                                 key=k("fb_open"))
         st.markdown('<div style="height:1px;background:#EEF0F3;margin:12px 0 4px;"></div>',
                     unsafe_allow_html=True)
 

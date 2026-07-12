@@ -1,0 +1,34 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  BETA FEEDBACK  —  the in-app "Report an issue" form. Edit the text here.
+#  (Dropdown values live in feedback.py — they must match the database
+#   constraints, so they are code, not content.)
+# ─────────────────────────────────────────────────────────────────────────────
+
+button       = "Report an issue or suggest an improvement"
+dialog_title = "Report an issue or suggest an improvement"
+
+[form]
+type_label    = "Feedback type"
+country_label = "Country or data source"
+title_label   = "Short title"
+title_ph      = "One line that sums it up"
+desc_label    = "Description"
+desc_ph       = "What happened? What did you expect to happen? Any steps needed to reproduce the issue?"
+privacy       = "Please do not include passwords or other confidential information."
+impact_label  = "Impact"
+contact_label = "You may contact me if more information is needed."
+submit        = "Send feedback"
+cancel        = "Cancel"
+close         = "Close"
+
+[messages]
+submitted     = "Thank you. Your feedback has been submitted."
+failed        = "We could not submit your feedback. Please try again."
+missing       = "Please fill in the title and the description."
+too_long      = "The title or description is too long."
+invalid       = "Please pick a feedback type and an impact."
+not_signed_in = "You need to be signed in to send feedback."
+
+[admin]
+load_failed = "Could not load the feedback list. Please try again."
+save_failed = "Could not save. Please try again."
