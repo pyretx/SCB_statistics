@@ -1113,6 +1113,10 @@ _FB_STATUS_COLORS = {"New": ("#0A63A6", "rgba(10,99,166,.10)"),
                      "Planned": ("#6B4FA0", "rgba(107,79,160,.12)"),
                      "Resolved": ("#1B8A5A", "rgba(27,138,90,.12)"),
                      "Closed": ("#8A919D", "#F1F3F6")}
+_IC_CHAT = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
+            'stroke-linecap="round" stroke-linejoin="round" width="18" height="18">'
+            '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>'
+            '</svg>')
 _FB_IMPACT_COLORS = {"Minor": ("#5B6472", "#EEF0F3"),
                      "Significant": ("#B26A00", "rgba(178,106,0,.14)"),
                      "Blocking": ("#C0453A", "rgba(192,69,58,.12)")}
@@ -1128,6 +1132,16 @@ def feedback_section():
     if err:
         st.error(err)
         return
+    # ── Status KPIs (like the other admin sections): total + one per status ──
+    kc = st.columns(6)
+    _kpi(kc[0], "fb_total", _IC_CHAT, "#0A63A6", "rgba(10,99,166,.10)",
+         len(rows), FB["kpi_total"])
+    for i, s in enumerate(fb.STATUSES, start=1):
+        fg, bg = _FB_STATUS_COLORS[s]
+        _kpi(kc[i], f"fb_{s.lower()}", _IC_CHAT, fg, bg,
+             sum(1 for r in rows if r.get("status") == s), s)
+    st.write("")
+
     open_n = sum(1 for r in rows if r.get("status") in ("New", "Reviewing"))
     st.caption(FB["caption"].format(total=len(rows), open=open_n))
 

@@ -196,6 +196,7 @@ del_help      = "Delete user"
 
 # ── Beta feedback management (admin panel → Feedback) ─────────────────────────
 [feedback]
+kpi_total   = "Submissions"
 caption     = "{total} submissions · {open} open (New / Reviewing). Admin notes are private — beta users never see them."
 heading     = "Feedback"
 empty       = "Nothing matches the filters — or no feedback yet."
