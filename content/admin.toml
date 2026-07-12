@@ -79,6 +79,12 @@ source  = "SSB"
 type    = "live API + STYRK labels"
 desc    = "Salaries fetched live from SSB table 11418 and disk-cached; the bundled bilingual STYRK labels give instant dropdowns."
 
+[data.denmark]
+name    = "Denmark"
+source  = "DST"
+type    = "live API + DISCO labels"
+desc    = "Standardized hourly earnings fetched live from DST table LONS20 and disk-cached; the bundled bilingual DISCO labels give instant dropdowns. Beta country."
+
 [data.sweden]
 name    = "Sweden"
 source  = "SCB"

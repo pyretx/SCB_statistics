@@ -75,6 +75,28 @@ occ_code = "2144"
 year     = "2025"
 fallback = { p10 = 40200, p25 = 45300, median = 51800, p75 = 60000, p90 = 69900 }
 
+# SSB 11418, STYRK-08 1212, private sector (the Norway page's default), 2025.
+# SSB publishes quartiles only — the tile renders P25/MED/P75.
+[[hero.preview.slides]]
+title    = "Human resource managers"
+sub      = "Norway · SSB 2025 · monthly, NOK"
+iso      = "no"
+unit     = "kr"
+occ_code = ""
+year     = ""
+fallback = { p25 = 79830, median = 100000, p75 = 125250 }
+
+# BLS OEWS May 2025, SOC 13-2051, North Carolina (bundled us_oews.json.gz).
+[[hero.preview.slides]]
+title    = "Financial and Investment Analysts"
+sub      = "United States · North Carolina · BLS OEWS May 2025 · annual, USD"
+iso      = "us"
+unit     = "$"
+occ_code = ""
+year     = ""
+per      = "/yr"
+fallback = { p10 = 61670, p25 = 76510, median = 102390, p75 = 131440, p90 = 167250 }
+
 [countries]
 eyebrow     = "SELECT A COUNTRY"
 heading     = "Where do you want to look?"
@@ -113,7 +135,7 @@ catalog = [
   { name = "Belgium",        iso = "be", region = "europe", source = "STATBEL",      status = "soon" },
   { name = "Croatia",        iso = "hr", region = "europe", source = "DZS",          status = "soon" },
   { name = "Czechia",        iso = "cz", region = "europe", source = "ISPV",         status = "soon" },
-  { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "soon" },
+  { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "beta", slug = "denmark" },
   { name = "Estonia",        iso = "ee", region = "europe", source = "STAT.EE",      status = "soon" },
   { name = "Finland",        iso = "fi", region = "europe", source = "STAT.FI",      status = "soon" },
   { name = "Germany",        iso = "de", region = "europe", source = "DESTATIS",     status = "soon" },
@@ -179,6 +201,11 @@ us = [
   "P10–P90 + mean · ~830 occupations (SOC-2018)",
   "National + all 50 states + 346 industries",
   "Annual wages + employment · BLS OEWS 2024",
+]
+dk = [
+  "Mean & median hourly earnings · ~420 occupations (DISCO-08)",
+  "Sector & gender breakdowns · quartiles",
+  "Standardized hourly earnings · 2013–2024",
 ]
 
 [footer]

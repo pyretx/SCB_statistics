@@ -15,7 +15,7 @@ from .access import can_open
 # se2/fr2 ARE the public Sweden/France pages (serving /sweden + /france); the
 # legacy builds stay registered admin-only in app.py (/sweden-old, /france-old).
 # NOTE: module dir MUST equal the config's slug (app.py builds page paths from it).
-_COUNTRY_MODULES = ["demo", "se2", "fr2", "norway", "us"]
+_COUNTRY_MODULES = ["demo", "se2", "fr2", "norway", "us", "denmark"]
 
 
 def all_countries() -> list:
