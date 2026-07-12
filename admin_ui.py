@@ -571,6 +571,62 @@ def _us_card(query, D, flt="all"):
         _check_button(D, "us", _US_KEYS)
 
 
+_UK_KEYS = ["uk_data"]
+
+
+def _uk_card(query, D, flt="all"):
+    from countries.uk import build as ukbuild
+    from countries.uk.provider import _leaves as _uk_leaves
+    T = D["uk"]
+    if not _match(query, T["name"], "uk", "gb", T["source"], T["type"], "ashe", "soc") \
+            or _flt_skip(flt, _UK_KEYS):
+        return
+    info = ukbuild.bundled_info()
+    yrs = info.get("years") or []
+    span = f"{min(yrs)}–{max(yrs)}" if yrs else str(info.get("year", "—"))
+    try:
+        n = len(_uk_leaves())
+    except Exception:
+        n = None
+    with st.container(border=True, key="adcard_gb"):
+        st.markdown(
+            _hdr("gb", T["name"], T["source"], T["type"], _country_pill(D, _UK_KEYS))
+            + _stats([(D["s_year"], span),
+                      (D["s_occ"], _n(n) if n else "—"),
+                      (D["s_built"], info.get("built_at", "—")),
+                      (D["s_size"], _fmt_bytes(info.get("size")))])
+            + f'<div class="ad-cap">{T["desc"]}</div>',
+            unsafe_allow_html=True)
+        _check_button(D, "gb", _UK_KEYS)
+
+
+_DE_KEYS = ["germany_data"]
+
+
+def _germany_card(query, D, flt="all"):
+    from countries.germany import build as debuild
+    from countries.germany.provider import _leaves as _de_leaves
+    T = D["germany"]
+    if not _match(query, T["name"], "germany", "de", T["source"], T["type"], "kldb") \
+            or _flt_skip(flt, _DE_KEYS):
+        return
+    info = debuild.bundled_info()
+    try:
+        n = len(_de_leaves())
+    except Exception:
+        n = None
+    with st.container(border=True, key="adcard_de"):
+        st.markdown(
+            _hdr("de", T["name"], T["source"], T["type"], _country_pill(D, _DE_KEYS))
+            + _stats([(D["s_year"], info.get("year", "—")),
+                      (D["s_occ"], _n(n) if n else "—"),
+                      (D["s_built"], info.get("built_at", "—")),
+                      (D["s_size"], _fmt_bytes(info.get("size")))])
+            + f'<div class="ad-cap">{T["desc"]}</div>',
+            unsafe_allow_html=True)
+        _check_button(D, "de", _DE_KEYS)
+
+
 _NO_KEYS = ["norway_data", "norway_labels"]
 
 
@@ -859,6 +915,8 @@ def data_section():
     _finland_card(query, D, flt)
     _estonia_card(query, D, flt)
     _netherlands_card(query, D, flt)
+    _uk_card(query, D, flt)
+    _germany_card(query, D, flt)
     if flt == "all":
         _caches_card(query, D)
 

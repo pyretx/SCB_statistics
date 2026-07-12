@@ -137,7 +137,7 @@ catalog = [
   { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "beta", slug = "denmark" },
   { name = "Estonia",        iso = "ee", region = "europe", source = "STAT.EE",      status = "beta", slug = "estonia" },
   { name = "Finland",        iso = "fi", region = "europe", source = "STAT.FI",      status = "beta", slug = "finland" },
-  { name = "Germany",        iso = "de", region = "europe", source = "DESTATIS",     status = "soon" },
+  { name = "Germany",        iso = "de", region = "europe", source = "DESTATIS",     status = "beta", slug = "germany" },
   { name = "Greece",         iso = "gr", region = "europe", source = "ELSTAT",       status = "soon" },
   { name = "Hungary",        iso = "hu", region = "europe", source = "KSH",          status = "soon" },
   { name = "Iceland",        iso = "is", region = "europe", source = "HAGSTOFA",     status = "beta", slug = "iceland" },
@@ -152,7 +152,7 @@ catalog = [
   { name = "Slovenia",       iso = "si", region = "europe", source = "SURS",         status = "soon" },
   { name = "Spain",          iso = "es", region = "europe", source = "INE",          status = "soon" },
   { name = "Switzerland",    iso = "ch", region = "europe", source = "BFS",          status = "soon" },
-  { name = "United Kingdom", iso = "gb", region = "europe", source = "ONS",          status = "soon" },
+  { name = "United Kingdom", iso = "gb", region = "europe", source = "ONS",          status = "beta", slug = "uk" },
   # Americas — live
   { name = "United States",  iso = "us", region = "americas", source = "BLS OEWS", status = "live", slug = "us" },
   # Americas — planned
@@ -225,6 +225,16 @@ nl = [
   "Median & quartiles · ~110 occupations (BRC)",
   "Hierarchy drill-down · P25–P75 · trend",
   "Est. monthly wages · 2013–2024",
+]
+gb = [
+  "P10–P90 + mean · 412 occupations (SOC 2020)",
+  "Gender breakdown · 2021–2024 trend (real terms)",
+  "Gross monthly pay · ONS ASHE · 2024",
+]
+de = [
+  "Mean & median · ~1300 occupations (KldB 2010)",
+  "Full hierarchy drill-down · skill-level split",
+  "Gross monthly earnings · Destatis · 2025",
 ]
 
 [footer]

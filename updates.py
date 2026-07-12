@@ -781,6 +781,70 @@ def _update_us_data(status, log) -> UpdateResult:
                         f"{res['scopes']} scopes · {_commit_note('us_oews.json.gz')}")
 
 
+# ── United Kingdom · ONS ASHE — bundled snapshot (parsed workbooks) ───────────
+def _check_uk_data() -> SourceStatus:
+    from countries.uk import build as ukbuild
+    info = ukbuild.bundled_info()
+    yrs = info.get("years") or []
+    span = f"{min(yrs)}–{max(yrs)}" if yrs else str(info.get("year", "—"))
+    s = SourceStatus("uk_data", "United Kingdom", "ONS ASHE",
+                     current=f"{span} · built {info.get('built_at', '—')}")
+    # Bundled snapshot from fixed ONS workbooks; no cheap 'newer year' probe —
+    # a rebuild re-downloads and refreshes the current years.
+    s.latest = span
+    s.update_available = False
+    s.note = _notes().get("uk_data", "Bundled ASHE snapshot — rebuild re-downloads "
+                          "the ONS workbooks and refreshes the data.")
+    return s
+
+
+def _update_uk_data(status, log) -> UpdateResult:
+    from countries.uk import build as ukbuild
+    res = ukbuild.build(log=log)              # atomic swap inside
+    if res.get("codes", 0) < 400:
+        return UpdateResult("uk_data", OUT_VALIDATION,
+                            f"implausibly few SOC codes: {res}")
+    try:
+        from countries.uk import provider as ukprov
+        ukprov._load.clear()                  # serve the new snapshot immediately
+    except Exception:
+        pass
+    return UpdateResult("uk_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} codes ({res['leaves']} "
+                        f"occupations), {len(res['years'])} years · "
+                        f"{_commit_note('uk_ashe.json.gz')}")
+
+
+# ── Germany · Destatis Verdiensterhebung — bundled snapshot (parsed report) ───
+def _check_germany_data() -> SourceStatus:
+    from countries.germany import build as debuild
+    info = debuild.bundled_info()
+    s = SourceStatus("germany_data", "Germany", "Destatis",
+                     current=f"{info.get('year', '—')} · built {info.get('built_at', '—')}")
+    s.latest = str(info.get("year", "—"))
+    s.update_available = False
+    s.note = _notes().get("germany_data", "Bundled Destatis snapshot — rebuild "
+                          "re-downloads the Verdiensterhebung report and refreshes "
+                          "the data.")
+    return s
+
+
+def _update_germany_data(status, log) -> UpdateResult:
+    from countries.germany import build as debuild
+    res = debuild.build(log=log)              # atomic swap inside
+    if res.get("codes", 0) < 1000:
+        return UpdateResult("germany_data", OUT_VALIDATION,
+                            f"implausibly few KldB codes: {res}")
+    try:
+        from countries.germany import provider as deprov
+        deprov._load.clear()
+    except Exception:
+        pass
+    return UpdateResult("germany_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} codes ({res['leaves']} "
+                        f"occupations) · {_commit_note('germany_kldb.json.gz')}")
+
+
 # ── Service API ───────────────────────────────────────────────────────────────
 _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_labels,
              "france_api": _check_france_api, "france_micro": _check_france_micro,
@@ -795,7 +859,9 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "estonia_data": _check_estonia_data,
              "estonia_labels": _check_estonia_labels,
              "netherlands_data": _check_netherlands_data,
-             "netherlands_labels": _check_netherlands_labels}
+             "netherlands_labels": _check_netherlands_labels,
+             "uk_data": _check_uk_data,
+             "germany_data": _check_germany_data}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
@@ -809,7 +875,9 @@ _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden
              "estonia_data": _update_estonia_data,
              "estonia_labels": _update_estonia_labels,
              "netherlands_data": _update_netherlands_data,
-             "netherlands_labels": _update_netherlands_labels}
+             "netherlands_labels": _update_netherlands_labels,
+             "uk_data": _update_uk_data,
+             "germany_data": _update_germany_data}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -826,14 +894,17 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "estonia_data": ("Estonia", "Stat. Estonia · data year"),
          "estonia_labels": ("Estonia", "Stat. Estonia · ISCO labels"),
          "netherlands_data": ("Netherlands", "CBS · data year"),
-         "netherlands_labels": ("Netherlands", "CBS · BRC labels")}
+         "netherlands_labels": ("Netherlands", "CBS · BRC labels"),
+         "uk_data": ("United Kingdom", "ONS ASHE"),
+         "germany_data": ("Germany", "Destatis")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",
                 "iceland_data", "iceland_labels",
                 "finland_data", "finland_labels",
                 "estonia_data", "estonia_labels",
-                "netherlands_data", "netherlands_labels"]
+                "netherlands_data", "netherlands_labels",
+                "uk_data", "germany_data"]
 
 
 def check(key: str) -> SourceStatus:

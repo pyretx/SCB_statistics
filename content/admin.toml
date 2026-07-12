@@ -109,6 +109,18 @@ source  = "CBS"
 type    = "live API + BRC labels"
 desc    = "Gross hourly wages fetched live from CBS table 85517NED (OData; BRC-2014 occupation hierarchy, P25/median/P75, 2013→) and disk-cached; the bundled BRC labels + code map give instant dropdowns. Beta country."
 
+[data.uk]
+name    = "United Kingdom"
+source  = "ONS ASHE"
+type    = "bundled file"
+desc    = "Bundled snapshot parsed from the official ONS ASHE Table 14 workbooks (occupation by 4-digit SOC 2020). P10–P90 + mean + jobs by occupation × sex × year (2021–2024) + a CPIH real-terms series. Rebuild re-downloads the workbooks. Beta country."
+
+[data.germany]
+name    = "Germany"
+source  = "Destatis"
+type    = "bundled file"
+desc    = "Bundled snapshot parsed from the public Destatis Verdiensterhebung report (table 62361-03; gross monthly mean + median by KldB 2010 occupation, ~1300 occupations). Rebuild re-downloads the report. Beta country."
+
 [data.sweden]
 name    = "Sweden"
 source  = "SCB"
