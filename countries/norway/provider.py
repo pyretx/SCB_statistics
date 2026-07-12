@@ -232,6 +232,46 @@ def _fetch_leaderboard(sector: str, sex: str, year: int, lang: str = "EN") -> pd
     return pd.DataFrame(rows, columns=["occ_code", "occ_name", "mean", "median", "count"])
 
 
+_REGION_TABLE_URL = "https://data.ssb.no/api/v0/en/table/12852"   # earnings by region
+
+
+@st.cache_data(show_spinner=False, persist="disk")
+def _region_factors(year: int) -> dict:
+    """{county_name: factor vs national} from SSB 12852 median monthly earnings,
+    all occupations pooled (works-in-region). National ('Ialt' Total) is the 1.0
+    baseline and is excluded. Only county-level regions (2-digit codes); 'county
+    not stated' (99) is dropped."""
+    query = {"query": [
+        {"code": "Region", "selection": {"filter": "all", "values": ["*"]}},
+        {"code": "MaaleMetode", "selection": {"filter": "item", "values": ["01"]}},
+        {"code": "ArbBostedRegion", "selection": {"filter": "item", "values": ["1"]}},
+        {"code": "Kjonn", "selection": {"filter": "item", "values": ["0"]}},
+        {"code": "Alder", "selection": {"filter": "item", "values": ["Ialt"]}},
+        {"code": "AvtaltVanlig", "selection": {"filter": "item", "values": ["0"]}},
+        {"code": "ContentsCode", "selection": {"filter": "item", "values": ["Manedslonn"]}},
+        {"code": "Tid", "selection": {"filter": "item", "values": [str(year)]}},
+    ], "response": {"format": "json-stat2"}}
+    try:
+        ds = _post(_REGION_TABLE_URL, query)
+    except Exception:
+        return {}
+    cat = ds["dimension"]["Region"]["category"]
+    idx, lbl, vals = cat["index"], cat["label"], ds["value"]
+    nat = vals[idx["Ialt"]] if "Ialt" in idx else None
+    if not nat:
+        return {}
+    out = {}
+    for code, i in idx.items():
+        if not (len(code) == 2 and code.isdigit()) or code == "99":
+            continue
+        v = vals[i]
+        if v is None:
+            continue
+        name = lbl.get(code, code).split(" - ")[0].strip()   # "Oslo - Oslove" → "Oslo"
+        out[name] = v / nat
+    return out
+
+
 class NorwayProvider(CountryProvider):
     def occupations(self, lang: str = "EN") -> dict[str, str]:
         return _leaves(lang)
@@ -256,3 +296,15 @@ class NorwayProvider(CountryProvider):
     def leaderboard(self, *, sector="all", sex="total", year=None, lang="EN") -> pd.DataFrame:
         from .build import latest_year
         return _fetch_leaderboard(sector, sex, int(year or latest_year()), lang)
+
+    def region_sim(self, *, year=None, lang="EN") -> dict:
+        from .build import latest_year
+        yr = int(year or latest_year())
+        # 12852 may trail the pinned occupation year by a release; fall back a
+        # year rather than showing the tab as unavailable.
+        regions = _region_factors(yr) or _region_factors(yr - 1)
+        if not regions:
+            return {}
+        basis = (f"median månedslønn, alle yrker, {yr}" if lang == "NO"
+                 else f"median monthly earnings, all occupations, {yr}")
+        return {"regions": regions, "basis": basis}

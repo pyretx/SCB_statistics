@@ -260,6 +260,50 @@ def _fetch_leaderboard(sector: str, sex: str, year: int, lang: str = "EN") -> pd
     return pd.DataFrame(rows, columns=["occ_code", "occ_name", "mean", "median", "count"])
 
 
+_REGION_TABLE = "LONS30"                   # earnings by region (all occupations)
+
+
+@st.cache_data(show_spinner=False, persist="disk")
+def _region_factors(year: int, lang: str = "EN") -> dict:
+    """{region_display_name: factor vs national} from LONS30 standardized median
+    earnings, all occupations pooled. National ('000' All Denmark) is the 1.0
+    baseline and is excluded from the returned map. A ratio, so unit-independent
+    (works against the monthly-presented occupation figures)."""
+    try:
+        r = requests.post(f"{BASE}/tableinfo",
+                          json={"lang": "da" if lang == "DA" else "en",
+                                "table": _REGION_TABLE}, timeout=60)
+        r.raise_for_status()
+        omr = next(v for v in r.json()["variables"] if v["id"] == "OMRÅDE")
+        names = {x["id"]: x["text"] for x in omr["values"]}
+    except Exception:
+        names = {}
+    try:
+        rows = _data_rows([
+            {"code": "OMRÅDE", "values": ["*"]},
+            {"code": "SEKTOR", "values": ["1000"]},
+            {"code": "AFLOEN", "values": ["TIFA"]},
+            {"code": "LONGRP", "values": ["LTOT"]},
+            {"code": "LØNMÅL", "values": ["MEDIANST"]},
+            {"code": "KØN", "values": ["MOK"]},
+            {"code": "Tid", "values": [str(year)]},
+        ], table=_REGION_TABLE)
+    except Exception:
+        return {}
+    med = {r.get("OMRÅDE", ""): r["INDHOLD"] for r in rows}
+    nat = med.get("000")
+    if not nat:
+        return {}
+    out = {}
+    for code, v in med.items():
+        if code == "000" or v is None:
+            continue
+        nm = (names.get(code, code).replace("Region ", "").replace("Region", "").strip()
+              or code)
+        out[nm] = v / nat
+    return out
+
+
 class DenmarkProvider(CountryProvider):
     def occupations(self, lang: str = "EN") -> dict[str, str]:
         return _leaves(lang)
@@ -284,3 +328,14 @@ class DenmarkProvider(CountryProvider):
     def leaderboard(self, *, sector="all", sex="total", year=None, lang="EN") -> pd.DataFrame:
         from .build import latest_year
         return _fetch_leaderboard(sector, sex, int(year or latest_year()), lang)
+
+    def region_sim(self, *, year=None, lang="EN") -> dict:
+        from .build import latest_year
+        yr = int(year or latest_year())
+        regions = _region_factors(yr, lang)
+        if not regions:
+            return {}
+        basis = (f"standardberegnet medianfortjeneste, alle arbejdsfunktioner, {yr}"
+                 if lang == "DA" else
+                 f"standardized median earnings, all occupations, {yr}")
+        return {"regions": regions, "basis": basis}
