@@ -54,7 +54,7 @@ def render(cfg, stats, query):
     if query.get("aggregate") and not tot.empty:
         tot = agg.collapse_stats(tot, agg.agg_name(cfg, lang, len(occ)))
     if tot.empty:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
 
     avail = [key for key in _PCT_KEYS if key in tot and tot[key].notna().any()]

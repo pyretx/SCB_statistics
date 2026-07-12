@@ -203,7 +203,7 @@ def _render_real(cfg, query, lang):
     if query.get("aggregate") and nat_tot is not None and not nat_tot.empty:
         nat_tot = agg.collapse_stats(nat_tot, agg.agg_name(cfg, lang, len(occ)))
     if nat_tot is None or nat_tot.empty:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
 
     st.caption(i18n.t(cfg, "rs_real_intro", lang,
@@ -267,7 +267,7 @@ def render(cfg, stats, query):
     if query.get("aggregate") and not tot.empty:
         tot = agg.collapse_stats(tot, agg.agg_name(cfg, lang, len(occ)))
     if tot.empty:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
 
     st.caption(i18n.t(cfg, "rs_intro", lang,

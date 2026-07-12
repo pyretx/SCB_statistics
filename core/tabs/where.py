@@ -21,7 +21,7 @@ def render(cfg, stats, query):
     st.subheader(i18n.t(cfg, "tab_where", lang, "Where do I stand?"))
     tot = stats[stats["dimension"] == "total"]
     if tot.empty:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
 
     codes = list(tot["occ_code"])

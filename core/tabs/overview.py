@@ -183,7 +183,7 @@ def render(cfg, stats, query):
     slug = cfg.slug
     tot = stats[stats["dimension"] == "total"]
     if tot.empty:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
     occ = tuple(query.get("occ_codes", ()))
     st.markdown(_CSS, unsafe_allow_html=True)

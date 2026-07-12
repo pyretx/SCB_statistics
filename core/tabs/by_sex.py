@@ -119,4 +119,4 @@ def render(cfg, stats, query):
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))

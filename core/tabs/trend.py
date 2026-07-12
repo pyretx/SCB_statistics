@@ -56,7 +56,7 @@ def trend_section(cfg, query, lang, k):
         tr = cfg.provider.trend(sector=query.get("sector", ""), occ_codes=occ,
                                 sex=query.get("sex", "total"), years=years, lang=lang, measure=mkey)
     if tr is None or tr.empty:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
     tr = tr.copy()
     tr["year"] = tr["year"].astype(int)

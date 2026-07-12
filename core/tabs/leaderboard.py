@@ -91,7 +91,7 @@ def render(cfg, stats, query):
         ranked = lb.dropna(subset=[mkey]).rename(columns={mkey: "val"})[["occ_code", "occ_name", "val"]]
 
     if ranked is None or ranked.empty:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
 
     # scope to the drilled sub-group (STYRK 2-digit, SOC minor 4-char), like Sweden
@@ -104,7 +104,7 @@ def render(cfg, stats, query):
     st.caption(i18n.t(cfg, "lead_intro", lang,
                       "Ranking {scope} — your picks are highlighted.").format(scope=scope_disp))
     if ranked.empty:
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
     ranked = ranked.sort_values("val", ascending=asc).reset_index(drop=True)
     ranked["rank"] = ranked.index + 1

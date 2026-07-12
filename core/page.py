@@ -87,7 +87,7 @@ def render_country(cfg):
     tot = stats[stats["dimension"] == "total"]
     vcols = [c for c in ("mean", "median", "p10", "p25", "p75", "p90") if c in tot]
     if tot.empty or not tot[vcols].notna().to_numpy().any():
-        states.no_data(i18n.t(cfg, "no_data_combo", lang))
+        states.no_data(i18n.no_data(cfg, lang))
         return
 
     tabs.render_tabs(cfg, stats, query)

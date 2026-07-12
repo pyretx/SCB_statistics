@@ -166,6 +166,14 @@ UI: dict[str, dict[str, str]] = {
         "no_data_combo": ("No figures are published for this combination of "
                           "occupation, sector, gender and year. Try “All sectors” or "
                           "adjust the selection."),
+        "no_data_nosex": ("No figures are published for this combination of "
+                          "occupation, sector and year. Try a broader scope or "
+                          "adjust the selection."),
+        "no_data_nosec": ("No figures are published for this combination of "
+                          "occupation, gender and year. Try a different occupation "
+                          "or year."),
+        "no_data_occ": ("No figures are published for this occupation and year. "
+                        "Try a different occupation or year."),
         "browser_search": "Search a code or name",
         "browser_intro": "Drill down the classification — pick a level and the next appears.",
         "browser_results": "results",
@@ -659,3 +667,17 @@ def t(cfg, key: str, lang: str = "EN", default: str | None = None) -> str:
         if src and key in src:
             return src[key]
     return default if default is not None else key
+
+
+def no_data(cfg, lang: str = "EN") -> str:
+    """A 'no figures published' message that names ONLY the filters this country
+    actually has — so a country with no sector/gender doesn't get told to 'Try
+    All sectors' (Netherlands) or mention a gender it can't split by."""
+    caps = getattr(cfg, "capabilities", None)
+    has_sector = bool(getattr(caps, "sectors", ()))
+    has_sex = bool(getattr(caps, "has_sex", False))
+    if has_sector:                      # keeps the sector hint ("Try All sectors")
+        key = "no_data_combo" if has_sex else "no_data_nosex"
+    else:
+        key = "no_data_nosec" if has_sex else "no_data_occ"
+    return t(cfg, key, lang)

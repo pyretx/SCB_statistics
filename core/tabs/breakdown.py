@@ -66,7 +66,7 @@ def _render(cfg, stats, query, dim: str):
         else:
             d = prep(fetch(query.get("sex", "total")))
     if d.empty or val not in d or not d[val].notna().any():
-        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        st.caption(i18n.no_data(cfg, lang))
         return
 
     heading = i18n.t(cfg, "avg_salary" if val == "mean" else "median_salary", lang)
