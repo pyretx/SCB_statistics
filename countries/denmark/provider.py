@@ -1,15 +1,30 @@
 """Denmark data provider — DST StatBank table LONS20 (api.statbank.dk).
 
-Verified against the live API 2026-07: STANDARDIZED HOURLY EARNINGS (DKK) with
-mean (STAND) / median (MEDIANST) / lower quartile (NEDREST) / upper quartile
-(OVREST) / full-time employee count (ANTAL), by DISCO-08 occupation × sector ×
-sex × year (2013→2024). No P10/P90 (quartiles only, like Norway), so
+Verified against the live API 2026-07: standardized earnings (DKK) with mean
+(STAND) / median (MEDIANST) / lower quartile (NEDREST) / upper quartile (OVREST)
+/ full-time employee count (ANTAL), by DISCO-08 occupation × sector × sex × year
+(2013→2024). No P10/P90 (quartiles only, like Norway), so
 has_occupation_percentiles is False in the config.
+
+DST's distribution figures are published PER HOUR (standardized hourly earnings).
+Danish pay is normally quoted MONTHLY, so we present standardized MONTHLY earnings
+by multiplying every money figure by DST's fixed standardization constant
+``STD_MONTHLY_HOURS`` (= standardized annual hours 1924 / 12). This is exactly how
+DST derives its own published "standardized monthly earnings" (MDRSNIT = STAND ×
+this constant, verified constant to 4 dp across occupations and years), and a
+quartile scales identically (the worker at hourly-P25 is the worker at monthly-P25),
+so the monthly distribution is faithful — DST simply doesn't publish monthly
+quartiles directly.
 
 Fixed query slots: AFLOEN=TIFA (all forms of pay), LONGRP=LTOT (employee group
 total). DST returns suppressed cells as 0 (tableinfo suppressedDataValue="0"),
-so zeros are normalized to None — a published hourly wage of 0 DKK does not
-occur.
+so zeros are normalized to None — a published wage of 0 DKK does not occur.
+
+Speed: DST's /data endpoint is slow (~12 s per call regardless of payload size),
+so the per-occupation fetch pulls ALL THREE sexes (total/women/men) in a SINGLE
+request — a full-year call is no slower than a one-sex call — and caches by
+(sector, occ, year) WITHOUT sex in the key. The Overview's total + women + men
+lookups then share one HTTP round-trip instead of three.
 
 Occupation LABELS come from the bundled disco_labels.json (countries/denmark/
 build.py) so the menu never waits on DST; salary VALUES are fetched per query
@@ -34,12 +49,27 @@ CPI_TABLE = "PRIS111"                     # Consumer Price Index (2015=100), mon
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 _LABELS_FILE = os.path.join(_ROOT, "disco_labels.json")
 
+# DST fixed standardization constant: standardized annual hours (1924) / 12.
+# Standardized MONTHLY earnings = standardized HOURLY earnings × this; verified
+# constant to 4 dp across occupations and years (160.327–160.332). We present
+# monthly, so every money figure from LONS20 is multiplied by this.
+STD_MONTHLY_HOURS = 160.33
+
 SECTOR_CODE = {"all": "1000", "private": "1046", "local": "1018", "central": "1016"}
 SEX_CODE = {"total": "MOK", "women": "K", "men": "M"}
-# LØNMÅL codes → normalized column (standardized hourly earnings)
+# LØNMÅL codes → normalized column (standardized HOURLY earnings; scaled to
+# monthly on the way out — see STD_MONTHLY_HOURS).
 _MEASURE = {"mean": "STAND", "median": "MEDIANST", "p25": "NEDREST",
             "p75": "OVREST", "count": "ANTAL"}
 _MEASURE_COL = {v: k for k, v in _MEASURE.items()}
+_MONEY_COLS = {"mean", "median", "p25", "p75"}   # scaled; "count" is not
+
+
+def _monthly(col: str, v):
+    """Scale an hourly money figure to standardized monthly; pass counts through."""
+    if v is None:
+        return None
+    return v * STD_MONTHLY_HOURS if col in _MONEY_COLS else v
 
 
 def _data_rows(variables: list[dict], table: str = TABLE,
@@ -101,34 +131,49 @@ def _base_vars(sector: str, sex: str) -> list[dict]:
 
 
 @st.cache_data(show_spinner=False, persist="disk")
-def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int,
-           lang: str = "EN") -> pd.DataFrame:
-    """One DST query → normalized OccupationStat rows (dimension='total')."""
+def _fetch_all_sexes(sector: str, occ_codes: tuple[str, ...], year: int) -> dict:
+    """ONE DST query for ALL sexes (MOK/M/K) → {(occ, sex_code): {col: monthly}}.
+    Cache key excludes sex AND lang (labels are applied later, in _fetch), so
+    total/women/men — and both languages — share this single round-trip."""
     if not occ_codes:
-        return model.empty_occ_stats()
+        return {}
     rows_raw = _data_rows([
         {"code": "ARBF", "values": list(occ_codes)},
-        *_base_vars(sector, sex),
+        {"code": "SEKTOR", "values": [SECTOR_CODE.get(sector, "1000")]},
+        {"code": "AFLOEN", "values": ["TIFA"]},
+        {"code": "LONGRP", "values": ["LTOT"]},
         {"code": "LØNMÅL", "values": list(_MEASURE.values())},
+        {"code": "KØN", "values": ["MOK", "M", "K"]},
         {"code": "Tid", "values": [str(year)]},
     ])
-    by_occ: dict[str, dict] = {}
+    out: dict = {}
     for r in rows_raw:
         col = _MEASURE_COL.get(r.get("LØNMÅL", ""))
         if col:
-            by_occ.setdefault(r.get("ARBF", ""), {})[col] = r["INDHOLD"]
+            out.setdefault((r.get("ARBF", ""), r.get("KØN", "")), {})[col] = \
+                _monthly(col, r["INDHOLD"])
+    return out
 
+
+def _fetch(sector: str, occ_codes: tuple[str, ...], sex: str, year: int,
+           lang: str = "EN") -> pd.DataFrame:
+    """Normalized OccupationStat rows (dimension='total') for one sex, sliced
+    from the shared all-sexes fetch (so it costs no extra HTTP call)."""
+    if not occ_codes:
+        return model.empty_occ_stats()
+    data = _fetch_all_sexes(sector, tuple(occ_codes), int(year))
+    sc = SEX_CODE.get(sex, "MOK")
     labels = _leaves(lang)
     rows = []
     for occ in occ_codes:
-        v = by_occ.get(occ)
+        v = data.get((occ, sc))
         if not v:
             continue
         rows.append({
-            "country": "denmark", "year": year, "occ_code": occ,
+            "country": "denmark", "year": int(year), "occ_code": occ,
             "occ_name": labels.get(occ, _codes(lang).get(occ, occ)),
             "occ_group": occ[:2], "dimension": "total", "dim_value": "total",
-            "currency": "DKK", "period": "hourly",
+            "currency": "DKK", "period": "monthly",
             "mean": v.get("mean"), "median": v.get("median"),
             "p10": None, "p25": v.get("p25"), "p75": v.get("p75"), "p90": None,
             "count": v.get("count"),
@@ -154,7 +199,9 @@ def _fetch_trend(sector: str, occ_codes: tuple[str, ...], sex: str,
         {"code": "LØNMÅL", "values": [mm]},
         {"code": "Tid", "values": yrs},
     ])
-    val = {(r.get("ARBF", ""), r.get("TID", "")): r["INDHOLD"] for r in rows_raw}
+    col = _MEASURE_COL.get(mm, "mean")
+    val = {(r.get("ARBF", ""), r.get("TID", "")): _monthly(col, r["INDHOLD"])
+           for r in rows_raw}
     labels = _leaves(lang)
     rows = []
     for occ in occ_codes:
@@ -204,7 +251,7 @@ def _fetch_leaderboard(sector: str, sex: str, year: int, lang: str = "EN") -> pd
     for r in rows_raw:
         col = _MEASURE_COL.get(r.get("LØNMÅL", ""))
         if col:
-            by_occ.setdefault(r.get("ARBF", ""), {})[col] = r["INDHOLD"]
+            by_occ.setdefault(r.get("ARBF", ""), {})[col] = _monthly(col, r["INDHOLD"])
     labels = _leaves(lang)               # only detailed (4-digit) occupations
     rows = [{"occ_code": occ, "occ_name": name,
              "mean": by_occ[occ].get("mean"), "median": by_occ[occ].get("median"),

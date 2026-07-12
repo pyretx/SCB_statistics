@@ -203,9 +203,9 @@ us = [
   "Annual wages + employment · BLS OEWS 2024",
 ]
 dk = [
-  "Mean & median hourly earnings · ~420 occupations (DISCO-08)",
+  "Mean & median monthly earnings · ~420 occupations (DISCO-08)",
   "Sector & gender breakdowns · quartiles",
-  "Standardized hourly earnings · 2013–2024",
+  "Standardized monthly earnings · 2013–2024",
 ]
 
 [footer]

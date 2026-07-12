@@ -12,7 +12,7 @@ _YR = latest_year()   # pinned in app_settings.json; bumped via the admin panel
 # Structured guides (the approved User-Guide design; rendered by core/panels.py)
 _GUIDE_EN = {
     "title": "How to use the Danish Salary Explorer",
-    "source": "Statistics Denmark (DST) · Standardized hourly earnings by occupation (DISCO-08) · table LONS20",
+    "source": "Statistics Denmark (DST) · Standardized monthly earnings by occupation (DISCO-08) · table LONS20",
     "intro": "Look up Danish salaries by occupation — official data from Statistics "
              "Denmark, no technical knowledge needed. This guide covers the three-step "
              "flow, finding occupations, and how to read the charts.",
@@ -48,9 +48,10 @@ _GUIDE_EN = {
              ("P75", 72, "a quarter earn more")],
     "notes_title": "Good to know",
     "notes": [
-        "Figures are standardized HOURLY earnings (DKK) — DST's headline measure, "
-        "computed per standard hour so absence doesn't distort the comparison. "
-        "For a rough monthly figure, multiply by about 160 (a standard month).",
+        "Figures are standardized MONTHLY earnings (DKK) — DST publishes its "
+        "earnings distribution per standard hour (so absence doesn't distort the "
+        "comparison); we scale it to a standard month (≈160.3 hours), exactly as "
+        "DST derives its own standardized monthly figure.",
         "Earnings include pension contributions, holiday allowance and fringe "
         "benefits — Danish pay is usually quoted this way.",
         "Small groups can be suppressed by DST for privacy — a missing occupation "
@@ -65,16 +66,16 @@ _GUIDE_EN = {
         ("Salary distribution", "The quartile chart, plus raw data + CSV export."),
         ("Trend", "Development over time: nominal, growth vs inflation (CPI), or "
                   "real (constant prices)."),
-        ("Where do I stand?", "Enter an hourly wage and see roughly where it falls."),
+        ("Where do I stand?", "Enter a monthly salary and see roughly where it falls."),
         ("Leaderboard", "Ranks all occupations by pay, gender gap or growth."),
         ("By gender", "Women vs men, with a women-as-%-of-men view."),
     ],
-    "footer": "All figures are standardized hourly earnings from DST table LONS20, updated annually.",
+    "footer": "All figures are standardized monthly earnings from DST table LONS20, updated annually.",
 }
 
 _GUIDE_DA = {
     "title": "Sådan bruger du den danske lønudforsker",
-    "source": "Danmarks Statistik (DST) · Standardberegnet timefortjeneste efter arbejdsfunktion (DISCO-08) · tabel LONS20",
+    "source": "Danmarks Statistik (DST) · Standardberegnet månedsfortjeneste efter arbejdsfunktion (DISCO-08) · tabel LONS20",
     "intro": "Slå danske lønninger op efter arbejdsfunktion — officielle data fra "
              "Danmarks Statistik, ingen tekniske forudsætninger kræves. Denne guide "
              "dækker tre-trins-flowet, hvordan du finder arbejdsfunktioner, og "
@@ -109,9 +110,10 @@ _GUIDE_DA = {
              ("P75", 72, "en fjerdedel tjener mere")],
     "notes_title": "Godt at vide",
     "notes": [
-        "Tallene er standardberegnet TIMEFORTJENESTE (kr.) — DST's hovedmål, "
-        "beregnet pr. standardtime så fravær ikke forvrider sammenligningen. "
-        "Gang med ca. 160 (en standardmåned) for et groft månedstal.",
+        "Tallene er standardberegnet MÅNEDSFORTJENESTE (kr.) — DST offentliggør "
+        "lønfordelingen pr. standardtime (så fravær ikke forvrider "
+        "sammenligningen); vi skalerer til en standardmåned (≈160,3 timer), "
+        "præcis som DST selv udleder sin standardberegnede månedsfortjeneste.",
         "Fortjenesten inkluderer pension, feriepenge og personalegoder — dansk "
         "løn opgøres normalt sådan.",
         "Små grupper kan være diskretioneret af DST — en manglende "
@@ -126,11 +128,11 @@ _GUIDE_DA = {
         ("Lønfordeling", "Kvartildiagrammet, plus rådata + CSV-eksport."),
         ("Udvikling", "Udvikling over tid: nominelt, vækst mod inflation "
                       "(forbrugerprisindeks) eller realløn (faste priser)."),
-        ("Hvor står jeg?", "Angiv en timeløn og se cirka hvor den ligger."),
+        ("Hvor står jeg?", "Angiv en månedsløn og se cirka hvor den ligger."),
         ("Rangliste", "Rangerer alle arbejdsfunktioner efter løn, løngab eller vækst."),
         ("Efter køn", "Kvinder mod mænd, med kvinder-i-%-af-mænd-visning."),
     ],
-    "footer": "Alle tal er standardberegnet timefortjeneste fra DST-tabel LONS20, opdateret årligt.",
+    "footer": "Alle tal er standardberegnet månedsfortjeneste fra DST-tabel LONS20, opdateret årligt.",
 }
 
 CONFIG = CountryConfig(
@@ -141,8 +143,8 @@ CONFIG = CountryConfig(
     eyebrow="OFFICIAL STATISTICS · DENMARK",
     source_name="Statistics Denmark (DST)",
     source_url="https://www.statbank.dk/LONS20",
-    caption="Statistics Denmark (DST) · Standardized hourly earnings by occupation (DISCO-08)",
-    currency="DKK", currency_suffix="kr", period="hourly",
+    caption="Statistics Denmark (DST) · Standardized monthly earnings by occupation (DISCO-08)",
+    currency="DKK", currency_suffix="kr", period="monthly",
     capabilities=Capabilities(
         has_occupation_percentiles=False,   # DST LONS20 has quartiles, not P10/P90
         has_occupation_hierarchy=True,       # DISCO-08 nests (ISCO-08 aligned)
@@ -160,9 +162,9 @@ CONFIG = CountryConfig(
     landing=True,                           # gated tile on the landing page
     classification="DISCO-08",
     bullets=(
-        "Mean &amp; median hourly earnings · ~420 occupations (DISCO-08)",
+        "Mean &amp; median monthly earnings · ~420 occupations (DISCO-08)",
         "Sector &amp; gender breakdowns · quartiles",
-        f"Standardized hourly earnings · 2013–{_YR}",
+        f"Standardized monthly earnings · 2013–{_YR}",
     ),
     # flat, language-independent strings the landing tile reads
     labels={

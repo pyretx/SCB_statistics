@@ -83,7 +83,7 @@ desc    = "Salaries fetched live from SSB table 11418 and disk-cached; the bundl
 name    = "Denmark"
 source  = "DST"
 type    = "live API + DISCO labels"
-desc    = "Standardized hourly earnings fetched live from DST table LONS20 and disk-cached; the bundled bilingual DISCO labels give instant dropdowns. Beta country."
+desc    = "Standardized monthly earnings fetched live from DST table LONS20 (published per hour, scaled to a standard month) and disk-cached; the bundled bilingual DISCO labels give instant dropdowns. Beta country."
 
 [data.sweden]
 name    = "Sweden"
