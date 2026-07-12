@@ -144,9 +144,9 @@ def _dialog_body():
     if st.session_state.get("_fb_done"):
         st.success(M["submitted"])
         if st.button(F["close"], key="_fb_close_done"):
-            for k in ("_fb_open", "_fb_done", "_fb_ctx", "_fb_nonce"):
+            for k in ("_fb_done", "_fb_ctx", "_fb_nonce"):
                 st.session_state.pop(k, None)
-            st.rerun()
+            st.rerun()                       # app-scope: closes the dialog
         return
 
     opts = _country_options()
@@ -171,7 +171,7 @@ def _dialog_body():
         done = st.session_state.setdefault("_fb_sent_nonces", set())
         if nonce in done:
             st.session_state["_fb_done"] = True
-            st.rerun()
+            st.rerun(scope="fragment")       # stay inside the open dialog
         if not (ftitle or "").strip() or not (fdesc or "").strip():
             st.error(M["missing"])
         else:
@@ -185,11 +185,14 @@ def _dialog_body():
             else:
                 done.add(nonce)
                 st.session_state["_fb_done"] = True
-                st.rerun()
+                # fragment-scope: re-render the dialog body (shows the thank-you
+                # message); an app-scope rerun here would close the dialog before
+                # the user ever saw the confirmation.
+                st.rerun(scope="fragment")
     if st.button(F["cancel"], key="_fb_cancel"):
-        for k in ("_fb_open", "_fb_done", "_fb_ctx", "_fb_nonce"):
+        for k in ("_fb_done", "_fb_ctx", "_fb_nonce"):
             st.session_state.pop(k, None)
-        st.rerun()
+        st.rerun()                           # app-scope: closes the dialog
 
 
 def feedback_entry(page: str, country: str | None = None, cfg=None,
@@ -202,10 +205,12 @@ def feedback_entry(page: str, country: str | None = None, cfg=None,
     T = _T()
     if st.button(T["button"], key=key, use_container_width=True,
                  icon=":material/feedback:"):
-        st.session_state["_fb_open"] = True
+        # Open the dialog ONLY on the click's own run — no persistent "open"
+        # flag. st.dialog is fragment-based: interactions inside it rerun just
+        # the dialog body, and dismissing it (X / click outside) simply ends it.
+        # The previous _fb_open flag survived an X-dismissal, so the dialog
+        # kept re-opening on every later rerun of the page.
         st.session_state["_fb_ctx"] = {"page": page, "country": country}
         st.session_state["_fb_nonce"] = uuid.uuid4().hex
         st.session_state.pop("_fb_done", None)
-        st.rerun()
-    if st.session_state.get("_fb_open"):
         st.dialog(T["dialog_title"], width="large")(_dialog_body)()
