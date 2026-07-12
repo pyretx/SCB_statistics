@@ -27,7 +27,7 @@ _GUIDE_EN = {
     "find_title": "Finding the right occupation",
     "find": [
         ("Search box", "Type in the “Search occupations…” box — it matches the "
-                       "Dutch occupation names and BRC codes."),
+                       "occupation names and BRC codes."),
         ("Drill down", "Or narrow step by step through the BRC hierarchy "
                        "(segment → group → detailed occupation)."),
         ("Code browser", "Open the Code browser to explore the whole BRC-2014 "
@@ -49,8 +49,9 @@ _GUIDE_EN = {
         "published and the sample includes part-time workers.",
         "This CBS table has no mean and no gender breakdown — only the median "
         "and quartiles, so the By-gender view doesn't appear.",
-        "Occupation names are in Dutch — CBS publishes no English names for this "
-        "table.",
+        "CBS publishes no English names for this table, so the English occupation "
+        "names are our own translations of the official Dutch BRC-2014 groups; "
+        "switch to Nederlands for the original names.",
         "Small occupation × year cells can be suppressed by CBS — a missing figure "
         "is not an error.",
         "Interface in English / Nederlands — switch at the top of the sidebar.",
