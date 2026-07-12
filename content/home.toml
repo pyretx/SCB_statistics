@@ -20,16 +20,16 @@ eyebrow = "OFFICIAL STATISTICS · GLOBAL"
 title   = "Salary data from national agencies, made explorable."
 intro   = "One clean interface over official government statistics - percentiles, breakdowns and trends, standardised so you can compare occupations within and across countries."
 
-# The three KPI figures under the hero headline.
-[[hero.stats]]
-value = "4"
-label = "countries live"
-[[hero.stats]]
-value = "2 000+"
-label = "occupations"
-[[hero.stats]]
-value = "100%"
-label = "official sources"
+# Hero KPI row. live/beta counts are computed from the [countries].catalog
+# statuses; roadmap is the planned ("soon") count rounded to a "N+" figure. Only
+# the labels, the static official-sources figure, and the punchline live here.
+[hero.stats]
+label_live     = "countries live"
+label_beta     = "in beta"
+label_roadmap  = "on the roadmap"
+label_official = "official sources"
+official       = "100%"
+punchline      = 'Official data, <b>enhanced</b> with analytics, comparisons and tools.'
 
 # The pitch-video button under the hero intro. `file` is repo-relative; the
 # video opens in a pop-up and starts playing. Update `duration` if the video

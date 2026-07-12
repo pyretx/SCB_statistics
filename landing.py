@@ -681,15 +681,43 @@ st.divider()
 hc1, hc2 = st.columns([1.05, 0.95], gap="large")
 with hc1:
     _hero = C["hero"]
-    _divider = '<div style="width:1px;background:#E1E4E9;margin:0 28px 0 0;"></div>'
-    _stat_blocks = []
-    for _i, _s in enumerate(_hero["stats"]):
-        _pr = "padding-right:28px;" if _i < len(_hero["stats"]) - 1 else ""
-        _stat_blocks.append(
-            f'<div style="{_pr}">'
-            f'<div class="se-mono" style="font-size:26px;font-weight:600;color:#0C1119;letter-spacing:-.02em;">{_s["value"]}</div>'
-            f'<div style="font-size:13px;color:#7A828F;margin-top:3px;">{_s["label"]}</div></div>')
-    _stats_html = _divider.join(_stat_blocks)
+    _hs = _hero["stats"]
+    # Counts driven by the catalogue statuses (single source of truth); roadmap
+    # is the planned ("soon") count rounded to the nearest 5 as an "N+" figure.
+    _cat = C["countries"]["catalog"]
+    _live_n = sum(1 for c in _cat if c.get("status") == "live")
+    _beta_n = sum(1 for c in _cat if c.get("status") == "beta")
+    _soon_n = sum(1 for c in _cat if c.get("status") == "soon")
+    _roadmap = f"{max(5, round(_soon_n / 5) * 5)}+"
+    _num = ('font-family:\'JetBrains Mono\',monospace;font-size:26px;font-weight:600;'
+            'color:#0C1119;letter-spacing:-.02em;')
+    _lbl = 'font-size:13px;color:#7A828F;margin-top:3px;'
+    _div = '<div style="width:1px;background:#E1E4E9;align-self:stretch;"></div>'
+    _dot = ('<span style="width:7px;height:7px;border-radius:50%;background:#1F9D62;'
+            'display:inline-block;"></span>')
+    _bbadge = ('<span class="se-mono" style="font-size:10px;font-weight:600;color:#0A63A6;'
+               'background:rgba(10,99,166,.10);padding:2px 6px;border-radius:4px;">BETA</span>')
+
+    def _stat(num, label, extra=""):
+        head = (f'<div style="display:flex;align-items:baseline;gap:6px;">'
+                f'<span style="{_num}">{num}</span>{extra}</div>') if extra else \
+               f'<div style="{_num}">{num}</div>'
+        return f'<div>{head}<div style="{_lbl}">{label}</div></div>'
+
+    _stats_html = (
+        f'{_stat(_live_n, _hs["label_live"], _dot)}{_div}'
+        f'{_stat(_beta_n, _hs["label_beta"], _bbadge)}{_div}'
+        f'{_stat(_roadmap, _hs["label_roadmap"])}{_div}'
+        f'{_stat(_hs["official"], _hs["label_official"])}')
+    _punch = (
+        '<div style="display:flex;align-items:center;gap:8px;margin-top:18px;'
+        'padding-top:16px;border-top:1px solid #E7E9ED;max-width:560px;">'
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A63A6" '
+        'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;">'
+        '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 '
+        '12 10h8a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 12 14z">'
+        '</path></svg>'
+        f'<span style="font-size:14px;color:#4A525F;">{_hs["punchline"]}</span></div>')
     st.markdown(f"""
     <div class="se-mono" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:{BLUE};margin-bottom:20px;">
       {_hero["eyebrow"]}
@@ -712,9 +740,10 @@ with hc1:
             st.session_state["_show_video"] = True
             st.rerun()
     st.markdown(f"""
-    <div style="display:flex;gap:0;margin-top:24px;flex-wrap:wrap;align-items:stretch;">
+    <div style="display:flex;gap:34px;margin-top:24px;flex-wrap:wrap;align-items:stretch;">
       {_stats_html}
     </div>
+    {_punch}
     """, unsafe_allow_html=True)
 
 with hc2:
