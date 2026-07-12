@@ -57,6 +57,10 @@ class Capabilities:
     has_leaderboard: bool = False               # can rank ALL occupations by pay
     leaderboard_scope: int = 2                  # code-prefix length to scope the leaderboard
                                                 # to (STYRK sub-group=2; SOC minor=4)
+    has_region_sim: bool = False                # region-level SIMULATION overlay (a
+                                                # country with overall-by-region earnings
+                                                # but no occupation×region — DK/NO); the
+                                                # provider answers region_sim()
     sectors: tuple[str, ...] = ()               # e.g. ("private", "public"); () = none
     year_range: tuple[int, int] | None = None   # (first, last) available year
 

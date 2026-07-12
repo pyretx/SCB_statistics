@@ -8,7 +8,7 @@ import streamlit as st
 
 from .. import access, i18n
 from . import (breakdown, by_sex, distribution, import_overlay, leaderboard,
-               overview, stats, trend, where)
+               overview, region_sim, stats, trend, where)
 
 # id -> render_fn. cfg.tabs lists which to enable, in order.
 TABS = {
@@ -24,6 +24,7 @@ TABS = {
     "age": breakdown.render_age,
     "education": breakdown.render_education,
     "region": breakdown.render_region,
+    "region_sim": region_sim.render,           # region SIMULATION (DK/NO) — see below
     "import_overlay": import_overlay.render,   # beta-gated (see render_tabs)
 }
 # Tab ids only admins/beta testers ever see in the tab bar.
@@ -33,7 +34,7 @@ _FALLBACK = {"overview": "Overview", "distribution": "Salary distribution",
              "sex": "By gender", "trend": "Trend", "where": "Where do I stand?",
              "leaderboard": "Leaderboard", "stats": "Basic statistics",
              "age": "By age", "education": "By education", "region": "By region",
-             "import_overlay": "Import overlay (beta)"}
+             "region_sim": "By region", "import_overlay": "Import overlay (beta)"}
 
 
 _TAB_CSS = """

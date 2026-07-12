@@ -69,6 +69,9 @@ _GUIDE_EN = {
         ("Where do I stand?", "Enter a monthly salary and see roughly where it falls."),
         ("Leaderboard", "Ranks all occupations by pay, gender gap or growth."),
         ("By gender", "Women vs men, with a women-as-%-of-men view."),
+        ("By region", "Estimate the occupation for a region by applying that "
+                      "region's overall pay difference — a simulation, not "
+                      "occupation-specific regional data."),
     ],
     "footer": "All figures are standardized monthly earnings from DST table LONS20, updated annually.",
 }
@@ -131,6 +134,9 @@ _GUIDE_DA = {
         ("Hvor står jeg?", "Angiv en månedsløn og se cirka hvor den ligger."),
         ("Rangliste", "Rangerer alle arbejdsfunktioner efter løn, løngab eller vækst."),
         ("Efter køn", "Kvinder mod mænd, med kvinder-i-%-af-mænd-visning."),
+        ("Efter region", "Anslå arbejdsfunktionen for en region ved at bruge "
+                         "regionens generelle lønforskel — en simulering, ikke "
+                         "arbejdsfunktionsspecifikke regiontal."),
     ],
     "footer": "Alle tal er standardberegnet månedsfortjeneste fra DST-tabel LONS20, opdateret årligt.",
 }
@@ -151,12 +157,13 @@ CONFIG = CountryConfig(
         has_quartiles=True,                  # P25 · median · P75 spread
         has_mean=True, has_median=True, has_sex=True, has_trend=True,
         has_leaderboard=True,
+        has_region_sim=True,                 # DST LONS30 region overlay (simulation)
         sectors=("all", "private", "local", "central"),
         year_range=(FIRST_YEAR, _YR),
     ),
     # standard order (docs/architecture.md); Basic statistics is merged into Overview
     tabs=("overview", "distribution", "trend", "where", "leaderboard", "sex",
-          "import_overlay"),
+          "region_sim", "import_overlay"),
     access="restricted",                    # BETA — admins + beta users only
     fetch_mode="search",                    # commit-on-Search, like Sweden/Norway
     landing=True,                           # gated tile on the landing page

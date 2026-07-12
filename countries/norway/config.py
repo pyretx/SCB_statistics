@@ -63,6 +63,9 @@ _GUIDE_EN = {
         ("Where do I stand?", "Enter a salary and see roughly where it falls."),
         ("Leaderboard", "Ranks all occupations by pay, gender gap or growth."),
         ("By gender", "Women vs men, with a women-as-%-of-men view."),
+        ("By region", "Estimate the occupation for a county by applying that "
+                      "county's overall pay difference — a simulation, not "
+                      "occupation-specific regional data."),
     ],
     "footer": "All figures are gross monthly earnings from SSB table 11418, updated annually.",
 }
@@ -121,6 +124,9 @@ _GUIDE_NO = {
         ("Hvor står jeg?", "Oppgi en lønn og se omtrent hvor den ligger."),
         ("Toppliste", "Rangerer alle yrker etter lønn, kjønnsgap eller vekst."),
         ("Etter kjønn", "Kvinner mot menn, med kvinner-i-%-av-menn-visning."),
+        ("Etter region", "Anslå yrket for et fylke ved å bruke fylkets generelle "
+                         "lønnsforskjell — en simulering, ikke yrkesspesifikke "
+                         "regiontall."),
     ],
     "footer": "Alle tall er brutto månedslønn fra SSB tabell 11418, oppdatert årlig.",
 }
@@ -141,12 +147,13 @@ CONFIG = CountryConfig(
         has_quartiles=True,                  # P25 · median · P75 spread
         has_mean=True, has_median=True, has_sex=True, has_trend=True,
         has_leaderboard=True,
+        has_region_sim=True,                 # SSB 12852 region overlay (simulation)
         sectors=("all", "private", "local", "central"),
         year_range=(2015, _YR),
     ),
     # standard order (docs/architecture.md); Basic statistics is merged into Overview
     tabs=("overview", "distribution", "trend", "where", "leaderboard", "sex",
-          "import_overlay"),
+          "region_sim", "import_overlay"),
     access="registered",                    # LIVE — any signed-in user
     fetch_mode="search",                    # commit-on-Search, like Sweden
     landing=True,                           # show a gated tile on the landing page

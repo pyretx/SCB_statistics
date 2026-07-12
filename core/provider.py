@@ -74,3 +74,12 @@ class CountryProvider:
     # occupation search beyond names/codes. Empty by default.
     def occupation_synonyms(self, lang: str = "EN") -> dict:
         return {}
+
+    # Region-level SIMULATION factors: for a country that publishes OVERALL
+    # earnings by region (all occupations pooled) but NOT occupation×region.
+    # Returns {"regions": {display_name: factor_vs_national}, "basis": label} —
+    # the "By region" tab multiplies the occupation's national figures by the
+    # chosen region's factor (national baseline = 1.0, not included). Empty when
+    # unsupported (has_region_sim=False).
+    def region_sim(self, *, year: int | None = None, lang: str = "EN") -> dict:
+        return {}
