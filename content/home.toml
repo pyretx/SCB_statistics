@@ -137,11 +137,11 @@ catalog = [
   { name = "Czechia",        iso = "cz", region = "europe", source = "ISPV",         status = "soon" },
   { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "beta", slug = "denmark" },
   { name = "Estonia",        iso = "ee", region = "europe", source = "STAT.EE",      status = "soon" },
-  { name = "Finland",        iso = "fi", region = "europe", source = "STAT.FI",      status = "soon" },
+  { name = "Finland",        iso = "fi", region = "europe", source = "STAT.FI",      status = "beta", slug = "finland" },
   { name = "Germany",        iso = "de", region = "europe", source = "DESTATIS",     status = "soon" },
   { name = "Greece",         iso = "gr", region = "europe", source = "ELSTAT",       status = "soon" },
   { name = "Hungary",        iso = "hu", region = "europe", source = "KSH",          status = "soon" },
-  { name = "Iceland",        iso = "is", region = "europe", source = "HAGSTOFA",     status = "soon" },
+  { name = "Iceland",        iso = "is", region = "europe", source = "HAGSTOFA",     status = "beta", slug = "iceland" },
   { name = "Ireland",        iso = "ie", region = "europe", source = "CSO",          status = "soon" },
   { name = "Italy",          iso = "it", region = "europe", source = "ISTAT",        status = "soon" },
   { name = "Latvia",         iso = "lv", region = "europe", source = "CSB",          status = "soon" },
@@ -206,6 +206,16 @@ dk = [
   "Mean & median monthly earnings · ~420 occupations (DISCO-08)",
   "Sector & gender breakdowns · quartiles",
   "Standardized monthly earnings · 2013–2024",
+]
+is = [
+  "Mean & median salary · ~140 occupations (ISCO)",
+  "Gender breakdown · quartiles · trend",
+  "Monthly earnings · 2014–2025",
+]
+fi = [
+  "P10–P90 + mean · ~500 occupations (ISCO)",
+  "Sector & gender breakdowns · region simulation",
+  "Monthly earnings · 2024 snapshot",
 ]
 
 [footer]

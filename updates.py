@@ -444,6 +444,156 @@ def _update_denmark_labels(status, log) -> UpdateResult:
                         f"occupations) · {_commit_note('disco_labels.json')}")
 
 
+# ── Iceland · Hagstofa data year + ISCO labels ───────────────────────────────
+_IS_URL = ("https://px.hagstofa.is/pxen/api/v1/en/Samfelag/launogtekjur/"
+           "1_laun/1_laun/VIN02001.px")
+
+
+def _hagstofa_meta() -> dict:
+    r = requests.get(_IS_URL, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+
+def _iceland_latest_year():
+    ar = next(v for v in _hagstofa_meta()["variables"] if v["code"] == "Ár")
+    yrs = [int(x) for x in ar["values"] if str(x).isdigit()]
+    return max(yrs) if yrs else None
+
+
+def _check_iceland_data() -> SourceStatus:
+    from countries.iceland.build import latest_year
+    cur = latest_year()
+    s = SourceStatus("iceland_data", "Iceland", "Hagstofa · data year", current=str(cur))
+    latest = _iceland_latest_year()
+    if latest is None:
+        raise RuntimeError("Hagstofa metadata probe returned no years")
+    s.latest, s.latest_raw = str(latest), int(latest)
+    s.update_available = latest > cur
+    if s.update_available:
+        s.note = _restart_note()
+    return s
+
+
+def _update_iceland_data(status, log) -> UpdateResult:
+    from countries.iceland.build import latest_year, save_latest_year
+    target = status.latest_raw if status and status.latest_raw else _iceland_latest_year()
+    if not target or not (2000 < int(target) < 2100):
+        return UpdateResult("iceland_data", OUT_VALIDATION, f"implausible year: {target!r}")
+    if int(target) <= latest_year():
+        return UpdateResult("iceland_data", OUT_UP_TO_DATE, str(latest_year()))
+    save_latest_year(int(target))
+    return UpdateResult("iceland_data", OUT_UPDATED, f"{target} · {_restart_note()}")
+
+
+def _check_iceland_labels() -> SourceStatus:
+    from countries.iceland.build import _fetch_starf
+    try:
+        with open(os.path.join(_ROOT, "iceland_labels.json"), encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    cached = (data.get("codes") or {}).get("EN", {})
+    s = SourceStatus("iceland_labels", "Iceland", "Hagstofa · ISCO labels",
+                     current=f"{len(cached)} codes · {data.get('built_at', '—')}")
+    live = _fetch_starf("EN")
+    s.latest = f"{len(live)} codes"
+    diff = _label_diff(live, cached)
+    s.update_available = bool(diff)
+    s.note = diff
+    return s
+
+
+def _update_iceland_labels(status, log) -> UpdateResult:
+    from countries.iceland import build as isbuild
+    res = isbuild.build(log=log)
+    if res.get("codes", 0) < 100:
+        return UpdateResult("iceland_labels", OUT_VALIDATION, f"too few codes: {res}")
+    try:
+        from countries.iceland import provider as isprov
+        isprov._codes.clear()
+    except Exception:
+        pass
+    return UpdateResult("iceland_labels", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} codes · "
+                        f"{_commit_note('iceland_labels.json')}")
+
+
+# ── Finland · StatFin data year (snapshot) + ISCO labels ──────────────────────
+_FI_URL = "https://pxdata.stat.fi/PxWeb/api/v1/en/StatFin/pra/15au.px"
+
+
+def _statfin_meta() -> dict:
+    r = requests.get(_FI_URL, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+
+def _finland_latest_year(meta=None):
+    meta = meta or _statfin_meta()
+    tp = next(v for v in meta["variables"] if v["code"] == "timeperiod_y")
+    yrs = [int(x) for x in tp["values"] if str(x).isdigit()]
+    return max(yrs) if yrs else None
+
+
+def _check_finland_data() -> SourceStatus:
+    from countries.finland.build import latest_year
+    cur = latest_year()
+    s = SourceStatus("finland_data", "Finland", "StatFin · data year", current=str(cur))
+    latest = _finland_latest_year()
+    if latest is None:
+        raise RuntimeError("StatFin metadata probe returned no years")
+    s.latest, s.latest_raw = str(latest), int(latest)
+    s.update_available = latest > cur
+    if s.update_available:
+        s.note = _restart_note()
+    return s
+
+
+def _update_finland_data(status, log) -> UpdateResult:
+    from countries.finland.build import latest_year, save_latest_year
+    target = status.latest_raw if status and status.latest_raw else _finland_latest_year()
+    if not target or not (2000 < int(target) < 2100):
+        return UpdateResult("finland_data", OUT_VALIDATION, f"implausible year: {target!r}")
+    if int(target) <= latest_year():
+        return UpdateResult("finland_data", OUT_UP_TO_DATE, str(latest_year()))
+    save_latest_year(int(target))
+    return UpdateResult("finland_data", OUT_UPDATED, f"{target} · {_restart_note()}")
+
+
+def _check_finland_labels() -> SourceStatus:
+    from countries.finland.build import _labels
+    try:
+        with open(os.path.join(_ROOT, "finland_labels.json"), encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    cached = (data.get("codes") or {}).get("EN", {})
+    s = SourceStatus("finland_labels", "Finland", "StatFin · ISCO labels",
+                     current=f"{len(cached)} codes · {data.get('built_at', '—')}")
+    live = _labels(_statfin_meta())
+    s.latest = f"{len(live)} codes"
+    diff = _label_diff(live, cached)
+    s.update_available = bool(diff)
+    s.note = diff
+    return s
+
+
+def _update_finland_labels(status, log) -> UpdateResult:
+    from countries.finland import build as fibuild
+    res = fibuild.build(log=log)
+    if res.get("codes", 0) < 200:
+        return UpdateResult("finland_labels", OUT_VALIDATION, f"too few codes: {res}")
+    try:
+        from countries.finland import provider as fiprov
+        fiprov._codes.clear()
+    except Exception:
+        pass
+    return UpdateResult("finland_labels", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} codes · "
+                        f"{_commit_note('finland_labels.json')}")
+
+
 # ── United States · BLS OEWS — bundled build, full auto pipeline ──────────────
 def _check_us_data() -> SourceStatus:
     from countries.us import build as usbuild
@@ -507,13 +657,21 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "norway_data": _check_norway_data, "norway_labels": _check_norway_labels,
              "us_data": _check_us_data,
              "denmark_data": _check_denmark_data,
-             "denmark_labels": _check_denmark_labels}
+             "denmark_labels": _check_denmark_labels,
+             "iceland_data": _check_iceland_data,
+             "iceland_labels": _check_iceland_labels,
+             "finland_data": _check_finland_data,
+             "finland_labels": _check_finland_labels}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
              "us_data": _update_us_data,
              "denmark_data": _update_denmark_data,
-             "denmark_labels": _update_denmark_labels}
+             "denmark_labels": _update_denmark_labels,
+             "iceland_data": _update_iceland_data,
+             "iceland_labels": _update_iceland_labels,
+             "finland_data": _update_finland_data,
+             "finland_labels": _update_finland_labels}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -522,10 +680,16 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "norway_labels": ("Norway", "SSB · STYRK labels"),
          "us_data": ("United States", "BLS OEWS"),
          "denmark_data": ("Denmark", "DST · data year"),
-         "denmark_labels": ("Denmark", "DST · DISCO labels")}
+         "denmark_labels": ("Denmark", "DST · DISCO labels"),
+         "iceland_data": ("Iceland", "Hagstofa · data year"),
+         "iceland_labels": ("Iceland", "Hagstofa · ISCO labels"),
+         "finland_data": ("Finland", "StatFin · data year"),
+         "finland_labels": ("Finland", "StatFin · ISCO labels")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
-                "denmark_data", "denmark_labels"]
+                "denmark_data", "denmark_labels",
+                "iceland_data", "iceland_labels",
+                "finland_data", "finland_labels"]
 
 
 def check(key: str) -> SourceStatus:

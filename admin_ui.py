@@ -596,29 +596,54 @@ def _norway_card(query, D, flt="all"):
         _check_button(D, "no", _NO_KEYS)
 
 
+def _labels_card(query, D, flt, *, iso, keys, tkey, file, year_fn, kw):
+    """Generic 'live API + bundled ISCO labels' card (Norway/Denmark/Iceland/
+    Finland share this shape): one Check button, uniform stat row."""
+    T = D[tkey]
+    if not _match(query, T["name"], T["source"], *kw, T["type"]) \
+            or _flt_skip(flt, keys):
+        return
+    meta = _file_meta(file)
+    data = meta.get("data") or {}
+    codes = (data.get("codes") or {}).get("EN", {})
+    leaves = sum(1 for c in codes if len(c) == 4)
+    with st.container(border=True, key=f"adcard_{iso}"):
+        st.markdown(
+            _hdr(iso, T["name"], T["source"], T["type"], _country_pill(D, keys))
+            + _stats([(D["s_year"], year_fn()),
+                      (D["s_occ"], _n(leaves) if leaves else "—"),
+                      (D["s_built"], data.get("built_at", "—")),
+                      (D["s_size"], _fmt_bytes(meta.get("size")))])
+            + f'<div class="ad-cap">{T["desc"]}</div>',
+            unsafe_allow_html=True)
+        _check_button(D, iso, keys)
+
+
 _DK_KEYS = ["denmark_data", "denmark_labels"]
 
 
 def _denmark_card(query, D, flt="all"):
-    T = D["denmark"]
-    if not _match(query, T["name"], T["source"], "disco", T["type"]) \
-            or _flt_skip(flt, _DK_KEYS):
-        return
-    from countries.denmark.build import latest_year as _dk_year
-    disco_meta = _file_meta("disco_labels.json")
-    disco = disco_meta.get("data") or {}
-    codes = (disco.get("codes") or {}).get("EN", {})
-    leaves = sum(1 for c in codes if len(c) == 4)
-    with st.container(border=True, key="adcard_dk"):
-        st.markdown(
-            _hdr("dk", T["name"], T["source"], T["type"], _country_pill(D, _DK_KEYS))
-            + _stats([(D["s_year"], _dk_year()),
-                      (D["s_occ"], _n(leaves) if leaves else "—"),
-                      (D["s_built"], disco.get("built_at", "—")),
-                      (D["s_size"], _fmt_bytes(disco_meta.get("size")))])
-            + f'<div class="ad-cap">{T["desc"]}</div>',
-            unsafe_allow_html=True)
-        _check_button(D, "dk", _DK_KEYS)
+    from countries.denmark.build import latest_year as yr
+    _labels_card(query, D, flt, iso="dk", keys=_DK_KEYS, tkey="denmark",
+                 file="disco_labels.json", year_fn=yr, kw=("disco",))
+
+
+_IS_KEYS = ["iceland_data", "iceland_labels"]
+
+
+def _iceland_card(query, D, flt="all"):
+    from countries.iceland.build import latest_year as yr
+    _labels_card(query, D, flt, iso="is", keys=_IS_KEYS, tkey="iceland",
+                 file="iceland_labels.json", year_fn=yr, kw=("isco", "hagstofa"))
+
+
+_FI_KEYS = ["finland_data", "finland_labels"]
+
+
+def _finland_card(query, D, flt="all"):
+    from countries.finland.build import latest_year as yr
+    _labels_card(query, D, flt, iso="fi", keys=_FI_KEYS, tkey="finland",
+                 file="finland_labels.json", year_fn=yr, kw=("isco", "statfin"))
 
 
 _SE_KEYS = ["sweden_data", "sweden_labels"]
@@ -812,6 +837,8 @@ def data_section():
     _norway_card(query, D, flt)
     _us_card(query, D, flt)
     _denmark_card(query, D, flt)
+    _iceland_card(query, D, flt)
+    _finland_card(query, D, flt)
     if flt == "all":
         _caches_card(query, D)
 
