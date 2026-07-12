@@ -148,6 +148,27 @@ def render_sidebar(cfg) -> dict:
     live = {"lang": "EN", "sector": (caps.sectors[0] if caps.sectors else ""),
             "sex": "total", "years": (), "occ_codes": (), "scope": ""}
 
+    # A staged selection from the Code-browser confirm dialog (its Search button).
+    # Consumed HERE, before the widgets below instantiate, so it may safely write
+    # their keys (the documented "set a widget value from outside" pattern) —
+    # committing the query, mirroring the chosen filters into the sidebar, and
+    # closing the browser view so the results render.
+    _apply = st.session_state.pop(k("apply"), None)
+    if _apply:
+        st.session_state[k("committed")] = _apply["query"]
+        st.session_state[k("occ")] = [_apply["occ_label"]]
+        if _apply.get("sector_label") is not None:
+            st.session_state[k("sector")] = _apply["sector_label"]
+        if _apply.get("sex") is not None:
+            st.session_state[k("sex")] = _apply["sex"]
+        if _apply.get("years_value") is not None:
+            st.session_state[k("years")] = _apply["years_value"]
+        for gkey in [key for key in st.session_state
+                     if str(key).startswith(f"{cfg.slug}_grp")]:
+            st.session_state.pop(gkey, None)     # clear the drill-down
+        st.session_state.pop(k("occsearch"), None)
+        st.session_state.pop(_apply.get("vk") or k("view"), None)   # close the view
+
     with st.sidebar:
         st.markdown(theme.SIDEBAR_CSS, unsafe_allow_html=True)
         lc, sc = st.columns([1.7, 1], vertical_alignment="center")
@@ -185,18 +206,23 @@ def render_sidebar(cfg) -> dict:
             live["sector"] = caps.sectors[sec_labels.index(chosen)]
 
         if caps.has_sex:
+            # Pass default= only on the first render; once the key exists (incl.
+            # a value staged by the confirm dialog) omit it, else Streamlit warns
+            # about "default value + Session State API" on every run.
+            _sex_kw = {} if k("sex") in st.session_state else {"default": "total"}
             _sex = st.segmented_control(
-                i18n.t(cfg, "sex", lang), ["total", "women", "men"], default="total",
-                key=k("sex"),
-                format_func=lambda s: i18n.t(cfg, s, lang, s.capitalize()))
+                i18n.t(cfg, "sex", lang), ["total", "women", "men"], key=k("sex"),
+                format_func=lambda s: i18n.t(cfg, s, lang, s.capitalize()), **_sex_kw)
             live["sex"] = _sex or "total"
 
         if caps.year_range:
             y0, y1 = caps.year_range
             years = list(range(y0, y1 + 1))
             if len(years) > 1:
+                _yr_kw = ({} if k("years") in st.session_state
+                          else {"value": (max(y0, y1 - 2), y1)})
                 a, b = st.select_slider(i18n.t(cfg, "year_range", lang), options=years,
-                                        value=(max(y0, y1 - 2), y1), key=k("years"))
+                                        key=k("years"), **_yr_kw)
                 live["years"] = tuple(y for y in years if a <= y <= b)
             else:
                 live["years"] = (y1,)

@@ -148,19 +148,77 @@ def browsable(cfg, lang: str = "EN") -> bool:
     return len({len(c) for c in tree}) > 1
 
 
-def _use_occupation(cfg, code, name, query, vk):
-    """Pick a drilled-to occupation: commit it as the active query (so its data
-    renders), mirror it into the sidebar, and close the browser view. Runs as a
-    button on_click callback — i.e. BEFORE the next run instantiates the sidebar
-    widgets — so it may safely write their keys (slug_occ / slug_grp*)."""
-    slug = cfg.slug
-    st.session_state[f"{slug}_committed"] = {**query, "occ_codes": (code,), "scope": ""}
-    for gkey in [key for key in st.session_state if key.startswith(f"{slug}_grp")]:
-        st.session_state.pop(gkey, None)        # clear the sidebar drill-down
-    st.session_state.pop(f"{slug}_occsearch", None)
-    st.session_state[f"{slug}_occ"] = [f"{name}  ({code})"]   # reflect in the multiselect
-    if vk:
-        st.session_state.pop(vk, None)           # close the code-browser view
+def _confirm_body(cfg, lang, query, code, name, vk):
+    """The 'Use this occupation' confirm dialog: the picked occupation plus the
+    country's remaining filters (sector / gender / year range, each shown only if
+    the data supports it), pre-filled from the current selection. Search applies;
+    Cancel just closes and returns to the browser. Only styling attributes and
+    capability gates differ per country."""
+    caps, slug = cfg.capabilities, cfg.slug
+    st.caption(i18n.t(cfg, "confirm_intro", lang,
+                      "Check the filters below, then search — or search with the "
+                      "current selection."))
+    st.markdown(f"**{i18n.t(cfg, 'confirm_occ', lang, 'Occupation')}:** {name} · {code}")
+
+    sector_code = query.get("sector", "") or (caps.sectors[0] if caps.sectors else "")
+    sector_label = None
+    if caps.sectors:
+        sec_labels = [i18n.t(cfg, f"sector_{s}", lang, s.capitalize()) for s in caps.sectors]
+        idx = caps.sectors.index(sector_code) if sector_code in caps.sectors else 0
+        sector_label = st.selectbox(i18n.t(cfg, "sector", lang, "Sector"), sec_labels,
+                                    index=idx, key=f"{slug}_d_sector")
+        sector_code = caps.sectors[sec_labels.index(sector_label)]
+
+    sex = query.get("sex", "total") or "total"
+    if caps.has_sex:
+        sex = st.segmented_control(
+            i18n.t(cfg, "sex", lang, "Gender"), ["total", "women", "men"],
+            default=sex if sex in ("total", "women", "men") else "total",
+            key=f"{slug}_d_sex",
+            format_func=lambda s: i18n.t(cfg, s, lang, s.capitalize())) or "total"
+
+    years_tuple = tuple(query.get("years", ()))
+    years_value = None
+    if caps.year_range:
+        y0, y1 = caps.year_range
+        allyears = list(range(y0, y1 + 1))
+        if len(allyears) > 1:
+            cur = sorted(int(y) for y in years_tuple) if years_tuple else []
+            a0 = min(max(cur[0] if cur else max(y0, y1 - 2), y0), y1)
+            b0 = min(max(cur[-1] if cur else y1, y0), y1)
+            a, b = st.select_slider(i18n.t(cfg, "year_range", lang, "Year range"),
+                                    options=allyears, value=(a0, b0),
+                                    key=f"{slug}_d_years")
+            years_tuple = tuple(y for y in allyears if a <= y <= b)
+            years_value = (a, b)
+        else:
+            years_tuple = (y1,)
+
+    c1, c2 = st.columns(2)
+    if c1.button("🔍 " + i18n.t(cfg, "search", lang, "Search"), type="primary",
+                 use_container_width=True, key=f"{slug}_d_go"):
+        # Stage the full selection; the sidebar consumes it BEFORE its widgets
+        # instantiate (so it can write their keys). App-scope rerun closes the
+        # dialog and renders the results.
+        st.session_state[f"{slug}_apply"] = {
+            "query": {**query, "sector": sector_code, "sex": sex,
+                      "years": years_tuple, "occ_codes": (code,), "scope": ""},
+            "occ_label": f"{name}  ({code})",
+            "sector_label": sector_label, "sex": sex if caps.has_sex else None,
+            "years_value": years_value, "vk": vk}
+        st.rerun()
+    if c2.button(i18n.t(cfg, "cancel", lang, "Cancel"), use_container_width=True,
+                 key=f"{slug}_d_cancel"):
+        st.rerun()                               # close, back to the browser
+
+
+def _open_confirm(cfg, lang, query, code, name, vk):
+    """Open the confirm dialog on the click's OWN run (the proven st.dialog
+    pattern — no persistent open flag that would resurrect it after an
+    X-dismissal). In-dialog widget edits are fragment reruns, so it stays open;
+    Search/Cancel do app-scope reruns, which close it."""
+    title = i18n.t(cfg, "confirm_title", lang, "Confirm your search")
+    st.dialog(title)(lambda: _confirm_body(cfg, lang, query, code, name, vk))()
 
 
 def _browse_body(cfg, lang, query=None, vk=None):
@@ -212,9 +270,13 @@ def _browse_body(cfg, lang, query=None, vk=None):
         else:                                    # a leaf = a detailed occupation
             st.caption(i18n.t(cfg, "browser_leaf", lang))
             if query is not None:
-                st.button(i18n.t(cfg, "use_occupation", lang), type="primary",
-                          key=f"{cfg.slug}_use", use_container_width=True,
-                          on_click=_use_occupation, args=(cfg, cur, tree[cur], query, vk))
+                if st.button(i18n.t(cfg, "use_occupation", lang), type="primary",
+                             key=f"{cfg.slug}_use", use_container_width=True):
+                    # fresh dialog each open (keyed widgets otherwise keep the
+                    # previous edit instead of reflecting the current selection)
+                    for dk in ("d_sector", "d_sex", "d_years"):
+                        st.session_state.pop(f"{cfg.slug}_{dk}", None)
+                    _open_confirm(cfg, lang, query, cur, tree[cur], vk)
 
     # ── Global search: bypass the drill-down, pick from matches ────────────────
     q = st.text_input(i18n.t(cfg, "browser_search", lang),
