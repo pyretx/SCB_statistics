@@ -101,7 +101,7 @@ desc    = "Structure-of-Earnings monthly figures fetched live from StatFin table
 name    = "Estonia"
 source  = "Stat. Estonia"
 type    = "live API + ISCO labels"
-desc    = "Gross hourly earnings fetched live from Statistics Estonia table PA623 (4-yearly SES snapshot; 10 ISCO major groups, deciles) and disk-cached; bundled bilingual major-group labels give instant dropdowns. Beta country."
+desc    = "Average earnings fetched live from Statistics Estonia table PA633 (4-yearly SES snapshot; 446 detailed ISCO occupations, average only) and disk-cached; bundled bilingual ISCO labels give instant dropdowns. Beta country."
 
 [data.netherlands]
 name    = "Netherlands"

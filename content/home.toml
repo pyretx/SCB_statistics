@@ -217,8 +217,8 @@ fi = [
   "Monthly earnings · 2024 snapshot",
 ]
 ee = [
-  "Mean, median & deciles · 10 ISCO major groups",
-  "Gender breakdown · P10–P90",
+  "Average salary · ~450 occupations (ISCO)",
+  "Hierarchy drill-down · gender split",
   "Est. monthly earnings · 2022 (4-yearly)",
 ]
 nl = [

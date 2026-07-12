@@ -1,9 +1,10 @@
-"""ISCO major-group labels for Estonia + the pinned data year.
+"""ISCO occupation labels for Estonia + the pinned data year.
 
-Statistics Estonia's Structure of Earnings table PA623 publishes earnings only
-by ISCO-08 MAJOR GROUP (OC0–OC9, 10 groups) — no detailed occupations — every
-4 years (2010/14/18/22). Labels come from the table's 'Ametiala pearühm'
-variable in EN + ET; codes are the OCx groups (flat, no hierarchy).
+Statistics Estonia table PA633 publishes average gross HOURLY earnings +
+headcount by DETAILED ISCO-08 occupation (446 codes, full 1–4-digit hierarchy),
+every 4 years (2010/14/18/22). The API codes are "OC" + the ISCO digits
+(OC2512); we strip "OC" so the framework sees clean numeric codes (2512) and its
+prefix drill-down works — the provider re-adds "OC" to query. Labels EN + ET.
 """
 from __future__ import annotations
 
@@ -14,9 +15,9 @@ import time
 
 import requests
 
-_ROOTS = {"EN": "https://andmed.stat.ee/api/v1/en/stat/majandus/palk-ja-toojeukulu/tootasu/PA623.PX",
-          "ET": "https://andmed.stat.ee/api/v1/et/stat/majandus/palk-ja-toojeukulu/tootasu/PA623.PX"}
-OCC_VAR = "Ametiala pearühm"
+_ROOTS = {"EN": "https://andmed.stat.ee/api/v1/en/stat/majandus/palk-ja-toojeukulu/tootasu/PA633.PX",
+          "ET": "https://andmed.stat.ee/api/v1/et/stat/majandus/palk-ja-toojeukulu/tootasu/PA633.PX"}
+OCC_VAR = "Ametiala"
 YEAR_VAR = "Vaatlusperiood"
 _ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 OUT = os.path.join(_ROOT, "estonia_labels.json")
@@ -63,15 +64,18 @@ def available_years(meta: dict | None = None) -> list[int]:
 
 def _labels(meta: dict) -> dict[str, str]:
     occ = next(v for v in meta["variables"] if v["code"] == OCC_VAR)
-    return {c: t.strip() for c, t in zip(occ["values"], occ["valueTexts"])
-            if c != "_T"}                     # OC0–OC9, drop the Total row
+    out = {}
+    for c, t in zip(occ["values"], occ["valueTexts"]):
+        if c.startswith("OC") and c[2:].isdigit() and 1 <= len(c[2:]) <= 4:
+            out[c[2:]] = t.strip()             # "OC2512" → "2512"
+    return out
 
 
 def build(out_path: str = OUT, log=print) -> dict:
-    log("fetching ISCO major-group labels (EN) from Statistics Estonia …")
+    log("fetching ISCO occupation labels (EN) from Statistics Estonia …")
     en = _labels(_meta("EN"))
     try:
-        log("fetching ISCO major-group labels (ET) …")
+        log("fetching ISCO occupation labels (ET) …")
         et = _labels(_meta("ET"))
     except Exception as e:
         log(f"ET labels unavailable ({e}) — falling back to EN")
@@ -79,12 +83,13 @@ def build(out_path: str = OUT, log=print) -> dict:
     payload = {
         "built_at": datetime.date.today().isoformat(),
         "source": _ROOTS["EN"],
-        "classification": "ISCO-08 major groups (OC0–OC9)",
+        "classification": "ISCO-08 (all levels 1–4 digit)",
         "codes": {"EN": en, "ET": et},
     }
     tmp = out_path + ".tmp"
     with open(tmp, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=1)
     os.replace(tmp, out_path)
-    log(f"wrote {len(en)} EN + {len(et)} ET major groups")
-    return {"built_at": payload["built_at"], "codes": len(en), "leaves": len(en)}
+    leaves = sum(1 for c in en if len(c) == 4)
+    log(f"wrote {len(en)} EN + {len(et)} ET codes ({leaves} leaf)")
+    return {"built_at": payload["built_at"], "codes": len(en), "leaves": leaves}
