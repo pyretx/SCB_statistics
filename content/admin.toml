@@ -118,6 +118,20 @@ extras  = [
 ]
 
 [users]
+# ── Status KPIs (top of the Users section) ──
+kpi_total      = "Registered users"
+kpi_unverified = "Waiting for verification"
+kpi_betareq    = "Beta requests"
+badge_unverified = "unverified"
+
+# ── Delete confirmation (dialog with the user's profile card) ──
+del_title   = "Delete this user?"
+del_warning = "This permanently deletes the account and its access. It cannot be undone."
+del_confirm = "🗑 Yes, delete user"
+del_cancel  = "Cancel"
+del_done    = "Deleted {email}."
+del_failed  = "Could not delete: {err}"
+
 # ── Beta program requests (users ask from their profile dialog) ──
 br_heading   = "Beta requests"
 br_caption   = "Users who asked to join the beta program from their profile. Accept switches them to the Beta role; Decline keeps them Standard (they can ask again). You can always change any user's role later from the table below."

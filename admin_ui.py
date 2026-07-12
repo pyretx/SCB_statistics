@@ -834,6 +834,54 @@ def _initials(name, email):
     return b[:2].upper()
 
 
+def _role_badge_map(U):
+    return {"master": (U["role_master"], "#8A6A2A", "rgba(184,134,59,.16)"),
+            "admin": (U["role_admin"], "#0A63A6", "rgba(10,99,166,.10)"),
+            "beta": (U.get("role_beta", "Beta"), "#166534", "rgba(22,163,74,.12)"),
+            "standard": (U["role_standard"], "#5B6472", "#EEF0F3")}
+
+
+def _delete_dialog():
+    """Confirmation before deleting a user: their profile card + an explicit
+    Delete / Cancel choice — no more one-click deletions."""
+    U = _A()["users"]
+    u = st.session_state.get("_del_user") or {}
+    txt, fg, bg = _role_badge_map(U).get(u.get("role"),
+                                         (u.get("role", "—"), "#5B6472", "#EEF0F3"))
+    country_opts = _country_options()
+    acc = (U["all_countries"] if u.get("role") in _ADMIN_ROLES
+           else ", ".join(country_opts.get(s, s) for s in u.get("countries", []))
+           or "—")
+    av = "#B8863B" if u.get("role") in _ADMIN_ROLES else "#0A63A6"
+    st.markdown(
+        f'<div style="border:1px solid #E7E9ED;border-radius:14px;padding:16px 18px;'
+        f'display:flex;align-items:center;gap:14px;margin-bottom:6px;">'
+        f'<div class="ad-av" style="background:{av};width:44px;height:44px;'
+        f'font-size:15px;">{_initials(u.get("name"), u.get("email", "?"))}</div>'
+        f'<div style="min-width:0;">'
+        f'<div class="ad-uname" style="font-size:15px;">{u.get("name") or U["no_name"]}</div>'
+        f'<div class="ad-email">{u.get("email", "—")}</div>'
+        f'<div style="margin-top:6px;"><span class="ad-badge" '
+        f'style="color:{fg};background:{bg};">{txt}</span>'
+        f'&nbsp;<span class="ad-access">🌐 {acc}</span></div>'
+        f'</div></div>', unsafe_allow_html=True)
+    st.warning(U["del_warning"])
+    c1, c2 = st.columns(2)
+    if c1.button(U["del_confirm"], type="primary", use_container_width=True,
+                 key="_del_yes"):
+        try:
+            auth.delete_user(u["id"])
+            _invalidate_users()
+            st.session_state["_del_msg"] = U["del_done"].format(email=u.get("email"))
+        except Exception as e:  # noqa: BLE001
+            st.session_state["_del_msg_err"] = U["del_failed"].format(err=e)
+        st.session_state.pop("_del_user", None)
+        st.rerun()
+    if c2.button(U["del_cancel"], use_container_width=True, key="_del_no"):
+        st.session_state.pop("_del_user", None)
+        st.rerun()
+
+
 def users_section():
     st.markdown(CSS, unsafe_allow_html=True)
     U = _A()["users"]
@@ -841,16 +889,25 @@ def users_section():
     country_opts = _country_options()
     cslugs = list(country_opts)
     cfmt = lambda s: country_opts.get(s, s)          # noqa: E731
-    role_badges = {"master": (U["role_master"], "#8A6A2A", "rgba(184,134,59,.16)"),
-                   "admin": (U["role_admin"], "#0A63A6", "rgba(10,99,166,.10)"),
-                   "beta": (U.get("role_beta", "Beta"), "#166534", "rgba(22,163,74,.12)"),
-                   "standard": (U["role_standard"], "#5B6472", "#EEF0F3")}
+    role_badges = _role_badge_map(U)
+
+    users, _ = _load_users()
+    pending = [u for u in (users or []) if u.get("beta_requested")]
+    unverified = [u for u in (users or []) if not u.get("email_confirmed", True)]
+
+    # ── Status KPIs (like the Overview tiles) ─────────────────────────────────
+    kc = st.columns(6)
+    _kpi(kc[0], "u_total", _IC_USERS, "#0A63A6", "rgba(10,99,166,.10)",
+         len(users) if users is not None else "—", U["kpi_total"])
+    _kpi(kc[1], "u_unver", _IC_ALERT, "#B26A00", "rgba(178,106,0,.13)",
+         len(unverified), U["kpi_unverified"])
+    _kpi(kc[2], "u_betareq", _IC_USERS, "#B26A00", "rgba(178,106,0,.13)",
+         len(pending), U["kpi_betareq"])
+    st.write("")
 
     # ── Beta requests card — pending asks from the profile dialog. Accept
     # switches the user to the beta role; either way the request is cleared
     # (the role stays editable any time via the ✏️ popover below). ──
-    users, _ = _load_users()
-    pending = [u for u in (users or []) if u.get("beta_requested")]
     with st.container(border=True, key="adcard_betareq"):
         st.markdown(
             f'#### {U["br_heading"]} '
@@ -946,6 +1003,10 @@ def users_section():
             st.error(U["load_error"].format(err=err))
             st.caption(U["retry_hint"])
             return
+        if st.session_state.get("_del_msg"):
+            st.success(st.session_state.pop("_del_msg"))
+        if st.session_state.get("_del_msg_err"):
+            st.error(st.session_state.pop("_del_msg_err"))
 
         shown = [u for u in (users or []) if _match(
             uq, u.get("name"), u["email"], u["role"],
@@ -976,8 +1037,12 @@ def users_section():
             req = ('' if not u.get("beta_requested") else
                    f' <span class="ad-badge" style="color:#B26A00;'
                    f'background:rgba(178,106,0,.14);">{U["badge_requested"]}</span>')
+            # Grey marker for accounts that never completed email confirmation.
+            unv = ('' if u.get("email_confirmed", True) else
+                   f' <span class="ad-badge" style="color:#8A919D;'
+                   f'background:#F1F3F6;">{U["badge_unverified"]}</span>')
             c_role.markdown(f'<span class="ad-badge" style="color:{fg};background:{bg};">'
-                            f'{txt}</span>{req}{you}', unsafe_allow_html=True)
+                            f'{txt}</span>{req}{unv}{you}', unsafe_allow_html=True)
             acc = (U["all_countries"] if u["role"] in _ADMIN_ROLES
                    else ", ".join(cfmt(s) for s in u.get("countries", [])) or "—")
             c_acc.markdown(f'<span class="ad-access">🌐 {acc}</span>', unsafe_allow_html=True)
@@ -1025,12 +1090,13 @@ def users_section():
                         st.error(str(e))
             if u["role"] != "master" and u["id"] != me.get("id"):
                 if d_col.button("🗑", key=f"del_{u['id']}", help=U["del_help"]):
-                    try:
-                        auth.delete_user(u["id"])
-                        _invalidate_users()
-                        st.rerun()
-                    except Exception as e:  # noqa: BLE001
-                        st.error(str(e))
+                    # No one-click deletion: open the confirmation dialog with
+                    # the user's profile card (see _delete_dialog).
+                    st.session_state["_del_user"] = u
+                    st.rerun()
+
+    if st.session_state.get("_del_user"):
+        st.dialog(U["del_title"])(_delete_dialog)()
 
 
 # ── Section: Work-permit rules (Sweden) ──────────────────────────────────────

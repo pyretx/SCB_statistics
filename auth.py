@@ -276,6 +276,9 @@ def list_users(retries: int = 1) -> list[dict]:
             "role":  meta.get("role", "standard"),
             "countries": _countries_of(meta),
             "beta_requested": meta.get("beta_requested"),
+            # False = registered but never completed the email confirmation
+            # (the admin panel surfaces these as "waiting for verification")
+            "email_confirmed": bool(getattr(u, "email_confirmed_at", None)),
         })
     out.sort(key=lambda r: ({"master": 0, "admin": 1, "standard": 2}.get(r["role"], 3), r["email"]))
     return out
