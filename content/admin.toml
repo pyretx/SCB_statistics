@@ -103,6 +103,12 @@ source  = "Stat. Estonia"
 type    = "live API + ISCO labels"
 desc    = "Gross hourly earnings fetched live from Statistics Estonia table PA623 (4-yearly SES snapshot; 10 ISCO major groups, deciles) and disk-cached; bundled bilingual major-group labels give instant dropdowns. Beta country."
 
+[data.netherlands]
+name    = "Netherlands"
+source  = "CBS"
+type    = "live API + BRC labels"
+desc    = "Gross hourly wages fetched live from CBS table 85517NED (OData; BRC-2014 occupation hierarchy, P25/median/P75, 2013→) and disk-cached; the bundled BRC labels + code map give instant dropdowns. Beta country."
+
 [data.sweden]
 name    = "Sweden"
 source  = "SCB"

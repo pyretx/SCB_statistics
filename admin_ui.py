@@ -655,6 +655,15 @@ def _estonia_card(query, D, flt="all"):
                  file="estonia_labels.json", year_fn=yr, kw=("isco", "stat.ee"))
 
 
+_NL_KEYS = ["netherlands_data", "netherlands_labels"]
+
+
+def _netherlands_card(query, D, flt="all"):
+    from countries.netherlands.build import latest_year as yr
+    _labels_card(query, D, flt, iso="nl", keys=_NL_KEYS, tkey="netherlands",
+                 file="netherlands_labels.json", year_fn=yr, kw=("brc", "cbs"))
+
+
 _SE_KEYS = ["sweden_data", "sweden_labels"]
 
 
@@ -849,6 +858,7 @@ def data_section():
     _iceland_card(query, D, flt)
     _finland_card(query, D, flt)
     _estonia_card(query, D, flt)
+    _netherlands_card(query, D, flt)
     if flt == "all":
         _caches_card(query, D)
 

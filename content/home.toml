@@ -145,7 +145,7 @@ catalog = [
   { name = "Italy",          iso = "it", region = "europe", source = "ISTAT",        status = "soon" },
   { name = "Latvia",         iso = "lv", region = "europe", source = "CSB",          status = "soon" },
   { name = "Lithuania",      iso = "lt", region = "europe", source = "OSP",          status = "soon" },
-  { name = "Netherlands",    iso = "nl", region = "europe", source = "CBS",          status = "soon" },
+  { name = "Netherlands",    iso = "nl", region = "europe", source = "CBS",          status = "beta", slug = "netherlands" },
   { name = "Poland",         iso = "pl", region = "europe", source = "GUS",          status = "soon" },
   { name = "Portugal",       iso = "pt", region = "europe", source = "INE PT",       status = "soon" },
   { name = "Slovakia",       iso = "sk", region = "europe", source = "SUSR",         status = "soon" },
@@ -220,6 +220,11 @@ ee = [
   "Mean, median & deciles · 10 ISCO major groups",
   "Gender breakdown · P10–P90",
   "Gross hourly earnings · 2022 (4-yearly)",
+]
+nl = [
+  "Median & quartiles · ~110 occupations (BRC)",
+  "Hierarchy drill-down · P25–P75 · trend",
+  "Gross hourly wages · 2013–2024",
 ]
 
 [footer]
