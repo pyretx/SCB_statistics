@@ -691,7 +691,7 @@ with hc1:
     _roadmap = f"{max(5, round(_soon_n / 5) * 5)}+"
     _num = ('font-family:\'JetBrains Mono\',monospace;font-size:26px;font-weight:600;'
             'color:#0C1119;letter-spacing:-.02em;')
-    _lbl = 'font-size:13px;color:#7A828F;margin-top:3px;'
+    _lbl = 'font-size:13px;color:#7A828F;margin-top:3px;white-space:nowrap;'
     _div = '<div style="width:1px;background:#E1E4E9;align-self:stretch;"></div>'
     _dot = ('<span style="width:7px;height:7px;border-radius:50%;background:#1F9D62;'
             'display:inline-block;"></span>')
@@ -740,7 +740,7 @@ with hc1:
             st.session_state["_show_video"] = True
             st.rerun()
     st.markdown(f"""
-    <div style="display:flex;gap:34px;margin-top:24px;flex-wrap:wrap;align-items:stretch;">
+    <div style="display:flex;gap:20px;margin-top:24px;flex-wrap:nowrap;align-items:stretch;">
       {_stats_html}
     </div>
     {_punch}
