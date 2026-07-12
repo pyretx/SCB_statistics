@@ -75,6 +75,28 @@ occ_code = "2144"
 year     = "2025"
 fallback = { p10 = 40200, p25 = 45300, median = 51800, p75 = 60000, p90 = 69900 }
 
+# SSB 11418, STYRK-08 1212, private sector (the Norway page's default), 2025.
+# SSB publishes quartiles only — the tile renders P25/MED/P75.
+[[hero.preview.slides]]
+title    = "Human resource managers"
+sub      = "Norway · SSB 2025 · monthly, NOK"
+iso      = "no"
+unit     = "kr"
+occ_code = ""
+year     = ""
+fallback = { p25 = 79830, median = 100000, p75 = 125250 }
+
+# BLS OEWS May 2025, SOC 13-2051, North Carolina (bundled us_oews.json.gz).
+[[hero.preview.slides]]
+title    = "Financial and Investment Analysts"
+sub      = "United States · North Carolina · BLS OEWS May 2025 · annual, USD"
+iso      = "us"
+unit     = "$"
+occ_code = ""
+year     = ""
+per      = "/yr"
+fallback = { p10 = 61670, p25 = 76510, median = 102390, p75 = 131440, p90 = 167250 }
+
 [countries]
 eyebrow     = "SELECT A COUNTRY"
 heading     = "Where do you want to look?"

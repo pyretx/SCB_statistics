@@ -729,20 +729,24 @@ with hc2:
         _v = (_fetch_preview_data(_s["occ_code"], _s["year"]) or _s["fallback"]) \
             if _s.get("occ_code") else _s["fallback"]
         _slides_data.append({"title": _s["title"], "sub": _s["sub"],
-                             "iso": _s["iso"], "unit": _s["unit"], "v": _v})
+                             "iso": _s["iso"], "unit": _s["unit"],
+                             "per": _s.get("per", _pv["per_month"]), "v": _v})
 
     def _nbsp(x):                       # 53500 -> "53 900" (nbsp so it never wraps)
         return f"{int(round(x)):,}".replace(",", " ")
 
     def _slide_html(s):
         v = s["v"]
-        lo, hi = v["p10"], (v["p90"] or 1)
+        # Only the percentiles the source publishes (Norway: quartiles only).
+        pres = [(lbl, key) for lbl, key in
+                (("P10", "p10"), ("P25", "p25"), ("MED", "median"),
+                 ("P75", "p75"), ("P90", "p90")) if v.get(key) is not None]
+        lo, hi = v[pres[0][1]], (v[pres[-1][1]] or 1)
         span = (hi - lo) or 1
         rows = ""
-        for lbl, key in (("P10", "p10"), ("P25", "p25"), ("MED", "median"),
-                         ("P75", "p75"), ("P90", "p90")):
+        for lbl, key in pres:
             val = v[key]
-            w = 30 + 66 * (val - lo) / span        # P10 ≈ 30% … P90 ≈ 96%
+            w = 30 + 66 * (val - lo) / span        # lowest ≈ 30% … highest ≈ 96%
             m = " med" if lbl == "MED" else ""
             rows += (f'<div class="row"><span class="lbl{m}">{lbl}</span>'
                      f'<div class="track2"><div class="fill{m}" style="width:{w:.0f}%"></div></div>'
@@ -754,7 +758,7 @@ with hc2:
                 f'<div class="sub">{s["sub"]}</div></div>'
                 f'<img class="flag" src="{flag_uri(s["iso"])}" alt=""></div>'
                 f'{rows}<div class="foot"><span class="foot-lbl">{_pv["foot_label"]}</span>'
-                f'<span class="foot-val mono">{med}<span class="unit">{_pv["per_month"]}</span></span></div></div>')
+                f'<span class="foot-val mono">{med}<span class="unit">{s["per"]}</span></span></div></div>')
 
     _slides = "".join(_slide_html(s) for s in _slides_data)
     _dots = "".join('<span class="dot"></span>' for _ in _slides_data)
