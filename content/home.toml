@@ -135,7 +135,7 @@ catalog = [
   { name = "Belgium",        iso = "be", region = "europe", source = "STATBEL",      status = "soon" },
   { name = "Croatia",        iso = "hr", region = "europe", source = "DZS",          status = "soon" },
   { name = "Czechia",        iso = "cz", region = "europe", source = "ISPV",         status = "soon" },
-  { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "soon" },
+  { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "beta", slug = "denmark" },
   { name = "Estonia",        iso = "ee", region = "europe", source = "STAT.EE",      status = "soon" },
   { name = "Finland",        iso = "fi", region = "europe", source = "STAT.FI",      status = "soon" },
   { name = "Germany",        iso = "de", region = "europe", source = "DESTATIS",     status = "soon" },
@@ -201,6 +201,11 @@ us = [
   "P10–P90 + mean · ~830 occupations (SOC-2018)",
   "National + all 50 states + 346 industries",
   "Annual wages + employment · BLS OEWS 2024",
+]
+dk = [
+  "Mean & median hourly earnings · ~420 occupations (DISCO-08)",
+  "Sector & gender breakdowns · quartiles",
+  "Standardized hourly earnings · 2013–2024",
 ]
 
 [footer]

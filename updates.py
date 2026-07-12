@@ -356,6 +356,94 @@ def _update_norway_labels(status, log) -> UpdateResult:
                         f"occupations) · {_commit_note('styrk_labels.json')}")
 
 
+# ── Denmark · DST data year — same pattern as Sweden/Norway: salaries are
+#    fetched live from LONS20, but the app pins the displayed year range
+#    (app_settings.json, "denmark_latest_year"), so a new DST year needs this
+#    explicit bump. ───────────────────────────────────────────────────────────
+def _dst_tableinfo() -> dict:
+    """One plain POST on the LONS20 table metadata (no long retries — checks)."""
+    r = requests.post("https://api.statbank.dk/v1/tableinfo",
+                      json={"lang": "en", "table": "LONS20"}, timeout=30)
+    r.raise_for_status()
+    return r.json()
+
+
+def _dst_latest_year() -> int | None:
+    tid = next(v for v in _dst_tableinfo()["variables"] if v["id"] == "Tid")
+    yrs = [int(x["id"]) for x in tid["values"] if str(x["id"]).isdigit()]
+    return max(yrs) if yrs else None
+
+
+def _check_denmark_data() -> SourceStatus:
+    from countries.denmark.build import latest_year
+    cur = latest_year()
+    s = SourceStatus("denmark_data", "Denmark", "DST · data year", current=str(cur))
+    latest = _dst_latest_year()
+    if latest is None:
+        raise RuntimeError("DST metadata probe returned no years")
+    s.latest = str(latest)
+    s.latest_raw = int(latest)
+    s.update_available = latest > cur
+    if s.update_available:
+        s.note = _restart_note()
+    return s
+
+
+def _update_denmark_data(status, log) -> UpdateResult:
+    from countries.denmark.build import latest_year, save_latest_year
+    target = status.latest_raw if status and status.latest_raw else _dst_latest_year()
+    if target is None:
+        return UpdateResult("denmark_data", OUT_UNAVAILABLE,
+                            "DST metadata probe returned no years")
+    if not (2000 < int(target) < 2100):
+        return UpdateResult("denmark_data", OUT_VALIDATION,
+                            f"implausible year from DST: {target!r}")
+    cur = latest_year()
+    if int(target) <= cur:
+        return UpdateResult("denmark_data", OUT_UP_TO_DATE, str(cur))
+    log(f"denmark_latest_year {cur} → {target}")
+    save_latest_year(int(target))
+    return UpdateResult("denmark_data", OUT_UPDATED,
+                        f"{target} · {_restart_note()}")
+
+
+# ── Denmark · DISCO labels — diff the live DST list vs disco_labels.json ──────
+def _check_denmark_labels() -> SourceStatus:
+    from countries.denmark.build import _labels
+    try:
+        with open(os.path.join(_ROOT, "disco_labels.json"), encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    cached = (data.get("codes") or {}).get("EN", {})
+    s = SourceStatus("denmark_labels", "Denmark", "DST · DISCO labels",
+                     current=f"{len(cached)} codes · {data.get('built_at', '—')}")
+    live = _labels(_dst_tableinfo())
+    if not live:
+        raise RuntimeError("DST returned no occupation metadata")
+    s.latest = f"{len(live)} codes"
+    diff = _label_diff(live, cached)
+    s.update_available = bool(diff)
+    s.note = diff
+    return s
+
+
+def _update_denmark_labels(status, log) -> UpdateResult:
+    from countries.denmark import build as dkbuild
+    res = dkbuild.build(log=log)             # atomic swap inside
+    if res.get("codes", 0) < 300:
+        return UpdateResult("denmark_labels", OUT_VALIDATION,
+                            f"implausibly few codes from DST: {res}")
+    try:
+        from countries.denmark import provider as dkprov
+        dkprov._codes.clear()                 # serve the new labels immediately
+    except Exception:
+        pass
+    return UpdateResult("denmark_labels", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} codes ({res['leaves']} "
+                        f"occupations) · {_commit_note('disco_labels.json')}")
+
+
 # ── United States · BLS OEWS — bundled build, full auto pipeline ──────────────
 def _check_us_data() -> SourceStatus:
     from countries.us import build as usbuild
@@ -417,20 +505,27 @@ def _update_us_data(status, log) -> UpdateResult:
 _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_labels,
              "france_api": _check_france_api, "france_micro": _check_france_micro,
              "norway_data": _check_norway_data, "norway_labels": _check_norway_labels,
-             "us_data": _check_us_data}
+             "us_data": _check_us_data,
+             "denmark_data": _check_denmark_data,
+             "denmark_labels": _check_denmark_labels}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
-             "us_data": _update_us_data}
+             "us_data": _update_us_data,
+             "denmark_data": _update_denmark_data,
+             "denmark_labels": _update_denmark_labels}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
          "france_micro": ("France", "INSEE · microdata"),
          "norway_data": ("Norway", "SSB · data year"),
          "norway_labels": ("Norway", "SSB · STYRK labels"),
-         "us_data": ("United States", "BLS OEWS")}
+         "us_data": ("United States", "BLS OEWS"),
+         "denmark_data": ("Denmark", "DST · data year"),
+         "denmark_labels": ("Denmark", "DST · DISCO labels")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
-                "norway_data", "norway_labels", "us_data"]
+                "norway_data", "norway_labels", "us_data",
+                "denmark_data", "denmark_labels"]
 
 
 def check(key: str) -> SourceStatus:

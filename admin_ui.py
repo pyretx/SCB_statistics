@@ -596,6 +596,31 @@ def _norway_card(query, D, flt="all"):
         _check_button(D, "no", _NO_KEYS)
 
 
+_DK_KEYS = ["denmark_data", "denmark_labels"]
+
+
+def _denmark_card(query, D, flt="all"):
+    T = D["denmark"]
+    if not _match(query, T["name"], T["source"], "disco", T["type"]) \
+            or _flt_skip(flt, _DK_KEYS):
+        return
+    from countries.denmark.build import latest_year as _dk_year
+    disco_meta = _file_meta("disco_labels.json")
+    disco = disco_meta.get("data") or {}
+    codes = (disco.get("codes") or {}).get("EN", {})
+    leaves = sum(1 for c in codes if len(c) == 4)
+    with st.container(border=True, key="adcard_dk"):
+        st.markdown(
+            _hdr("dk", T["name"], T["source"], T["type"], _country_pill(D, _DK_KEYS))
+            + _stats([(D["s_year"], _dk_year()),
+                      (D["s_occ"], _n(leaves) if leaves else "—"),
+                      (D["s_built"], disco.get("built_at", "—")),
+                      (D["s_size"], _fmt_bytes(disco_meta.get("size")))])
+            + f'<div class="ad-cap">{T["desc"]}</div>',
+            unsafe_allow_html=True)
+        _check_button(D, "dk", _DK_KEYS)
+
+
 _SE_KEYS = ["sweden_data", "sweden_labels"]
 
 
@@ -786,6 +811,7 @@ def data_section():
     _france_card(query, D, flt)
     _norway_card(query, D, flt)
     _us_card(query, D, flt)
+    _denmark_card(query, D, flt)
     if flt == "all":
         _caches_card(query, D)
 
