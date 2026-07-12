@@ -14,6 +14,13 @@ enableStaticServing = true
 [browser]
 gatherUsageStats = false
 
+[global]
+# The sidebar intentionally seeds keyed widgets via the Session State API while
+# also passing value=/default= (the Code-browser confirm dialog stages filter
+# values that way — see core/sidebar.py). Silence the once-per-process
+# "default value + Session State API" log warning that pattern triggers.
+disableWidgetStateDuplicationWarning = true
+
 # ── Theme — the design system's single source of truth (design-system.md §1). ──
 # Applied app-wide (both country pages, the landing, every widget) from here so
 # we avoid fragile CSS that targets Streamlit's internal class names.

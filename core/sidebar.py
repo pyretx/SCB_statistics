@@ -219,10 +219,19 @@ def render_sidebar(cfg) -> dict:
             y0, y1 = caps.year_range
             years = list(range(y0, y1 + 1))
             if len(years) > 1:
-                _yr_kw = ({} if k("years") in st.session_state
-                          else {"value": (max(y0, y1 - 2), y1)})
+                # value= must ALWAYS be a 2-tuple: it is what puts select_slider
+                # in range mode. Omitting it (value=None) registers a SINGLE-value
+                # widget, and once the browser echoes the two-handle state back,
+                # deserializing it bails out to options[0] — a bare int — and the
+                # `a, b =` unpack crashes ("cannot unpack non-iterable int").
+                # Seeding from the key's current state keeps a confirm-dialog
+                # staged value winning; value never affects the widget identity
+                # (select_slider registers with key_as_main_identity).
+                _cur = st.session_state.get(k("years"))
+                _val = (tuple(_cur) if isinstance(_cur, (list, tuple)) and len(_cur) == 2
+                        else (max(y0, y1 - 2), y1))
                 a, b = st.select_slider(i18n.t(cfg, "year_range", lang), options=years,
-                                        key=k("years"), **_yr_kw)
+                                        value=_val, key=k("years"))
                 live["years"] = tuple(y for y in years if a <= y <= b)
             else:
                 live["years"] = (y1,)
