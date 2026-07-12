@@ -204,6 +204,14 @@ def _load_users(force: bool = False):
 
 def _invalidate_users():
     st.session_state.pop("_admin_users", None)
+    # Also drop the per-user edit-widget states (role dropdown / country grant
+    # multiselect). Streamlit keeps a keyed widget's value across reruns and
+    # ignores its index/default afterwards — so after e.g. a beta-request
+    # accept, the ✏️ popover would still SHOW the pre-change role even though
+    # the row badge (fresh data) is correct. Fresh data ⇒ fresh defaults.
+    for k in [k for k in st.session_state
+              if str(k).startswith(("role_", "cty_"))]:
+        st.session_state.pop(k, None)
 
 
 def _match(query: str, *texts) -> bool:
