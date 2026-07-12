@@ -59,8 +59,11 @@ close        = "Close"
 
 # Feedback messages. {err} is replaced with the underlying reason.
 [messages]
-confirmed      = "✅ Thanks for confirming your registration — please sign in below."
+confirmed      = "✅ Registration link opened — please sign in below. If sign-in says your email isn't confirmed, press “Resend confirmation email”."
 sign_in_failed = "Sign-in failed: {err}"
+resend_button  = "📧 Resend confirmation email"
+resent         = "Confirmation email re-sent to {email} — open the newest email and click its link, then sign in."
+resend_failed  = "Could not resend: {err}"
 missing_fields = "Name, email and password are required."
 create_failed  = "Could not create account: {err}"
-check_inbox    = "Account created — check your inbox to confirm your email, then sign in."
+check_inbox    = "Account created — check your inbox to confirm your email, then sign in. (Tip: if the link says it's expired or already used, come back here and press “Resend confirmation email” after a failed sign-in.)"

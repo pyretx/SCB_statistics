@@ -397,10 +397,27 @@ def _auth_dialog():
                     st.session_state["auth_user"] = user
                     st.session_state.pop("_auth_pw", None)
                     st.session_state.pop("_confirmed_msg", None)
+                    st.session_state.pop("_resend_for", None)
                     st.session_state["_show_auth"] = False
                     st.rerun()
                 else:
                     st.error(_m["sign_in_failed"].format(err=err))
+                    # 'Email not confirmed' → offer a fresh confirmation link
+                    # (the first one is often consumed by a mail-app preview).
+                    if "confirm" in str(err).lower():
+                        st.session_state["_resend_for"] = email.strip()
+            if st.session_state.get("_resend_for"):
+                if st.button(_m["resend_button"], key="_auth_resend",
+                             use_container_width=True):
+                    _base = _app_base_url()
+                    _redir = f"{_base}/?confirmed=1" if _base else None
+                    _rerr = auth.resend_confirmation(
+                        st.session_state["_resend_for"], _redir)
+                    if _rerr:
+                        st.error(_m["resend_failed"].format(err=_rerr))
+                    else:
+                        st.success(_m["resent"].format(
+                            email=st.session_state.pop("_resend_for")))
         else:
             if st.button(_f["create_button"], type="primary", use_container_width=True):
                 if not name.strip() or not email.strip() or not pw:
@@ -435,6 +452,7 @@ def _auth_dialog():
         st.caption(_f["terms"])
         if st.button(_f["close"], key="_auth_close"):
             st.session_state["_show_auth"] = False
+            st.session_state.pop("_resend_for", None)
             st.session_state.pop("_confirmed_msg", None)
             st.rerun()
 

@@ -176,6 +176,22 @@ def sign_in(email: str, password: str):
         return None, str(e)
 
 
+def resend_confirmation(email: str, redirect_to: str | None = None):
+    """Re-send the signup confirmation email (public client). Returns an error
+    string or None. Covers the common real-world failure where the first
+    email's one-time link gets consumed by a mail-app preview/scanner before
+    the user clicks it — the user then sees 'Email not confirmed' on sign-in
+    and can self-serve a fresh link instead of needing an admin."""
+    try:
+        payload: dict = {"type": "signup", "email": email}
+        if redirect_to:
+            payload["options"] = {"email_redirect_to": redirect_to}
+        _client(service=False).auth.resend(payload)
+        return None
+    except Exception as e:  # noqa: BLE001
+        return str(e)
+
+
 def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | None = None):
     """Public self-service registration (uses the anon/public client, not the
     admin API). New accounts default to role 'standard' (no app_metadata is
