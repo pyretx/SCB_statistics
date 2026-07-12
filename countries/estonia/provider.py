@@ -30,6 +30,15 @@ SEX_CODE = {"total": "M_F", "men": "M", "women": "F"}
 # Näitaja (indicator) codes → normalized column (deciles → P10/median/P90)
 _MEASURE = {"mean": "GR_H", "p10": "GR_H_D1", "median": "GR_H_D5", "p90": "GR_H_D9"}
 _MEASURE_COL = {v: k for k, v in _MEASURE.items()}
+# Statistics Estonia publishes HOURLY earnings; we present an estimated MONTHLY
+# figure = hourly × a standard full-time month (40 h/week × 52 / 12). It is an
+# estimate (no official monthly is published, and the sample includes part-time
+# workers) — a full-time-equivalent monthly.
+_HOURS_PER_MONTH = 173.33
+
+
+def _monthly(v):
+    return v * _HOURS_PER_MONTH if v is not None else None
 
 
 def _post(query: dict, tries: int = 4) -> dict:
@@ -99,11 +108,11 @@ def _fetch(occ_codes: tuple[str, ...], sex: str, year: int, lang: str = "EN") ->
             continue
 
         def m(mc):
-            return val({IND_VAR: mc, OCC_VAR: occ, SEX_VAR: sc, YEAR_VAR: str(year)})
+            return _monthly(val({IND_VAR: mc, OCC_VAR: occ, SEX_VAR: sc, YEAR_VAR: str(year)}))
         rows.append({
             "country": "estonia", "year": int(year), "occ_code": occ,
             "occ_name": labels.get(occ, occ), "occ_group": occ, "dimension": "total",
-            "dim_value": "total", "currency": "EUR", "period": "hourly",
+            "dim_value": "total", "currency": "EUR", "period": "monthly",
             "mean": m(_MEASURE["mean"]), "median": m(_MEASURE["median"]),
             "p10": m(_MEASURE["p10"]), "p25": None, "p75": None,
             "p90": m(_MEASURE["p90"]), "count": None,
@@ -126,8 +135,8 @@ def _fetch_leaderboard(sex, year, lang="EN"):
         if occ not in idx:
             continue
         rows.append({"occ_code": occ, "occ_name": name,
-                     "mean": val({IND_VAR: "GR_H", OCC_VAR: occ, SEX_VAR: sc, YEAR_VAR: str(year)}),
-                     "median": val({IND_VAR: "GR_H_D5", OCC_VAR: occ, SEX_VAR: sc, YEAR_VAR: str(year)}),
+                     "mean": _monthly(val({IND_VAR: "GR_H", OCC_VAR: occ, SEX_VAR: sc, YEAR_VAR: str(year)})),
+                     "median": _monthly(val({IND_VAR: "GR_H_D5", OCC_VAR: occ, SEX_VAR: sc, YEAR_VAR: str(year)})),
                      "count": None})
     return pd.DataFrame(rows, columns=["occ_code", "occ_name", "mean", "median", "count"])
 

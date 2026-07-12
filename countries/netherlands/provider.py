@@ -28,6 +28,15 @@ _LABELS_FILE = os.path.join(_ROOT, "netherlands_labels.json")
 BASE = "https://opendata.cbs.nl/ODataApi/odata/85517NED/"
 _SELECT = ("Beroep,k_25ePercentiel_2,k_50ePercentielMediaan_3,"
            "k_75ePercentiel_4,Werknemer_1")
+# CBS publishes HOURLY wages; we present an estimated MONTHLY figure = hourly ×
+# a standard full-time month (40 h/week × 52 / 12). It is an estimate (no
+# official monthly is published, and the sample includes part-time workers) —
+# a full-time-equivalent monthly.
+_HOURS_PER_MONTH = 173.33
+
+
+def _monthly(v):
+    return v * _HOURS_PER_MONTH if v is not None else None
 
 
 @st.cache_data(show_spinner=False)
@@ -80,9 +89,9 @@ def _fetch_year(year: int) -> dict:
             continue
         cnt = r.get("Werknemer_1")
         out[code] = {
-            "p25": r.get("k_25ePercentiel_2"),
-            "median": r.get("k_50ePercentielMediaan_3"),
-            "p75": r.get("k_75ePercentiel_4"),
+            "p25": _monthly(r.get("k_25ePercentiel_2")),
+            "median": _monthly(r.get("k_50ePercentielMediaan_3")),
+            "p75": _monthly(r.get("k_75ePercentiel_4")),
             "count": (cnt * 1000) if cnt is not None else None,
         }
     return out
@@ -100,7 +109,7 @@ def _rows(codes, year, lang):
             "country": "netherlands", "year": int(year), "occ_code": occ,
             "occ_name": labels.get(occ, _codes(lang).get(occ, occ)),
             "occ_group": occ[:2], "dimension": "total", "dim_value": "total",
-            "currency": "EUR", "period": "hourly",
+            "currency": "EUR", "period": "monthly",
             "mean": None, "median": v.get("median"),
             "p10": None, "p25": v.get("p25"), "p75": v.get("p75"), "p90": None,
             "count": v.get("count"),

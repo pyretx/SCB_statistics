@@ -43,8 +43,10 @@ _GUIDE_EN = {
              ("P90", 84, "only 10% earn more")],
     "notes_title": "Good to know",
     "notes": [
-        "Figures are gross HOURLY earnings (EUR) for full-time and part-time "
-        "employees together.",
+        "Estonia publishes gross HOURLY earnings; the figures shown are an "
+        "ESTIMATED monthly amount — the hourly earnings × a standard full-time "
+        "month (40 h/week, ~173 h). It is an estimate: no official monthly is "
+        "published and the sample includes part-time workers.",
         "Estonia's Structure of Earnings is a four-yearly survey, so this is a "
         f"snapshot of {_YR} — there is no year-by-year trend (as with the US).",
         "Only the ten ISCO major groups are published — there are no detailed "
@@ -55,11 +57,11 @@ _GUIDE_EN = {
     "tabs": [
         ("Overview", "The key figures at a glance."),
         ("Salary distribution", "The P10–median–P90 chart, plus raw data + CSV."),
-        ("Where do I stand?", "Enter an hourly wage and see roughly where it falls."),
+        ("Where do I stand?", "Enter a monthly salary and see roughly where it falls."),
         ("Leaderboard", "Ranks the occupational groups by pay or gender gap."),
         ("By gender", "Women vs men, with a women-as-%-of-men view."),
     ],
-    "footer": f"All figures are gross hourly earnings from Statistics Estonia table PA623 ({_YR}).",
+    "footer": f"Figures are an estimated monthly amount from Statistics Estonia's gross hourly earnings, table PA623 ({_YR}).",
 }
 
 _GUIDE_ET = {
@@ -95,8 +97,10 @@ _GUIDE_ET = {
              ("P90", 84, "vaid 10% teenib rohkem")],
     "notes_title": "Hea teada",
     "notes": [
-        "Arvud on brutotunnitasu (eurodes) täis- ja osalise tööajaga töötajate "
-        "kohta kokku.",
+        "Eesti avaldab brutotunnitasu; kuvatavad arvud on HINNANGULINE kuutasu — "
+        "tunnitasu × standardne täistööaja kuu (40 t/nädalas, ~173 t). See on "
+        "hinnang: ametlikku kuutasu ei avaldata ja valimis on ka osalise "
+        "tööajaga töötajad.",
         "Eesti palgastruktuur on neljaaastane uuring, seega on see "
         f"{_YR}. aasta hetkeseis — aastatrendi ei ole (nagu USA puhul).",
         "Avaldatakse ainult kümme ISCO pearühma — üksikameteid ei ole.",
@@ -106,11 +110,11 @@ _GUIDE_ET = {
     "tabs": [
         ("Ülevaade", "Põhinäitajad ühe pilguga."),
         ("Palgajaotus", "P10–mediaan–P90 diagramm, pluss toorandmed + CSV."),
-        ("Kus ma olen?", "Sisesta tunnitasu ja vaata ligikaudu, kuhu see jääb."),
+        ("Kus ma olen?", "Sisesta kuupalk ja vaata ligikaudu, kuhu see jääb."),
         ("Edetabel", "Järjestab ametialarühmad palga või palgalõhe järgi."),
         ("Soo järgi", "Naised vs mehed, naised-%-meestest vaatega."),
     ],
-    "footer": f"Kõik arvud on brutotunnitasu Statistikaameti tabelist PA623 ({_YR}).",
+    "footer": f"Arvud on hinnanguline kuutasu Statistikaameti brutotunnitasust, tabel PA623 ({_YR}).",
 }
 
 CONFIG = CountryConfig(
@@ -122,7 +126,7 @@ CONFIG = CountryConfig(
     source_name="Statistics Estonia",
     source_url="https://andmed.stat.ee/en/stat/majandus__palk-ja-toojeukulu__tootasu",
     caption=f"Statistics Estonia · Structure of Earnings by occupational group (ISCO) · {_YR}",
-    currency="EUR", currency_suffix="€", money_prefix=False, period="hourly",
+    currency="EUR", currency_suffix="€", money_prefix=False, period="monthly",
     capabilities=Capabilities(
         has_occupation_percentiles=True,     # P10 · median · P90 (deciles)
         has_occupation_hierarchy=False,      # 10 flat major groups, no drill-down
@@ -140,7 +144,7 @@ CONFIG = CountryConfig(
     bullets=(
         "Mean, median &amp; deciles · 10 ISCO major groups",
         "Gender breakdown · P10–P90",
-        f"Gross hourly earnings · {_YR} (4-yearly)",
+        f"Est. monthly earnings · {_YR} (4-yearly)",
     ),
     labels={"badge": "Beta", "source_short": "Stat. Estonia · official"},
     languages=(("EN", "English"), ("ET", "Eesti")),
