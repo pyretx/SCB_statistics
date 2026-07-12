@@ -15,11 +15,18 @@ cd "$DIR"
 git pull --ff-only
 cd deploy
 
-# Bind-mounted runtime files must exist as FILES before `up` — Docker would
-# otherwise create directories at these paths and break the app's writes.
+# Bind-mounted runtime files must exist as FILES before `up` — Docker creates
+# a DIRECTORY at any missing mount path, which then breaks the app's writes
+# AND this very guard (echo into a directory aborts the script). Self-heal:
+# replace an empty Docker-made directory with an empty JSON file.
 for f in scb-wp-rules.json scb-ssyk-overrides.json scb-app-settings.json \
          scb-guide.json scb-update-checks.json; do
-  [ -f "/root/$f" ] || echo '{}' > "/root/$f"
+  p="/root/$f"
+  if [ -d "$p" ]; then
+    echo "==> $p is a directory (Docker mount artifact) — replacing with a file"
+    rmdir "$p"
+  fi
+  [ -f "$p" ] || echo '{}' > "$p"
 done
 # --force-recreate: rebuilding with the same image tag does NOT change Compose's
 # config hash, so without it Compose leaves the OLD container running and the new
