@@ -462,12 +462,48 @@ def _country_check(keys):
                                         if k in merged]
 
 
+def _country_newer(keys) -> bool:
+    res = _upd_results_map()
+    return any(res[k].update_available for k in keys if k in res)
+
+
 def _country_pill(D, keys) -> str:
     """Green/amber status pill from the latest check results (green until a
     check has found something)."""
-    res = _upd_results_map()
-    newer = any(res[k].update_available for k in keys if k in res)
-    return _pill("amber", D["pill_update"]) if newer else _pill("green", D["pill_ok"])
+    return (_pill("amber", D["pill_update"]) if _country_newer(keys)
+            else _pill("green", D["pill_ok"]))
+
+
+def _flt_skip(flt, keys) -> bool:
+    """Whether the status filter hides this card."""
+    if flt == "ok":
+        return _country_newer(keys)
+    if flt == "upd":
+        return not _country_newer(keys)
+    return False
+
+
+def _country_update_counts():
+    """(countries up to date, countries with an update) from the freshest check
+    (session results, else the persisted log). (None, None) before any check."""
+    import updates as upd
+    sources = None
+    if st.session_state.get("_upd_results"):
+        sources = {s.key: bool(s.update_available)
+                   for s in st.session_state["_upd_results"]}
+    else:
+        rec = upd.last_check()
+        if rec:
+            sources = {k: bool(v.get("update_available"))
+                       for k, v in rec.get("sources", {}).items()}
+    if not sources:
+        return None, None
+    by_country: dict = {}
+    for k, has_upd in sources.items():
+        c = k.split("_")[0]
+        by_country[c] = by_country.get(c, False) or has_upd
+    upd_n = sum(1 for v in by_country.values() if v)
+    return len(by_country) - upd_n, upd_n
 
 
 def _check_lines(D, keys):
@@ -504,21 +540,25 @@ def _check_button(D, iso, keys):
 _US_KEYS = ["us_data"]
 
 
-def _us_card(query, D):
+def _us_card(query, D, flt="all"):
     from countries.us import build as usbuild
     T = D["us"]
-    if not _match(query, T["name"], "us", T["source"], T["type"], "soc"):
+    if not _match(query, T["name"], "us", T["source"], T["type"], "soc") \
+            or _flt_skip(flt, _US_KEYS):
         return
     info = usbuild.bundled_info()
     c = info.get("counts", {})
     with st.container(border=True, key="adcard_us"):
         html = _hdr("us", T["name"], T["source"], T["type"],
                     _country_pill(D, _US_KEYS))
-        html += _stats([(T["s_year"], f"May {info.get('year', '—')}"),
-                        (T["s_occ"], _n(c.get("occupations", "—"))),
-                        (T["s_scopes"], _n(c.get("scopes", "—"))),
-                        (T["s_size"], _fmt_bytes(info.get("size")))])
-        html += f'<div class="ad-cap">{T["desc"].format(built=info.get("built_at", "—"))}</div>'
+        # Standard stat row (same headings/order on every card): year ·
+        # occupations · built · size — plus the US-only Scopes column.
+        html += _stats([(D["s_year"], f"May {info.get('year', '—')}"),
+                        (D["s_occ"], _n(c.get("occupations", "—"))),
+                        (D["s_scopes"], _n(c.get("scopes", "—"))),
+                        (D["s_built"], info.get("built_at", "—")),
+                        (D["s_size"], _fmt_bytes(info.get("size")))])
+        html += f'<div class="ad-cap">{T["desc"]}</div>'
         st.markdown(html, unsafe_allow_html=True)
         _check_button(D, "us", _US_KEYS)
 
@@ -526,17 +566,23 @@ def _us_card(query, D):
 _NO_KEYS = ["norway_data", "norway_labels"]
 
 
-def _norway_card(query, D):
+def _norway_card(query, D, flt="all"):
     T = D["norway"]
-    if not _match(query, T["name"], T["source"], "styrk", T["type"]):
+    if not _match(query, T["name"], T["source"], "styrk", T["type"]) \
+            or _flt_skip(flt, _NO_KEYS):
         return
     from countries.norway.build import latest_year as _no_year
-    styrk = (_file_meta("styrk_labels.json").get("data") or {})
+    styrk_meta = _file_meta("styrk_labels.json")
+    styrk = styrk_meta.get("data") or {}
+    codes = (styrk.get("codes") or {}).get("EN", {})
+    leaves = sum(1 for c in codes if len(c) == 4)
     with st.container(border=True, key="adcard_no"):
         st.markdown(
             _hdr("no", T["name"], T["source"], T["type"], _country_pill(D, _NO_KEYS))
-            + _stats([(T["s_year"], _no_year()),
-                      (T["s_built"], styrk.get("built_at", "—"))])
+            + _stats([(D["s_year"], _no_year()),
+                      (D["s_occ"], _n(leaves) if leaves else "—"),
+                      (D["s_built"], styrk.get("built_at", "—")),
+                      (D["s_size"], _fmt_bytes(styrk_meta.get("size")))])
             + f'<div class="ad-cap">{T["desc"]}</div>',
             unsafe_allow_html=True)
         _check_button(D, "no", _NO_KEYS)
@@ -545,19 +591,22 @@ def _norway_card(query, D):
 _SE_KEYS = ["sweden_data", "sweden_labels"]
 
 
-def _sweden_card(query, D):
+def _sweden_card(query, D, flt="all"):
     T = D["sweden"]
-    if not _match(query, T["name"], T["source"], "ssyk", T["type"]):
+    if not _match(query, T["name"], T["source"], "ssyk", T["type"]) \
+            or _flt_skip(flt, _SE_KEYS):
         return
     occ = (_file_meta("occupations_cache.json").get("data") or {})
-    ssyk = (_file_meta("ssyk_descriptions.json").get("data") or {})
+    ssyk_meta = _file_meta("ssyk_descriptions.json")
     appset = (_file_meta("app_settings.json").get("data") or {})
+    n_occ = len(occ.get("EN", {}) or {})
     with st.container(border=True, key="adcard_se"):
         st.markdown(
             _hdr("se", T["name"], T["source"], T["type"], _country_pill(D, _SE_KEYS))
-            + _stats([(T["s_year"], appset.get("latest_data_year", 2025)),
-                      (T["s_codes"], (occ.get("cached_at") or "—")[:10]),
-                      (T["s_built"], (ssyk.get("built_at") or "—")[:10])])
+            + _stats([(D["s_year"], appset.get("latest_data_year", 2025)),
+                      (D["s_occ"], _n(n_occ) if n_occ else "—"),
+                      (D["s_built"], (occ.get("cached_at") or "—")[:10]),
+                      (D["s_size"], _fmt_bytes(ssyk_meta.get("size")))])
             + f'<div class="ad-cap">{T["desc"]}</div>'
             + _extras_html(T),
             unsafe_allow_html=True)
@@ -575,20 +624,24 @@ def _sweden_card(query, D):
 _FR_KEYS = ["france_api", "france_micro"]
 
 
-def _france_card(query, D):
+def _france_card(query, D, flt="all"):
     T = D["france"]
-    if not _match(query, T["name"], T["source"], "melodi", "microdata", "pcs", T["type"]):
+    if not _match(query, T["name"], T["source"], "melodi", "microdata", "pcs",
+                  T["type"]) or _flt_skip(flt, _FR_KEYS):
         return
     lbl = (_file_meta("pcs_labels.json").get("data") or {})
     micro_meta = _file_meta("pcs_microdata_percentiles.json")
     micro = micro_meta.get("data") or {}
     micro_year = micro.get("year", "—")
+    n_occ = len(micro.get("occupations", {}) or {})
     with st.container(border=True, key="adcard_fr"):
         html = _hdr("fr", T["name"], T["source"], T["type"],
                     _country_pill(D, _FR_KEYS))
-        html += _stats([(T["s_year"], micro_year),
-                        (T["s_built"], lbl.get("built_at", "—")),
-                        (T["s_size"], _fmt_bytes(micro_meta.get("size")))])
+        html += _stats([(D["s_year"], micro_year),
+                        (D["s_occ"], _n(n_occ) if n_occ else "—"),
+                        (D["s_built"], micro.get("built_at")
+                         or lbl.get("built_at", "—")),
+                        (D["s_size"], _fmt_bytes(micro_meta.get("size")))])
         html += f'<div class="ad-cap">{T["desc"]}</div>'
         html += _extras_html(T)
         st.markdown(html, unsafe_allow_html=True)
@@ -701,13 +754,32 @@ def data_section():
     _updates_card()
     st.write("")
 
-    query = st.text_input("Search data sources", key="ds_search",
-                          placeholder=D["search_ph"], label_visibility="collapsed")
-    _us_card(query, D)
-    _norway_card(query, D)
-    _sweden_card(query, D)
-    _france_card(query, D)
-    _caches_card(query, D)
+    # ── Status KPIs (like the Overview tiles): countries up to date vs with an
+    # update — from the freshest check (session, else the persisted log). ─────
+    ok_n, upd_n = _country_update_counts()
+    kc = st.columns(6)
+    _kpi(kc[0], "ds_ok", _IC_ZAP, "#1B8A5A", "rgba(27,138,90,.12)",
+         ok_n if ok_n is not None else "—", D["kpi_ok"])
+    _kpi(kc[1], "ds_upd", _IC_ALERT, "#B26A00", "rgba(178,106,0,.13)",
+         upd_n if upd_n is not None else "—", D["kpi_upd"])
+    st.write("")
+
+    # ── Search + status filter ────────────────────────────────────────────────
+    sc1, sc2 = st.columns([2, 1.1], vertical_alignment="center")
+    query = sc1.text_input("Search data sources", key="ds_search",
+                           placeholder=D["search_ph"], label_visibility="collapsed")
+    _flbl = {"all": D["flt_all"], "ok": D["flt_ok"], "upd": D["flt_upd"]}
+    flt = sc2.segmented_control("Status filter", list(_flbl),
+                                format_func=lambda k: _flbl[k], default="all",
+                                key="ds_filter", label_visibility="collapsed") or "all"
+
+    # Cards in the same order as the update table (SOURCE_ORDER).
+    _sweden_card(query, D, flt)
+    _france_card(query, D, flt)
+    _norway_card(query, D, flt)
+    _us_card(query, D, flt)
+    if flt == "all":
+        _caches_card(query, D)
 
     # Live search-as-you-type (same behaviour as the landing catalog): a
     # same-origin iframe script prefix-matches the card's country name on every

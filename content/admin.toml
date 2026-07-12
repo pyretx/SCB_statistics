@@ -36,6 +36,20 @@ legacy_caption = "Legacy builds kept for admin reference — superseded by the f
 [data]
 caption        = "Each source shows its latest data year and how it refreshes."
 specific_heading = "Country-specific"
+# Status KPIs + filter (country level — a country counts as 'update' when any
+# of its sub-sources has one)
+kpi_ok  = "Countries up to date"
+kpi_upd = "Countries with updates"
+flt_all = "All"
+flt_ok  = "Up to date"
+flt_upd = "Update available"
+# Standard stat-row headings — SAME on every country card, in this order:
+# year · occupations · (US: scopes) · built · size
+s_year   = "Latest data year"
+s_occ    = "Occupations"
+s_scopes = "Scopes"
+s_built  = "Built"
+s_size   = "File size"
 # The ONE standard action on every country card — updates themselves run from
 # the table at the top of this page.
 btn_check = "🔍 Check for updates"
@@ -56,27 +70,18 @@ cleared        = "Cleared — fresh figures on next view."
 name        = "United States"
 source      = "BLS OEWS"
 type        = "bundled file"
-s_year      = "Latest data year"
-s_occ       = "Occupations"
-s_scopes    = "Scopes"
-s_size      = "File size"
-desc        = "Bundled file built {built} · re-downloadable from BLS special-requests files (national + state + national-industry)."
+desc        = "Bundled snapshot, re-downloadable from BLS special-requests files (national + state + national-industry)."
 
 [data.norway]
 name    = "Norway"
 source  = "SSB"
 type    = "live API + STYRK labels"
-s_year  = "Latest data year"
-s_built = "STYRK labels built"
 desc    = "Salaries fetched live from SSB table 11418 and disk-cached; the bundled bilingual STYRK labels give instant dropdowns."
 
 [data.sweden]
 name    = "Sweden"
 source  = "SCB"
 type    = "live API + stored codes & labels"
-s_year  = "Latest data year"
-s_codes = "SCB codes cached"
-s_built = "SSYK labels built"
 desc    = "Salaries fetched live from SCB; occupation codes + SSYK labels/translations are cached for fast, translated dropdowns."
 btn_wp  = "⚙ Work permit rules"
 extras_title = "Sweden (/sweden, framework) — features beyond the framework standard"
@@ -89,10 +94,7 @@ extras  = [
 name      = "France"
 source    = "INSEE"
 type      = "live API + microdata + PCS labels"
-s_year    = "Microdata year"
-s_built   = "PCS labels built"
-s_size    = "Microdata size"
-desc      = "Mean-salary series fetched live from INSEE Melodi; per-occupation percentiles come from the bundled FD_SALAAN microdata, importable below when INSEE publishes a new vintage (PCS labels stay a bundled file)."
+desc      = "Mean-salary series fetched live from INSEE Melodi (2024 means); per-occupation percentiles come from the bundled FD_SALAAN microdata (year above), importable below when INSEE publishes a new vintage."
 # Microdata import (country-specific): paste the INSEE parquet URL or upload
 imp_caption    = "Import a new FD_SALAAN vintage: ① on insee.fr, find the newest “Description des emplois salariés — fichier détail” (search for FD_SALAAN), ② copy the .parquet file link — or download the file — and ③ paste the link or upload it below, then press Import. The file is ~100 MB; the import takes a few minutes."
 imp_url_label  = "INSEE parquet URL"
