@@ -42,6 +42,17 @@ def _leaves(lang: str = "EN") -> dict:
 
 
 class UsProvider(CountryProvider):
+    def year(self) -> int:
+        """OEWS reference year from the bundled snapshot's meta (the vintage
+        shown in captions is 'May {year}' — the OEWS reference period)."""
+        return int(_load()["year"])
+
+    def top_code(self) -> int:
+        """Annual top-code: wages at/above it are '#' in the BLS source and null
+        here. Snapshots built before the meta field existed fall back to the
+        value BLS has used in recent releases ($115.00/hr · 2080h)."""
+        return int(_load().get("top_code") or 239_200)
+
     def occupations(self, lang: str = "EN") -> dict[str, str]:
         return _leaves(lang)
 

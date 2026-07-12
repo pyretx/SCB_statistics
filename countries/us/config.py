@@ -9,6 +9,10 @@ from .provider import UsProvider
 
 _prov = UsProvider()
 _regions = _prov.regions()                      # {code: name} — US national, states, then industries
+_YEAR = _prov.year()                            # from the data file meta — never hardcode the vintage
+_VINTAGE = f"May {_YEAR}"                       # OEWS reference period is May of the reference year
+_TOP_CODE = _prov.top_code()                    # annual top-code (percentiles at/above it are blank)
+_CAPTION = f"BLS Occupational Employment & Wage Statistics · {_VINTAGE} · annual USD"
 
 
 def _scope_label(code: str, name: str) -> str:
@@ -22,7 +26,7 @@ _region_labels = {f"sector_{code}": _scope_label(code, name) for code, name in _
 # Structured guide (the approved User-Guide design; rendered by core/panels.py)
 _GUIDE_EN = {
     "title": "How to use the US Salary Explorer",
-    "source": "U.S. Bureau of Labor Statistics · OEWS (SOC-2018) · May 2024 · annual USD",
+    "source": f"U.S. Bureau of Labor Statistics · OEWS (SOC-2018) · {_VINTAGE} · annual USD",
     "intro": "Look up US wages by occupation — official data from the Bureau of "
              "Labor Statistics OEWS program, no technical knowledge needed. This "
              "guide covers the three-step flow, finding occupations, and how to "
@@ -63,8 +67,8 @@ _GUIDE_EN = {
     "notes_title": "Good to know",
     "notes": [
         "Figures are annual wages (USD) plus employment counts.",
-        "Very high wages are top-coded by BLS — a percentile at or above the top "
-        "code ($239,200/yr in 2024) is shown blank.",
+        f"Very high wages are top-coded by BLS — a percentile at or above the top "
+        f"code (${_TOP_CODE:,}/yr in {_YEAR}) is shown blank.",
         "OEWS has no gender, age or education breakdown and is a single annual "
         "snapshot, so those tabs and the trend view don't appear.",
         "Industry cuts (NAICS) are national only — BLS does not publish "
@@ -78,7 +82,7 @@ _GUIDE_EN = {
                               "falls in."),
         ("Leaderboard", "Ranks all ~830 occupations by pay within a SOC group."),
     ],
-    "footer": "All figures are from the BLS OEWS May 2024 release, updated annually.",
+    "footer": f"All figures are from the BLS OEWS {_VINTAGE} release, updated annually.",
 }
 
 CONFIG = CountryConfig(
@@ -89,7 +93,7 @@ CONFIG = CountryConfig(
     eyebrow="OFFICIAL STATISTICS · UNITED STATES",
     source_name="U.S. Bureau of Labor Statistics (OEWS)",
     source_url="https://www.bls.gov/oes/",
-    caption="BLS Occupational Employment & Wage Statistics · May 2024 · annual USD",
+    caption=_CAPTION,
     currency="USD", currency_suffix="$", money_prefix=True, period="annual",
     capabilities=Capabilities(
         has_occupation_percentiles=True,        # full P10..P90 (richer than Norway)
@@ -97,7 +101,7 @@ CONFIG = CountryConfig(
         has_mean=True, has_median=True,
         has_leaderboard=True, leaderboard_scope=4,   # SOC minor group (4-char key)
         sectors=tuple(_regions),                # the sector slot holds the Location/state
-        year_range=(2024, 2024),                # single OEWS snapshot
+        year_range=(_YEAR, _YEAR),              # single OEWS snapshot
     ),
     tabs=("overview", "distribution", "where", "leaderboard", "import_overlay"),
     access="registered",                    # LIVE — any signed-in user
@@ -108,7 +112,7 @@ CONFIG = CountryConfig(
     languages=(("EN", "English"),),
     i18n={"EN": {
         "title": "US Salary Explorer",
-        "caption": "BLS Occupational Employment & Wage Statistics · May 2024 · annual USD",
+        "caption": _CAPTION,
         "sector": "Location / industry",
         **_region_labels,
         # SOC drill-down (sidebar, by depth) and code browser (by key length 2/4/6/7)
