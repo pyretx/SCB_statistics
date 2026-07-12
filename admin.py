@@ -43,7 +43,25 @@ with _bl:
     _tag_html = (f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:8px;'
                  f'font-weight:600;letter-spacing:.14em;color:#8A919D;line-height:1.2;">'
                  f'{_TAGLINE}</span>' if _TAGLINE else "")
-    st.markdown(f"""
+    # The whole brand block (logo · wordmark · tagline) is a home link, same as
+    # on the country pages: an invisible st.page_link overlaid on the HTML (a
+    # raw <a href> would full-reload the browser and drop the signed-in session).
+    st.markdown("""<style>
+    /* min-height: the brand HTML overflows Streamlit's collapsed markdown slot
+       (~18px), so without it the click overlay would only cover the top half. */
+    [class*="st-key-adm_brand"]{ position:relative; width:fit-content; min-height:36px; }
+    [class*="st-key-adm_brand"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
+      position:absolute;inset:0;margin:0;width:100% !important;height:100% !important;}
+    [class*="st-key-adm_brand"] [data-testid="stPageLink"]{position:absolute;inset:0;
+      width:100% !important;height:100% !important;}
+    [class*="st-key-adm_brand"] [data-testid="stPageLink"] a{position:absolute;inset:0;
+      width:100% !important;height:100% !important;
+      background:transparent !important;border-radius:8px;}
+    [class*="st-key-adm_brand"] [data-testid="stPageLink"] a p,
+    [class*="st-key-adm_brand"] [data-testid="stPageLink"] a span{display:none;}
+    </style>""", unsafe_allow_html=True)
+    with st.container(key="adm_brand"):
+        st.markdown(f"""
     <div style="display:flex;align-items:center;gap:11px;">
       <img src="{_logo_uri()}" alt="{_BRAND}" style="width:32px;height:32px;flex:none;
            border-radius:8px;box-shadow:0 2px 6px rgba(10,99,166,.35);">
@@ -59,6 +77,7 @@ with _bl:
       </div>
     </div>
     """, unsafe_allow_html=True)
+        st.page_link("landing.py", label=_BRAND)
 
 st.markdown('<div style="height:1px;background:#E7E9ED;margin:14px 0 18px;"></div>',
             unsafe_allow_html=True)
