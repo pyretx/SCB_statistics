@@ -83,3 +83,13 @@ class CountryProvider:
     # unsupported (has_region_sim=False).
     def region_sim(self, *, year: int | None = None, lang: str = "EN") -> dict:
         return {}
+
+    # REAL occupation×region data (has_region_data): the regions the By-region
+    # tab offers, and the national baseline scope. The tab fetches each region's
+    # actual figures via occupation_stats(sector=<region_code>). US OEWS answers
+    # these with its 50+ states; the national code is the all-regions baseline.
+    def region_choices(self, lang: str = "EN") -> list[tuple[str, str]]:
+        return []                                # [(region_code, display_name), …]
+
+    def region_national_code(self) -> str:
+        return ""                                # baseline scope for occupation_stats

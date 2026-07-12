@@ -18,7 +18,7 @@ admin          = "Admin"                       # admin-only button → /admin pa
 [hero]
 eyebrow = "OFFICIAL STATISTICS · GLOBAL"
 title   = "Salary data from national agencies, made explorable."
-intro   = "One clean interface over official government statistics - percentiles, breakdowns and trends, standardised so you can compare occupations within and across countries."
+intro   = "One clean interface over official government statistics - percentiles, breakdowns and trends, standardised and enhanced with analytics and functions, so you can compare occupations within and across countries."
 
 # Hero KPI row. live/beta counts are computed from the [countries].catalog
 # statuses; roadmap is the planned ("soon") count rounded to a "N+" figure. Only

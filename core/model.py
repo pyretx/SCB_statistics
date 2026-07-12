@@ -61,6 +61,11 @@ class Capabilities:
                                                 # country with overall-by-region earnings
                                                 # but no occupation×region — DK/NO); the
                                                 # provider answers region_sim()
+    has_region_data: bool = False               # REAL occupation×region data (US OEWS
+                                                # per-state) — the By-region tab shows
+                                                # actual regional figures, not a
+                                                # simulation; provider answers
+                                                # region_choices()/region_national_code()
     sectors: tuple[str, ...] = ()               # e.g. ("private", "public"); () = none
     year_range: tuple[int, int] | None = None   # (first, last) available year
 

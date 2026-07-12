@@ -16,12 +16,14 @@ _CAPTION = f"BLS Occupational Employment & Wage Statistics · {_VINTAGE} · annu
 
 
 def _scope_label(code: str, name: str) -> str:
-    # Industry scopes (key "IND"+NAICS) are national-only and mutually exclusive
-    # with a state — mark them so they read distinctly in the combined selector.
-    return f"Industry · {name}" if code.startswith("IND") else name
+    return "All industries" if code == "US" else name
 
 
-_region_labels = {f"sector_{code}": _scope_label(code, name) for code, name in _regions.items()}
+# Sidebar selector = INDUSTRY only (national baseline + nationwide NAICS
+# industries). States moved to the By-region tab (real OEWS per-state data);
+# OEWS has no industry × state, so the two are separate lenses, never combined.
+_scopes = {c: n for c, n in _regions.items() if c == "US" or c.startswith("IND")}
+_region_labels = {f"sector_{code}": _scope_label(code, name) for code, name in _scopes.items()}
 
 # Structured guide (the approved User-Guide design; rendered by core/panels.py)
 _GUIDE_EN = {
@@ -33,10 +35,10 @@ _GUIDE_EN = {
              "read the charts.",
     "steps_title": "Getting started — three steps",
     "steps": [
-        ("Pick a location / industry",
-         "United States (national), a state, or a nationwide industry "
-         "(“Industry · …”, e.g. Hospitals). Location and industry are separate "
-         "cuts — one or the other, not both."),
+        ("Pick an industry",
+         "All industries (national) or a single nationwide industry (e.g. "
+         "Hospitals). For geography, use the By-region tab instead — BLS does "
+         "not publish wages by industry × state, so they are separate cuts."),
         ("Search",
          "Pick one or more occupations, then press the blue Search button at the "
          "bottom of the sidebar."),
@@ -81,6 +83,8 @@ _GUIDE_EN = {
         ("Where do I stand?", "Enter an annual wage and see which percentile it "
                               "falls in."),
         ("Leaderboard", "Ranks all ~830 occupations by pay within a SOC group."),
+        ("By region", "Compare a state's actual OEWS wages for the occupation "
+                      "against the national figure — real data, not an estimate."),
     ],
     "footer": f"All figures are from the BLS OEWS {_VINTAGE} release, updated annually.",
 }
@@ -100,10 +104,12 @@ CONFIG = CountryConfig(
         has_occupation_hierarchy=True,          # SOC nests via significant-prefix keys
         has_mean=True, has_median=True,
         has_leaderboard=True, leaderboard_scope=4,   # SOC minor group (4-char key)
-        sectors=tuple(_regions),                # the sector slot holds the Location/state
+        has_region_data=True,                   # real per-state OEWS → By-region tab
+        sectors=tuple(_scopes),                 # sidebar = national + industries only
         year_range=(_YEAR, _YEAR),              # single OEWS snapshot
     ),
-    tabs=("overview", "distribution", "where", "leaderboard", "import_overlay"),
+    tabs=("overview", "distribution", "where", "leaderboard", "region_sim",
+          "import_overlay"),
     access="registered",                    # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
@@ -113,7 +119,7 @@ CONFIG = CountryConfig(
     i18n={"EN": {
         "title": "US Salary Explorer",
         "caption": _CAPTION,
-        "sector": "Location / industry",
+        "sector": "Industry",
         **_region_labels,
         # SOC drill-down (sidebar, by depth) and code browser (by key length 2/4/6/7)
         "grp_1": "Major group", "grp_2": "Minor group", "grp_3": "Broad occupation",

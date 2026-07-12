@@ -82,9 +82,11 @@ def _cards(cfg, lang, row, factor, delta):
     st.markdown(f'<div class="rs-grid">{cells}</div>', unsafe_allow_html=True)
 
 
-def _chart(cfg, lang, tot, factor, region_name, year, sim_on):
+def _chart(cfg, lang, tot, factor, region_name, year, sim_on, region_rows=None):
     """The standard distribution line chart: a national line + mean diamond per
-    occupation, and (when simulating) a dotted region line + region diamond."""
+    occupation, and (when a region is active) a dotted region line + diamond.
+    ``region_rows`` {occ_code: row} gives REAL per-region values (US); when None
+    the region line is national × ``factor`` (the simulation)."""
     pct = [(k, _label(cfg, lang, ik, fb)) for k, ik, fb in _PCTS
            if k in tot and tot[k].notna().any()]
     if not pct:
@@ -114,15 +116,21 @@ def _chart(cfg, lang, tot, factor, region_name, year, sim_on):
         if sim_on and region_name:
             rc = theme.MEAN if not multi else col
             r_name = f"{occ} · {region_name}" if multi else region_name
+            rr = region_rows.get(row["occ_code"]) if region_rows is not None else None
+            if region_rows is not None:      # real per-region values
+                r_ys = [rr[c] if (rr is not None and pd.notna(rr[c])) else None
+                        for c, _ in pct]
+                r_mean = rr["mean"] if (rr is not None and pd.notna(rr["mean"])) else None
+            else:                            # simulation: national × factor
+                r_ys = [y * factor if pd.notna(y) else y for y in ys]
+                r_mean = row["mean"] * factor if pd.notna(row["mean"]) else None
             fig.add_trace(go.Scatter(
-                x=xlabels, y=[y * factor if pd.notna(y) else y for y in ys],
-                mode="lines+markers", name=r_name,
+                x=xlabels, y=r_ys, mode="lines+markers", name=r_name,
                 line=dict(color=rc, width=2, dash="dot"),
                 marker=dict(size=7, color=rc)))
-            if show_mean and pd.notna(row["mean"]):
+            if show_mean and r_mean is not None:
                 fig.add_trace(go.Scatter(
-                    x=[mean_label], y=[row["mean"] * factor], mode="markers",
-                    showlegend=False,
+                    x=[mean_label], y=[r_mean], mode="markers", showlegend=False,
                     marker=dict(size=12, symbol="diamond", color=rc,
                                 line=dict(width=1, color="white")),
                     hovertemplate=f"{r_name}<br>{mean_label} %{{y:,.0f}} {unit}<extra></extra>"))
@@ -135,6 +143,111 @@ def _chart(cfg, lang, tot, factor, region_name, year, sim_on):
     return theme.style_fig(fig)
 
 
+def _real_state_cards(cfg, lang, nat_row, state_row):
+    """Cards for a real region: each measure's actual regional value + its own
+    %-vs-national delta (suppressed cells show '–', no pill)."""
+    unit = f'<span class="rs-unit">{cfg.currency_suffix}{cfg.per_label}</span>'
+    cells = ""
+    for key, ik, fb in _MEASURES:
+        if key not in nat_row or pd.isna(nat_row[key]):
+            continue
+        sv = state_row[key] if (state_row is not None and key in state_row) else None
+        if sv is None or pd.isna(sv):
+            val_html, pill = '<div class="rs-val">–</div>', ""
+        else:
+            money = (f'{"$" if cfg.money_prefix else ""}{_num(sv)}'
+                     f'{"" if cfg.money_prefix else unit}')
+            val_html = f'<div class="rs-val">{money}</div>'
+            nv = nat_row[key]
+            pct = ((sv / nv - 1) * 100) if (nv and pd.notna(nv)) else None
+            if pct is None:
+                pill = ""
+            else:
+                cls = "rs-up" if pct > 0.05 else ("rs-dn" if pct < -0.05 else "rs-flat")
+                arr = "↑ " if pct > 0.05 else ("↓ " if pct < -0.05 else "")
+                pill = f'<div class="rs-pill {cls}">{arr}{pct:+.1f}%</div>'
+        cells += (f'<div class="rs-card"><div class="rs-lbl">'
+                  f'{_label(cfg, lang, ik, fb)}</div>{val_html}{pill}</div>')
+    st.markdown(f'<div class="rs-grid">{cells}</div>', unsafe_allow_html=True)
+
+
+def _money_cards(cfg, lang, row):
+    """National cards honouring money_prefix ($ before the number for the US)."""
+    unit = f'<span class="rs-unit">{cfg.currency_suffix}{cfg.per_label}</span>'
+    cells = ""
+    for key, ik, fb in _MEASURES:
+        if key not in row or pd.isna(row[key]):
+            continue
+        money = (f'{"$" if cfg.money_prefix else ""}{_num(row[key])}'
+                 f'{"" if cfg.money_prefix else unit}')
+        cells += (f'<div class="rs-card"><div class="rs-lbl">'
+                  f'{_label(cfg, lang, ik, fb)}</div><div class="rs-val">{money}</div></div>')
+    st.markdown(f'<div class="rs-grid">{cells}</div>', unsafe_allow_html=True)
+
+
+def _render_real(cfg, query, lang):
+    """REAL occupation×region mode (US OEWS per-state): national baseline vs a
+    chosen state's ACTUAL figures — not a simulation. Region is always the
+    national/all-industries geography (OEWS has no industry × state)."""
+    slug = cfg.slug
+    def k(n):
+        return f"{slug}_{n}"
+    occ = tuple(query.get("occ_codes", ()))
+    year = cfg.capabilities.year_range[1] if cfg.capabilities.year_range else None
+    sex = query.get("sex", "total")
+    nat_code = cfg.provider.region_national_code()
+    with states.loading():
+        nat = cfg.provider.occupation_stats(sector=nat_code, occ_codes=occ,
+                                            sex=sex, year=year, lang=lang)
+    nat_tot = nat[nat["dimension"] == "total"] if nat is not None else nat
+    if query.get("aggregate") and nat_tot is not None and not nat_tot.empty:
+        nat_tot = agg.collapse_stats(nat_tot, agg.agg_name(cfg, lang, len(occ)))
+    if nat_tot is None or nat_tot.empty:
+        st.caption(i18n.t(cfg, "no_data_combo", lang))
+        return
+
+    st.caption(i18n.t(cfg, "rs_real_intro", lang,
+                      "Below are the national figures for the selected occupation. "
+                      "Choose a state to see its actual regional wages."))
+
+    choices = cfg.provider.region_choices(lang) or []
+    code_by_name = {n: c for c, n in choices}
+    show = st.toggle(i18n.t(cfg, "rs_real_toggle", lang, "Show a specific state"),
+                     key=k("regsim"))
+    region_name, region_rows = None, None
+    if show and choices:
+        region_name = st.selectbox(i18n.t(cfg, "rs_state", lang, "State"),
+                                   [n for _, n in choices], key=k("regsim_pick"))
+        with states.loading():
+            st_stats = cfg.provider.occupation_stats(sector=code_by_name[region_name],
+                                                     occ_codes=occ, sex=sex, year=year,
+                                                     lang=lang)
+        st_tot = st_stats[st_stats["dimension"] == "total"]
+        if query.get("aggregate") and not st_tot.empty:
+            st_tot = agg.collapse_stats(st_tot, agg.agg_name(cfg, lang, len(occ)))
+        region_rows = {r["occ_code"]: r for _, r in st_tot.iterrows()}
+
+    fig = _chart(cfg, lang, nat_tot, 1.0, region_name, year, bool(show), region_rows)
+    if fig is not None:
+        st.plotly_chart(fig, use_container_width=True)
+
+    for _, row in nat_tot.iterrows():
+        st.markdown(f'<div class="rs-occ">{row["occ_name"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="rs-rowlbl">{i18n.t(cfg, "rs_national", lang, "National")}</div>',
+                    unsafe_allow_html=True)
+        _money_cards(cfg, lang, row)
+        if show and region_name:
+            st.markdown(f'<div class="rs-rowlbl">{region_name}</div>', unsafe_allow_html=True)
+            _real_state_cards(cfg, lang, row,
+                              region_rows.get(row["occ_code"]) if region_rows else None)
+
+    st.caption(i18n.t(cfg, "rs_real_note", lang,
+                      "Actual BLS OEWS wages by state (all industries). BLS does not "
+                      "publish wages by occupation × industry × state, so an industry "
+                      "selection does not apply here; blank cells are figures BLS "
+                      "suppresses for that state."))
+
+
 def render(cfg, stats, query):
     lang = query.get("lang", "EN")
     slug = cfg.slug
@@ -143,6 +256,11 @@ def render(cfg, stats, query):
 
     st.subheader(i18n.t(cfg, "tab_region_sim", lang, "By region"))
     st.markdown(_CSS, unsafe_allow_html=True)
+
+    # US-style REAL per-region data → its own renderer (not a simulation).
+    if getattr(cfg.capabilities, "has_region_data", False):
+        _render_real(cfg, query, lang)
+        return
 
     tot = stats[stats["dimension"] == "total"]
     occ = tuple(query.get("occ_codes", ()))

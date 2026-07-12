@@ -62,6 +62,17 @@ class UsProvider(CountryProvider):
     def regions(self) -> dict[str, str]:
         return dict(_load().get("regions", {}))
 
+    # Real per-state figures for the By-region tab. States = every scope that is
+    # neither the national baseline ("US") nor a nationwide industry ("IND"…),
+    # sorted by name. occupation_stats(sector=<state>) then returns real wages.
+    def region_choices(self, lang: str = "EN") -> list[tuple[str, str]]:
+        regs = _load().get("regions", {})
+        states = [(c, n) for c, n in regs.items() if c != "US" and not c.startswith("IND")]
+        return sorted(states, key=lambda cn: cn[1])
+
+    def region_national_code(self) -> str:
+        return "US"
+
     def _rows(self, region: str, occ_codes, lang: str) -> pd.DataFrame:
         d = _load()
         cols = d["stat_cols"]                       # [mean, median, p10, p25, p75, p90, count]
