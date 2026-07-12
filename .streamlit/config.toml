@@ -7,6 +7,9 @@ port = 8501
 # so CORS/XSRF browser-origin checks are unnecessary here.
 enableCORS = false
 enableXsrfProtection = false
+# Serve ./static at /app/static/… — the email templates load the brand logo
+# from here (mail clients need a public https image URL, not data URIs).
+enableStaticServing = true
 
 [browser]
 gatherUsageStats = false
