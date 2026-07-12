@@ -594,6 +594,71 @@ def _update_finland_labels(status, log) -> UpdateResult:
                         f"{_commit_note('finland_labels.json')}")
 
 
+# ── Estonia · Statistics Estonia PA623 data year (4-yearly SES) + labels ──────
+def _estonia_latest_year():
+    from countries.estonia.build import available_years
+    yrs = available_years()
+    return max(yrs) if yrs else None
+
+
+def _check_estonia_data() -> SourceStatus:
+    from countries.estonia.build import latest_year
+    cur = latest_year()
+    s = SourceStatus("estonia_data", "Estonia", "Stat. Estonia · data year", current=str(cur))
+    latest = _estonia_latest_year()
+    if latest is None:
+        raise RuntimeError("Statistics Estonia metadata probe returned no years")
+    s.latest, s.latest_raw = str(latest), int(latest)
+    s.update_available = latest > cur
+    if s.update_available:
+        s.note = _restart_note()
+    return s
+
+
+def _update_estonia_data(status, log) -> UpdateResult:
+    from countries.estonia.build import latest_year, save_latest_year
+    target = status.latest_raw if status and status.latest_raw else _estonia_latest_year()
+    if not target or not (2000 < int(target) < 2100):
+        return UpdateResult("estonia_data", OUT_VALIDATION, f"implausible year: {target!r}")
+    if int(target) <= latest_year():
+        return UpdateResult("estonia_data", OUT_UP_TO_DATE, str(latest_year()))
+    save_latest_year(int(target))
+    return UpdateResult("estonia_data", OUT_UPDATED, f"{target} · {_restart_note()}")
+
+
+def _check_estonia_labels() -> SourceStatus:
+    from countries.estonia.build import _labels, _meta
+    try:
+        with open(os.path.join(_ROOT, "estonia_labels.json"), encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
+    cached = (data.get("codes") or {}).get("EN", {})
+    s = SourceStatus("estonia_labels", "Estonia", "Stat. Estonia · ISCO labels",
+                     current=f"{len(cached)} groups · {data.get('built_at', '—')}")
+    live = _labels(_meta("EN"))
+    s.latest = f"{len(live)} groups"
+    diff = _label_diff(live, cached)
+    s.update_available = bool(diff)
+    s.note = diff
+    return s
+
+
+def _update_estonia_labels(status, log) -> UpdateResult:
+    from countries.estonia import build as eebuild
+    res = eebuild.build(log=log)
+    if res.get("codes", 0) < 5:
+        return UpdateResult("estonia_labels", OUT_VALIDATION, f"too few groups: {res}")
+    try:
+        from countries.estonia import provider as eeprov
+        eeprov._codes.clear()
+    except Exception:
+        pass
+    return UpdateResult("estonia_labels", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} groups · "
+                        f"{_commit_note('estonia_labels.json')}")
+
+
 # ── United States · BLS OEWS — bundled build, full auto pipeline ──────────────
 def _check_us_data() -> SourceStatus:
     from countries.us import build as usbuild
@@ -661,7 +726,9 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "iceland_data": _check_iceland_data,
              "iceland_labels": _check_iceland_labels,
              "finland_data": _check_finland_data,
-             "finland_labels": _check_finland_labels}
+             "finland_labels": _check_finland_labels,
+             "estonia_data": _check_estonia_data,
+             "estonia_labels": _check_estonia_labels}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
@@ -671,7 +738,9 @@ _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden
              "iceland_data": _update_iceland_data,
              "iceland_labels": _update_iceland_labels,
              "finland_data": _update_finland_data,
-             "finland_labels": _update_finland_labels}
+             "finland_labels": _update_finland_labels,
+             "estonia_data": _update_estonia_data,
+             "estonia_labels": _update_estonia_labels}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -684,12 +753,15 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "iceland_data": ("Iceland", "Hagstofa · data year"),
          "iceland_labels": ("Iceland", "Hagstofa · ISCO labels"),
          "finland_data": ("Finland", "StatFin · data year"),
-         "finland_labels": ("Finland", "StatFin · ISCO labels")}
+         "finland_labels": ("Finland", "StatFin · ISCO labels"),
+         "estonia_data": ("Estonia", "Stat. Estonia · data year"),
+         "estonia_labels": ("Estonia", "Stat. Estonia · ISCO labels")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",
                 "iceland_data", "iceland_labels",
-                "finland_data", "finland_labels"]
+                "finland_data", "finland_labels",
+                "estonia_data", "estonia_labels"]
 
 
 def check(key: str) -> SourceStatus:

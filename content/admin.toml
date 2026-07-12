@@ -97,6 +97,12 @@ source  = "StatFin"
 type    = "live API + ISCO labels"
 desc    = "Structure-of-Earnings monthly figures fetched live from StatFin table 15au (annual snapshot; P10/median/P90) and disk-cached; bundled bilingual ISCO labels give instant dropdowns. Beta country."
 
+[data.estonia]
+name    = "Estonia"
+source  = "Stat. Estonia"
+type    = "live API + ISCO labels"
+desc    = "Gross hourly earnings fetched live from Statistics Estonia table PA623 (4-yearly SES snapshot; 10 ISCO major groups, deciles) and disk-cached; bundled bilingual major-group labels give instant dropdowns. Beta country."
+
 [data.sweden]
 name    = "Sweden"
 source  = "SCB"

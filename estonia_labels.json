@@ -1,0 +1,31 @@
+{
+ "built_at": "2026-07-12",
+ "source": "https://andmed.stat.ee/api/v1/en/stat/majandus/palk-ja-toojeukulu/tootasu/PA623.PX",
+ "classification": "ISCO-08 major groups (OC0–OC9)",
+ "codes": {
+  "EN": {
+   "OC1": "Managers",
+   "OC2": "Professionals",
+   "OC3": "Technicians and associate professionals",
+   "OC4": "Clerical support workers",
+   "OC5": "Service and sales workers",
+   "OC6": "Skilled agricultural, forestry and fishery workers",
+   "OC7": "Craft and related trades workers",
+   "OC8": "Plant and machine operators and assemblers",
+   "OC9": "Elementary occupations",
+   "OC0": "Armed forces occupations"
+  },
+  "ET": {
+   "OC1": "Juhid",
+   "OC2": "Tippspetsialistid",
+   "OC3": "Tehnikud ja keskastme spetsialistid",
+   "OC4": "Kontoritöötajad ja klienditeenindajad",
+   "OC5": "Teenindus- ja müügitöötajad",
+   "OC6": "Põllumajanduse, metsanduse, kalanduse ja jahinduse oskustöölised",
+   "OC7": "Oskus- ja käsitöölised",
+   "OC8": "Seadme- ja masinaoperaatorid ning koostajad",
+   "OC9": "Lihttöölised",
+   "OC0": "Sõjaväelased"
+  }
+ }
+}

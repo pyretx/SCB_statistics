@@ -135,7 +135,7 @@ catalog = [
   { name = "Croatia",        iso = "hr", region = "europe", source = "DZS",          status = "soon" },
   { name = "Czechia",        iso = "cz", region = "europe", source = "ISPV",         status = "soon" },
   { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "beta", slug = "denmark" },
-  { name = "Estonia",        iso = "ee", region = "europe", source = "STAT.EE",      status = "soon" },
+  { name = "Estonia",        iso = "ee", region = "europe", source = "STAT.EE",      status = "beta", slug = "estonia" },
   { name = "Finland",        iso = "fi", region = "europe", source = "STAT.FI",      status = "beta", slug = "finland" },
   { name = "Germany",        iso = "de", region = "europe", source = "DESTATIS",     status = "soon" },
   { name = "Greece",         iso = "gr", region = "europe", source = "ELSTAT",       status = "soon" },
@@ -215,6 +215,11 @@ fi = [
   "P10–P90 + mean · ~500 occupations (ISCO)",
   "Sector & gender breakdowns · region simulation",
   "Monthly earnings · 2024 snapshot",
+]
+ee = [
+  "Mean, median & deciles · 10 ISCO major groups",
+  "Gender breakdown · P10–P90",
+  "Gross hourly earnings · 2022 (4-yearly)",
 ]
 
 [footer]
