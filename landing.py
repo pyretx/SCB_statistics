@@ -134,10 +134,22 @@ _ROUTES = {"sweden": "countries/se2/page.py", "france": "countries/fr2/page.py"}
 if st.query_params.get("country") in _ROUTES:
     st.switch_page(_ROUTES[st.query_params["country"]])
 
-# Just confirmed their email? Supabase redirects the confirmation link back to
-# the app with ?confirmed=1 (see auth.sign_up's redirect_to). Greet them and
-# open the sign-in dialog, then drop the marker from the URL.
-if st.query_params.get("confirmed"):
+# ── Email confirmation, two generations ──────────────────────────────────────
+# NEW (root-cause fix): the customised Supabase email links straight to the app
+# with &confirm_token={{ .TokenHash }}. Verification happens ONLY when the user
+# presses the Confirm button in the dialog below — mail-scanner prefetches load
+# the page but never press buttons, so the one-time token survives. On success
+# the user is signed in directly.
+if st.query_params.get("confirm_token"):
+    st.session_state["_confirm_token"] = st.query_params["confirm_token"]
+    for p in ("confirm_token", "confirmed"):
+        if p in st.query_params:
+            del st.query_params[p]
+
+# LEGACY (default Supabase template): the link verified on Supabase's side and
+# redirected here with ?confirmed=1 — optimistic banner + sign-in (the resend
+# button covers tokens that a scanner already consumed).
+elif st.query_params.get("confirmed"):
     st.session_state["_confirmed_msg"] = True
     st.session_state["_show_auth"] = True
     st.session_state["_auth_mode"] = A["form"]["mode_sign_in"]
@@ -457,6 +469,30 @@ def _auth_dialog():
             st.rerun()
 
 
+@st.dialog(A.get("confirm", {}).get("title", "Confirm your email"))
+def _confirm_dialog():
+    """The new-generation confirmation: the email links here with a token_hash;
+    verification runs ONLY on this button press (mail scanners prefetch links
+    but never press buttons), and on success the user is signed in directly."""
+    Cq = A["confirm"]
+    st.markdown(Cq["intro"])
+    tok = st.session_state.get("_confirm_token")
+    if st.button(Cq["button"], type="primary", use_container_width=True,
+                 key="_confirm_go"):
+        user, err = auth.confirm_email_token(tok)
+        if user:
+            st.session_state["auth_user"] = user
+            st.session_state.pop("_confirm_token", None)
+            st.session_state["_confirm_done"] = True
+            st.rerun()
+        else:
+            st.error(Cq["failed"].format(err=err))
+            st.caption(Cq["failed_hint"])
+    if st.button(A["form"]["close"], key="_confirm_close"):
+        st.session_state.pop("_confirm_token", None)
+        st.rerun()
+
+
 # White person glyph for the profile dialog's avatar circle (lucide-ish, same
 # stroke style as the admin panel's KPI icons).
 _PROFILE_ICON = ('<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" '
@@ -613,8 +649,13 @@ with h_right:
 # only stays open across its own internal reruns (typing, radio clicks) if
 # it's called unconditionally like this, gated by persisted state; calling it
 # only inside the button's `if` block would close it the instant you type.
-if st.session_state.get("_show_auth"):
+if st.session_state.get("_confirm_token"):
+    _confirm_dialog()
+elif st.session_state.get("_show_auth"):
     _auth_dialog()
+
+if st.session_state.pop("_confirm_done", False):
+    st.toast(A["confirm"]["success"])
 
 if st.session_state.get("_show_profile"):
     _profile_dialog()

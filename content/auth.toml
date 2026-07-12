@@ -57,6 +57,18 @@ beta_admin   = "Admin accounts already include every beta feature."
 beta_failed  = "Could not send the request: {err}"
 close        = "Close"
 
+# ─────────────────────────────────────────────────────────────────────────────
+#  CONFIRM-EMAIL DIALOG — the email's button links here with a one-time token;
+#  verification runs only when the user presses the button (scanner-proof).
+# ─────────────────────────────────────────────────────────────────────────────
+[confirm]
+title       = "Confirm your email"
+intro       = "One last step — press the button to confirm your email address for Salary Explorer. You'll be signed in right away."
+button      = "✅ Confirm my email"
+success     = "Email confirmed — you're signed in. Welcome!"
+failed      = "Confirmation failed: {err}"
+failed_hint = "The link may have expired or already been used. Open Sign in, enter your email and password, and press “Resend confirmation email” to get a fresh link."
+
 # Feedback messages. {err} is replaced with the underlying reason.
 [messages]
 confirmed      = "✅ Registration link opened — please sign in below. If sign-in says your email isn't confirmed, press “Resend confirmation email”."

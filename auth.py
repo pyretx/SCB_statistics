@@ -176,6 +176,33 @@ def sign_in(email: str, password: str):
         return None, str(e)
 
 
+def confirm_email_token(token_hash: str):
+    """Verify a signup-confirmation token_hash (the root-cause fix for mail
+    scanners eating one-time links: the email links to OUR page with the hash,
+    and verification only runs when the user presses the Confirm button —
+    prefetchers never press buttons). On success the user is signed in.
+    Returns (user_dict, error)."""
+    last_err = None
+    for otp_type in ("email", "signup"):     # gotrue naming varies by version
+        try:
+            res = _client(service=False).auth.verify_otp(
+                {"token_hash": token_hash, "type": otp_type})
+            u = res.user
+            if u is None:
+                last_err = "verification returned no user"
+                continue
+            meta = u.app_metadata or {}
+            umeta = u.user_metadata or {}
+            return {"id": u.id, "email": u.email,
+                    "name": umeta.get("full_name") or umeta.get("name") or "",
+                    "role": meta.get("role", "standard"),
+                    "countries": _countries_of(meta),
+                    "beta_requested": meta.get("beta_requested")}, None
+        except Exception as e:  # noqa: BLE001
+            last_err = str(e)
+    return None, last_err
+
+
 def resend_confirmation(email: str, redirect_to: str | None = None):
     """Re-send the signup confirmation email (public client). Returns an error
     string or None. Covers the common real-world failure where the first
