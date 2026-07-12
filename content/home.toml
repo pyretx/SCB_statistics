@@ -29,7 +29,6 @@ label_beta     = "in beta"
 label_roadmap  = "on the roadmap"
 label_official = "official sources"
 official       = "100%"
-punchline      = 'Official data, <b>enhanced</b> with analytics, comparisons and tools.'
 
 # The pitch-video button under the hero intro. `file` is repo-relative; the
 # video opens in a pop-up and starts playing. Update `duration` if the video

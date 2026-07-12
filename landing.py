@@ -709,15 +709,6 @@ with hc1:
         f'{_stat(_beta_n, _hs["label_beta"], _bbadge)}{_div}'
         f'{_stat(_roadmap, _hs["label_roadmap"])}{_div}'
         f'{_stat(_hs["official"], _hs["label_official"])}')
-    _punch = (
-        '<div style="display:flex;align-items:center;gap:8px;margin-top:18px;'
-        'padding-top:16px;border-top:1px solid #E7E9ED;max-width:560px;">'
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0A63A6" '
-        'stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none;">'
-        '<path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 '
-        '12 10h8a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 12 14z">'
-        '</path></svg>'
-        f'<span style="font-size:14px;color:#4A525F;">{_hs["punchline"]}</span></div>')
     st.markdown(f"""
     <div class="se-mono" style="font-size:12px;font-weight:600;letter-spacing:.16em;color:{BLUE};margin-bottom:20px;">
       {_hero["eyebrow"]}
@@ -743,7 +734,6 @@ with hc1:
     <div style="display:flex;gap:20px;margin-top:24px;flex-wrap:nowrap;align-items:stretch;">
       {_stats_html}
     </div>
-    {_punch}
     """, unsafe_allow_html=True)
 
 with hc2:
