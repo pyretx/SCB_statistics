@@ -781,6 +781,35 @@ def _update_us_data(status, log) -> UpdateResult:
                         f"{res['scopes']} scopes · {_commit_note('us_oews.json.gz')}")
 
 
+# ── Canada · Statistics Canada 14-10-0417 — bundled snapshot (WDS CSV) ────────
+def _check_canada_data() -> SourceStatus:
+    from countries.canada import build as cabuild
+    info = cabuild.bundled_info()
+    s = SourceStatus("canada_data", "Canada", "Statistics Canada",
+                     current=f"{info.get('year', '—')} · built {info.get('built_at', '—')}")
+    s.latest = str(info.get("year", "—"))
+    s.update_available = False
+    s.note = _notes().get("canada_data", "Bundled StatCan snapshot — rebuild "
+                          "re-downloads the full-table CSV (14-10-0417) and refreshes.")
+    return s
+
+
+def _update_canada_data(status, log) -> UpdateResult:
+    from countries.canada import build as cabuild
+    res = cabuild.build(log=log)
+    if res.get("codes", 0) < 30:
+        return UpdateResult("canada_data", OUT_VALIDATION, f"too few NOC codes: {res}")
+    try:
+        from countries.canada import provider as caprov
+        caprov._load.clear()
+    except Exception:
+        pass
+    return UpdateResult("canada_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} codes ({res['leaves']} "
+                        f"occupations), {res['scopes']} scopes · "
+                        f"{_commit_note('canada_wages.json.gz')}")
+
+
 # ── United Kingdom · ONS ASHE — bundled snapshot (parsed workbooks) ───────────
 def _check_uk_data() -> SourceStatus:
     from countries.uk import build as ukbuild
@@ -861,7 +890,8 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "netherlands_data": _check_netherlands_data,
              "netherlands_labels": _check_netherlands_labels,
              "uk_data": _check_uk_data,
-             "germany_data": _check_germany_data}
+             "germany_data": _check_germany_data,
+             "canada_data": _check_canada_data}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
@@ -877,7 +907,8 @@ _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden
              "netherlands_data": _update_netherlands_data,
              "netherlands_labels": _update_netherlands_labels,
              "uk_data": _update_uk_data,
-             "germany_data": _update_germany_data}
+             "germany_data": _update_germany_data,
+             "canada_data": _update_canada_data}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -896,7 +927,8 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "netherlands_data": ("Netherlands", "CBS · data year"),
          "netherlands_labels": ("Netherlands", "CBS · BRC labels"),
          "uk_data": ("United Kingdom", "ONS ASHE"),
-         "germany_data": ("Germany", "Destatis GENESIS")}
+         "germany_data": ("Germany", "Destatis GENESIS"),
+         "canada_data": ("Canada", "Statistics Canada")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",
@@ -904,7 +936,7 @@ SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "finland_data", "finland_labels",
                 "estonia_data", "estonia_labels",
                 "netherlands_data", "netherlands_labels",
-                "uk_data", "germany_data"]
+                "uk_data", "germany_data", "canada_data"]
 
 
 def check(key: str) -> SourceStatus:

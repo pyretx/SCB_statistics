@@ -571,6 +571,33 @@ def _us_card(query, D, flt="all"):
         _check_button(D, "us", _US_KEYS)
 
 
+_CA_KEYS = ["canada_data"]
+
+
+def _canada_card(query, D, flt="all"):
+    from countries.canada import build as cabuild
+    from countries.canada.provider import _leaves as _ca_leaves
+    T = D["canada"]
+    if not _match(query, T["name"], "canada", "ca", T["source"], T["type"], "noc") \
+            or _flt_skip(flt, _CA_KEYS):
+        return
+    info = cabuild.bundled_info()
+    try:
+        n = len(_ca_leaves())
+    except Exception:
+        n = None
+    with st.container(border=True, key="adcard_ca"):
+        st.markdown(
+            _hdr("ca", T["name"], T["source"], T["type"], _country_pill(D, _CA_KEYS))
+            + _stats([(D["s_year"], info.get("year", "—")),
+                      (D["s_occ"], _n(n) if n else "—"),
+                      (D["s_built"], info.get("built_at", "—")),
+                      (D["s_size"], _fmt_bytes(info.get("size")))])
+            + f'<div class="ad-cap">{T["desc"]}</div>',
+            unsafe_allow_html=True)
+        _check_button(D, "ca", _CA_KEYS)
+
+
 _UK_KEYS = ["uk_data"]
 
 
@@ -917,6 +944,7 @@ def data_section():
     _netherlands_card(query, D, flt)
     _uk_card(query, D, flt)
     _germany_card(query, D, flt)
+    _canada_card(query, D, flt)
     if flt == "all":
         _caches_card(query, D)
 

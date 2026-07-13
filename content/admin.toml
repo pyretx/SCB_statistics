@@ -109,6 +109,12 @@ source  = "CBS"
 type    = "live API + BRC labels"
 desc    = "Gross hourly wages fetched live from CBS table 85517NED (OData; BRC-2014 occupation hierarchy, P25/median/P75, 2013→) and disk-cached; the bundled BRC labels + code map give instant dropdowns. Beta country."
 
+[data.canada]
+name    = "Canada"
+source  = "Statistics Canada"
+type    = "bundled file"
+desc    = "Bundled snapshot from the open StatCan WDS (table 14-10-0417; average + median gross monthly wages by NOC occupation × gender × 10 provinces, full-time). Rebuild re-downloads the full-table CSV. Beta country."
+
 [data.uk]
 name    = "United Kingdom"
 source  = "ONS ASHE"

@@ -158,7 +158,7 @@ catalog = [
   # Americas — planned
   { name = "Argentina",      iso = "ar", region = "americas", source = "INDEC",   status = "soon" },
   { name = "Brazil",         iso = "br", region = "americas", source = "IBGE",    status = "soon" },
-  { name = "Canada",         iso = "ca", region = "americas", source = "STATCAN", status = "soon" },
+  { name = "Canada",         iso = "ca", region = "americas", source = "STATCAN", status = "beta", slug = "canada" },
   { name = "Chile",          iso = "cl", region = "americas", source = "INE CL",  status = "soon" },
   { name = "Colombia",       iso = "co", region = "americas", source = "DANE",    status = "soon" },
   { name = "Mexico",         iso = "mx", region = "americas", source = "INEGI",   status = "soon" },
@@ -235,6 +235,11 @@ de = [
   "Mean, median & gender split · ~1300 occupations (KldB 2010)",
   "Full hierarchy drill-down · skill-level split",
   "Gross monthly earnings · Destatis GENESIS · 2025",
+]
+ca = [
+  "Mean, median & gender split · ~430 occupations (NOC)",
+  "Real per-province data (all 10 provinces)",
+  "Gross monthly wages · Statistics Canada · 2025",
 ]
 
 [footer]
