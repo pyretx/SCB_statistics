@@ -90,6 +90,10 @@ class CountryConfig:
     extra_tabs: dict = field(default_factory=dict)   # country-specific tabs appended
                                      # after the standard ones: {id: render_fn(cfg,
                                      # stats, query)}; label from i18n "tab_<id>"
+    overview_addon: object = None    # optional per-occupation Overview extra:
+                                     # fn(cfg, lang, row, query) -> html str,
+                                     # appended inside each occupation's card block
+                                     # (Germany's skill-level strip). Guarded.
     access: str = "internal"         # "public" | "registered" | "internal" | "restricted"
     url_path: str = ""               # public URL path override (default: the slug) —
                                      # lets e.g. slug "se2" serve at /sweden

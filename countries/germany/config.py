@@ -154,6 +154,7 @@ CONFIG = CountryConfig(
     ),
     tabs=("overview", "stats", "leaderboard", "sex"),
     extra_tabs={"skill_levels": skill_levels.render},   # Germany-specific (KldB 5th digit)
+    overview_addon=skill_levels.overview_strip,         # compact levels strip in Overview
     access="restricted",                         # BETA — admins + beta users only
     fetch_mode="search",
     landing=True,

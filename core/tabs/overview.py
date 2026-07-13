@@ -258,6 +258,13 @@ def render(cfg, stats, query):
             html += f'<div class="ov-grid ov-r2">{sex}{hc}</div>'
         elif sex or hc:
             html += f'<div class="ov-grid ov-r2">{sex or hc}</div>'
+        # Optional country-specific per-occupation strip (Germany: skill levels).
+        addon = getattr(cfg, "overview_addon", None)
+        if addon:
+            try:
+                html += addon(cfg, lang, row, query) or ""
+            except Exception:  # noqa: BLE001 — an addon must never break Overview
+                pass
         st.markdown(html, unsafe_allow_html=True)
 
     # ── Compare chart (several occupations) ───────────────────────────────────

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -130,7 +131,6 @@ def render(cfg, stats, query):
         st.caption(T["one"])
 
     # Table: level · mean · median · median step-up vs the previous level.
-    import pandas as pd
     trows = []
     prev = None
     for (d, mean, md), lbl in zip(rows, xlabels):
@@ -141,3 +141,54 @@ def render(cfg, stats, query):
                       T["median"]: charts.fmt_value(md, cfg), T["step"]: step})
         prev = md or prev
     st.dataframe(pd.DataFrame(trows), use_container_width=True, hide_index=True)
+
+
+def overview_strip(cfg, lang, row, query) -> str:
+    """Compact 'levels at a glance' strip for the Overview card (wired via
+    cfg.overview_addon). Returns HTML for a multi-level occupation — one median
+    mini-bar per skill level, the current level highlighted — else ''."""
+    code = str(row.get("occ_code", ""))
+    if len(code) != 5:
+        return ""
+    base = code[:4]
+    tree = cfg.provider.occupation_tree(lang)
+    sibs = sorted([c for c in tree if len(c) == 5 and c[:4] == base],
+                  key=lambda c: _ORDER.index(c[-1]) if c[-1] in _ORDER else 9)
+    if len(sibs) < 2:
+        return ""
+    df = cfg.provider.occupation_stats(occ_codes=tuple(sibs),
+                                       sex=query.get("sex", "total"), lang=lang)
+    df = df[df["dimension"] == "total"]
+    data = []
+    for c in sibs:
+        r = df[df["occ_code"] == c]
+        md = None if r.empty else r.iloc[0]["median"]
+        if md is not None and pd.notna(md):
+            data.append((c, md))
+    if len(data) < 2:
+        return ""
+    T = _T.get(lang, _T["EN"])
+    acc, soft, muted, ink = theme.ACCENT, "#94AAC0", "#5B6472", "#0C1119"
+    vmax = max(md for _, md in data) * 1.06
+    bar_rows = []
+    for c, md in data:
+        cur = c == code
+        w = max(6, md / vmax * 100)
+        bar_rows.append(
+            f'<div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">'
+            f'<span style="font-size:12.5px;color:{acc if cur else muted};'
+            f'font-weight:{600 if cur else 400};width:132px;flex:0 0 auto;">{_lvl_label(c[-1], lang)}</span>'
+            f'<div style="flex:1;height:9px;border-radius:5px;background:#EEF0F3;overflow:hidden;">'
+            f'<div style="height:100%;border-radius:5px;background:{acc if cur else soft};width:{w:.1f}%;"></div></div>'
+            f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:12.5px;'
+            f'color:{acc if cur else ink};font-weight:{600 if cur else 400};'
+            f'width:96px;text-align:right;flex:0 0 auto;">{charts.fmt_value(md, cfg)}</span></div>')
+    title = i18n.t(cfg, "tab_skill_levels", lang, "Skill levels")
+    unit = f"{T['median']} · {cfg.currency_suffix}{cfg.per_label}"
+    return (f'<div style="background:#fff;border:1px solid #E7E9ED;border-radius:16px;'
+            f'padding:18px 22px;margin-bottom:16px;">'
+            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">'
+            f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;font-weight:600;'
+            f'letter-spacing:.12em;color:#8A919D;text-transform:uppercase;">{title}</span>'
+            f'<span style="font-size:12px;color:#98A0AC;">{unit}</span></div>'
+            f'{"".join(bar_rows)}</div>')
