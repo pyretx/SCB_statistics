@@ -241,11 +241,11 @@ record.
 
 | Type | Host / name | Value / target | TTL | Notes |
 |------|-------------|----------------|-----|-------|
-| A | `@` (qvist.in) | `148.230.110.67` | 300 | homepage; **replace** any existing one.com parking/hosting A record |
-| A | `www` | `148.230.110.67` | 300 | or CNAME → `qvist.in`; **replace** existing `www` if it points to one.com |
-| A | `salaryexplorer` | `148.230.110.67` | 300 | Salary Explorer **prod** |
-| A | `test` | `148.230.110.67` | 300 | Salary Explorer **test** |
-| A | `dev` | `148.230.110.67` | 300 | Salary Explorer **dev** |
+| A | `@` (qvist.in) | `148.230.110.67` | 600 | homepage; **replace** any existing one.com parking/hosting A record |
+| A | `www` | `148.230.110.67` | 600 | or CNAME → `qvist.in`; **replace** existing `www` if it points to one.com |
+| A | `salaryexplorer` | `148.230.110.67` | 600 | Salary Explorer **prod** |
+| A | `test` | `148.230.110.67` | 600 | Salary Explorer **test** |
+| A | `dev` | `148.230.110.67` | 600 | Salary Explorer **dev** |
 
 **Preserve (do not edit/remove):** `MX`, any `TXT` SPF (`v=spf1 …`), DKIM
 (`…_domainkey`), `DMARC` (`_dmarc`), and any records needed by existing email/other
@@ -255,7 +255,7 @@ services.
 records pointing at one.com's own web hosting / a parking page — those must be
 changed to the values above, or the homepage won't resolve to the VPS.
 
-Use a low TTL (300s) during migration; raise to 3600s once everything is verified.
+Use a low TTL (600s — one.com's minimum) during migration; raise to 3600s once verified.
 
 The old `*.srv950186.hstgr.cloud` URLs are Hostinger's wildcard and are **unaffected**
 by any of this — they keep working the entire time.

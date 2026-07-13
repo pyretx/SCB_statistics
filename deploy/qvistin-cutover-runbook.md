@@ -23,22 +23,22 @@ not allow a CNAME on the apex, so `qvist.in` is an A record.
 
 | Type | Host / name | Points to | TTL |
 |------|-------------|-----------|-----|
-| A | `@`              | `148.230.110.67` | 300 |
-| A | `www`            | `148.230.110.67` | 300 |
-| A | `salaryexplorer` | `148.230.110.67` | 300 |
-| A | `test`           | `148.230.110.67` | 300 |
-| A | `dev`            | `148.230.110.67` | 300 |
+| A | `@`              | `148.230.110.67` | 600 |
+| A | `www`            | `148.230.110.67` | 600 |
+| A | `salaryexplorer` | `148.230.110.67` | 600 |
+| A | `test`           | `148.230.110.67` | 600 |
+| A | `dev`            | `148.230.110.67` | 600 |
 
 - **Preserve — do NOT edit or delete:** `MX`, SPF `TXT` (`v=spf1 …`), DKIM
   (`*_domainkey`), `DMARC` (`_dmarc`), and anything email-related.
 - **Likely conflicts to replace:** one.com usually pre-fills `@` and `www` pointing
   at one.com hosting / a parking page — change those two to `148.230.110.67`.
-- TTL 300 (5 min) during migration; raise to 3600 once everything is verified.
+- TTL **600** (one.com's minimum; 10 min) during migration; raise to 3600 once verified.
 - Adding all five now is fine — hosts with no container yet just return a Traefik
   404 until their service is deployed (harmless). You can also add `test` first and
   the rest later.
 
-Verify from any machine once propagated (seconds–minutes at TTL 300):
+Verify from any machine once propagated (minutes at TTL 600):
 
 ```bash
 nslookup test.qvist.in            # → 148.230.110.67   (repeat for the others)
