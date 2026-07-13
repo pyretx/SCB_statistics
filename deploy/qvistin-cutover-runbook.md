@@ -61,11 +61,17 @@ alone for now.
 cd /srv/scb-test
 git pull
 bash deploy/migrate-env-isolation.sh    # no-op if already run
-# set test's own public URL:
-#   /root/scb-test-secrets.toml  →  [app]\n  url = "https://test.qvist.in"
 nano /root/scb-test-secrets.toml
 cd deploy && ./deploy.sh test
 ```
+> The file already contains an `[app]` section (copied from the shared secrets) —
+> **edit its `url` value, do not add a second `[app]` block** (a duplicate table is
+> invalid TOML and the container will crash-loop). It must read exactly:
+> ```toml
+> [app]
+> url = "https://test.qvist.in"
+> ```
+> Validate before deploying: `python3 -c "import tomllib; tomllib.load(open('/root/scb-test-secrets.toml','rb')); print('OK')"`
 
 **2c. TLS + health (Traefik issues the cert on first HTTPS hit):**
 ```bash

@@ -32,12 +32,16 @@ done
 cat <<'EOF'
 
 Done. Next steps (manual):
-  1. Set the public URL PER ENV in each secrets file (they currently all share
-     one value). For now use the existing hstgr URLs; switch to the qvist.in URLs
-     during the domain cutover:
-       /root/scb-prod-secrets.toml   [app] url = "https://scb.srv950186.hstgr.cloud"
-       /root/scb-test-secrets.toml   [app] url = "https://scb-test.srv950186.hstgr.cloud"
-       /root/scb-dev-secrets.toml    [app] url = "https://scb-dev.srv950186.hstgr.cloud"
+  1. Set the public URL PER ENV. Each file was copied from the shared secrets, so
+     it ALREADY has an [app] section — EDIT the url value in that existing section,
+     do NOT add a second [app] block (a duplicate table is invalid TOML and the app
+     won't start). The section must look exactly like:
+       [app]
+       url = "https://test.qvist.in"
+     Per env (use the current hstgr URLs for now; switch to qvist.in at cutover):
+       /root/scb-prod-secrets.toml   ->  https://scb.srv950186.hstgr.cloud
+       /root/scb-test-secrets.toml   ->  https://scb-test.srv950186.hstgr.cloud
+       /root/scb-dev-secrets.toml    ->  https://scb-dev.srv950186.hstgr.cloud
   2. Redeploy each env so it mounts its own files:
        cd /srv/scb-prod/deploy && ./deploy.sh prod   # then test, then dev
      (deploy.sh now aborts if the per-env secrets file is missing, so a mistimed
