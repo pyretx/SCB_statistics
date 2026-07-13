@@ -12,6 +12,7 @@ there, not here.
 from __future__ import annotations
 
 import gzip
+import html
 import json
 import os
 from collections import Counter
@@ -1451,6 +1452,102 @@ def feedback_section():
                         st.rerun()
 
 
+# ── Section: Qvistin messages (TEMPORARY — contact form from qvist.in) ───────
+_QM_STATUS_COLORS = {"New": ("#0A63A6", "rgba(10,99,166,.10)"),
+                     "Read": ("#1B8A5A", "rgba(27,138,90,.12)"),
+                     "Archived": ("#8A919D", "#F1F3F6")}
+
+
+def qvistin_messages_section():
+    """Read the Qvistin homepage contact-form messages (temporary; the table
+    lives in this project). Every user-supplied field is HTML-escaped and the
+    message body is shown via st.text(), so pasted script/markup can't execute."""
+    st.markdown(CSS, unsafe_allow_html=True)
+    import qvistin_messages as qm
+    esc = html.escape
+    rows, err = qm.list_messages()
+    if err:
+        st.error(err)
+        return
+
+    kc = st.columns(4)
+    _kpi(kc[0], "qm_total", _IC_CHAT, "#0A63A6", "rgba(10,99,166,.10)",
+         len(rows), "Messages")
+    for i, s in enumerate(qm.STATUSES, start=1):
+        fg, bg = _QM_STATUS_COLORS[s]
+        _kpi(kc[i], f"qm_{s.lower()}", _IC_CHAT, fg, bg,
+             sum(1 for r in rows if r.get("status") == s), s)
+    st.write("")
+
+    new_n = sum(1 for r in rows if r.get("status") == "New")
+    st.caption(f"{len(rows)} messages from the qvist.in contact form · {new_n} new. "
+               "Notes are private. Temporary — messages are stored in the Salary "
+               "Explorer database for now.")
+
+    allv = "All"
+    f1, f2 = st.columns(2)
+    fstat = f1.selectbox("Status", [allv] + qm.STATUSES, key="qm_f_status")
+    topic_opts = sorted({(r.get("topic") or "—") for r in rows})
+    ftopic = f2.selectbox("Topic", [allv] + topic_opts, key="qm_f_topic")
+    shown = [r for r in rows
+             if (fstat == allv or r.get("status") == fstat)
+             and (ftopic == allv or (r.get("topic") or "—") == ftopic)]
+
+    st.write("")
+    with st.container(border=True, key="adcard_qmessages"):
+        st.markdown("#### Messages")
+        if st.session_state.get("_qm_admin_msg"):
+            st.success(st.session_state.pop("_qm_admin_msg"))
+        if not shown:
+            st.caption("Nothing matches the filters — or no messages yet.")
+            return
+        _W = [1.6, 1.8, 2.4, 1.6, 3.4, 1.3]
+        head = st.columns(_W)
+        for col, cap in zip(head, ("Date", "Name", "Email", "Topic", "Message", "Status")):
+            col.markdown(f'<div class="ad-th">{cap}</div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:1px;background:#EEF0F3;margin:6px 0 2px;"></div>',
+                    unsafe_allow_html=True)
+
+        for r in shown:                          # already newest-first
+            mid = r["id"]
+            c1, c2, c3, c4, c5, c6 = st.columns(_W, vertical_alignment="center")
+            c1.markdown(f'<span class="ad-access">'
+                        f'{esc(str(r.get("created_at", ""))[:16].replace("T", " "))}</span>',
+                        unsafe_allow_html=True)
+            c2.markdown(f'<span class="ad-uname">{esc(r.get("name") or "—")}</span>',
+                        unsafe_allow_html=True)
+            c3.markdown(f'<span class="ad-email">{esc(r.get("email") or "—")}</span>',
+                        unsafe_allow_html=True)
+            c4.markdown(f'<span class="ad-access">{esc(r.get("topic") or "—")}</span>',
+                        unsafe_allow_html=True)
+            preview = (r.get("message") or "").replace("\n", " ")
+            preview = preview[:60] + ("…" if len(preview) > 60 else "")
+            c5.markdown(f'<span class="ad-access">{esc(preview)}</span>',
+                        unsafe_allow_html=True)
+            sfg, sbg = _QM_STATUS_COLORS.get(r.get("status"), ("#5B6472", "#EEF0F3"))
+            c6.markdown(f'<span class="ad-badge" style="color:{sfg};background:{sbg};">'
+                        f'{esc(r.get("status", "—"))}</span>', unsafe_allow_html=True)
+
+            with st.expander("Open message"):
+                st.text(r.get("message", ""))    # st.text escapes — safe for any content
+                st.caption(f'From: {r.get("name") or "—"} <{r.get("email") or "—"}>  ·  '
+                           f'Topic: {r.get("topic") or "—"}  ·  Source: {r.get("source") or "—"}')
+                e1, e2 = st.columns([1, 2.4])
+                nstat = e1.selectbox(
+                    "Status", qm.STATUSES,
+                    index=qm.STATUSES.index(r["status"])
+                    if r.get("status") in qm.STATUSES else 0, key=f"qms_{mid}")
+                nnotes = e2.text_area("Private notes", value=r.get("admin_notes") or "",
+                                      height=80, key=f"qmn_{mid}")
+                if st.button("Save", key=f"qmsave_{mid}", type="primary"):
+                    uerr = qm.update_message(mid, status=nstat, admin_notes=nnotes)
+                    if uerr:
+                        st.error(uerr)
+                    else:
+                        st.session_state["_qm_admin_msg"] = "Saved."
+                        st.rerun()
+
+
 # ── Section: Work-permit rules (Sweden) ──────────────────────────────────────
 def _wp_code_list(W, title, caption, state_key, names):
     """Interactive SSYK-code list: row per code (name + 🗑), plus an add box.
@@ -1556,7 +1653,8 @@ def wp_section():
 # (The Work-permit editor is not a top-level section — it's Sweden's
 # country-specific action, opened from the Sweden data-source card.)
 SECTIONS = {"overview": overview_section, "data": data_section,
-            "users": users_section, "feedback": feedback_section}
+            "users": users_section, "feedback": feedback_section,
+            "messages": qvistin_messages_section}
 
 
 def section_selector() -> str:

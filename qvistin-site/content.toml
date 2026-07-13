@@ -72,7 +72,7 @@ heading = "A growing family of focused tools."
 name   = "Salary Explorer"
 status = "live"
 icon   = "globe"
-desc   = "Official salary statistics from trusted government sources."
+desc   = "Official salary statistics from trusted government sources enhanced with analytics and functions."
 cta_label = "Launch"
 cta_href  = "https://salaryexplorer.qvist.in"
 [[products.item]]
@@ -102,18 +102,20 @@ cta_href  = "#"
 eyebrow = "CONTACT"
 heading = "Talk to us."
 blurb   = "Questions about a product, an idea for a new branch, or just curious? We read everything."
-email   = "hello@qvistin.com"
+email   = "hello@qvist.in"
 topics  = ["General", "Salary Explorer", "Partnership", "Press"]
 form_note = "No newsletters. We only reply."
-# Social links shown under the email (icon: linkedin | github).
-[[contact.link]]
-label = "LinkedIn"
-href  = "#"
-icon  = "linkedin"
-[[contact.link]]
-label = "GitHub"
-href  = "#"
-icon  = "github"
+# LinkedIn / GitHub links are temporarily hidden. To show them again, re-add
+# [[contact.link]] blocks here (fields: label, href, icon = "linkedin" | "github").
+
+# Backend for the "Send message" form. These are the PUBLIC client-side Supabase
+# values (project URL + anon/"publishable" key) — safe to expose in the browser;
+# security comes from RLS (anon can only INSERT into qvistin_messages, never read
+# it). Fill both in from Supabase → Project Settings → API, then rebuild. If left
+# blank, the form falls back to opening a mailto: link instead.
+[contact.backend]
+supabase_url      = ""     # e.g. https://xxxxxxxx.supabase.co
+supabase_anon_key = ""     # the anon / publishable key (NOT the service_role key)
 
 [footer]
 powered   = "POWERED BY QVISTIN"

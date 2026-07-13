@@ -17,6 +17,7 @@ overview = "Overview"
 data     = "Data sources"
 users    = "Users"
 feedback = "Feedback"
+messages = "Messages"
 
 [overview]
 kpi_users     = "Registered users"

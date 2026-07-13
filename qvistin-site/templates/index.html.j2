@@ -132,16 +132,21 @@
         <p class="contact-blurb">{{ contact.blurb }}</p>
         <div class="contact-links">
           <a class="contact-link" href="mailto:{{ contact.email }}">{{ icon('mail') }}{{ contact.email }}</a>
-          {% for l in contact['link'] %}<a class="contact-link" href="{{ l.href }}">{{ icon(l.icon) }}{{ l.label }}</a>{% endfor %}
+          {% for l in contact.get('link', []) %}<a class="contact-link" href="{{ l.href }}">{{ icon(l.icon) }}{{ l.label }}</a>{% endfor %}
         </div>
       </div>
 
-      <form class="contact-card" id="contact-form">
+      <form class="contact-card" id="contact-form"
+            data-supabase-url="{{ (contact.get('backend') or {}).get('supabase_url', '') }}"
+            data-supabase-key="{{ (contact.get('backend') or {}).get('supabase_anon_key', '') }}">
         <div class="form-fields">
           <div class="form-row">
-            <div><div class="field-label">NAME</div><input id="f-name" placeholder="Your name" autocomplete="name"></div>
-            <div><div class="field-label">EMAIL</div><input id="f-email" type="email" placeholder="name@company.com" autocomplete="email"></div>
+            <div><div class="field-label">NAME</div><input id="f-name" maxlength="200" placeholder="Your name" autocomplete="name"></div>
+            <div><div class="field-label">EMAIL</div><input id="f-email" type="email" maxlength="320" placeholder="name@company.com" autocomplete="email"></div>
           </div>
+          {# honeypot: hidden from humans; bots that fill it get silently dropped.
+             named "website" (not company/org) so browser autofill won't trip it. #}
+          <input type="text" id="f-company" name="website" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
           <div>
             <div class="field-label">TOPIC</div>
             <div class="topics" id="topics">
@@ -150,17 +155,18 @@
           </div>
           <div>
             <div class="field-label">MESSAGE</div>
-            <textarea id="f-msg" rows="4" placeholder="What's on your mind?"></textarea>
+            <textarea id="f-msg" rows="4" maxlength="5000" placeholder="What's on your mind?"></textarea>
           </div>
           <div class="form-foot">
             <span class="form-note">{{ contact.form_note }}</span>
             <button type="submit" class="btn-send" id="f-send" data-email="{{ contact.email }}">Send message {{ icon('arrow') }}</button>
           </div>
+          <div class="form-err" id="form-err" hidden>Couldn't send just now — please email <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>.</div>
         </div>
         <div class="form-sent" id="form-sent" hidden>
           <div class="sent-check">{{ icon('check') }}</div>
-          <div class="sent-title">Message ready.</div>
-          <p class="sent-note">Your email app should open with the message — just hit send.</p>
+          <div class="sent-title">Message sent.</div>
+          <p class="sent-note">Thanks — we'll get back to you shortly.</p>
           <button type="button" class="sent-again" id="f-again">Write another</button>
         </div>
       </form>

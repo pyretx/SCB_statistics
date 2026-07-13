@@ -132,6 +132,9 @@ a:hover { color: var(--accent); }
 .topic.is-active { border-color: var(--accent); background: rgba(35,113,107,.08); color: var(--accent); }
 .form-foot { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 .form-note { font-size: 12px; color: #B0B6BB; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; overflow: hidden; } /* honeypot */
+.form-err { margin-top: 10px; font-size: 13px; color: #C0453A; }
+.form-err a { color: #C0453A; font-weight: 600; }
 .btn-send { display: inline-flex; align-items: center; gap: 8px; font-family: inherit; font-size: 14.5px;
   font-weight: 700; color: #FAFAF9; background: #12151A; border: 0; padding: 12px 22px; border-radius: 12px;
   cursor: pointer; transition: background .18s ease; }
