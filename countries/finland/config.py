@@ -146,7 +146,7 @@ CONFIG = CountryConfig(
     ),
     tabs=("overview", "distribution", "where", "leaderboard", "sex",
           "region_sim", "import_overlay"),
-    access="restricted",                     # BETA — admins + beta users only
+    access="registered",                     # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="ISCO-08",
@@ -155,7 +155,7 @@ CONFIG = CountryConfig(
         "Sector &amp; gender breakdowns · region simulation",
         f"Monthly earnings · {_YR} snapshot",
     ),
-    labels={"badge": "Beta", "source_short": "StatFin · official"},
+    labels={"badge": "Live", "source_short": "StatFin · official"},
     languages=(("EN", "English"), ("FI", "Suomi")),
     i18n={
         "EN": {"title": "Finnish Salary Explorer",

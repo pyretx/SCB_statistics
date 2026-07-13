@@ -88,7 +88,7 @@ CONFIG = CountryConfig(
         year_range=(_YR, _YR),
     ),
     tabs=("overview", "stats", "leaderboard", "sex", "region_sim"),
-    access="restricted",                        # BETA — admins + beta users only
+    access="registered",                        # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="NOC 2021",
@@ -97,7 +97,7 @@ CONFIG = CountryConfig(
         "Real per-province data (all 10 provinces)",
         f"Gross monthly wages · Statistics Canada · {_YR}",
     ),
-    labels={"badge": "Beta", "source_short": "StatCan · official"},
+    labels={"badge": "Live", "source_short": "StatCan · official"},
     languages=(("EN", "English"),),
     i18n={"EN": {
         "title": "Canadian Salary Explorer",

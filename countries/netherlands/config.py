@@ -143,7 +143,7 @@ CONFIG = CountryConfig(
     ),
     tabs=("overview", "distribution", "trend", "where", "leaderboard",
           "import_overlay"),
-    access="restricted",                     # BETA — admins + beta users only
+    access="registered",                     # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="BRC 2014",
@@ -152,7 +152,7 @@ CONFIG = CountryConfig(
         "Hierarchy drill-down · P25–P75 · trend",
         f"Est. monthly wages · 2013–{_YR}",
     ),
-    labels={"badge": "Beta", "source_short": "CBS · official"},
+    labels={"badge": "Live", "source_short": "CBS · official"},
     languages=(("EN", "English"), ("NL", "Nederlands")),
     i18n={
         "EN": {"title": "Dutch Salary Explorer",

@@ -164,7 +164,7 @@ CONFIG = CountryConfig(
     # standard order (docs/architecture.md); Basic statistics is merged into Overview
     tabs=("overview", "distribution", "trend", "where", "leaderboard", "sex",
           "region_sim", "import_overlay"),
-    access="restricted",                    # BETA — admins + beta users only
+    access="registered",                    # LIVE — any signed-in user
     fetch_mode="search",                    # commit-on-Search, like Sweden/Norway
     landing=True,                           # gated tile on the landing page
     classification="DISCO-08",
@@ -175,7 +175,7 @@ CONFIG = CountryConfig(
     ),
     # flat, language-independent strings the landing tile reads
     labels={
-        "badge": "Beta",
+        "badge": "Live",
         "source_short": "DST · official",
     },
     # in-app strings that follow the language toggle (generic UI comes from

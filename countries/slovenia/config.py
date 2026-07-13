@@ -83,7 +83,7 @@ CONFIG = CountryConfig(
         year_range=(min(_YEARS), max(_YEARS)),
     ),
     tabs=("overview", "distribution", "where", "leaderboard", "sex", "import_overlay"),
-    access="restricted",                        # BETA
+    access="registered",                        # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="SKP-08",
@@ -92,7 +92,7 @@ CONFIG = CountryConfig(
         "Gender breakdown & 2011–2022 trend",
         f"Gross monthly earnings · SURS · {_YR}",
     ),
-    labels={"badge": "Beta", "source_short": "SURS · official"},
+    labels={"badge": "Live", "source_short": "SURS · official"},
     languages=(("EN", "English"),),
     i18n={"EN": {
         "title": "Slovenian Salary Explorer",

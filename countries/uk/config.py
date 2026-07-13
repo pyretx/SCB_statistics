@@ -99,7 +99,7 @@ CONFIG = CountryConfig(
         year_range=(min(_YEARS), max(_YEARS)),
     ),
     tabs=("overview", "distribution", "where", "leaderboard", "sex", "import_overlay"),
-    access="restricted",                     # BETA — admins + beta users only
+    access="registered",                     # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="SOC 2020",
@@ -108,7 +108,7 @@ CONFIG = CountryConfig(
         "Gender breakdown &amp; 2021–2024 trend (real terms)",
         f"Gross monthly pay · ONS ASHE · {_YR}",
     ),
-    labels={"badge": "Beta", "source_short": "ONS ASHE · official"},
+    labels={"badge": "Live", "source_short": "ONS ASHE · official"},
     languages=(("EN", "English"),),
     i18n={"EN": {
         "title": "UK Salary Explorer",

@@ -75,7 +75,7 @@ CONFIG = CountryConfig(
         year_range=(_YR, _YR),
     ),
     tabs=("overview", "stats", "leaderboard", "sex"),
-    access="restricted",                         # BETA
+    access="registered",                         # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="ANZSCO",
@@ -84,7 +84,7 @@ CONFIG = CountryConfig(
         "Detailed 4-digit occupations",
         f"Gross monthly earnings · ABS EEH · May {_YR}",
     ),
-    labels={"badge": "Beta", "source_short": "ABS EEH · official"},
+    labels={"badge": "Live", "source_short": "ABS EEH · official"},
     languages=(("EN", "English"),),
     i18n={"EN": {"title": "Australian Salary Explorer", "caption": _CAPTION}},
     guide={"EN": _GUIDE_EN},

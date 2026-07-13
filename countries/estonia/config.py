@@ -127,7 +127,7 @@ CONFIG = CountryConfig(
         year_range=(_YR, _YR),
     ),
     tabs=("overview", "leaderboard", "sex", "import_overlay"),
-    access="restricted",                     # BETA — admins + beta users only
+    access="registered",                     # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="ISCO-08",
@@ -136,7 +136,7 @@ CONFIG = CountryConfig(
         "Hierarchy drill-down · gender split",
         f"Est. monthly earnings · {_YR} (4-yearly)",
     ),
-    labels={"badge": "Beta", "source_short": "Stat. Estonia · official"},
+    labels={"badge": "Live", "source_short": "Stat. Estonia · official"},
     languages=(("EN", "English"), ("ET", "Eesti")),
     i18n={
         "EN": {"title": "Estonian Salary Explorer",

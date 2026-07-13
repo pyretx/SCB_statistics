@@ -133,7 +133,7 @@ CONFIG = CountryConfig(
     ),
     tabs=("overview", "distribution", "trend", "where", "leaderboard", "sex",
           "import_overlay"),
-    access="restricted",                     # BETA — admins + beta users only
+    access="registered",                     # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="ISCO-08",
@@ -142,7 +142,7 @@ CONFIG = CountryConfig(
         "Gender breakdown · quartiles",
         f"Monthly earnings · 2014–{_YR}",
     ),
-    labels={"badge": "Beta", "source_short": "Hagstofa · official"},
+    labels={"badge": "Live", "source_short": "Hagstofa · official"},
     languages=(("EN", "English"), ("IS", "Íslenska")),
     i18n={
         "EN": {"title": "Icelandic Salary Explorer",

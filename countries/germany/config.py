@@ -159,7 +159,7 @@ CONFIG = CountryConfig(
     tabs=("overview", "distribution", "stats", "leaderboard", "sex"),
     extra_tabs={"skill_levels": skill_levels.render},   # Germany-specific (KldB 5th digit)
     overview_addon=skill_levels.overview_strip,         # compact levels strip in Overview
-    access="restricted",                         # BETA — admins + beta users only
+    access="registered",                         # LIVE — any signed-in user
     fetch_mode="search",
     landing=True,
     classification="KldB 2010",
@@ -168,7 +168,7 @@ CONFIG = CountryConfig(
         "Full occupation hierarchy &amp; leaderboard",
         f"Gross monthly earnings · Destatis GENESIS · {_YR}",
     ),
-    labels={"badge": "Beta", "source_short": "Destatis · official"},
+    labels={"badge": "Live", "source_short": "Destatis · official"},
     languages=(("EN", "English"), ("DE", "Deutsch")),
     i18n={
         "EN": {
