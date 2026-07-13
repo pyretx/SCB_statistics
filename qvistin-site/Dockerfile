@@ -12,5 +12,8 @@ FROM nginx:alpine
 COPY qvistin-site/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /site/dist /usr/share/nginx/html
 EXPOSE 80
+# Use 127.0.0.1 (not localhost): in the container `localhost` resolves to IPv6 ::1
+# but nginx listens on IPv4 only, so a localhost check gets "connection refused"
+# and the container is wrongly marked unhealthy (Traefik then won't route to it).
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD wget -qO- http://localhost/ >/dev/null 2>&1 || exit 1
+    CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1
