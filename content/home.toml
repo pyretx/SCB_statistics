@@ -149,7 +149,7 @@ catalog = [
   { name = "Poland",         iso = "pl", region = "europe", source = "GUS",          status = "soon" },
   { name = "Portugal",       iso = "pt", region = "europe", source = "INE PT",       status = "soon" },
   { name = "Slovakia",       iso = "sk", region = "europe", source = "SUSR",         status = "soon" },
-  { name = "Slovenia",       iso = "si", region = "europe", source = "SURS",         status = "soon" },
+  { name = "Slovenia",       iso = "si", region = "europe", source = "SURS",         status = "beta", slug = "slovenia" },
   { name = "Spain",          iso = "es", region = "europe", source = "INE",          status = "soon" },
   { name = "Switzerland",    iso = "ch", region = "europe", source = "BFS",          status = "soon" },
   { name = "United Kingdom", iso = "gb", region = "europe", source = "ONS",          status = "beta", slug = "uk" },
@@ -250,6 +250,11 @@ au = [
   "Average earnings & gender split · ~360 occupations (ANZSCO)",
   "Detailed 4-digit occupations",
   "Gross monthly earnings · ABS EEH · May 2025",
+]
+si = [
+  "P10–P90 + mean · ~600 occupations (SKP-08/ISCO)",
+  "Gender breakdown & 2011–2022 trend",
+  "Gross monthly earnings · SURS · 2022",
 ]
 
 [footer]

@@ -109,6 +109,12 @@ source  = "CBS"
 type    = "live API + BRC labels"
 desc    = "Gross hourly wages fetched live from CBS table 85517NED (OData; BRC-2014 occupation hierarchy, P25/median/P75, 2013→) and disk-cached; the bundled BRC labels + code map give instant dropdowns. Beta country."
 
+[data.slovenia]
+name    = "Slovenia"
+source  = "SURS"
+type    = "bundled file"
+desc    = "Bundled snapshot from the open SURS PxWeb API (table 0711335S; P10–P90 + mean + median gross monthly earnings by SKP-08/ISCO occupation × sex × year 2011–2022). Rebuild re-fetches from PxWeb. Beta country."
+
 [data.newzealand]
 name    = "New Zealand"
 source  = "Stats NZ"

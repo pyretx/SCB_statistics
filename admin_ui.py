@@ -594,6 +594,13 @@ def _bundled_card(query, D, flt, *, tkey, iso, keys, build_mod, leaves_fn, kw, y
         _check_button(D, iso, keys)
 
 
+def _slovenia_card(query, D, flt="all"):
+    from countries.slovenia import build as sibuild
+    from countries.slovenia.provider import _leaves as si_leaves
+    _bundled_card(query, D, flt, tkey="slovenia", iso="si", keys=["slovenia_data"],
+                  build_mod=sibuild, leaves_fn=si_leaves, kw=("skp", "surs", "isco"))
+
+
 def _newzealand_card(query, D, flt="all"):
     from countries.newzealand import build as nzbuild
     from countries.newzealand.provider import _codes as nz_codes
@@ -983,6 +990,7 @@ def data_section():
     _uk_card(query, D, flt)
     _germany_card(query, D, flt)
     _canada_card(query, D, flt)
+    _slovenia_card(query, D, flt)
     _newzealand_card(query, D, flt)
     _australia_card(query, D, flt)
     if flt == "all":
