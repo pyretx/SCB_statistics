@@ -914,6 +914,36 @@ def _update_switzerland_data(status, log) -> UpdateResult:
                         f"{_commit_note('switzerland_earnings.json.gz')}")
 
 
+# ── Spain · INE Tempus3 table 70672 (SES) — bundled snapshot ──────────────────
+def _check_spain_data() -> SourceStatus:
+    from countries.spain import build as esbuild
+    info = esbuild.bundled_info()
+    yrs = info.get("years") or []
+    span = f"{min(yrs)}–{max(yrs)}" if len(yrs) > 1 else str(info.get("year", "—"))
+    s = SourceStatus("spain_data", "Spain", "INE",
+                     current=f"{span} · built {info.get('built_at', '—')}")
+    s.latest = span
+    s.update_available = False
+    s.note = _notes().get("spain_data", "Bundled INE SES snapshot — rebuild "
+                          "re-fetches table 70672 from the INE Tempus3 API.")
+    return s
+
+
+def _update_spain_data(status, log) -> UpdateResult:
+    from countries.spain import build as esbuild
+    res = esbuild.build(log=log)
+    if res.get("codes", 0) < 30:
+        return UpdateResult("spain_data", OUT_VALIDATION, f"too few CNO codes: {res}")
+    try:
+        from countries.spain import provider as esprov
+        esprov._load.clear()
+    except Exception:
+        pass
+    return UpdateResult("spain_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} codes ({res['leaves']} "
+                        f"occupations) · {_commit_note('spain_earnings.json.gz')}")
+
+
 # ── New Zealand · Stats NZ ADE INC_INC_004 — bundled snapshot (SDMX API) ──────
 def _check_newzealand_data() -> SourceStatus:
     from countries.newzealand import build as nzbuild
@@ -1088,7 +1118,8 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "slovenia_data": _check_slovenia_data,
              "brazil_data": _check_brazil_data,
              "mexico_data": _check_mexico_data,
-             "switzerland_data": _check_switzerland_data}
+             "switzerland_data": _check_switzerland_data,
+             "spain_data": _check_spain_data}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
@@ -1111,7 +1142,8 @@ _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden
              "slovenia_data": _update_slovenia_data,
              "brazil_data": _update_brazil_data,
              "mexico_data": _update_mexico_data,
-             "switzerland_data": _update_switzerland_data}
+             "switzerland_data": _update_switzerland_data,
+             "spain_data": _update_spain_data}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -1137,7 +1169,8 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "slovenia_data": ("Slovenia", "SURS"),
          "brazil_data": ("Brazil", "IBGE"),
          "mexico_data": ("Mexico", "INEGI ENOE"),
-         "switzerland_data": ("Switzerland", "FSO LSE")}
+         "switzerland_data": ("Switzerland", "FSO LSE"),
+         "spain_data": ("Spain", "INE")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",
@@ -1147,7 +1180,7 @@ SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "netherlands_data", "netherlands_labels",
                 "uk_data", "germany_data", "canada_data",
                 "newzealand_data", "australia_data", "slovenia_data", "brazil_data",
-                "mexico_data", "switzerland_data"]
+                "mexico_data", "switzerland_data", "spain_data"]
 
 
 def check(key: str) -> SourceStatus:

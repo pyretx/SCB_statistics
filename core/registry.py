@@ -18,7 +18,7 @@ from .access import can_open
 _COUNTRY_MODULES = ["demo", "se2", "fr2", "norway", "us", "denmark",
                     "iceland", "finland", "estonia", "netherlands", "uk", "germany",
                     "canada", "newzealand", "australia", "slovenia", "brazil",
-                    "mexico", "switzerland"]
+                    "mexico", "switzerland", "spain"]
 
 
 def all_countries() -> list:

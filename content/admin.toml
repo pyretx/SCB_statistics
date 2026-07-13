@@ -128,6 +128,12 @@ source  = "SURS"
 type    = "bundled file"
 desc    = "Bundled snapshot from the open SURS PxWeb API (table 0711335S; P10–P90 + mean + median gross monthly earnings by SKP-08/ISCO occupation × sex × year 2011–2022). Rebuild re-fetches from PxWeb. Beta country."
 
+[data.spain]
+name    = "Spain"
+source  = "INE (Encuesta de Estructura Salarial)"
+type    = "bundled file"
+desc    = "Bundled snapshot from the open INE Tempus3 API (table 70672; mean + P10/P25/median/P75/P90 gross monthly earnings — official annual ÷ 12 — by CNO-11/ISCO occupation major & sub-major × sex, 2018 quadrennial SES). Rebuild re-fetches from INE. Beta country."
+
 [data.switzerland]
 name    = "Switzerland"
 source  = "FSO / BFS (LSE)"
