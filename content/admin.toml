@@ -109,6 +109,12 @@ source  = "CBS"
 type    = "live API + BRC labels"
 desc    = "Gross hourly wages fetched live from CBS table 85517NED (OData; BRC-2014 occupation hierarchy, P25/median/P75, 2013→) and disk-cached; the bundled BRC labels + code map give instant dropdowns. Beta country."
 
+[data.brazil]
+name    = "Brazil"
+source  = "IBGE"
+type    = "bundled file"
+desc    = "Bundled snapshot from the open IBGE SIDRA/aggregates API (PNAD Contínua table 9457; average earnings by 10 ISCO major occupation groups, 2012→, estimated monthly from the published hourly). Rebuild re-fetches from IBGE. Beta country."
+
 [data.slovenia]
 name    = "Slovenia"
 source  = "SURS"

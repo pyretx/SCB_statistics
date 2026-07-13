@@ -594,6 +594,13 @@ def _bundled_card(query, D, flt, *, tkey, iso, keys, build_mod, leaves_fn, kw, y
         _check_button(D, iso, keys)
 
 
+def _brazil_card(query, D, flt="all"):
+    from countries.brazil import build as brbuild
+    from countries.brazil.provider import _codes as br_codes
+    _bundled_card(query, D, flt, tkey="brazil", iso="br", keys=["brazil_data"],
+                  build_mod=brbuild, leaves_fn=br_codes, kw=("ibge", "isco", "pnad"))
+
+
 def _slovenia_card(query, D, flt="all"):
     from countries.slovenia import build as sibuild
     from countries.slovenia.provider import _leaves as si_leaves
@@ -990,6 +997,7 @@ def data_section():
     _uk_card(query, D, flt)
     _germany_card(query, D, flt)
     _canada_card(query, D, flt)
+    _brazil_card(query, D, flt)
     _slovenia_card(query, D, flt)
     _newzealand_card(query, D, flt)
     _australia_card(query, D, flt)

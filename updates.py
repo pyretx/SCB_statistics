@@ -781,6 +781,36 @@ def _update_us_data(status, log) -> UpdateResult:
                         f"{res['scopes']} scopes · {_commit_note('us_oews.json.gz')}")
 
 
+# ── Brazil · IBGE PNAD Contínua 9457 — bundled snapshot (SIDRA API) ───────────
+def _check_brazil_data() -> SourceStatus:
+    from countries.brazil import build as brbuild
+    info = brbuild.bundled_info()
+    yrs = info.get("years") or []
+    span = f"{min(yrs)}–{max(yrs)}" if yrs else str(info.get("year", "—"))
+    s = SourceStatus("brazil_data", "Brazil", "IBGE",
+                     current=f"{span} · built {info.get('built_at', '—')}")
+    s.latest = span
+    s.update_available = False
+    s.note = _notes().get("brazil_data", "Bundled IBGE snapshot — rebuild re-fetches "
+                          "PNAD Contínua table 9457 from the open SIDRA API.")
+    return s
+
+
+def _update_brazil_data(status, log) -> UpdateResult:
+    from countries.brazil import build as brbuild
+    res = brbuild.build(log=log)
+    if res.get("codes", 0) < 5:
+        return UpdateResult("brazil_data", OUT_VALIDATION, f"too few groups: {res}")
+    try:
+        from countries.brazil import provider as brprov
+        brprov._load.clear()
+    except Exception:
+        pass
+    return UpdateResult("brazil_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} groups, "
+                        f"{len(res['years'])} years · {_commit_note('brazil_earnings.json.gz')}")
+
+
 # ── Slovenia · SURS PxWeb 0711335S — bundled snapshot (per-year fetch) ────────
 def _check_slovenia_data() -> SourceStatus:
     from countries.slovenia import build as sibuild
@@ -983,7 +1013,8 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "canada_data": _check_canada_data,
              "newzealand_data": _check_newzealand_data,
              "australia_data": _check_australia_data,
-             "slovenia_data": _check_slovenia_data}
+             "slovenia_data": _check_slovenia_data,
+             "brazil_data": _check_brazil_data}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
@@ -1003,7 +1034,8 @@ _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden
              "canada_data": _update_canada_data,
              "newzealand_data": _update_newzealand_data,
              "australia_data": _update_australia_data,
-             "slovenia_data": _update_slovenia_data}
+             "slovenia_data": _update_slovenia_data,
+             "brazil_data": _update_brazil_data}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -1026,7 +1058,8 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "canada_data": ("Canada", "Statistics Canada"),
          "newzealand_data": ("New Zealand", "Stats NZ"),
          "australia_data": ("Australia", "ABS EEH"),
-         "slovenia_data": ("Slovenia", "SURS")}
+         "slovenia_data": ("Slovenia", "SURS"),
+         "brazil_data": ("Brazil", "IBGE")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",
@@ -1035,7 +1068,7 @@ SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "estonia_data", "estonia_labels",
                 "netherlands_data", "netherlands_labels",
                 "uk_data", "germany_data", "canada_data",
-                "newzealand_data", "australia_data", "slovenia_data"]
+                "newzealand_data", "australia_data", "slovenia_data", "brazil_data"]
 
 
 def check(key: str) -> SourceStatus:
