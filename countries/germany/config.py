@@ -13,6 +13,7 @@ Datenlizenz Deutschland – Namensnennung – Version 2.0.
 from __future__ import annotations
 
 from core.model import CountryConfig, Capabilities
+from . import skill_levels
 from .build import latest_year
 from .provider import GermanyProvider, _load
 
@@ -74,6 +75,8 @@ _GUIDE_EN = {
         ("Leaderboard", "Ranks occupations by mean or median pay within a KldB "
                         "group."),
         ("By gender", "Women vs men, with a women-as-%-of-men view."),
+        ("Skill levels", "Pay across an occupation's requirement levels "
+                         "(Helfer → Fachkraft → Spezialist → Experte)."),
     ],
     "footer": ATTRIBUTION,
 }
@@ -125,6 +128,8 @@ _GUIDE_DE = {
         ("Rangliste", "Ordnet Berufe nach Mittel oder Median innerhalb einer "
                       "KldB-Gruppe."),
         ("Nach Geschlecht", "Frauen vs. Männer, mit Frauen-in-%-der-Männer-Ansicht."),
+        ("Anforderungsniveaus", "Verdienst über die Anforderungsniveaus eines "
+                                "Berufs (Helfer → Fachkraft → Spezialist → Experte)."),
     ],
     "footer": ATTRIBUTION,
 }
@@ -148,6 +153,7 @@ CONFIG = CountryConfig(
         year_range=(_YR, _YR),                   # single annual snapshot
     ),
     tabs=("overview", "stats", "leaderboard", "sex"),
+    extra_tabs={"skill_levels": skill_levels.render},   # Germany-specific (KldB 5th digit)
     access="restricted",                         # BETA — admins + beta users only
     fetch_mode="search",
     landing=True,
@@ -163,19 +169,24 @@ CONFIG = CountryConfig(
         "EN": {
             "title": "German Salary Explorer",
             "caption": _CAPTION,
+            "tab_skill_levels": "Skill levels",
             "grp_1": "Major group", "grp_2": "Occupation group",
+            "grp_3": "Occupation",
             "all_grp_1": "— All major groups —", "all_grp_2": "— All occupation groups —",
+            "all_grp_3": "— All occupations —",
             "brlvl_2": "Major group (2-digit)", "brlvl_3": "Occupation group (3-digit)",
-            "brlvl_5": "Occupation (5-digit)",
+            "brlvl_4": "Occupation (4-digit)", "brlvl_5": "Skill level (5-digit)",
         },
         "DE": {
             "title": "Deutscher Gehaltsexplorer",
             "caption": "Statistisches Bundesamt (Destatis) · GENESIS-Online · "
                        "Bruttomonatsverdienste nach Beruf (KldB 2010)",
-            "grp_1": "Berufshauptgruppe", "grp_2": "Berufsgruppe",
+            "tab_skill_levels": "Anforderungsniveaus",
+            "grp_1": "Berufshauptgruppe", "grp_2": "Berufsgruppe", "grp_3": "Beruf",
             "all_grp_1": "— Alle Berufshauptgruppen —", "all_grp_2": "— Alle Berufsgruppen —",
+            "all_grp_3": "— Alle Berufe —",
             "brlvl_2": "Berufshauptgruppe (2-stellig)", "brlvl_3": "Berufsgruppe (3-stellig)",
-            "brlvl_5": "Berufsgattung (5-stellig)",
+            "brlvl_4": "Berufsuntergruppe (4-stellig)", "brlvl_5": "Anforderungsniveau (5-stellig)",
         },
     },
     guide={"EN": _GUIDE_EN, "DE": _GUIDE_DE},

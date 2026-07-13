@@ -146,6 +146,18 @@ def build(out_path: str = OUT, log=print) -> dict:
         if t[:4].isdigit():
             year = int(t[:4])
 
+    # Synthesize 4-digit KldB base occupations (Berufsuntergruppe) from the
+    # 5-digit skill-level leaves, so the drill-down groups skill levels under
+    # their occupation and the Skill-levels tab can pick a base directly. The
+    # base name is the leaf name minus its ' - <level>' suffix. There is no
+    # earnings figure at this level (the table publishes 2/3/5-digit only), so
+    # these are navigation-only group nodes — not leaves, no stats row.
+    def _add_bases(names):
+        for c in [c for c in names if len(c) == 5]:
+            names.setdefault(c[:4], names[c].rsplit(" - ", 1)[0])
+    _add_bases(names_en)
+    _add_bases(names_de)
+
     # flatten each occupation's measures to STAT_COLS order
     codes = names_en
     out_stats = {sex: {c: [d.get(m) for m in STAT_COLS] for c, d in cmap.items()}
