@@ -54,7 +54,6 @@
   [name, email, msg].forEach(function (el) { el.addEventListener("input", sync); });
   sync();
 
-  var hp = document.getElementById("f-company");           // honeypot
   var errEl = document.getElementById("form-err");
   var SB_URL = (form.dataset.supabaseUrl || "").replace(/\/+$/, "");
   var SB_KEY = form.dataset.supabaseKey || "";
@@ -65,7 +64,6 @@
   form.addEventListener("submit", function (e) {
     e.preventDefault();
     if (!canSend()) return;
-    if (hp && hp.value) { showSent(); return; }    // bot filled the honeypot → drop silently
     if (errEl) errEl.hidden = true;
 
     var payload = {
