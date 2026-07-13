@@ -630,6 +630,26 @@ def _spain_card(query, D, flt="all"):
                   build_mod=esbuild, leaves_fn=es_leaves, kw=("ine", "cno", "isco", "ses"))
 
 
+# Eurostat-SES beta countries (shared card renderer; skips any not yet built).
+_EUROSTAT_ADMIN = {"lithuania": "lt", "belgium": "be", "portugal": "pt", "austria": "at",
+                   "poland": "pl", "luxembourg": "lu", "latvia": "lv", "croatia": "hr",
+                   "romania": "ro", "bulgaria": "bg"}
+
+
+def _eurostat_cards(query, D, flt="all"):
+    import importlib
+    from countries import eurostat_ses
+    for slug, iso in _EUROSTAT_ADMIN.items():
+        try:
+            bmod = importlib.import_module(f"countries.{slug}.build")
+        except Exception:
+            continue
+        _bundled_card(query, D, flt, tkey=slug, iso=iso, keys=[f"{slug}_data"],
+                      build_mod=bmod,
+                      leaves_fn=(lambda lang="EN", s=slug: eurostat_ses.leaves(s)),
+                      kw=("eurostat", "ses", "isco"))
+
+
 def _newzealand_card(query, D, flt="all"):
     from countries.newzealand import build as nzbuild
     from countries.newzealand.provider import _codes as nz_codes
@@ -1024,6 +1044,7 @@ def data_section():
     _slovenia_card(query, D, flt)
     _switzerland_card(query, D, flt)
     _spain_card(query, D, flt)
+    _eurostat_cards(query, D, flt)
     _newzealand_card(query, D, flt)
     _australia_card(query, D, flt)
     if flt == "all":

@@ -25,6 +25,7 @@ layer owns session state, confirmations and st.cache_data clearing.
 """
 from __future__ import annotations
 
+import importlib
 import json
 import os
 from dataclasses import dataclass
@@ -1096,6 +1097,48 @@ def _update_germany_data(status, log) -> UpdateResult:
 
 
 # ── Service API ───────────────────────────────────────────────────────────────
+# ── Eurostat SES beta countries (shared handler) ─────────────────────────────
+# key "<slug>_data" → display name. Adding a Eurostat-SES country = one line here
+# (plus its countries/<slug>/ module + landing/admin entries).
+_EUROSTAT_SES = {
+    "lithuania_data": "Lithuania", "belgium_data": "Belgium", "portugal_data": "Portugal",
+    "austria_data": "Austria", "poland_data": "Poland", "luxembourg_data": "Luxembourg",
+    "latvia_data": "Latvia", "croatia_data": "Croatia", "romania_data": "Romania",
+    "bulgaria_data": "Bulgaria",
+}
+
+
+def _eurostat_check(key):
+    name = _EUROSTAT_SES[key]
+    slug = key[:-5]
+
+    def _c():
+        info = importlib.import_module(f"countries.{slug}.build").bundled_info()
+        yrs = info.get("years") or []
+        span = f"{min(yrs)}–{max(yrs)}" if len(yrs) > 1 else str(info.get("year", "—"))
+        s = SourceStatus(key, name, "Eurostat SES", current=f"{span} · built {info.get('built_at', '—')}")
+        s.latest = span
+        s.update_available = False
+        s.note = _notes().get(key, "Bundled Eurostat SES snapshot — rebuild "
+                              "re-fetches earn_ses_21 from the Eurostat API.")
+        return s
+    return _c
+
+
+def _eurostat_update(key):
+    slug = key[:-5]
+
+    def _u(status, log):
+        res = importlib.import_module(f"countries.{slug}.build").build(log=log)
+        if res.get("codes", 0) < 5:
+            return UpdateResult(key, OUT_VALIDATION, f"too few groups: {res}")
+        return UpdateResult(key, OUT_UPDATED,
+                            f"{res['built_at']} · {res['codes']} groups, "
+                            f"{len(res.get('years', []))} years · "
+                            f"{_commit_note(slug + '_earnings.json.gz')}")
+    return _u
+
+
 _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_labels,
              "france_api": _check_france_api, "france_micro": _check_france_micro,
              "norway_data": _check_norway_data, "norway_labels": _check_norway_labels,
@@ -1181,6 +1224,14 @@ SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "uk_data", "germany_data", "canada_data",
                 "newzealand_data", "australia_data", "slovenia_data", "brazil_data",
                 "mexico_data", "switzerland_data", "spain_data"]
+
+# Register the Eurostat-SES countries into the maps + order (generic handler).
+for _k in _EUROSTAT_SES:
+    _CHECKERS[_k] = _eurostat_check(_k)
+    _UPDATERS[_k] = _eurostat_update(_k)
+    _BASE[_k] = (_EUROSTAT_SES[_k], "Eurostat SES")
+    if _k not in SOURCE_ORDER:
+        SOURCE_ORDER.append(_k)
 
 
 def check(key: str) -> SourceStatus:

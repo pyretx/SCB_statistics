@@ -134,6 +134,66 @@ source  = "INE (Encuesta de Estructura Salarial)"
 type    = "bundled file"
 desc    = "Bundled snapshot from the open INE Tempus3 API (table 70672; mean + P10/P25/median/P75/P90 gross monthly earnings — official annual ÷ 12 — by CNO-11/ISCO occupation major & sub-major × sex, 2018 quadrennial SES). Rebuild re-fetches from INE. Beta country."
 
+[data.lithuania]
+name = "Lithuania"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 4-yearly SES editions 2006–2022). Rebuild re-fetches from Eurostat. Beta country."
+
+[data.belgium]
+name = "Belgium"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.portugal]
+name = "Portugal"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.austria]
+name = "Austria"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.poland]
+name = "Poland"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.luxembourg]
+name = "Luxembourg"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.latvia]
+name = "Latvia"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.croatia]
+name = "Croatia"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2010–2022). Beta country."
+
+[data.romania]
+name = "Romania"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.bulgaria]
+name = "Bulgaria"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
 [data.switzerland]
 name    = "Switzerland"
 source  = "FSO / BFS (LSE)"

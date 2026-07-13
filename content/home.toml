@@ -130,9 +130,10 @@ catalog = [
   { name = "France",  iso = "fr", region = "europe", source = "INSEE", status = "live", slug = "fr2" },
   { name = "Norway",  iso = "no", region = "europe", source = "SSB",   status = "live", slug = "norway" },
   # Europe — planned
-  { name = "Austria",        iso = "at", region = "europe", source = "STATISTIK.AT", status = "soon" },
-  { name = "Belgium",        iso = "be", region = "europe", source = "STATBEL",      status = "soon" },
-  { name = "Croatia",        iso = "hr", region = "europe", source = "DZS",          status = "soon" },
+  { name = "Austria",        iso = "at", region = "europe", source = "EUROSTAT",     status = "beta", slug = "austria" },
+  { name = "Belgium",        iso = "be", region = "europe", source = "EUROSTAT",     status = "beta", slug = "belgium" },
+  { name = "Bulgaria",       iso = "bg", region = "europe", source = "EUROSTAT",     status = "beta", slug = "bulgaria" },
+  { name = "Croatia",        iso = "hr", region = "europe", source = "EUROSTAT",     status = "beta", slug = "croatia" },
   { name = "Czechia",        iso = "cz", region = "europe", source = "ISPV",         status = "soon" },
   { name = "Denmark",        iso = "dk", region = "europe", source = "DST",          status = "live", slug = "denmark" },
   { name = "Estonia",        iso = "ee", region = "europe", source = "STAT.EE",      status = "live", slug = "estonia" },
@@ -143,11 +144,13 @@ catalog = [
   { name = "Iceland",        iso = "is", region = "europe", source = "HAGSTOFA",     status = "live", slug = "iceland" },
   { name = "Ireland",        iso = "ie", region = "europe", source = "CSO",          status = "soon" },
   { name = "Italy",          iso = "it", region = "europe", source = "ISTAT",        status = "soon" },
-  { name = "Latvia",         iso = "lv", region = "europe", source = "CSB",          status = "soon" },
-  { name = "Lithuania",      iso = "lt", region = "europe", source = "OSP",          status = "soon" },
+  { name = "Latvia",         iso = "lv", region = "europe", source = "EUROSTAT",     status = "beta", slug = "latvia" },
+  { name = "Lithuania",      iso = "lt", region = "europe", source = "EUROSTAT",     status = "beta", slug = "lithuania" },
+  { name = "Luxembourg",     iso = "lu", region = "europe", source = "EUROSTAT",     status = "beta", slug = "luxembourg" },
   { name = "Netherlands",    iso = "nl", region = "europe", source = "CBS",          status = "live", slug = "netherlands" },
-  { name = "Poland",         iso = "pl", region = "europe", source = "GUS",          status = "soon" },
-  { name = "Portugal",       iso = "pt", region = "europe", source = "INE PT",       status = "soon" },
+  { name = "Poland",         iso = "pl", region = "europe", source = "EUROSTAT",     status = "beta", slug = "poland" },
+  { name = "Portugal",       iso = "pt", region = "europe", source = "EUROSTAT",     status = "beta", slug = "portugal" },
+  { name = "Romania",        iso = "ro", region = "europe", source = "EUROSTAT",     status = "beta", slug = "romania" },
   { name = "Slovakia",       iso = "sk", region = "europe", source = "SUSR",         status = "soon" },
   { name = "Slovenia",       iso = "si", region = "europe", source = "SURS",         status = "live", slug = "slovenia" },
   { name = "Spain",          iso = "es", region = "europe", source = "INE",          status = "beta", slug = "spain" },
@@ -276,6 +279,17 @@ es = [
   "Gender breakdown · Structure of Earnings Survey",
   "Gross monthly earnings · INE · 2018",
 ]
+# Eurostat SES beta countries (mean by ISCO major group × sex, 2006–2022, EUR).
+lt = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
+be = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
+pt = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
+at = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
+pl = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
+lu = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
+lv = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
+hr = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2010–2022 trend", "Gross monthly earnings · Eurostat SES"]
+ro = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
+bg = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
 
 [footer]
 note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France) · SSB (Norway) · BLS (United States)"
