@@ -17,7 +17,7 @@ from .access import can_open
 # NOTE: module dir MUST equal the config's slug (app.py builds page paths from it).
 _COUNTRY_MODULES = ["demo", "se2", "fr2", "norway", "us", "denmark",
                     "iceland", "finland", "estonia", "netherlands", "uk", "germany",
-                    "canada", "newzealand", "australia"]
+                    "canada", "newzealand", "australia", "slovenia"]
 
 
 def all_countries() -> list:
