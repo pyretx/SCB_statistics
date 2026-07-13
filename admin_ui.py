@@ -571,6 +571,44 @@ def _us_card(query, D, flt="all"):
         _check_button(D, "us", _US_KEYS)
 
 
+def _bundled_card(query, D, flt, *, tkey, iso, keys, build_mod, leaves_fn, kw, year_fmt=None):
+    """Generic single-bundled-source card (NZ / AU)."""
+    T = D[tkey]
+    if not _match(query, T["name"], iso, T["source"], T["type"], *kw) or _flt_skip(flt, keys):
+        return
+    info = build_mod.bundled_info()
+    yrs = info.get("years") or []
+    yr = (f"{min(yrs)}–{max(yrs)}" if len(yrs) > 1 else
+          (year_fmt.format(info.get("year", "—")) if year_fmt else info.get("year", "—")))
+    try:
+        n = len(leaves_fn())
+    except Exception:
+        n = None
+    with st.container(border=True, key=f"adcard_{iso}"):
+        st.markdown(
+            _hdr(iso, T["name"], T["source"], T["type"], _country_pill(D, keys))
+            + _stats([(D["s_year"], yr), (D["s_occ"], _n(n) if n else "—"),
+                      (D["s_built"], info.get("built_at", "—")),
+                      (D["s_size"], _fmt_bytes(info.get("size")))])
+            + f'<div class="ad-cap">{T["desc"]}</div>', unsafe_allow_html=True)
+        _check_button(D, iso, keys)
+
+
+def _newzealand_card(query, D, flt="all"):
+    from countries.newzealand import build as nzbuild
+    from countries.newzealand.provider import _codes as nz_codes
+    _bundled_card(query, D, flt, tkey="newzealand", iso="nz", keys=["newzealand_data"],
+                  build_mod=nzbuild, leaves_fn=nz_codes, kw=("anzsco", "stats nz"))
+
+
+def _australia_card(query, D, flt="all"):
+    from countries.australia import build as aubuild
+    from countries.australia.provider import _codes as au_codes
+    _bundled_card(query, D, flt, tkey="australia", iso="au", keys=["australia_data"],
+                  build_mod=aubuild, leaves_fn=au_codes, kw=("anzsco", "eeh"),
+                  year_fmt="May {}")
+
+
 _CA_KEYS = ["canada_data"]
 
 
@@ -945,6 +983,8 @@ def data_section():
     _uk_card(query, D, flt)
     _germany_card(query, D, flt)
     _canada_card(query, D, flt)
+    _newzealand_card(query, D, flt)
+    _australia_card(query, D, flt)
     if flt == "all":
         _caches_card(query, D)
 

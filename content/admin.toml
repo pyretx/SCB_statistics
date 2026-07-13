@@ -109,6 +109,18 @@ source  = "CBS"
 type    = "live API + BRC labels"
 desc    = "Gross hourly wages fetched live from CBS table 85517NED (OData; BRC-2014 occupation hierarchy, P25/median/P75, 2013→) and disk-cached; the bundled BRC labels + code map give instant dropdowns. Beta country."
 
+[data.newzealand]
+name    = "New Zealand"
+source  = "Stats NZ"
+type    = "bundled file"
+desc    = "Bundled snapshot from the Stats NZ Aotearoa Data Explorer SDMX API (dataflow INC_INC_004; median + average gross monthly earnings by ANZSCO major group × sex, 2009→). Rebuild re-fetches via the [statsnz] api_key secret. Beta country."
+
+[data.australia]
+name    = "Australia"
+source  = "ABS EEH"
+type    = "bundled file"
+desc    = "Bundled snapshot from the ABS Employee Earnings and Hours data cube 11 (average gross monthly earnings by detailed ANZSCO occupation × sex). Rebuild re-downloads the EEH XLSX. Beta country."
+
 [data.canada]
 name    = "Canada"
 source  = "Statistics Canada"

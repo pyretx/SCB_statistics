@@ -781,6 +781,64 @@ def _update_us_data(status, log) -> UpdateResult:
                         f"{res['scopes']} scopes · {_commit_note('us_oews.json.gz')}")
 
 
+# ── New Zealand · Stats NZ ADE INC_INC_004 — bundled snapshot (SDMX API) ──────
+def _check_newzealand_data() -> SourceStatus:
+    from countries.newzealand import build as nzbuild
+    info = nzbuild.bundled_info()
+    yrs = info.get("years") or []
+    span = f"{min(yrs)}–{max(yrs)}" if yrs else str(info.get("year", "—"))
+    s = SourceStatus("newzealand_data", "New Zealand", "Stats NZ",
+                     current=f"{span} · built {info.get('built_at', '—')}")
+    s.latest = span
+    s.update_available = False
+    s.note = _notes().get("newzealand_data", "Bundled Stats NZ snapshot — rebuild "
+                          "re-fetches via the ADE API ([statsnz] api_key secret).")
+    return s
+
+
+def _update_newzealand_data(status, log) -> UpdateResult:
+    from countries.newzealand import build as nzbuild
+    res = nzbuild.build(log=log)
+    if res.get("codes", 0) < 5:
+        return UpdateResult("newzealand_data", OUT_VALIDATION, f"too few occupations: {res}")
+    try:
+        from countries.newzealand import provider as nzprov
+        nzprov._load.clear()
+    except Exception:
+        pass
+    return UpdateResult("newzealand_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} occupations, "
+                        f"{len(res['years'])} years · {_commit_note('newzealand_earnings.json.gz')}")
+
+
+# ── Australia · ABS EEH cube 11 — bundled snapshot (XLSX) ─────────────────────
+def _check_australia_data() -> SourceStatus:
+    from countries.australia import build as aubuild
+    info = aubuild.bundled_info()
+    s = SourceStatus("australia_data", "Australia", "ABS EEH",
+                     current=f"May {info.get('year', '—')} · built {info.get('built_at', '—')}")
+    s.latest = str(info.get("year", "—"))
+    s.update_available = False
+    s.note = _notes().get("australia_data", "Bundled ABS EEH snapshot — rebuild "
+                          "re-downloads the Employee Earnings and Hours data cube.")
+    return s
+
+
+def _update_australia_data(status, log) -> UpdateResult:
+    from countries.australia import build as aubuild
+    res = aubuild.build(log=log)
+    if res.get("codes", 0) < 100:
+        return UpdateResult("australia_data", OUT_VALIDATION, f"too few occupations: {res}")
+    try:
+        from countries.australia import provider as auprov
+        auprov._load.clear()
+    except Exception:
+        pass
+    return UpdateResult("australia_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} occupations · "
+                        f"{_commit_note('australia_eeh.json.gz')}")
+
+
 # ── Canada · Statistics Canada 14-10-0417 — bundled snapshot (WDS CSV) ────────
 def _check_canada_data() -> SourceStatus:
     from countries.canada import build as cabuild
@@ -891,7 +949,9 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "netherlands_labels": _check_netherlands_labels,
              "uk_data": _check_uk_data,
              "germany_data": _check_germany_data,
-             "canada_data": _check_canada_data}
+             "canada_data": _check_canada_data,
+             "newzealand_data": _check_newzealand_data,
+             "australia_data": _check_australia_data}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
@@ -908,7 +968,9 @@ _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden
              "netherlands_labels": _update_netherlands_labels,
              "uk_data": _update_uk_data,
              "germany_data": _update_germany_data,
-             "canada_data": _update_canada_data}
+             "canada_data": _update_canada_data,
+             "newzealand_data": _update_newzealand_data,
+             "australia_data": _update_australia_data}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -928,7 +990,9 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "netherlands_labels": ("Netherlands", "CBS · BRC labels"),
          "uk_data": ("United Kingdom", "ONS ASHE"),
          "germany_data": ("Germany", "Destatis GENESIS"),
-         "canada_data": ("Canada", "Statistics Canada")}
+         "canada_data": ("Canada", "Statistics Canada"),
+         "newzealand_data": ("New Zealand", "Stats NZ"),
+         "australia_data": ("Australia", "ABS EEH")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",
@@ -936,7 +1000,8 @@ SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "finland_data", "finland_labels",
                 "estonia_data", "estonia_labels",
                 "netherlands_data", "netherlands_labels",
-                "uk_data", "germany_data", "canada_data"]
+                "uk_data", "germany_data", "canada_data",
+                "newzealand_data", "australia_data"]
 
 
 def check(key: str) -> SourceStatus:

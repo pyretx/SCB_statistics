@@ -163,11 +163,11 @@ catalog = [
   { name = "Colombia",       iso = "co", region = "americas", source = "DANE",    status = "soon" },
   { name = "Mexico",         iso = "mx", region = "americas", source = "INEGI",   status = "soon" },
   # Asia-Pacific — planned
-  { name = "Australia",      iso = "au", region = "apac", source = "ABS",      status = "soon" },
+  { name = "Australia",      iso = "au", region = "apac", source = "ABS",      status = "beta", slug = "australia" },
   { name = "China",          iso = "cn", region = "apac", source = "NBS",      status = "soon" },
   { name = "India",          iso = "in", region = "apac", source = "MOSPI",    status = "soon" },
   { name = "Japan",          iso = "jp", region = "apac", source = "E-STAT",   status = "soon" },
-  { name = "New Zealand",    iso = "nz", region = "apac", source = "STATS NZ", status = "soon" },
+  { name = "New Zealand",    iso = "nz", region = "apac", source = "STATS NZ", status = "beta", slug = "newzealand" },
   { name = "Singapore",      iso = "sg", region = "apac", source = "SINGSTAT", status = "soon" },
   { name = "South Korea",    iso = "kr", region = "apac", source = "KOSIS",    status = "soon" },
   # Middle East & Africa — planned
@@ -240,6 +240,16 @@ ca = [
   "Mean, median & gender split · ~430 occupations (NOC)",
   "Real per-province data (all 10 provinces)",
   "Gross monthly wages · Statistics Canada · 2025",
+]
+nz = [
+  "Median, mean & gender split · 9 occupation groups (ANZSCO)",
+  "Trend since 2009 · forward projection",
+  "Gross monthly earnings · Stats NZ · 2025",
+]
+au = [
+  "Average earnings & gender split · ~360 occupations (ANZSCO)",
+  "Detailed 4-digit occupations",
+  "Gross monthly earnings · ABS EEH · May 2025",
 ]
 
 [footer]
