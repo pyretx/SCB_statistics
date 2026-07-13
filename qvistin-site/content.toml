@@ -23,9 +23,8 @@ href  = "#about"
 [[nav]]
 label = "Contact"
 href  = "#contact"
-[[nav]]
-label = "GitHub"
-href  = "#"                      # TODO: set the Qvistin GitHub URL
+# GitHub nav link temporarily hidden — re-add a [[nav]] block with label "GitHub"
+# and its href to show it again.
 
 [hero]
 heading   = "Practical software for better decisions."
@@ -114,8 +113,8 @@ form_note = "No newsletters. We only reply."
 # it). Fill both in from Supabase → Project Settings → API, then rebuild. If left
 # blank, the form falls back to opening a mailto: link instead.
 [contact.backend]
-supabase_url      = ""     # e.g. https://xxxxxxxx.supabase.co
-supabase_anon_key = ""     # the anon / publishable key (NOT the service_role key)
+supabase_url      = "https://pnjrovmktokokteiyflw.supabase.co"     # e.g. https://xxxxxxxx.supabase.co
+supabase_anon_key = "sb_publishable_rbSEpzrZMVmdwfOlgwn68A_eYT9_rPG"     # the anon / publishable key (NOT the service_role key)
 
 [footer]
 powered   = "POWERED BY QVISTIN"
