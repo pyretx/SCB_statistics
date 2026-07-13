@@ -785,12 +785,23 @@ def _update_us_data(status, log) -> UpdateResult:
 def _check_mexico_data() -> SourceStatus:
     from countries.mexico import build as mxbuild
     info = mxbuild.bundled_info()
+    have = str(info.get("latest_quarter") or info.get("period") or info.get("year", "—"))
     s = SourceStatus("mexico_data", "Mexico", "INEGI ENOE",
-                     current=f"{info.get('period', info.get('year', '—'))} · built {info.get('built_at', '—')}")
-    s.latest = str(info.get("period", info.get("year", "—")))
+                     current=f"{have} · built {info.get('built_at', '—')}")
+    s.latest = have
     s.update_available = False
-    s.note = _notes().get("mexico_data", "Bundled ENOE-microdata snapshot — rebuild "
-                          "re-downloads the ENOE microdata and recomputes the "
+    # detect a newly-released ENOE quarter beyond the bundled one (probe the next quarter)
+    try:
+        y, q = int(have[:4]), int(have[5:])
+        ny, nq = mxbuild._next_q(y, q)
+        if mxbuild._exists(ny, nq):
+            s.latest = mxbuild._label(ny, nq)
+            s.update_available = True
+    except Exception:
+        s.update_available = False
+    s.note = _notes().get("mexico_data", "Bundled ENOE-microdata snapshot. The check "
+                          "probes INEGI for a newly-released quarter; pushing the update "
+                          "downloads only the new quarter(s) and recomputes the "
                           "weighted mean/median by occupation.")
     return s
 
@@ -806,7 +817,8 @@ def _update_mexico_data(status, log) -> UpdateResult:
     except Exception:
         pass
     return UpdateResult("mexico_data", OUT_UPDATED,
-                        f"{res['built_at']} · {res['codes']} groups · "
+                        f"{res['built_at']} · {res.get('latest_quarter', '')} · "
+                        f"{res.get('quarters', '?')} quarters · {res['codes']} groups · "
                         f"{_commit_note('mexico_earnings.json.gz')}")
 
 

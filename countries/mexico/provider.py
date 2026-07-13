@@ -1,8 +1,9 @@
 """Mexico provider — INEGI ENOE microdata (computed offline).
 
 Reads the bundled snapshot mexico_earnings.json.gz (survey-weighted mean & median
-monthly occupational income by 10 ENOE occupation groups × sex, from the ENOE
-microdata). No percentiles/trend/region in this cut. EN + ES occupation names.
+monthly occupational income by 10 ENOE occupation groups × sex, computed from the
+ENOE microdata for each quarter and annualised). Provides an annual trend (mean of
+each year's quarters), 2024 →. EN + ES occupation names.
 """
 from __future__ import annotations
 
@@ -32,10 +33,10 @@ def _codes(lang="EN") -> dict:
     return codes.get(lang) or codes.get("EN", {})
 
 
-def _slice(sex: str) -> dict:
+def _slice(year: int, sex: str) -> dict:
     d = _load()
     cols = d["stat_cols"]
-    raw = d["stats"].get(sex if sex in _SEX else "total", {})
+    raw = d["stats"].get(str(year), {}).get(sex if sex in _SEX else "total", {})
     return {c: dict(zip(cols, v)) for c, v in raw.items()}
 
 
@@ -53,7 +54,8 @@ class MexicoProvider(CountryProvider):
                          dimension="total", year=None, lang="EN"):
         if not occ_codes:
             return model.empty_occ_stats()
-        data = _slice(sex)
+        yr = int(year or (max(years) if years else self.year()))
+        data = _slice(yr, sex)
         labels = _codes(lang)
         d = _load()
         rows = []
@@ -62,7 +64,7 @@ class MexicoProvider(CountryProvider):
             if not v:
                 continue
             rows.append({
-                "country": "mexico", "year": self.year(), "occ_code": occ,
+                "country": "mexico", "year": yr, "occ_code": occ,
                 "occ_name": labels.get(occ, occ), "occ_group": occ,
                 "dimension": "total", "dim_value": "total", "currency": "MXN",
                 "period": "monthly", "mean": v.get("mean"), "median": v.get("median"),
@@ -71,8 +73,27 @@ class MexicoProvider(CountryProvider):
             })
         return pd.DataFrame(rows, columns=model.OCC_STAT_COLS)
 
+    def trend(self, *, sector="", occ_codes=(), sex="total", years=(),
+              lang="EN", measure="median"):
+        if not occ_codes or not years:
+            return model.empty_trend()
+        m = measure if measure in ("mean", "median") else "median"
+        labels = _codes(lang)
+        allyears = set(_load().get("years", []))
+        rows = []
+        for y in years:
+            if int(y) not in allyears:
+                continue
+            data = _slice(int(y), sex)
+            for occ in occ_codes:
+                v = data.get(occ)
+                rows.append({"country": "mexico", "year": int(y),
+                             "series": labels.get(occ, occ), "sex": sex,
+                             "value_nominal": v.get(m) if v else None, "value_real": None})
+        return pd.DataFrame(rows, columns=model.TREND_COLS)
+
     def leaderboard(self, *, sector="", sex="total", year=None, lang="EN"):
-        data = _slice(sex)
+        data = _slice(int(year or self.year()), sex)
         labels = _codes(lang)
         rows = [{"occ_code": c, "occ_name": n, "mean": (data.get(c) or {}).get("mean"),
                  "median": (data.get(c) or {}).get("median"), "count": None}

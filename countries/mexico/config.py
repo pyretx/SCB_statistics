@@ -11,7 +11,8 @@ from .build import latest_year
 from .provider import MexicoProvider, _load
 
 _prov = MexicoProvider()
-_YR = latest_year()
+_YEARS = _load().get("years") or [2024]
+_YR = max(_YEARS)
 _PERIOD = _load().get("period_label", str(_YR))
 _CAPTION = ("INEGI · ENOE · monthly occupational income by occupation group "
             "(SINCO-based)")
@@ -41,12 +42,15 @@ _GUIDE_EN = {
         "Figures are the survey-WEIGHTED mean and median MONTHLY occupational "
         "income (MXN) of employed people, computed from the ENOE microdata.",
         "Occupations are the 10 ENOE groups (coded from SINCO) — the survey has no "
-        "finer public occupation, percentile or time-series cut here.",
-        "The By-gender tab splits women vs men.",
+        "finer public occupation or percentile cut here.",
+        "The trend is annual (the mean of each year's available quarters) from "
+        "2024; the By-gender tab splits women vs men.",
     ],
     "tabs_title": "The tabs",
     "tabs": [
         ("Overview", "The mean and median at a glance for each occupation group."),
+        ("Salary distribution", "Median & mean + the annual trend (from 2024) and "
+                                "a forward projection."),
         ("Basic statistics", "A per-occupation summary table with CSV export."),
         ("Leaderboard", "Ranks the occupation groups by pay."),
         ("By gender", "Women vs men, with a women-as-%-of-men view."),
@@ -67,12 +71,12 @@ CONFIG = CountryConfig(
     capabilities=Capabilities(
         has_occupation_hierarchy=False,          # 10 flat ENOE occupation groups
         has_mean=True, has_median=True, has_sex=True,
-        has_trend=False,
+        has_trend=True,                          # annual (mean of quarters), 2024→
         has_leaderboard=True, leaderboard_scope=1,
         sectors=(),
-        year_range=(_YR, _YR),
+        year_range=(min(_YEARS), max(_YEARS)),
     ),
-    tabs=("overview", "stats", "leaderboard", "sex"),
+    tabs=("overview", "distribution", "stats", "leaderboard", "sex"),
     access="restricted",                         # BETA
     fetch_mode="search",
     landing=True,
