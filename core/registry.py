@@ -21,7 +21,9 @@ _COUNTRY_MODULES = ["demo", "se2", "fr2", "norway", "us", "denmark",
                     "mexico", "switzerland", "spain",
                     # Eurostat SES beta countries
                     "lithuania", "belgium", "portugal", "austria", "poland",
-                    "luxembourg", "latvia", "croatia", "romania", "bulgaria"]
+                    "luxembourg", "latvia", "croatia", "romania", "bulgaria",
+                    "greece", "hungary", "slovakia", "czechia", "ireland",
+                    "italy", "cyprus", "malta"]
 
 
 def all_countries() -> list:

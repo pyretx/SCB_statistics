@@ -633,7 +633,9 @@ def _spain_card(query, D, flt="all"):
 # Eurostat-SES beta countries (shared card renderer; skips any not yet built).
 _EUROSTAT_ADMIN = {"lithuania": "lt", "belgium": "be", "portugal": "pt", "austria": "at",
                    "poland": "pl", "luxembourg": "lu", "latvia": "lv", "croatia": "hr",
-                   "romania": "ro", "bulgaria": "bg"}
+                   "romania": "ro", "bulgaria": "bg", "greece": "gr", "hungary": "hu",
+                   "slovakia": "sk", "czechia": "cz", "ireland": "ie", "italy": "it",
+                   "cyprus": "cy", "malta": "mt"}
 
 
 def _eurostat_cards(query, D, flt="all"):

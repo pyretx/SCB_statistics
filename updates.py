@@ -1104,7 +1104,9 @@ _EUROSTAT_SES = {
     "lithuania_data": "Lithuania", "belgium_data": "Belgium", "portugal_data": "Portugal",
     "austria_data": "Austria", "poland_data": "Poland", "luxembourg_data": "Luxembourg",
     "latvia_data": "Latvia", "croatia_data": "Croatia", "romania_data": "Romania",
-    "bulgaria_data": "Bulgaria",
+    "bulgaria_data": "Bulgaria", "greece_data": "Greece", "hungary_data": "Hungary",
+    "slovakia_data": "Slovakia", "czechia_data": "Czechia", "ireland_data": "Ireland",
+    "italy_data": "Italy", "cyprus_data": "Cyprus", "malta_data": "Malta",
 }
 
 

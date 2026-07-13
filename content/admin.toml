@@ -194,6 +194,54 @@ source = "Eurostat SES"
 type = "bundled file"
 desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
 
+[data.greece]
+name = "Greece"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.hungary]
+name = "Hungary"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.slovakia]
+name = "Slovakia"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.czechia]
+name = "Czechia"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Note: richer CZ-ISCO wages with deciles exist at ISPV but are gated — this is the harmonised Eurostat cut. Beta country."
+
+[data.ireland]
+name = "Ireland"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). CSO has no occupation-level national series (occupation survey ended ~2009). Beta country."
+
+[data.italy]
+name = "Italy"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). ISTAT SDMX has no real occupation classification — this is the harmonised Eurostat cut. Beta country."
+
+[data.cyprus]
+name = "Cyprus"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
+[data.malta]
+name = "Malta"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
+
 [data.switzerland]
 name    = "Switzerland"
 source  = "FSO / BFS (LSE)"
