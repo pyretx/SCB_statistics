@@ -635,7 +635,8 @@ _EUROSTAT_ADMIN = {"lithuania": "lt", "belgium": "be", "portugal": "pt", "austri
                    "poland": "pl", "luxembourg": "lu", "latvia": "lv", "croatia": "hr",
                    "romania": "ro", "bulgaria": "bg", "greece": "gr", "hungary": "hu",
                    "slovakia": "sk", "czechia": "cz", "ireland": "ie", "italy": "it",
-                   "cyprus": "cy", "malta": "mt"}
+                   "cyprus": "cy", "malta": "mt", "serbia": "rs",
+                   "northmacedonia": "mk"}
 
 
 def _eurostat_cards(query, D, flt="all"):

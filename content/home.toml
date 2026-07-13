@@ -153,6 +153,8 @@ catalog = [
   { name = "Portugal",       iso = "pt", region = "europe", source = "EUROSTAT",     status = "beta", slug = "portugal" },
   { name = "Romania",        iso = "ro", region = "europe", source = "EUROSTAT",     status = "beta", slug = "romania" },
   { name = "Malta",          iso = "mt", region = "europe", source = "EUROSTAT",     status = "beta", slug = "malta" },
+  { name = "North Macedonia",iso = "mk", region = "europe", source = "EUROSTAT",     status = "beta", slug = "northmacedonia" },
+  { name = "Serbia",         iso = "rs", region = "europe", source = "EUROSTAT",     status = "beta", slug = "serbia" },
   { name = "Slovakia",       iso = "sk", region = "europe", source = "EUROSTAT",     status = "beta", slug = "slovakia" },
   { name = "Slovenia",       iso = "si", region = "europe", source = "SURS",         status = "live", slug = "slovenia" },
   { name = "Spain",          iso = "es", region = "europe", source = "INE",          status = "beta", slug = "spain" },
@@ -300,6 +302,8 @@ ie = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU s
 it = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
 cy = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
 mt = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
+rs = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2014–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
+mk = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2010–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
 
 [footer]
 note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France) · SSB (Norway) · BLS (United States)"

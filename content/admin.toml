@@ -242,6 +242,18 @@ source = "Eurostat SES"
 type = "bundled file"
 desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
 
+[data.serbia]
+name = "Serbia"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2014–2022). EU candidate country. Beta."
+
+[data.northmacedonia]
+name = "North Macedonia"
+source = "Eurostat SES"
+type = "bundled file"
+desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2010–2022). EU candidate country. Beta."
+
 [data.switzerland]
 name    = "Switzerland"
 source  = "FSO / BFS (LSE)"

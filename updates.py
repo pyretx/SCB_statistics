@@ -1107,6 +1107,7 @@ _EUROSTAT_SES = {
     "bulgaria_data": "Bulgaria", "greece_data": "Greece", "hungary_data": "Hungary",
     "slovakia_data": "Slovakia", "czechia_data": "Czechia", "ireland_data": "Ireland",
     "italy_data": "Italy", "cyprus_data": "Cyprus", "malta_data": "Malta",
+    "serbia_data": "Serbia", "northmacedonia_data": "North Macedonia",
 }
 
 

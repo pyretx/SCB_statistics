@@ -23,7 +23,7 @@ _COUNTRY_MODULES = ["demo", "se2", "fr2", "norway", "us", "denmark",
                     "lithuania", "belgium", "portugal", "austria", "poland",
                     "luxembourg", "latvia", "croatia", "romania", "bulgaria",
                     "greece", "hungary", "slovakia", "czechia", "ireland",
-                    "italy", "cyprus", "malta"]
+                    "italy", "cyprus", "malta", "serbia", "northmacedonia"]
 
 
 def all_countries() -> list:
