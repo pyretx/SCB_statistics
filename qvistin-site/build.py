@@ -8,6 +8,7 @@ what nginx serves.
 """
 from __future__ import annotations
 
+import hashlib
 import shutil
 import tomllib
 from pathlib import Path
@@ -63,6 +64,13 @@ def build(log=print) -> None:
     ctx = dict(content)
     ctx["branches"] = _branches(content.get("diagram", {}).get("node", []))
     ctx["favicon_svg"] = _FAVICON
+    # Cache-buster: a short hash of the CSS+JS so a changed asset gets a fresh URL
+    # (nginx serves /static/ with a long cache; without this, browsers keep the old
+    # site.js/site.css until it expires).
+    _h = hashlib.md5()
+    for p in ((ROOT / "static/css/site.css"), (ROOT / "static/js/site.js")):
+        _h.update(p.read_bytes())
+    ctx["asset_v"] = _h.hexdigest()[:8]
 
     env = Environment(
         loader=FileSystemLoader(str(ROOT / "templates")),
