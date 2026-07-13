@@ -29,7 +29,7 @@ services:
       - traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.scb-test.rule=Host(`scb-test.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.scb-test.rule=Host(`scb-test.${DOMAIN_NAME}`) || Host(`test.qvist.in`)"
       - "traefik.http.routers.scb-test.entrypoints=web,websecure"
       - "traefik.http.routers.scb-test.tls=true"
       - "traefik.http.routers.scb-test.tls.certresolver=mytlschallenge"
