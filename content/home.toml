@@ -151,7 +151,7 @@ catalog = [
   { name = "Slovakia",       iso = "sk", region = "europe", source = "SUSR",         status = "soon" },
   { name = "Slovenia",       iso = "si", region = "europe", source = "SURS",         status = "live", slug = "slovenia" },
   { name = "Spain",          iso = "es", region = "europe", source = "INE",          status = "soon" },
-  { name = "Switzerland",    iso = "ch", region = "europe", source = "BFS",          status = "soon" },
+  { name = "Switzerland",    iso = "ch", region = "europe", source = "BFS",          status = "beta", slug = "switzerland" },
   { name = "United Kingdom", iso = "gb", region = "europe", source = "ONS",          status = "live", slug = "uk" },
   # Americas — live
   { name = "United States",  iso = "us", region = "americas", source = "BLS OEWS", status = "live", slug = "us" },
@@ -265,6 +265,11 @@ mx = [
   "Mean, median & gender split · 10 occupation groups (SINCO)",
   "Computed from ENOE microdata (survey-weighted)",
   "Monthly occupational income · INEGI · Q2 2025",
+]
+ch = [
+  "P10–P90 distribution · ISCO-08 occupations (1- & 2-digit)",
+  "Gender breakdown & 2012–2024 biennial trend",
+  "Standardised gross monthly wage · FSO LSE · 2024",
 ]
 
 [footer]

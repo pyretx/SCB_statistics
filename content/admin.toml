@@ -127,6 +127,12 @@ source  = "SURS"
 type    = "bundled file"
 desc    = "Bundled snapshot from the open SURS PxWeb API (table 0711335S; P10–P90 + mean + median gross monthly earnings by SKP-08/ISCO occupation × sex × year 2011–2022). Rebuild re-fetches from PxWeb. Beta country."
 
+[data.switzerland]
+name    = "Switzerland"
+source  = "FSO / BFS (LSE)"
+type    = "bundled file"
+desc    = "Bundled snapshot from the open FSO STAT-TAB PxWeb API (cube px-x-0304010000_205; median + P10/P25/P75/P90 standardised gross monthly wage by ISCO-08 occupation 1- & 2-digit × sex × biennial year 2012–2024, national). Rebuild re-fetches from PxWeb. Beta country."
+
 [data.newzealand]
 name    = "New Zealand"
 source  = "Stats NZ"
