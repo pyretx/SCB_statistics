@@ -1,0 +1,3 @@
+# Build output — regenerated from content.toml by build.py (and by the Docker image
+# build). Not committed to avoid a stale dist/ diverging from content.toml.
+dist/

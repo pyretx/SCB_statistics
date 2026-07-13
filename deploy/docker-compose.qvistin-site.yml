@@ -1,0 +1,42 @@
+# Qvistin corporate homepage — serves https://qvist.in (+ www).
+# Own container, opts into the EXISTING Traefik (root_default network); the
+# Streamlit app containers and n8n are untouched.
+#
+# The site is rendered from qvistin-site/content.toml at image-build time, so a
+# content edit can never ship a stale page. Build context is the repo ROOT.
+# Deploy from the deploy/ directory:
+#   docker compose -f docker-compose.qvistin-site.yml up -d --build --force-recreate
+#
+# NOTE: Traefik issues the TLS cert on first HTTPS request, which only works once
+# qvist.in / www.qvist.in resolve to this server (one.com A records). Until then
+# the container runs and is ready but serves no public traffic.
+
+name: qvistin-site
+
+services:
+  site:
+    build:
+      context: ..
+      dockerfile: qvistin-site/Dockerfile
+    image: qvistin-site:latest
+    container_name: qvistin-site
+    restart: always
+    networks:
+      - traefik
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.qvistin.rule=Host(`qvist.in`) || Host(`www.qvist.in`)"
+      - "traefik.http.routers.qvistin.entrypoints=web,websecure"
+      - "traefik.http.routers.qvistin.tls=true"
+      - "traefik.http.routers.qvistin.tls.certresolver=mytlschallenge"
+      - "traefik.http.services.qvistin.loadbalancer.server.port=80"
+      # www.qvist.in -> qvist.in (apex). $$ escapes Compose interpolation.
+      - "traefik.http.routers.qvistin.middlewares=qvistin-www"
+      - "traefik.http.middlewares.qvistin-www.redirectregex.regex=^https?://www\\.qvist\\.in/(.*)"
+      - "traefik.http.middlewares.qvistin-www.redirectregex.replacement=https://qvist.in/$${1}"
+      - "traefik.http.middlewares.qvistin-www.redirectregex.permanent=true"
+
+networks:
+  traefik:
+    external: true
+    name: root_default
