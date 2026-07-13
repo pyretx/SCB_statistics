@@ -1,0 +1,121 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Qvistin homepage — editable content.
+#
+# Edit the text here, then rebuild:   python build.py
+# (A static site has no server runtime, so the copy is baked into dist/index.html
+#  at build time — same idea as Salary Explorer's content/*.toml, one build step.)
+# Design/layout lives in templates/index.html.j2 + static/. This file is text only.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[site]
+title       = "Qvistin — Practical software for better decisions"
+description  = "Qvistin develops focused digital products that transform complex information into clear decisions."
+brand       = "Qvistin"
+accent      = "#23716B"          # brand teal (used across hover/active states)
+
+# Top navigation links (left→right).
+[[nav]]
+label = "Products"
+href  = "#products"
+[[nav]]
+label = "About"
+href  = "#about"
+[[nav]]
+label = "Contact"
+href  = "#contact"
+[[nav]]
+label = "GitHub"
+href  = "#"                      # TODO: set the Qvistin GitHub URL
+
+[hero]
+heading   = "Practical software for better decisions."
+subheading = "Qvistin develops focused digital products that transform complex information into clear decisions."
+tagline   = "One foundation. Endless possibilities. Every product is a new branch."
+cta_primary_label   = "Explore Products"
+cta_primary_href    = "#products"
+cta_secondary_label = "Learn About Qvistin"
+cta_secondary_href  = "#about"
+
+[diagram]
+caption = "ONE FOUNDATION · GROWING BRANCHES"
+# The branch illustration. x/y are positions on the 1000×430 canvas; keep 4 nodes.
+[[diagram.node]]
+label = "SALARY EXPLORER"
+x = 150
+y = 96
+live = true
+href = "https://salaryexplorer.qvist.in"
+[[diagram.node]]
+label = "FORGE"
+x = 400
+y = 56
+live = false
+href = ""
+[[diagram.node]]
+label = "SHAPE"
+x = 640
+y = 66
+live = false
+href = ""
+[[diagram.node]]
+label = "FUTURE PRODUCT"
+x = 866
+y = 120
+live = false
+href = ""
+
+[products]
+eyebrow = "PRODUCTS"
+heading = "A growing family of focused tools."
+# status: "live" | "dev" | "soon"   ·   icon: globe | chart | blocks | plus
+[[products.item]]
+name   = "Salary Explorer"
+status = "live"
+icon   = "globe"
+desc   = "Official salary statistics from trusted government sources."
+cta_label = "Launch"
+cta_href  = "https://salaryexplorer.qvist.in"
+[[products.item]]
+name   = "Forge"
+status = "dev"
+icon   = "chart"
+desc   = "Build, backtest and deploy AI trading agents."
+[[products.item]]
+name   = "Shape"
+status = "dev"
+icon   = "blocks"
+desc   = "Design the organisation before you change it — model structures, compare scenarios, evaluate impact."
+[[products.item]]
+name   = "Next branch"
+status = "soon"
+icon   = "plus"
+desc   = "Coming soon."
+
+[about]
+eyebrow   = "ABOUT"
+statement = "Qvistin is a Swedish software company building focused products that simplify complex decisions."
+values    = ["Simple.", "Reliable.", "Useful."]
+cta_label = "Learn More"
+cta_href  = "#"
+
+[contact]
+eyebrow = "CONTACT"
+heading = "Talk to us."
+blurb   = "Questions about a product, an idea for a new branch, or just curious? We read everything."
+email   = "hello@qvistin.com"
+topics  = ["General", "Salary Explorer", "Partnership", "Press"]
+form_note = "No newsletters. We only reply."
+# Social links shown under the email (icon: linkedin | github).
+[[contact.link]]
+label = "LinkedIn"
+href  = "#"
+icon  = "linkedin"
+[[contact.link]]
+label = "GitHub"
+href  = "#"
+icon  = "github"
+
+[footer]
+powered   = "POWERED BY QVISTIN"
+location  = "Sweden"
+copyright = "© 2026 Qvistin"
