@@ -29,7 +29,7 @@ services:
       - traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.scb.rule=Host(`scb.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.scb.rule=Host(`scb.${DOMAIN_NAME}`) || Host(`salaryexplorer.qvist.in`)"
       - "traefik.http.routers.scb.entrypoints=web,websecure"
       - "traefik.http.routers.scb.tls=true"
       - "traefik.http.routers.scb.tls.certresolver=mytlschallenge"
