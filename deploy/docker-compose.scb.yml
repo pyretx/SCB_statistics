@@ -16,13 +16,15 @@ services:
     restart: always
     # Supabase secrets live on the server only, never in git or the image.
     # Work-permit rules persist on the host so admin edits survive redeploys.
+    # Per-env files (isolation): prod/test/dev each mount their OWN /root/scb-<env>-*
+    # so dev/test edits never touch prod. Seed them with deploy/migrate-env-isolation.sh.
     volumes:
-      - /root/scb-secrets.toml:/app/.streamlit/secrets.toml:ro
-      - /root/scb-wp-rules.json:/app/wp_rules.json:rw
-      - /root/scb-ssyk-overrides.json:/app/ssyk_overrides.json:rw
-      - /root/scb-app-settings.json:/app/app_settings.json:rw
-      - /root/scb-guide.json:/app/guide.json:rw
-      - /root/scb-update-checks.json:/app/update_checks.json:rw
+      - /root/scb-prod-secrets.toml:/app/.streamlit/secrets.toml:ro
+      - /root/scb-prod-wp-rules.json:/app/wp_rules.json:rw
+      - /root/scb-prod-ssyk-overrides.json:/app/ssyk_overrides.json:rw
+      - /root/scb-prod-app-settings.json:/app/app_settings.json:rw
+      - /root/scb-prod-guide.json:/app/guide.json:rw
+      - /root/scb-prod-update-checks.json:/app/update_checks.json:rw
     networks:
       - traefik
     labels:

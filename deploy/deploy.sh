@@ -15,13 +15,22 @@ cd "$DIR"
 git pull --ff-only
 cd deploy
 
-# Bind-mounted runtime files must exist as FILES before `up` — Docker creates
-# a DIRECTORY at any missing mount path, which then breaks the app's writes
-# AND this very guard (echo into a directory aborts the script). Self-heal:
-# replace an empty Docker-made directory with an empty JSON file.
-for f in scb-wp-rules.json scb-ssyk-overrides.json scb-app-settings.json \
-         scb-guide.json scb-update-checks.json; do
-  p="/root/$f"
+# Per-env runtime files live at /root/scb-${ENV}-* (isolation). The secrets file
+# must already exist — if it doesn't, aborting here beats letting Docker create a
+# DIRECTORY at the mount path (which silently breaks auth). Run the one-time
+# deploy/migrate-env-isolation.sh first.
+SECRETS="/root/scb-${ENV}-secrets.toml"
+if [ ! -f "$SECRETS" ]; then
+  echo "ERROR: $SECRETS is missing."
+  echo "       Run  bash deploy/migrate-env-isolation.sh  once, then retry."
+  exit 1
+fi
+
+# Bind-mounted JSON files must exist as FILES before `up` — Docker creates a
+# DIRECTORY at any missing mount path, which then breaks the app's writes AND
+# this very guard. Self-heal: replace an empty Docker-made directory / seed {}.
+for base in wp-rules ssyk-overrides app-settings guide update-checks; do
+  p="/root/scb-${ENV}-${base}.json"
   if [ -d "$p" ]; then
     echo "==> $p is a directory (Docker mount artifact) — replacing with a file"
     rmdir "$p"

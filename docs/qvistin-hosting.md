@@ -107,11 +107,13 @@ Nothing below is applied yet. This section is the review checklist.
 | `deploy/docker-compose.scb.yml` | modify | add `Host(salaryexplorer.qvist.in)` to the router rule; switch to per-env mounts (`scb-prod-*`) |
 | `deploy/docker-compose.scb-test.yml` | modify | add `Host(test.qvist.in)`; per-env mounts (`scb-test-*`) |
 | `deploy/docker-compose.scb-dev.yml` | modify | add `Host(dev.qvist.in)`; per-env mounts (`scb-dev-*`) |
-| `deploy/docker-compose.qvistin-site.yml` | **create** | nginx:alpine container serving the homepage for `qvist.in` + `www` |
-| `qvistin-site/` (or a separate repo) | **create** | the converted static homepage (§7) |
-| `deploy/SETUP.md` | modify | document the new hostnames + per-env secrets after cutover |
+| `qvistin-site/` | ✅ **done** | converted static homepage (content.toml + Jinja build); see its README (§7) |
+| `deploy/docker-compose.qvistin-site.yml` + `qvistin-site/Dockerfile` | ✅ **done** | nginx container that renders the homepage from `content.toml` and serves `qvist.in` + `www` |
+| `deploy/docker-compose.scb{,-test,-dev}.yml` | ✅ **done** | per-env volume mounts (`/root/scb-<env>-*`) for isolation (§5) |
+| `deploy/migrate-env-isolation.sh` + `deploy.sh` guard | ✅ **done** | one-time per-env file seeding + a deploy guard (§5) |
+| `deploy/SETUP.md` | ✅ **done** | per-env secrets + new hostnames noted |
 | `.streamlit/config.toml` | **no change** | subdomain approach needs none |
-| `Dockerfile` | **no change** | health check stays `/_stcore/health` |
+| `Dockerfile` (Streamlit app) | **no change** | health check stays `/_stcore/health` |
 
 ---
 
@@ -185,16 +187,12 @@ networks:
 ## 5. Per-env secrets/settings split (do this FIRST — see §8 Phase 1)
 
 Give each environment its own copies so `[app].url` and admin state diverge and
-prod is never affected by dev/test edits. **One-time on the server:**
+prod is never affected by dev/test edits. This is **implemented** — the compose
+files mount per-env paths, `deploy.sh` aborts if the per-env secrets file is
+missing, and a one-time script seeds the files. **On the server, once:**
 
 ```bash
-# seed prod from the current shared files, then clone for test/dev
-for f in secrets.toml app-settings.json wp-rules.json ssyk-overrides.json \
-         guide.json update-checks.json; do
-  cp -n /root/scb-$f /root/scb-prod-$f 2>/dev/null || true      # secrets.toml has no scb- prefix mismatch; adjust names as needed
-done
-# (the real current names are: scb-secrets.toml, scb-app-settings.json,
-#  scb-wp-rules.json, scb-ssyk-overrides.json, scb-guide.json, scb-update-checks.json)
+bash /srv/scb-prod/deploy/migrate-env-isolation.sh   # idempotent; seeds /root/scb-<env>-* from the shared files
 ```
 
 Target per-env filenames on the host:

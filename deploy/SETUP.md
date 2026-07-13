@@ -112,12 +112,15 @@ is run exactly once regardless of environment. Applied so far:
 
 For the "Thanks for confirming — please sign in" popup to work, the app must send
 the confirmation-email link back to itself with `?confirmed=1`. Behind Traefik the
-app can't reliably guess its own public URL, so set it explicitly in the server
-secrets file (`/root/scb-secrets.toml`, mounted into every container):
+app can't reliably guess its own public URL, so set it explicitly in that env's
+secrets file. Each environment now mounts its **own** `/root/scb-<env>-secrets.toml`
+(prod/test/dev — see `deploy/migrate-env-isolation.sh` and
+`docs/qvistin-hosting.md`), so the URL can differ per env:
 
 ```toml
+# /root/scb-prod-secrets.toml   (test/dev use their own file + URL)
 [app]
-url = "https://scb-dev.srv950186.hstgr.cloud"   # or scb. / scb-test. per env
+url = "https://scb.srv950186.hstgr.cloud"   # → https://salaryexplorer.qvist.in after cutover
 ```
 
 Then in Supabase → **Authentication → URL Configuration**: **Site URL** = that same
