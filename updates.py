@@ -781,6 +781,35 @@ def _update_us_data(status, log) -> UpdateResult:
                         f"{res['scopes']} scopes · {_commit_note('us_oews.json.gz')}")
 
 
+# ── Mexico · INEGI ENOE microdata — bundled snapshot (weighted aggregation) ───
+def _check_mexico_data() -> SourceStatus:
+    from countries.mexico import build as mxbuild
+    info = mxbuild.bundled_info()
+    s = SourceStatus("mexico_data", "Mexico", "INEGI ENOE",
+                     current=f"{info.get('period', info.get('year', '—'))} · built {info.get('built_at', '—')}")
+    s.latest = str(info.get("period", info.get("year", "—")))
+    s.update_available = False
+    s.note = _notes().get("mexico_data", "Bundled ENOE-microdata snapshot — rebuild "
+                          "re-downloads the ENOE microdata and recomputes the "
+                          "weighted mean/median by occupation.")
+    return s
+
+
+def _update_mexico_data(status, log) -> UpdateResult:
+    from countries.mexico import build as mxbuild
+    res = mxbuild.build(log=log)
+    if res.get("codes", 0) < 5:
+        return UpdateResult("mexico_data", OUT_VALIDATION, f"too few groups: {res}")
+    try:
+        from countries.mexico import provider as mxprov
+        mxprov._load.clear()
+    except Exception:
+        pass
+    return UpdateResult("mexico_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} groups · "
+                        f"{_commit_note('mexico_earnings.json.gz')}")
+
+
 # ── Brazil · IBGE PNAD Contínua 9457 — bundled snapshot (SIDRA API) ───────────
 def _check_brazil_data() -> SourceStatus:
     from countries.brazil import build as brbuild
@@ -1014,7 +1043,8 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "newzealand_data": _check_newzealand_data,
              "australia_data": _check_australia_data,
              "slovenia_data": _check_slovenia_data,
-             "brazil_data": _check_brazil_data}
+             "brazil_data": _check_brazil_data,
+             "mexico_data": _check_mexico_data}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
@@ -1035,7 +1065,8 @@ _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden
              "newzealand_data": _update_newzealand_data,
              "australia_data": _update_australia_data,
              "slovenia_data": _update_slovenia_data,
-             "brazil_data": _update_brazil_data}
+             "brazil_data": _update_brazil_data,
+             "mexico_data": _update_mexico_data}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -1059,7 +1090,8 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "newzealand_data": ("New Zealand", "Stats NZ"),
          "australia_data": ("Australia", "ABS EEH"),
          "slovenia_data": ("Slovenia", "SURS"),
-         "brazil_data": ("Brazil", "IBGE")}
+         "brazil_data": ("Brazil", "IBGE"),
+         "mexico_data": ("Mexico", "INEGI ENOE")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",
@@ -1068,7 +1100,8 @@ SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "estonia_data", "estonia_labels",
                 "netherlands_data", "netherlands_labels",
                 "uk_data", "germany_data", "canada_data",
-                "newzealand_data", "australia_data", "slovenia_data", "brazil_data"]
+                "newzealand_data", "australia_data", "slovenia_data", "brazil_data",
+                "mexico_data"]
 
 
 def check(key: str) -> SourceStatus:

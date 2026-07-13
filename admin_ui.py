@@ -601,6 +601,13 @@ def _brazil_card(query, D, flt="all"):
                   build_mod=brbuild, leaves_fn=br_codes, kw=("ibge", "isco", "pnad"))
 
 
+def _mexico_card(query, D, flt="all"):
+    from countries.mexico import build as mxbuild
+    from countries.mexico.provider import _codes as mx_codes
+    _bundled_card(query, D, flt, tkey="mexico", iso="mx", keys=["mexico_data"],
+                  build_mod=mxbuild, leaves_fn=mx_codes, kw=("inegi", "enoe", "sinco"))
+
+
 def _slovenia_card(query, D, flt="all"):
     from countries.slovenia import build as sibuild
     from countries.slovenia.provider import _leaves as si_leaves
@@ -998,6 +1005,7 @@ def data_section():
     _germany_card(query, D, flt)
     _canada_card(query, D, flt)
     _brazil_card(query, D, flt)
+    _mexico_card(query, D, flt)
     _slovenia_card(query, D, flt)
     _newzealand_card(query, D, flt)
     _australia_card(query, D, flt)

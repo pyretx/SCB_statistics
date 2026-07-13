@@ -109,6 +109,12 @@ source  = "CBS"
 type    = "live API + BRC labels"
 desc    = "Gross hourly wages fetched live from CBS table 85517NED (OData; BRC-2014 occupation hierarchy, P25/median/P75, 2013→) and disk-cached; the bundled BRC labels + code map give instant dropdowns. Beta country."
 
+[data.mexico]
+name    = "Mexico"
+source  = "INEGI ENOE"
+type    = "bundled file"
+desc    = "Bundled snapshot computed from the open INEGI ENOE microdata (SDEMT; survey-weighted mean + median monthly occupational income by 10 ENOE occupation groups × sex). Rebuild re-downloads the ENOE microdata and recomputes. Beta country."
+
 [data.brazil]
 name    = "Brazil"
 source  = "IBGE"

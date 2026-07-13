@@ -161,7 +161,7 @@ catalog = [
   { name = "Canada",         iso = "ca", region = "americas", source = "STATCAN", status = "beta", slug = "canada" },
   { name = "Chile",          iso = "cl", region = "americas", source = "INE CL",  status = "soon" },
   { name = "Colombia",       iso = "co", region = "americas", source = "DANE",    status = "soon" },
-  { name = "Mexico",         iso = "mx", region = "americas", source = "INEGI",   status = "soon" },
+  { name = "Mexico",         iso = "mx", region = "americas", source = "INEGI",   status = "beta", slug = "mexico" },
   # Asia-Pacific — planned
   { name = "Australia",      iso = "au", region = "apac", source = "ABS",      status = "beta", slug = "australia" },
   { name = "China",          iso = "cn", region = "apac", source = "NBS",      status = "soon" },
@@ -260,6 +260,11 @@ br = [
   "Average earnings · 10 occupation groups (ISCO)",
   "Trend since 2012 · forward projection",
   "Est. gross monthly earnings · IBGE · 2025",
+]
+mx = [
+  "Mean, median & gender split · 10 occupation groups (SINCO)",
+  "Computed from ENOE microdata (survey-weighted)",
+  "Monthly occupational income · INEGI · Q2 2025",
 ]
 
 [footer]
