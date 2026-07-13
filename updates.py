@@ -815,17 +815,17 @@ def _update_uk_data(status, log) -> UpdateResult:
                         f"{_commit_note('uk_ashe.json.gz')}")
 
 
-# ── Germany · Destatis Verdiensterhebung — bundled snapshot (parsed report) ───
+# ── Germany · Destatis GENESIS 62361-0030 — bundled snapshot (API build) ──────
 def _check_germany_data() -> SourceStatus:
     from countries.germany import build as debuild
     info = debuild.bundled_info()
-    s = SourceStatus("germany_data", "Germany", "Destatis",
+    s = SourceStatus("germany_data", "Germany", "Destatis GENESIS",
                      current=f"{info.get('year', '—')} · built {info.get('built_at', '—')}")
     s.latest = str(info.get("year", "—"))
     s.update_available = False
-    s.note = _notes().get("germany_data", "Bundled Destatis snapshot — rebuild "
-                          "re-downloads the Verdiensterhebung report and refreshes "
-                          "the data.")
+    s.note = _notes().get("germany_data", "Bundled GENESIS 62361-0030 snapshot — "
+                          "rebuild re-fetches from the GENESIS API (needs the "
+                          "[genesis] api_key secret) and refreshes the data.")
     return s
 
 
@@ -896,7 +896,7 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "netherlands_data": ("Netherlands", "CBS · data year"),
          "netherlands_labels": ("Netherlands", "CBS · BRC labels"),
          "uk_data": ("United Kingdom", "ONS ASHE"),
-         "germany_data": ("Germany", "Destatis")}
+         "germany_data": ("Germany", "Destatis GENESIS")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",

@@ -1,27 +1,36 @@
-"""Germany config — Destatis Verdiensterhebung, earnings by KldB 2010 occupation.
+"""Germany config — Destatis GENESIS-Online, earnings by KldB 2010 occupation.
 
-Mean + median gross MONTHLY earnings (EUR, full-time) across the full KldB 2010
-hierarchy (37 Berufshauptgruppen / 144 Berufsgruppen / 1300 Berufsgattungen). A
-single annual snapshot — no sex, percentiles, region or trend in this Destatis
-release, so the page runs Overview / Basic statistics / Leaderboard. Occupation
-names are the official German KldB titles. access='restricted' → BETA.
+Mean + median gross MONTHLY earnings (EUR, full-time) by occupation × SEX across
+the full KldB 2010 hierarchy (37 Berufshauptgruppen / 144 Berufsgruppen / 1300
+Berufsgattungen), with official EN + DE occupation names (GENESIS table
+62361-0030). A single annual snapshot — no percentiles, region or trend in this
+table — so the page runs Overview / Basic statistics / Leaderboard / By-gender.
+access='restricted' → BETA.
+
+Data source: Statistisches Bundesamt (Destatis), GENESIS-Online; used under
+Datenlizenz Deutschland – Namensnennung – Version 2.0.
 """
 from __future__ import annotations
 
 from core.model import CountryConfig, Capabilities
 from .build import latest_year
-from .provider import GermanyProvider
+from .provider import GermanyProvider, _load
 
 _prov = GermanyProvider()
 _YR = latest_year()
-_CAPTION = ("Statistisches Bundesamt (Destatis) · Verdiensterhebung · gross "
-            "monthly earnings by occupation (KldB 2010)")
+_RETRIEVED = _load().get("retrieved", "")
+# Required Data licence Germany (dl-de/by-2-0) attribution.
+ATTRIBUTION = (f"Data source: Statistisches Bundesamt (Destatis), GENESIS-Online, "
+               f"retrieved {_RETRIEVED}; Data licence Germany – attribution – "
+               f"Version 2.0.")
+_CAPTION = ("Statistisches Bundesamt (Destatis) · GENESIS-Online · gross monthly "
+            "earnings by occupation (KldB 2010)")
 
 _GUIDE_EN = {
     "title": "How to use the German Salary Explorer",
-    "source": f"Statistisches Bundesamt (Destatis) · Verdiensterhebung (62361) · {_YR}",
+    "source": f"Statistisches Bundesamt (Destatis) · GENESIS-Online 62361-0030 · {_YR}",
     "intro": "Look up German salaries by occupation — official data from Destatis' "
-             "earnings survey (Verdiensterhebung). This guide covers finding "
+             "earnings survey via GENESIS-Online. This guide covers finding "
              "occupations and reading the figures.",
     "steps_title": "Getting started — three steps",
     "steps": [
@@ -50,11 +59,11 @@ _GUIDE_EN = {
     "notes": [
         "Figures are gross MONTHLY earnings (EUR) of full-time employees, "
         "excluding special payments (bonuses), reference month April.",
-        "This Destatis release has no gender, percentile, regional or time-trend "
-        "breakdown by occupation — only the mean and median, so those tabs don't "
-        "appear.",
-        "Occupation names are the official German KldB 2010 titles — Destatis "
-        "publishes no English names for this table.",
+        "The By-gender tab splits women vs men. This table has no percentile, "
+        "regional or time-trend breakdown by occupation — only mean and median — "
+        "so those tabs don't appear.",
+        "Occupation names are the official Destatis KldB 2010 titles; switch to "
+        "Deutsch for the German names.",
         "Small occupation cells can be suppressed by Destatis — a missing figure "
         "is not an error.",
     ],
@@ -64,16 +73,16 @@ _GUIDE_EN = {
         ("Basic statistics", "A per-occupation summary table with CSV export."),
         ("Leaderboard", "Ranks occupations by mean or median pay within a KldB "
                         "group."),
+        ("By gender", "Women vs men, with a women-as-%-of-men view."),
     ],
-    "footer": "All figures are from the Destatis Verdiensterhebung (table 62361), "
-              "updated annually.",
+    "footer": ATTRIBUTION,
 }
 
 _GUIDE_DE = {
     "title": "So nutzt du den deutschen Gehaltsexplorer",
-    "source": f"Statistisches Bundesamt (Destatis) · Verdiensterhebung (62361) · {_YR}",
+    "source": f"Statistisches Bundesamt (Destatis) · GENESIS-Online 62361-0030 · {_YR}",
     "intro": "Gehälter nach Beruf nachschlagen — amtliche Daten aus der "
-             "Verdiensterhebung des Statistischen Bundesamtes.",
+             "Verdiensterhebung des Statistischen Bundesamtes über GENESIS-Online.",
     "steps_title": "Erste Schritte — drei Schritte",
     "steps": [
         ("Suchen", "Wähle links einen oder mehrere Berufe und klicke auf den "
@@ -102,9 +111,10 @@ _GUIDE_DE = {
     "notes": [
         "Werte sind Brutto-MONATSverdienste (EUR) von Vollzeitbeschäftigten, ohne "
         "Sonderzahlungen, Berichtsmonat April.",
-        "Diese Destatis-Veröffentlichung hat keine Aufteilung nach Geschlecht, "
-        "Perzentilen, Region oder Zeit je Beruf — nur Mittel und Median.",
-        "Die Berufsnamen sind die amtlichen deutschen KldB-2010-Bezeichnungen.",
+        "Der Reiter „Nach Geschlecht“ trennt Frauen und Männer. Diese Tabelle hat "
+        "keine Perzentile, Region oder Zeitreihe je Beruf — nur Mittel und Median.",
+        "Die Berufsnamen sind die amtlichen KldB-2010-Bezeichnungen; auf Englisch "
+        "umschalten für die englischen Namen.",
         "Kleine Berufszellen können von Destatis gesperrt sein — ein fehlender "
         "Wert ist kein Fehler.",
     ],
@@ -114,9 +124,9 @@ _GUIDE_DE = {
         ("Basisstatistik", "Übersichtstabelle je Beruf mit CSV-Export."),
         ("Rangliste", "Ordnet Berufe nach Mittel oder Median innerhalb einer "
                       "KldB-Gruppe."),
+        ("Nach Geschlecht", "Frauen vs. Männer, mit Frauen-in-%-der-Männer-Ansicht."),
     ],
-    "footer": "Alle Werte stammen aus der Destatis-Verdiensterhebung (Tabelle "
-              "62361), jährlich aktualisiert.",
+    "footer": ATTRIBUTION,
 }
 
 CONFIG = CountryConfig(
@@ -132,20 +142,20 @@ CONFIG = CountryConfig(
     capabilities=Capabilities(
         has_occupation_hierarchy=True,           # KldB 2010: 2 → 3 → 5 digit
         has_mean=True, has_median=True,
-        has_sex=False, has_trend=False,
+        has_sex=True, has_trend=False,           # mean+median × sex (GENESIS 62361-0030)
         has_leaderboard=True, leaderboard_scope=2,   # Berufshauptgruppe (2-digit)
         sectors=(),
         year_range=(_YR, _YR),                   # single annual snapshot
     ),
-    tabs=("overview", "stats", "leaderboard"),
+    tabs=("overview", "stats", "leaderboard", "sex"),
     access="restricted",                         # BETA — admins + beta users only
     fetch_mode="search",
     landing=True,
     classification="KldB 2010",
     bullets=(
-        "Mean &amp; median · ~1300 occupations (KldB 2010)",
+        "Mean, median &amp; gender split · ~1300 occupations (KldB 2010)",
         "Full occupation hierarchy &amp; leaderboard",
-        f"Gross monthly earnings · Destatis · {_YR}",
+        f"Gross monthly earnings · Destatis GENESIS · {_YR}",
     ),
     labels={"badge": "Beta", "source_short": "Destatis · official"},
     languages=(("EN", "English"), ("DE", "Deutsch")),
@@ -160,7 +170,7 @@ CONFIG = CountryConfig(
         },
         "DE": {
             "title": "Deutscher Gehaltsexplorer",
-            "caption": "Statistisches Bundesamt (Destatis) · Verdiensterhebung · "
+            "caption": "Statistisches Bundesamt (Destatis) · GENESIS-Online · "
                        "Bruttomonatsverdienste nach Beruf (KldB 2010)",
             "grp_1": "Berufshauptgruppe", "grp_2": "Berufsgruppe",
             "all_grp_1": "— Alle Berufshauptgruppen —", "all_grp_2": "— Alle Berufsgruppen —",

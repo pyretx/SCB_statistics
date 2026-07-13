@@ -232,9 +232,9 @@ gb = [
   "Gross monthly pay · ONS ASHE · 2024",
 ]
 de = [
-  "Mean & median · ~1300 occupations (KldB 2010)",
+  "Mean, median & gender split · ~1300 occupations (KldB 2010)",
   "Full hierarchy drill-down · skill-level split",
-  "Gross monthly earnings · Destatis · 2025",
+  "Gross monthly earnings · Destatis GENESIS · 2025",
 ]
 
 [footer]
