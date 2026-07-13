@@ -71,6 +71,8 @@ _GUIDE_EN = {
     "tabs_title": "The tabs",
     "tabs": [
         ("Overview", "The mean and median at a glance for each occupation."),
+        ("Salary distribution", "The median &amp; mean, with an optional forward "
+                                "projection at an assumed yearly % increase."),
         ("Basic statistics", "A per-occupation summary table with CSV export."),
         ("Leaderboard", "Ranks occupations by mean or median pay within a KldB "
                         "group."),
@@ -124,6 +126,8 @@ _GUIDE_DE = {
     "tabs_title": "Die Reiter",
     "tabs": [
         ("Überblick", "Mittel und Median je Beruf auf einen Blick."),
+        ("Gehaltsverteilung", "Median &amp; Mittel, mit optionaler Fortschreibung "
+                              "bei angenommener jährlicher %-Steigerung."),
         ("Basisstatistik", "Übersichtstabelle je Beruf mit CSV-Export."),
         ("Rangliste", "Ordnet Berufe nach Mittel oder Median innerhalb einer "
                       "KldB-Gruppe."),
@@ -152,7 +156,7 @@ CONFIG = CountryConfig(
         sectors=(),
         year_range=(_YR, _YR),                   # single annual snapshot
     ),
-    tabs=("overview", "stats", "leaderboard", "sex"),
+    tabs=("overview", "distribution", "stats", "leaderboard", "sex"),
     extra_tabs={"skill_levels": skill_levels.render},   # Germany-specific (KldB 5th digit)
     overview_addon=skill_levels.overview_strip,         # compact levels strip in Overview
     access="restricted",                         # BETA — admins + beta users only
@@ -182,6 +186,7 @@ CONFIG = CountryConfig(
             "title": "Deutscher Gehaltsexplorer",
             "caption": "Statistisches Bundesamt (Destatis) · GENESIS-Online · "
                        "Bruttomonatsverdienste nach Beruf (KldB 2010)",
+            "tab_distribution": "Gehaltsverteilung",
             "tab_skill_levels": "Anforderungsniveaus",
             "grp_1": "Berufshauptgruppe", "grp_2": "Berufsgruppe", "grp_3": "Beruf",
             "all_grp_1": "— Alle Berufshauptgruppen —", "all_grp_2": "— Alle Berufsgruppen —",

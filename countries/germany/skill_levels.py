@@ -19,6 +19,7 @@ import streamlit as st
 
 import theme
 from core import charts, i18n
+from core.tabs import projection
 
 # 5th-digit requirement level → (sort order, EN label, DE label)
 _LEVELS = {
@@ -99,6 +100,18 @@ def render(cfg, stats, query):
     if sex != "total":
         st.caption(T["selnote"].format(sex=i18n.t(cfg, sex, lang, sex)))
 
+    # Forward projection (aging) — the same control as the Salary-distribution tab.
+    proj_factor, proj_label = 1.0, ""
+    ref_year = cfg.provider.year()
+    if projection.years_to_project(ref_year):
+        show = projection.toggle(cfg, lang, f"{slug}_skl_proj_show")
+        factor = projection.slider_block(cfg, lang, lambda n: f"{slug}_skl_{n}",
+                                         ref_year, expanded=show)
+        if show and factor > 1.0:
+            proj_factor = factor
+            proj_label = i18n.t(cfg, "io_trace_aged", lang, "Projected to {year}").format(
+                year=projection.years_to_project(ref_year)[-1])
+
     xlabels = [_lvl_label(d, lang) for d, _, _ in rows]
     means = [m for _, m, _ in rows]
     medians = [md for _, _, md in rows]
@@ -115,6 +128,12 @@ def render(cfg, stats, query):
             x=xlabels, y=means, mode="lines+markers", name=T["mean"],
             line=dict(color=theme.MEAN, width=2, dash="dot"),
             marker=theme.series_marker(theme.MEAN),
+            hovertemplate="%{x}<br>%{y:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
+    if proj_factor > 1.0:
+        fig.add_trace(go.Scatter(
+            x=xlabels, y=[md * proj_factor for md in medians], mode="lines+markers",
+            name=proj_label, line=dict(color=theme.ACCENT, width=2, dash="dash"),
+            opacity=0.6, marker=dict(size=7, color=theme.ACCENT),
             hovertemplate="%{x}<br>%{y:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
     fig.update_layout(
         title=f"{tree.get(base, base)} · {cfg.currency_suffix}{cfg.per_label}",
