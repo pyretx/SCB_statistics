@@ -2080,12 +2080,12 @@ def _cp_apply_suggestion(s: dict, cp, v1, admin: str) -> bool:
 
 
 def career_section():
-    """Calibrate the curated Career Paths estimates (edit bands/tracks/confidence/
-    publish; audit-logged). Guarded so a missing table shows a message, not a crash."""
+    """Career Paths admin — three sub-pages (segmented nav): percentile bands
+    (the curated families/titles/relationships editor), the internal performance
+    overlay, and the offline job-ad evidence + review queue (v1)."""
     import pandas as pd
     import careerpaths as cp
     C = _A().get("career", {})
-    st.caption(C.get("caption", ""))
 
     fams, ferr = cp.families()
     if ferr:
@@ -2098,6 +2098,21 @@ def career_section():
     rels, _ = cp.relationships()
     _admin = (st.session_state.get("auth_user") or {}).get("email", "admin")
 
+    subs = {"bands": C.get("sub_bands", "Percentile bands"),
+            "perf": C.get("sub_perf", "Performance overlay"),
+            "v1": C.get("sub_v1", "Job-ad evidence")}
+    page = st.segmented_control("cp_sub", list(subs), default="bands",
+                                format_func=lambda s: subs[s], key="_cp_sub",
+                                label_visibility="collapsed") or "bands"
+    if page == "perf":
+        _cp_perf_page(C, cp, pd, _admin)
+        return
+    if page == "v1":
+        _cp_v1_page(C, cp, fams, _admin)
+        return
+
+    # ── Page 1 · Percentile bands (families / titles / relationships) ────────
+    st.caption(C.get("caption", ""))
     n_tpub = sum(1 for t in titles if t.get("published"))
     n_rpub = sum(1 for r in rels if r.get("published"))
     n_draft = sum(1 for t in titles if t.get("review_status") != "approved")
@@ -2261,147 +2276,148 @@ def career_section():
     if q and not shown:
         st.caption(C.get("no_match", "No match."))
 
-    # ── Performance overlay (internal preview — not published) ───────────────
-    st.write("")
-    with st.expander(C.get("perf_h", "Performance overlay (internal preview)")):
-        st.caption(C.get("perf_note", ""))
-        pcfg = cp.perf_config()
-        bands = cp.perf_bands()
-        if not bands:
-            st.caption(C.get("perf_missing", "Run the overlay migration to enable."))
-        else:
-            en = st.toggle(C.get("perf_public", "Enable for public"),
-                           value=bool(pcfg.get("enabled_public")), key="cp_perf_pub")
-            if en != bool(pcfg.get("enabled_public")):
-                cp.set_perf_config(enabled_public=en)
-                cp.log_change("cp_perf_config", "1", "publish" if en else "unpublish", _admin,
-                              {"enabled_public": en})
-                st.rerun()
-            porig = {b["band_id"]: b for b in bands}
-            pdf = pd.DataFrame([{
-                "Position": b["label"], "Order": int(b["position"]),
-                "Rel lo": float(b["rel_lo"]), "Rel hi": float(b["rel_hi"]),
-                "Description": b.get("description") or "", "_id": b["band_id"],
-            } for b in bands])
-            ped = st.data_editor(
-                pdf, key="cp_perf_ed", hide_index=True, use_container_width=True,
-                column_config={
-                    "Position": st.column_config.TextColumn("Position"),
-                    "Order": st.column_config.NumberColumn("Order", min_value=1, max_value=9, step=1),
-                    "Rel lo": st.column_config.NumberColumn("Rel lo", min_value=0.0, max_value=1.0, step=0.05),
-                    "Rel hi": st.column_config.NumberColumn("Rel hi", min_value=0.0, max_value=1.0, step=0.05),
-                    "Description": st.column_config.TextColumn("Description"),
-                    "_id": None,
-                })
-            if st.button(C.get("perf_save", "Save"), key="cp_perf_save"):
-                n_ok = n_err = 0
-                for _, row in ped.iterrows():
-                    o = porig.get(row["_id"])
-                    if not o:
-                        continue
-                    ch = {}
-                    for col, field, cast in (("Position", "label", str), ("Order", "position", int),
-                                             ("Rel lo", "rel_lo", float), ("Rel hi", "rel_hi", float),
-                                             ("Description", "description", str)):
-                        new = cast(row[col]) if row[col] is not None else ""
-                        cur = o.get(field)
-                        if new != (cast(cur) if cur is not None else ""):
-                            ch[field] = new
-                    if ch:
-                        err = cp.set_perf_band(row["_id"], **ch)
-                        if err:
-                            n_err += 1
-                        else:
-                            n_ok += 1
-                            cp.log_change("cp_perf_band", row["_id"], "edit", _admin, ch)
-                if n_err:
-                    st.error(C["save_err"].format(n=n_err))
-                if n_ok:
-                    st.success(C["saved"].format(n=n_ok))
-                    st.rerun()
-                elif not n_err:
-                    st.info(C["saved_none"])
 
-    # ── Job-ad evidence & review (v1 — offline, admin only) ──────────────────
-    st.write("")
-    with st.expander(C.get("v1_h", "Job-ad evidence & review (v1)")):
-        import careerpaths_v1 as v1
-        vconf = v1.config()
-        en = st.toggle(C.get("v1_enable", "Enable job-ad evidence pipeline"),
-                       value=bool(vconf.get("enabled")), key="cp_v1_en")
-        if en != bool(vconf.get("enabled")):
-            err = v1.set_config(enabled=en)
-            if err:
-                st.error(C.get("v1_missing", err))
-            else:
-                cp.log_change("cp_v1_config", "1", "enable" if en else "disable", _admin,
-                              {"enabled": en})
-                st.rerun()
+def _cp_perf_page(C, cp, pd, _admin):
+    """Sub-page 2 · internal performance overlay (never public without consent)."""
+    st.markdown(f"#### {C.get('perf_h', 'Performance overlay (internal preview)')}")
+    st.caption(C.get("perf_note", ""))
+    pcfg = cp.perf_config()
+    bands = cp.perf_bands()
+    if not bands:
+        st.caption(C.get("perf_missing", "Run the overlay migration to enable."))
+        return
+    en = st.toggle(C.get("perf_public", "Enable for public"),
+                   value=bool(pcfg.get("enabled_public")), key="cp_perf_pub")
+    if en != bool(pcfg.get("enabled_public")):
+        cp.set_perf_config(enabled_public=en)
+        cp.log_change("cp_perf_config", "1", "publish" if en else "unpublish", _admin,
+                      {"enabled_public": en})
+        st.rerun()
+    porig = {b["band_id"]: b for b in bands}
+    pdf = pd.DataFrame([{
+        "Position": b["label"], "Order": int(b["position"]),
+        "Rel lo": float(b["rel_lo"]), "Rel hi": float(b["rel_hi"]),
+        "Description": b.get("description") or "", "_id": b["band_id"],
+    } for b in bands])
+    ped = st.data_editor(
+        pdf, key="cp_perf_ed", hide_index=True, use_container_width=True,
+        column_config={
+            "Position": st.column_config.TextColumn("Position"),
+            "Order": st.column_config.NumberColumn("Order", min_value=1, max_value=9, step=1),
+            "Rel lo": st.column_config.NumberColumn("Rel lo", min_value=0.0, max_value=1.0, step=0.05),
+            "Rel hi": st.column_config.NumberColumn("Rel hi", min_value=0.0, max_value=1.0, step=0.05),
+            "Description": st.column_config.TextColumn("Description"),
+            "_id": None,
+        })
+    if st.button(C.get("perf_save", "Save"), key="cp_perf_save"):
+        n_ok = n_err = 0
+        for _, row in ped.iterrows():
+            o = porig.get(row["_id"])
+            if not o:
+                continue
+            ch = {}
+            for col, field, cast in (("Position", "label", str), ("Order", "position", int),
+                                     ("Rel lo", "rel_lo", float), ("Rel hi", "rel_hi", float),
+                                     ("Description", "description", str)):
+                new = cast(row[col]) if row[col] is not None else ""
+                cur = o.get(field)
+                if new != (cast(cur) if cur is not None else ""):
+                    ch[field] = new
+            if ch:
+                err = cp.set_perf_band(row["_id"], **ch)
+                if err:
+                    n_err += 1
+                else:
+                    n_ok += 1
+                    cp.log_change("cp_perf_band", row["_id"], "edit", _admin, ch)
+        if n_err:
+            st.error(C["save_err"].format(n=n_err))
+        if n_ok:
+            st.success(C["saved"].format(n=n_ok))
+            st.rerun()
+        elif not n_err:
+            st.info(C["saved_none"])
 
-        runs = v1.recent_runs(1)
-        if runs:
-            r0 = runs[0]
-            st.caption(C.get("v1_lastrun", "Last run: {t} · {status} · {ads} ads · {sug} suggestions")
-                       .format(t=str(r0.get("started_at", ""))[:16], status=r0.get("status", ""),
-                               ads=r0.get("ads_processed", 0), sug=r0.get("suggestions", 0)))
-        else:
-            st.caption(C.get("v1_norun", "No refresh run yet."))
 
-        if en:
-            if v1.due_for_refresh(30):
-                st.caption(C.get("v1_due", "Due for refresh."))
-            st.caption(C.get("v1_run_note", ""))
-            fam_opts = [f["family_id"] for f in fams]
-            fam_lab = {f["family_id"]: f.get("name_en", f["family_id"]) for f in fams}
-            pick = st.multiselect(C.get("v1_run_scope", "Families to refresh"), fam_opts,
-                                  format_func=lambda x: fam_lab.get(x, x), key="cp_v1_scope")
-            if st.button(C.get("v1_run", "Run refresh now"), key="cp_v1_run"):
-                import career_pipeline as _pipe
-                with st.status(C.get("v1_running", "Running…"), expanded=True) as box:
-                    res = _pipe.run(families=(pick or None), actor=_admin)
-                    box.write(res)
-                    box.update(state="complete" if res.get("ok") else "error")
-                st.rerun()
+def _cp_v1_page(C, cp, fams, _admin):
+    """Sub-page 3 · offline job-ad evidence pipeline + review queue (v1)."""
+    import careerpaths_v1 as v1
+    st.markdown(f"#### {C.get('v1_h', 'Job-ad evidence & review (v1)')}")
+    vconf = v1.config()
+    en = st.toggle(C.get("v1_enable", "Enable job-ad evidence pipeline"),
+                   value=bool(vconf.get("enabled")), key="cp_v1_en")
+    if en != bool(vconf.get("enabled")):
+        err = v1.set_config(enabled=en)
+        if err:
+            st.error(C.get("v1_missing", err))
         else:
-            st.caption(C.get("v1_off", "Turn on to enable the refresh + evidence."))
+            cp.log_change("cp_v1_config", "1", "enable" if en else "disable", _admin,
+                          {"enabled": en})
+            st.rerun()
 
-        # Review queue
-        st.markdown(f"**{C.get('v1_queue', 'Review queue')}**")
-        sugg = v1.suggestions("pending")
-        if not sugg:
-            st.caption(C.get("v1_empty_queue", "No pending suggestions."))
-        else:
-            fams_in = sorted({s.get("family_id") for s in sugg if s.get("family_id")})
-            confs = ["strong", "moderate", "limited", "experimental"]
-            cf1, cf2 = st.columns(2)
-            ff = cf1.multiselect(C.get("v1_flt_fam", "Family"), fams_in,
-                                 format_func=lambda x: {f["family_id"]: f.get("name_en", x)
-                                                        for f in fams}.get(x, x), key="cp_v1_ff")
-            fc = cf2.multiselect(C.get("v1_flt_conf", "Confidence"), confs, key="cp_v1_fc")
-            shown_s = [s for s in sugg
-                       if (not ff or s.get("family_id") in ff)
-                       and (not fc or s.get("confidence") in fc)]
-            st.caption(C.get("v1_shown", "{n} of {total} shown").format(n=len(shown_s), total=len(sugg)))
-            if shown_s and st.button(C.get("v1_approve_all", "Approve all (filtered)"), key="cp_v1_appall"):
-                n = sum(1 for s in shown_s if _cp_apply_suggestion(s, cp, v1, _admin))
-                cp._clear_cache()
-                st.success(C.get("v1_approved", "Approved {n}.").format(n=n))
+    runs = v1.recent_runs(1)
+    if runs:
+        r0 = runs[0]
+        st.caption(C.get("v1_lastrun", "Last run: {t} · {status} · {ads} ads · {sug} suggestions")
+                   .format(t=str(r0.get("started_at", ""))[:16], status=r0.get("status", ""),
+                           ads=r0.get("ads_processed", 0), sug=r0.get("suggestions", 0)))
+    else:
+        st.caption(C.get("v1_norun", "No refresh run yet."))
+
+    if en:
+        if v1.due_for_refresh(30):
+            st.caption(C.get("v1_due", "Due for refresh."))
+        st.caption(C.get("v1_run_note", ""))
+        fam_opts = [f["family_id"] for f in fams]
+        fam_lab = {f["family_id"]: f.get("name_en", f["family_id"]) for f in fams}
+        pick = st.multiselect(C.get("v1_run_scope", "Families to refresh"), fam_opts,
+                              format_func=lambda x: fam_lab.get(x, x), key="cp_v1_scope")
+        if st.button(C.get("v1_run", "Run refresh now"), key="cp_v1_run"):
+            import career_pipeline as _pipe
+            with st.status(C.get("v1_running", "Running…"), expanded=True) as box:
+                res = _pipe.run(families=(pick or None), actor=_admin)
+                box.write(res)
+                box.update(state="complete" if res.get("ok") else "error")
+            st.rerun()
+    else:
+        st.caption(C.get("v1_off", "Turn on to enable the refresh + evidence."))
+
+    # Review queue
+    st.markdown(f"**{C.get('v1_queue', 'Review queue')}**")
+    sugg = v1.suggestions("pending")
+    if not sugg:
+        st.caption(C.get("v1_empty_queue", "No pending suggestions."))
+        return
+    fams_in = sorted({s.get("family_id") for s in sugg if s.get("family_id")})
+    confs = ["strong", "moderate", "limited", "experimental"]
+    cf1, cf2 = st.columns(2)
+    ff = cf1.multiselect(C.get("v1_flt_fam", "Family"), fams_in,
+                         format_func=lambda x: fam_lab_all(fams, x), key="cp_v1_ff")
+    fc = cf2.multiselect(C.get("v1_flt_conf", "Confidence"), confs, key="cp_v1_fc")
+    shown_s = [s for s in sugg
+               if (not ff or s.get("family_id") in ff)
+               and (not fc or s.get("confidence") in fc)]
+    st.caption(C.get("v1_shown", "{n} of {total} shown").format(n=len(shown_s), total=len(sugg)))
+    if shown_s and st.button(C.get("v1_approve_all", "Approve all (filtered)"), key="cp_v1_appall"):
+        n = sum(1 for s in shown_s if _cp_apply_suggestion(s, cp, v1, _admin))
+        cp._clear_cache()
+        st.success(C.get("v1_approved", "Approved {n}.").format(n=n))
+        st.rerun()
+    for s in shown_s[:60]:
+        with st.container(border=True):
+            st.markdown(f"**{s.get('summary', '')}**")
+            st.caption(f"{s.get('confidence', '')} · support {s.get('ad_support', 0)} · "
+                       f"{fam_lab_all(fams, s.get('family_id'))}")
+            b1, b2, _sp = st.columns([1, 1, 4])
+            if b1.button(C.get("v1_approve", "Approve"), key=f"cp_v1_ok_{s['id']}"):
+                if _cp_apply_suggestion(s, cp, v1, _admin):
+                    cp._clear_cache()
+                    st.success(C.get("v1_approved", "Approved {n}.").format(n=1))
                 st.rerun()
-            for s in shown_s[:60]:
-                with st.container(border=True):
-                    st.markdown(f"**{s.get('summary', '')}**")
-                    st.caption(f"{s.get('confidence', '')} · support {s.get('ad_support', 0)} · "
-                               f"{fam_lab_all(fams, s.get('family_id'))}")
-                    b1, b2, _sp = st.columns([1, 1, 4])
-                    if b1.button(C.get("v1_approve", "Approve"), key=f"cp_v1_ok_{s['id']}"):
-                        if _cp_apply_suggestion(s, cp, v1, _admin):
-                            cp._clear_cache()
-                            st.success(C.get("v1_approved", "Approved {n}.").format(n=1))
-                        st.rerun()
-                    if b2.button(C.get("v1_reject", "Reject"), key=f"cp_v1_no_{s['id']}"):
-                        v1.set_suggestion(s["id"], "rejected", _admin)
-                        cp.log_change("cp_suggestion", str(s["id"]), "reject", _admin, {})
-                        st.rerun()
+            if b2.button(C.get("v1_reject", "Reject"), key=f"cp_v1_no_{s['id']}"):
+                v1.set_suggestion(s["id"], "rejected", _admin)
+                cp.log_change("cp_suggestion", str(s["id"]), "reject", _admin, {})
+                st.rerun()
 
 
 def fam_lab_all(fams, fid):
