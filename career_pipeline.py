@@ -115,7 +115,7 @@ def run(families: list[str] | None = None, actor: str = "admin",
                 emptype = Counter(s.get("employment_type") for s in ads if s.get("employment_type"))
                 # example ad references — most recent first, up to 5, with links
                 ex = sorted([s for s in ads if s.get("id")],
-                            key=lambda s: (s.get("publication_date") or ""), reverse=True)[:5]
+                            key=lambda s: (s.get("publication_date") or ""), reverse=True)[:12]
                 evidence_rows.append({
                     "title_id": t["title_id"], "ad_count": len(matched),
                     "common_skills": [{"skill": s, "freq": n} for s, n in skills.most_common(10)],
@@ -128,7 +128,7 @@ def run(families: list[str] | None = None, actor: str = "admin",
                     "top_employers": [{"name": e, "freq": n} for e, n in emp.most_common(6)],
                     "example_ads": [{"id": s.get("id"), "headline": (s.get("headline") or "")[:120],
                                      "employer": s.get("employer"), "deadline": s.get("deadline"),
-                                     "url": s.get("url")} for s in ex],
+                                     "region": s.get("region"), "url": s.get("url")} for s in ex],
                     "mgmt_freq": round(sum(1 for c in matched if c.get("mgmt")) / len(matched), 2),
                     "top_variants": [{"title": v, "freq": n} for v, n in variants.most_common(6)],
                     "observed_to": today, "evidence_strength": _strength(len(matched)),
