@@ -157,19 +157,23 @@ _MAP_TEMPLATE = r"""
  .cplegend span { display:inline-flex; align-items:center; gap:6px; }
  .cpdot { width:9px; height:9px; border-radius:50%; display:inline-block; }
  .cpmap { position:relative; width:100%; border:1px solid #E7E9ED; border-radius:14px; background:#fff;
-   overflow:hidden; }
- .cpwires { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+   overflow-x:auto; overflow-y:hidden; }
+ .cpcanvas { position:relative; height:100%; }
+ .cpwires { position:absolute; inset:0; pointer-events:none; }
  .cpcenter { position:absolute; left:60px; top:50%; transform:translateY(-50%); background:#0A63A6;
    color:#fff; border-radius:12px; padding:10px 14px; max-width:210px; box-shadow:0 3px 10px rgba(10,99,166,.28); z-index:2; }
  .cpcenter .lbl { font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.06em; opacity:.85; }
  .cpcenter .cname { font-weight:700; font-size:14px; margin-top:2px; }
  .cpcenter .crange { font-size:11.5px; opacity:.9; margin-top:2px; }
- .cpnode { position:absolute; right:14px; display:flex; align-items:center; gap:8px; background:#fff;
-   border:1px solid #E7E9ED; border-radius:22px; padding:7px 13px; cursor:pointer; z-index:2;
-   box-shadow:0 1px 2px rgba(16,21,31,.05); transition:box-shadow .12s, border-color .12s; white-space:nowrap; }
+ .cpnode { position:absolute; width:214px; background:#fff; border:1px solid #E7E9ED; border-radius:14px;
+   padding:9px 13px; cursor:pointer; z-index:2; box-shadow:0 1px 2px rgba(16,21,31,.05);
+   transition:box-shadow .12s, border-color .12s; }
  .cpnode:hover { box-shadow:0 3px 10px rgba(16,21,31,.12); }
  .cpnode.active { border-color:#0A63A6; box-shadow:0 0 0 3px rgba(10,99,166,.14); }
- .cpnode .nname { font-weight:600; font-size:13px; }
+ .cpnode .nrow { display:flex; align-items:flex-start; gap:7px; }
+ .cpnode .nrow .cpdot { margin-top:5px; flex:0 0 auto; }
+ .cpnode .nname { font-weight:600; font-size:13px; line-height:1.25; }
+ .cpnode .nmeta { padding-left:16px; margin-top:3px; display:flex; gap:8px; align-items:baseline; }
  .cpnode .ndiff { font-weight:700; font-size:12px; }
  .cpnode .nads { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#98A0AC; }
  .cpdetail { border:1px solid #E7E9ED; border-radius:14px; background:#fff; padding:16px 18px; margin-top:12px;
@@ -211,7 +215,7 @@ _MAP_TEMPLATE = r"""
   <div class="cpsub" id="cpsub"></div>
   <div class="cplegend" id="cplegend"></div>
   <div class="cplevels" id="cplevels"></div>
-  <div class="cpmap" id="cpmap"><svg class="cpwires" id="cpwires"></svg></div>
+  <div class="cpmap" id="cpmap"><div class="cpcanvas" id="cpcanvas"><svg class="cpwires" id="cpwires"></svg></div></div>
   <div class="cpdetail" id="cpdetail"></div>
   <div class="cphint" id="cphint"></div>
 </div>
@@ -231,14 +235,16 @@ document.getElementById('cplegend').innerHTML = (D.legend||[])
 const R = D.roles, E = D.edges, OCC = D.occupation, RL = D.rellabels || {};
 const LAYER = D.layer, PARENT = D.parent, CENTERIDS = new Set(D.center_ids||[]), MAXL = D.max_layer||1;
 const mapEl = document.getElementById('cpmap');
+const canvas = document.getElementById('cpcanvas');
 const svg = document.getElementById('cpwires');
 const titleEl = document.getElementById('cptitle');
 const levelsEl = document.getElementById('cplevels');
 const detailEl = document.getElementById('cpdetail');
+const NODEW = 214;
 
 const center0 = document.createElement('div');
 center0.className = 'cpcenter';
-mapEl.appendChild(center0);
+canvas.appendChild(center0);
 
 // the edge that leads INTO each node along its longest-path parent (colour/rel/gaps)
 const edgeInto = {};
@@ -270,26 +276,33 @@ function drawCenter(){
 function markActive(){ Object.entries(nodeEls).forEach(([id,el])=> el.classList.toggle('active', id===focus)); }
 function createNode(n){
   const d = document.createElement('div');
-  d.className='cpnode'; d.dataset.id=n.id; d.dataset.rel=n.rel||''; d.style.right='auto';
-  d.innerHTML = `<span class="cpdot" style="background:${n.color}"></span>`
-    + `<span class="nname">${esc(n.name)}</span>`
+  d.className='cpnode'; d.dataset.id=n.id; d.dataset.rel=n.rel||'';
+  d.innerHTML = `<div class="nrow"><span class="cpdot" style="background:${n.color}"></span>`
+    + `<span class="nname">${esc(n.name)}</span></div>`
+    + `<div class="nmeta">`
     + (n.diff!=null? `<span class="ndiff" style="color:${n.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(n.diff)}</span>`:'')
-    + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'');
+    + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'')
+    + `</div>`;
   d.onclick = ()=>{ focus=n.id; focusPath=pathTo(n.id); renderDetail(); drawWires(); markActive(); };
   d.onmouseenter = ()=>{ hoverPath=pathTo(n.id); drawWires(); };
   d.onmouseleave = ()=>{ hoverPath=null; drawWires(); };
-  mapEl.appendChild(d); nodeEls[n.id]=d;
+  canvas.appendChild(d); nodeEls[n.id]=d;
 }
 function layoutNodes(){
-  const W = mapEl.clientWidth;
+  const availW = mapEl.clientWidth;
   center0.style.left = '16px';
-  const x0 = 16 + center0.offsetWidth + 28;
-  const colStep = Math.max(160, (W - x0 - 24) / sel);
+  const x0 = 16 + center0.offsetWidth + 30;
+  // fixed comfortable column width so pills never overlap; overflow → horizontal pan
+  const colStep = Math.max(250, (availW - x0 - 24) / sel);
   const byL = {}; shownIds().forEach(id=> (byL[LAYER[id]]=byL[LAYER[id]]||[]).push(id));
   let maxCount = 1;
   Object.values(byL).forEach(a=>{ a.sort((p,q)=> R[q].mid-R[p].mid); maxCount=Math.max(maxCount,a.length); });
-  const mapH = Math.max(maxCount*54 + 44, 220);
-  mapEl.style.height = mapH+'px';
+  const rowH = 66;
+  const mapH = Math.max(maxCount*rowH + 28, 210);
+  const contentW = x0 + (sel-1)*colStep + NODEW + 26;
+  canvas.style.width = Math.max(contentW, availW) + 'px';
+  canvas.style.height = mapH + 'px';
+  mapEl.style.height = (mapH + (contentW > availW ? 14 : 0)) + 'px';
   shownIds().forEach(id=>{ const el=nodeEls[id]; if(!el) return; const Lr=LAYER[id];
     const arr=byL[Lr], idx=arr.indexOf(id), cnt=arr.length;
     const yStep = mapH/(cnt+1), y = yStep*(idx+1);
@@ -298,7 +311,7 @@ function layoutNodes(){
   });
 }
 function drawWires(){
-  const mr = mapEl.getBoundingClientRect();
+  const cr0 = canvas.getBoundingClientRect();
   const ids = new Set(shownIds());
   let p='';
   E.forEach(e=>{
@@ -309,22 +322,23 @@ function drawWires(){
     const dstEl = nodeEls[e.to];
     if(!srcEl || !dstEl) return;
     const sr=srcEl.getBoundingClientRect(), dr=dstEl.getBoundingClientRect();
-    const cx=sr.right-mr.left, cy=sr.top-mr.top+sr.height/2;
-    const nx=dr.left-mr.left, ny=dr.top-mr.top+dr.height/2, mx=(cx+nx)/2;
+    const cx=sr.right-cr0.left, cy=sr.top-cr0.top+sr.height/2;
+    const nx=dr.left-cr0.left, ny=dr.top-cr0.top+dr.height/2, mx=(cx+nx)/2;
     const key=e.from+'>'+e.to;
     const on = (hoverPath&&hoverPath.has(key)) || (focusPath&&focusPath.has(key));
     const dash=(e.rel==='lateral'||e.rel==='related')?' stroke-dasharray="5 6"':'';
     p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
       + `stroke="${e.color}" stroke-width="${on?3:1.4}" stroke-opacity="${on?0.95:0.28}"${dash}/>`;
   });
-  svg.setAttribute('viewBox',`0 0 ${mr.width} ${mr.height}`);
-  svg.setAttribute('width',mr.width); svg.setAttribute('height',mr.height); svg.innerHTML=p;
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  svg.setAttribute('width',w); svg.setAttribute('height',h); svg.innerHTML=p;
 }
 function render(){
   levelButtons();
   titleEl.textContent = L.title.replace('{r}', OCC.name);
   drawCenter();
-  mapEl.querySelectorAll('.cpnode').forEach(x=>x.remove()); nodeEls={};
+  canvas.querySelectorAll('.cpnode').forEach(x=>x.remove()); nodeEls={};
   shownIds().forEach(id=> createNode(nodeObj(id)));
   layoutNodes();
   if(focus!==null && !nodeEls[focus]){ focus=null; focusPath=null; }
@@ -495,7 +509,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         },
     }
     html = _MAP_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
-    map_h = max(max_layer_width * 54 + 44, 220)
+    map_h = max(max_layer_width * 66 + 42, 220)
     components.html(html, height=150 + map_h + 320, scrolling=True)
 
 
