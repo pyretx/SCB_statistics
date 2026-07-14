@@ -105,7 +105,7 @@ insert into public.compliance_dataset
      'Free reuse, including commercial, with attribution to Stats NZ.',
      'Source: Stats NZ','none','2009→; median + average earnings by ANZSCO major group, NZD.'),
   ('abs_eeh','abs','Employee Earnings and Hours (EEH), data cube 11','EEH-DC11',
-     'https://www.abs.gov.au/statistics/labour/earnings-and-working-conditions','excel',
+     'https://www.abs.gov.au/statistics/labour/earnings-and-working-conditions','official_table',
      'CC BY 4.0','https://www.abs.gov.au/website-privacy-copyright-and-disclaimer',
      'Free reuse, including commercial, with attribution to the ABS.',
      'Source: Australian Bureau of Statistics','none','Average earnings by detailed ANZSCO, AUD.'),
