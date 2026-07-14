@@ -218,9 +218,8 @@ document.getElementById('cpeyebrow').textContent = L.eyebrow;
 document.getElementById('cptitle').textContent = L.title;
 document.getElementById('cpsub').textContent = L.subtitle;
 document.getElementById('cphint').textContent = L.hint;
-document.getElementById('cplegend').innerHTML =
-  [['#0A63A6',L.leg_within],['#5B8A72',L.leg_spec],['#B26A00',L.leg_lead]]
-  .map(([c,t])=>`<span><span class="cpdot" style="background:${c}"></span>${esc(t)}</span>`).join('');
+document.getElementById('cplegend').innerHTML = (D.legend||[])
+  .map(o=>`<span><span class="cpdot" style="background:${o.color}"></span>${esc(o.label)}${o.dashed?' <span style="opacity:.6">- -</span>':''}</span>`).join('');
 
 const mapEl = document.getElementById('cpmap');
 const svg = document.getElementById('cpwires');
@@ -238,7 +237,7 @@ let sel = 0;
 D.nodes.forEach((n,i)=>{ if(n.rel==='progression' && sel===0) sel=i; });
 D.nodes.forEach((n,i)=>{
   const d = document.createElement('div');
-  d.className = 'cpnode'; d.dataset.i = i; d.dataset.color = n.color;
+  d.className = 'cpnode'; d.dataset.i = i; d.dataset.color = n.color; d.dataset.rel = n.rel;
   d.style.top = (padY + i*rowH) + 'px';
   d.innerHTML = `<span class="cpdot" style="background:${n.color}"></span>`
     + `<span class="nname">${esc(n.name)}</span>`
@@ -259,8 +258,9 @@ function drawWires(){
     const nx = r.left - mr.left, ny = r.top - mr.top + r.height/2;
     const mx = (cx+nx)/2;
     const on = (i===sel);
+    const dash = (node.dataset.rel==='lateral' || node.dataset.rel==='related') ? ' stroke-dasharray="5 6"' : '';
     p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
-      + `stroke="${node.dataset.color}" stroke-width="${on?3:1.5}" stroke-opacity="${on?0.9:0.35}"/>`;
+      + `stroke="${node.dataset.color}" stroke-width="${on?3:1.5}" stroke-opacity="${on?0.9:0.35}"${dash}/>`;
   });
   svg.setAttribute('viewBox', `0 0 ${mr.width} ${mr.height}`);
   svg.setAttribute('width', mr.width); svg.setAttribute('height', mr.height);
@@ -301,7 +301,8 @@ function positionNodes(){
   mapEl.querySelectorAll('.cpnode').forEach(nd=>{
     const i=+nd.dataset.i, n=D.nodes[i];
     nd.style.top = (padY + i*rowH) + 'px';
-    const ratio = Math.abs(n.diff||0)/maxD;      // 1 = biggest leap → furthest right
+    // clamp so small / lateral (≈0 diff) leaps still sit clear of the centre node
+    const ratio = 0.22 + 0.78*(Math.abs(n.diff||0)/maxD);   // 1 = biggest leap → furthest right
     nd.style.right = (16 + (1-ratio)*pull) + 'px';
   });
 }
@@ -375,10 +376,27 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         return
     nodes.sort(key=lambda n: -(n["mid"] or 0))
 
+    _leg_lbl = {
+        "progression": i18n.t(cfg, "cp_rel_progression", lang, "Advance within this occupation"),
+        "specialist": i18n.t(cfg, "cp_rel_specialist", lang, "Specialist move"),
+        "management": i18n.t(cfg, "cp_rel_leadership", lang, "Move into leadership"),
+        "leadership": i18n.t(cfg, "cp_rel_leadership", lang, "Move into leadership"),
+        "lateral": i18n.t(cfg, "cp_rel_lateral", lang, "Related lateral moves"),
+        "entry": i18n.t(cfg, "cp_rel_entry", lang, "Entry route"),
+        "related": i18n.t(cfg, "cp_rel_related", lang, "Related move"),
+    }
+    legend, _seen = [], set()
+    for _rt in ["progression", "specialist", "management", "leadership", "lateral", "entry", "related"]:
+        _lbl = _leg_lbl.get(_rt)
+        if _lbl and _lbl not in _seen and any(n["rel"] == _rt for n in nodes):
+            legend.append({"color": rel_color.get(_rt, "#5B6472"), "label": _lbl,
+                           "dashed": _rt in ("lateral", "related")})
+            _seen.add(_lbl)
+
     payload = {
         "center": {"name": occ_name, "ssyk": str(primary),
                    "lo": (round(c_lo) if c_lo else None), "hi": (round(c_hi) if c_hi else None)},
-        "nodes": nodes,
+        "nodes": nodes, "legend": legend,
         "labels": {
             "eyebrow": "CAREER PATHS · " + i18n.t(cfg, "cp_map_h", lang, "Where can this role lead?").upper(),
             "title": i18n.t(cfg, "cp_map_from", lang, "Paths from {r}").format(r=occ_name),
@@ -513,19 +531,19 @@ def _render_market_signal_section(cfg, lang, titles, evidence, primary):
     exp = (e.get("common_experience") or [])
     ym = exp[0].get("years_median") if exp else None
     edu_top = (e.get("common_education") or [])
-    # ── Stat tiles (app card style) ──
-    s1, s2, s3, s4 = st.columns(4)
-    s1.markdown(_tile(i18n.t(cfg, "cp_ms_ads_t", lang, "Live ads"),
-                      f"{int(e.get('ad_count') or 0)}",
-                      _ev_strength(cfg, lang, e.get("evidence_strength"))), unsafe_allow_html=True)
-    s2.markdown(_tile(i18n.t(cfg, "cp_ms_exp", lang, "Typical experience"),
-                      (f"{ym}+ {i18n.t(cfg, 'cp_ms_yrs', lang, 'yrs')}" if ym is not None else "—")),
+    # ── Stat tiles (app card style, equal height via a stretch grid) ──
+    tiles_html = (
+        _tile(i18n.t(cfg, "cp_ms_ads_t", lang, "Live ads"), f"{int(e.get('ad_count') or 0)}",
+              _ev_strength(cfg, lang, e.get("evidence_strength")))
+        + _tile(i18n.t(cfg, "cp_ms_exp", lang, "Typical experience"),
+                (f"{ym}+ {i18n.t(cfg, 'cp_ms_yrs', lang, 'yrs')}" if ym is not None else "—"))
+        + _tile(i18n.t(cfg, "cp_ms_edu", lang, "Top education req."),
+                (edu_top[0]["label"] if edu_top else "—"))
+        + _tile(i18n.t(cfg, "cp_ms_mgmt", lang, "People management"),
+                f"{round((e.get('mgmt_freq') or 0) * 100)}%"))
+    st.markdown('<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;'
+                'align-items:stretch;margin-bottom:12px;">' + tiles_html + '</div>',
                 unsafe_allow_html=True)
-    s3.markdown(_tile(i18n.t(cfg, "cp_ms_edu", lang, "Top education req."),
-                      (edu_top[0]["label"] if edu_top else "—")), unsafe_allow_html=True)
-    s4.markdown(_tile(i18n.t(cfg, "cp_ms_mgmt", lang, "People management"),
-                      f"{round((e.get('mgmt_freq') or 0) * 100)}%"), unsafe_allow_html=True)
-    st.write("")
 
     def chips(items, color, bg):
         return _chips([x for x in items if x], color, bg)
