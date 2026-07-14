@@ -307,4 +307,4 @@ mk = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU s
 jp = ["Mean earnings & gender split · 144 detailed occupations (JSCO 2020)", "Basic Survey on Wage Structure · 2020–2023 trend", "Scheduled monthly cash earnings · e-Stat · 2023"]
 
 [footer]
-note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France) · SSB (Norway) · BLS (United States)"
+note = "Data sourced directly from official national statistics agencies and Eurostat across 40+ countries."

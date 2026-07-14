@@ -9,6 +9,10 @@ home          = "Home"
 methodology   = "Data sources & methodology"
 about         = "About Salary Explorer"
 disclaimers   = "Disclaimers & terms"
+# Short labels for the compact top nav bar (the footer dropdown + page H1 use the full ones)
+methodology_short = "Data sources"
+about_short       = "About"
+disclaimers_short = "Disclaimers"
 
 # ── Data Sources & Methodology ───────────────────────────────────────────────
 [methodology]
@@ -66,6 +70,9 @@ body    = "Salary Explorer is a free tool for looking up pay by occupation acros
 [about.data]
 heading = "Built on official statistics"
 body    = "Every country page draws on data published by that country's official statistics provider — national statistical offices, Eurostat, and equivalent bodies. We do not survey anyone or estimate our own wages; we surface what the official sources publish, and clearly mark anything Salary Explorer calculates on top (see Data sources & methodology)."
+[about.enhanced]
+heading = "More than a data portal"
+body    = "On top of the official statistics, Salary Explorer adds a layer of enhanced analytics, features, tools and functions — occupation search and drill-down, multi-year trends, forward projections, gender comparisons, rankings, cross-country context and more — turning raw agency tables into something you can actually explore. This added layer gives the end-user considerably more value than the source data alone, and it is all packaged in a clean, user-friendly interface that works the same way in every country."
 [about.coverage]
 heading = "Coverage"
 body    = "Coverage grows continuously. Countries are marked Live or Beta on the home page; Beta countries are newer additions still being validated. The Data sources & methodology page lists the exact dataset behind each country."

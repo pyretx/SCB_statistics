@@ -15,7 +15,7 @@ st.markdown(f'<div class="pp-eyebrow">{A["eyebrow"]}</div>'
             f'<div class="pp-h1">{A["title"]}</div>', unsafe_allow_html=True)
 st.write("")
 
-for key in ("purpose", "data", "coverage", "methodology", "limitations", "contact"):
+for key in ("purpose", "data", "enhanced", "coverage", "methodology", "limitations", "contact"):
     sec = A[key]
     st.markdown(f'<div class="pp-card"><div class="pp-sec-h">{sec["heading"]}</div>'
                 f'<div class="pp-sec-b">{sec["body"]}</div></div>', unsafe_allow_html=True)

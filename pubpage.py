@@ -85,24 +85,54 @@ def inject_base():
 
 def top(active: str):
     """Brand row + a compact cross-page nav (Home · the three About pages).
-    ``active`` is one of _PAGES keys (or '' for none) — the active link is bold."""
+    ``active`` is one of _PAGES keys (or '' for none). The brand block (logo +
+    wordmark + POWERED-BY tagline) is a clickable Home link — same invisible
+    page_link overlay pattern as admin.py."""
     N = nav_text()
+    B = content.load("home").get("brand", {})
+    brand = B.get("name", "Salary Explorer")
+    tagline = B.get("tagline", "")
+
     st.markdown("<div style='height:1.4rem'></div>", unsafe_allow_html=True)
-    left, right = st.columns([2.3, 1.7], vertical_alignment="center")
+    # Invisible page_link stretched over the brand HTML → the whole logo+wordmark
+    # block is a Home link (a raw <a> would full-reload and drop the session).
+    st.markdown("""<style>
+    [class*="st-key-pp_brand"]{ position:relative; width:fit-content; min-height:34px; }
+    [class*="st-key-pp_brand"] [data-testid="stElementContainer"]:has([data-testid="stPageLink"]){
+      position:absolute;inset:0;margin:0;width:100% !important;height:100% !important;}
+    [class*="st-key-pp_brand"] [data-testid="stPageLink"]{position:absolute;inset:0;
+      width:100% !important;height:100% !important;}
+    [class*="st-key-pp_brand"] [data-testid="stPageLink"] a{position:absolute;inset:0;
+      width:100% !important;height:100% !important;background:transparent !important;border-radius:8px;}
+    [class*="st-key-pp_brand"] [data-testid="stPageLink"] a p,
+    [class*="st-key-pp_brand"] [data-testid="stPageLink"] a span{display:none;}
+    </style>""", unsafe_allow_html=True)
+
+    left, right = st.columns([1.5, 2.5], vertical_alignment="center")
     with left:
-        st.markdown(f"""
-        <div style="display:flex;align-items:center;gap:11px;">
-          <img src="{_logo_uri()}" alt="Salary Explorer" style="width:30px;height:30px;flex:none;
-               border-radius:8px;box-shadow:0 2px 6px rgba(10,99,166,.35);">
-          <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;color:#0C1119;">
-            {content.load("home").get("brand", {}).get("name", "Salary Explorer")}</span>
-        </div>
-        """, unsafe_allow_html=True)
+        _tag = (f'<span style="font-family:\'JetBrains Mono\',monospace;font-size:8px;'
+                f'font-weight:600;letter-spacing:.14em;color:#8A919D;line-height:1.2;">'
+                f'{tagline}</span>' if tagline else "")
+        with st.container(key="pp_brand"):
+            st.markdown(f"""
+            <div style="display:flex;align-items:center;gap:11px;">
+              <img src="{_logo_uri()}" alt="{brand}" style="width:32px;height:32px;flex:none;
+                   border-radius:8px;box-shadow:0 2px 6px rgba(10,99,166,.35);">
+              <div style="display:flex;flex-direction:column;gap:2px;">
+                <span style="font-weight:700;font-size:16px;letter-spacing:-.01em;color:#0C1119;
+                      line-height:1.15;">{brand}</span>
+                {_tag}
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+            st.page_link("landing.py", label=brand)
     with right:
-        cols = st.columns([1, 1.7, 1.6, 1.7])
-        cols[0].page_link("landing.py", label=N["home"], icon=":material/home:")
-        cols[1].page_link("methodology.py", label=N["methodology"])
-        cols[2].page_link("about.py", label=N["about"])
-        cols[3].page_link("disclaimers.py", label=N["disclaimers"])
+        # Right-aligned, non-truncating nav (leading spacer pushes links right;
+        # short labels from content/about.toml keep them on one line).
+        cols = st.columns([0.6, 0.5, 1.15, 0.8, 1.15])
+        cols[1].page_link("landing.py", label=N["home"], icon=":material/home:")
+        cols[2].page_link("methodology.py", label=N.get("methodology_short", N["methodology"]))
+        cols[3].page_link("about.py", label=N.get("about_short", N["about"]))
+        cols[4].page_link("disclaimers.py", label=N.get("disclaimers_short", N["disclaimers"]))
     st.markdown('<div style="height:1px;background:#E7E9ED;margin:14px 0 22px;"></div>',
                 unsafe_allow_html=True)
