@@ -44,11 +44,18 @@ def _norm(s: str) -> str:
 
 
 def run(families: list[str] | None = None, actor: str = "admin",
-        max_ads: int | None = None) -> dict:
+        max_ads: int | None = None, classify_fn=None, model_label: str | None = None) -> dict:
     """Run a refresh over the given families (default: all published). Returns a
-    summary dict. Safe to call only when enabled; the caller checks the toggle."""
+    summary dict. Safe to call only when enabled; the caller checks the toggle.
+
+    Backends (hybrid): by default classification uses the paid Anthropic API on the
+    configured model (career_ai.classify). Pass `classify_fn(scrubbed_ads) -> list`
+    to inject a different classifier — e.g. an agent/MAX-powered pass that costs no
+    API tokens — and `model_label` to record which backend ran in the log."""
     conf = v1.config()
-    model = conf.get("model") or "claude-haiku-4-5-20251001"
+    api_model = conf.get("model") or "claude-haiku-4-5-20251001"
+    model = model_label or api_model          # recorded on the run log
+    classify = classify_fn or (lambda ads: career_ai.classify(ads, model=api_model))
     cap = int(max_ads or conf.get("max_ads_per_ssyk") or 60)
     min_ads = int(conf.get("min_ads_suggestion") or 5)
 
@@ -73,7 +80,7 @@ def run(families: list[str] | None = None, actor: str = "admin",
         for ssyk, ssyk_titles in by_ssyk.items():
             scrubbed = jt.fetch_scrubbed(ssyk, limit=cap)
             ads_fetched += len(scrubbed)
-            classified = career_ai.classify(scrubbed, model=model) if scrubbed else []
+            classified = classify(scrubbed) if scrubbed else []
             ads_proc += len(classified)
             if not classified:
                 continue
