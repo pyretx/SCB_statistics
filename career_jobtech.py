@@ -85,6 +85,12 @@ def scrub(ad: dict) -> dict:
         "experience_required": ad.get("experience_required"),
         "salary_type": (ad.get("salary_type") or {}).get("label"),
         "publication_date": ad.get("publication_date"),
+        # Public ad reference — the id IS the Platsbanken reference number, and
+        # webpage_url the direct link. Not PII (points at a public ad; links expire
+        # at the application deadline). Used for "see the ads" references.
+        "deadline": (ad.get("application_deadline") or "")[:10] or None,
+        "url": ad.get("webpage_url") or (
+            f"https://arbetsformedlingen.se/platsbanken/annonser/{ad.get('id')}" if ad.get("id") else None),
         "skills": _labels(mh, "skills") + _labels(nh, "skills"),
         "education": _labels(mh, "education") + _labels(nh, "education"),
         "languages": _labels(mh, "languages") + _labels(nh, "languages"),

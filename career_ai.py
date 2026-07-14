@@ -57,6 +57,10 @@ def _prompt(ads: list[dict]) -> str:
         '  mgmt (true only if the role has formal people-management responsibility),\n'
         '  years (minimum years of relevant experience requested, integer, or null),\n'
         '  skills (array of up to 6 short English skill/requirement phrases),\n'
+        '  education (the education requirement as a short English label — one of: '
+        '"None stated", "Upper secondary", "Vocational", "Bachelor", "Master", "PhD", '
+        'optionally with a field e.g. "Bachelor in HR"),\n'
+        '  certs (array of up to 4 required certifications/licences named in the ad, or []),\n'
         '  norm_title (a short normalised English job title).\n'
         "Judge only from the ad text. Interpret words like Lead/Manager/Chef in context "
         "(not every 'Lead' means people management). Return ONLY a JSON array of these "
@@ -106,6 +110,8 @@ def classify(ads: list[dict], model: str | None = None, batch: int = 8) -> list[
                 "mgmt": bool(o.get("mgmt")),
                 "years": o.get("years") if isinstance(o.get("years"), int) else None,
                 "skills": (o.get("skills") or a.get("skills") or [])[:6],
+                "education": (o.get("education") or None),
+                "certs": [c for c in (o.get("certs") or []) if isinstance(c, str)][:4],
                 "norm_title": o.get("norm_title"),
             })
     return out

@@ -166,6 +166,18 @@ _CAREER_SV = {
     "cp_ev_based": "baserat på {n} annonser · Arbetsförmedlingen",
     "cp_ev_skills": "Efterfrågade färdigheter",
     "cp_ev_count": "📊 marknadssignal för {n} roll(er)",
+    "cp_ms_h": "Marknadssignal (från aktuella platsannonser)",
+    "cp_ms_cap": "Vad aktuella svenska platsannonser för dessa roller faktiskt efterfrågar. "
+                 "Aggregerat från publika annonser (Arbetsförmedlingen / JobTech, CC BY-SA) — "
+                 "indikativt, inte officiellt, och det ändrar inte SCB-lönerna ovan.",
+    "cp_ms_role": "Visa roll", "cp_ms_obs": "per {d}",
+    "cp_ms_exp": "Typisk erfarenhet", "cp_ms_yrs": "år",
+    "cp_ms_edu": "Vanligaste utbildningskrav", "cp_ms_mgmt": "Personalansvar",
+    "cp_ms_certs": "Certifikat / behörigheter", "cp_ms_langs": "Språk",
+    "cp_ms_emp": "Arbetsgivare som nyligen rekryterat",
+    "cp_ms_ex": "Exempelannonser · Platsbanken-referenser",
+    "cp_ms_dl": "sök senast {d}", "cp_ms_ref": "ref",
+    "cp_ms_expire": "Länkarna öppnar annonsen på Platsbanken och slutar gälla efter sista ansökningsdag.",
     "cp_ev_attr": "Marknadssignal och vanligaste krav är aggregerade från publika platsannonser "
                   "(Arbetsförmedlingen / JobTech, CC BY-SA) — indikativt, inte officiellt.",
     "cp_compare_h": "Jämför två roller", "cp_current": "Nuvarande roll",

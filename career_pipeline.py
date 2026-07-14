@@ -80,6 +80,7 @@ def run(families: list[str] | None = None, actor: str = "admin",
         for ssyk, ssyk_titles in by_ssyk.items():
             scrubbed = jt.fetch_scrubbed(ssyk, limit=cap)
             ads_fetched += len(scrubbed)
+            scrub_by_id = {a.get("id"): a for a in scrubbed}
             classified = classify(scrubbed) if scrubbed else []
             ads_proc += len(classified)
             if not classified:
@@ -99,15 +100,35 @@ def run(families: list[str] | None = None, actor: str = "admin",
                 matched = [c for c in classified if c.get("seniority") in bucket]
                 if len(matched) < 1:
                     continue
+                ads = [scrub_by_id.get(c.get("id")) or {} for c in matched]
                 skills = Counter(s for c in matched for s in (c.get("skills") or []))
                 yrs = [c["years"] for c in matched if isinstance(c.get("years"), int)]
                 variants = Counter(c["norm_title"] for c in matched if c.get("norm_title"))
+                # education: AI single label + any structured must/nice labels
+                edu = Counter(c.get("education") for c in matched if c.get("education"))
+                for s in ads:
+                    for lab in (s.get("education") or []):
+                        edu[lab] += 1
+                certs = Counter(x for c in matched for x in (c.get("certs") or []))
+                langs = Counter(l for s in ads for l in (s.get("languages") or []))
+                emp = Counter(s.get("employer") for s in ads if s.get("employer"))
+                emptype = Counter(s.get("employment_type") for s in ads if s.get("employment_type"))
+                # example ad references — most recent first, up to 5, with links
+                ex = sorted([s for s in ads if s.get("id")],
+                            key=lambda s: (s.get("publication_date") or ""), reverse=True)[:5]
                 evidence_rows.append({
                     "title_id": t["title_id"], "ad_count": len(matched),
                     "common_skills": [{"skill": s, "freq": n} for s, n in skills.most_common(10)],
                     "common_experience": ([{"years_min": min(yrs), "years_median": sorted(yrs)[len(yrs) // 2]}]
                                           if yrs else []),
-                    "common_education": [], "common_certs": [],
+                    "common_education": [{"label": l, "freq": n} for l, n in edu.most_common(6)],
+                    "common_certs": [{"label": l, "freq": n} for l, n in certs.most_common(6)],
+                    "common_languages": [{"label": l, "freq": n} for l, n in langs.most_common(6)],
+                    "employment_mix": dict(emptype.most_common(6)),
+                    "top_employers": [{"name": e, "freq": n} for e, n in emp.most_common(6)],
+                    "example_ads": [{"id": s.get("id"), "headline": (s.get("headline") or "")[:120],
+                                     "employer": s.get("employer"), "deadline": s.get("deadline"),
+                                     "url": s.get("url")} for s in ex],
                     "mgmt_freq": round(sum(1 for c in matched if c.get("mgmt")) / len(matched), 2),
                     "top_variants": [{"title": v, "freq": n} for v, n in variants.most_common(6)],
                     "observed_to": today, "evidence_strength": _strength(len(matched)),

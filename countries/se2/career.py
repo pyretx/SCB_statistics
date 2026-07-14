@@ -117,6 +117,95 @@ def _subcode(t):
     return tid if (sep and len(a) == 4 and a.isdigit() and b.isdigit()) else ""
 
 
+def _chips(items, color, bg):
+    return " ".join(
+        f'<span style="display:inline-block;padding:2px 9px;margin:2px 4px 2px 0;border-radius:20px;'
+        f'background:{bg};color:{color};font-size:12px;line-height:1.7;">{_esc(x)}</span>'
+        for x in items if x)
+
+
+def _render_market_signal_section(cfg, lang, titles, evidence, primary):
+    """Dedicated 'Live market signal' section — for each role with job-ad evidence,
+    a clean panel of skills / experience / education / certs / languages / employers
+    and example ad references (Platsbanken links). Nothing shows if no evidence."""
+    ev_titles = [t for t in titles if evidence.get(t["title_id"])]
+    if not ev_titles:
+        return
+    st.markdown(f"#### {i18n.t(cfg, 'cp_ms_h', lang, 'Live market signal (from current job ads)')}")
+    st.caption(i18n.t(cfg, "cp_ms_cap", lang,
+                      "What current Swedish job ads for these roles actually ask for. Aggregated from "
+                      "public ads (Arbetsförmedlingen / JobTech, CC BY-SA) — indicative, not official, "
+                      "and it does not change the SCB salary figures above."))
+
+    ev_titles.sort(key=lambda t: -(evidence.get(t["title_id"], {}).get("ad_count") or 0))
+    default_i = next((i for i, t in enumerate(ev_titles) if str(t.get("primary_ssyk")) == primary), 0)
+    sel_i = st.selectbox(
+        i18n.t(cfg, "cp_ms_role", lang, "Show role"), list(range(len(ev_titles))), index=default_i,
+        format_func=lambda i: ((_subcode(ev_titles[i]) + " · ") if _subcode(ev_titles[i]) else "")
+        + _tname(ev_titles[i], lang) + f"  ({evidence.get(ev_titles[i]['title_id'], {}).get('ad_count', 0)} "
+        + i18n.t(cfg, "cp_ads", lang, "ads") + ")",
+        key=f"{cfg.slug}_cp_ms_role")
+    t = ev_titles[sel_i]
+    e = evidence.get(t["title_id"], {})
+
+    sc = _subcode(t)
+    obs = e.get("observed_to")
+    st.markdown(
+        f'<div style="font-size:15px;font-weight:700;color:#0C1119;margin-top:4px;">'
+        f'{(_esc(sc) + " · ") if sc else ""}{_esc(_tname(t, lang))}</div>'
+        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:#98A0AC;margin:2px 0 8px;">'
+        f'{int(e.get("ad_count") or 0)} {i18n.t(cfg, "cp_ads", lang, "ads")} · '
+        f'{_ev_strength(cfg, lang, e.get("evidence_strength"))} · SSYK {_esc(t.get("primary_ssyk"))}'
+        + (f' · {i18n.t(cfg, "cp_ms_obs", lang, "as of {d}").format(d=_esc(obs))}' if obs else "")
+        + '</div>', unsafe_allow_html=True)
+
+    exp = (e.get("common_experience") or [])
+    ym = exp[0].get("years_median") if exp else None
+    edu_top = (e.get("common_education") or [])
+    m1, m2, m3 = st.columns(3)
+    m1.metric(i18n.t(cfg, "cp_ms_exp", lang, "Typical experience"),
+              (f"{ym}+ {i18n.t(cfg, 'cp_ms_yrs', lang, 'yrs')}" if ym is not None else "—"))
+    m2.metric(i18n.t(cfg, "cp_ms_edu", lang, "Top education req."),
+              (edu_top[0]["label"] if edu_top else "—"))
+    m3.metric(i18n.t(cfg, "cp_ms_mgmt", lang, "People management"),
+              f"{round((e.get('mgmt_freq') or 0) * 100)}%")
+
+    def _block(label, items, color, bg):
+        if items:
+            st.markdown(f'<div style="font-size:12px;color:#5B6472;margin:10px 0 2px;">{label}</div>'
+                        + _chips(items, color, bg), unsafe_allow_html=True)
+
+    _block(i18n.t(cfg, "cp_ev_skills", lang, "In-demand skills"),
+           [s.get("skill") for s in (e.get("common_skills") or [])[:10]], "#0A63A6", "rgba(10,99,166,.08)")
+    _block(i18n.t(cfg, "cp_ms_certs", lang, "Certifications / licences"),
+           [s.get("label") for s in (e.get("common_certs") or [])[:6]], "#7A4FB0", "rgba(122,79,176,.08)")
+    _block(i18n.t(cfg, "cp_ms_langs", lang, "Languages"),
+           [s.get("label") for s in (e.get("common_languages") or [])[:6]], "#1B8A5A", "rgba(27,138,90,.08)")
+    _block(i18n.t(cfg, "cp_ms_emp", lang, "Recent hiring employers"),
+           [s.get("name") for s in (e.get("top_employers") or [])[:6]], "#5B6472", "rgba(91,100,114,.08)")
+
+    exa = e.get("example_ads") or []
+    if exa:
+        st.markdown(f'<div style="font-size:12px;color:#5B6472;margin:12px 0 4px;">'
+                    f'{i18n.t(cfg, "cp_ms_ex", lang, "Example ads · Platsbanken references")}</div>',
+                    unsafe_allow_html=True)
+        li = ""
+        for a in exa:
+            dl = a.get("deadline")
+            meta = " · ".join(x for x in [
+                _esc(a.get("employer")) if a.get("employer") else None,
+                (i18n.t(cfg, "cp_ms_dl", lang, "apply by {d}").format(d=_esc(dl)) if dl else None),
+                f'{i18n.t(cfg, "cp_ms_ref", lang, "ref")} {_esc(a.get("id"))}'] if x)
+            href = a.get("url") or "#"
+            li += (f'<li style="margin-bottom:7px;"><a href="{_esc(href)}" target="_blank" '
+                   f'style="color:#0A63A6;text-decoration:none;font-weight:600;">'
+                   f'{_esc(a.get("headline") or href)}</a>'
+                   f'<div style="font-size:11px;color:#98A0AC;">{meta}</div></li>')
+        st.markdown(f'<ul style="margin:2px 0 0;padding-left:18px;">{li}</ul>', unsafe_allow_html=True)
+        st.caption(i18n.t(cfg, "cp_ms_expire", lang,
+                          "Links open the ad on Platsbanken and expire after the application deadline."))
+
+
 def render(cfg, stats, query):
     import careerpaths as cp
     lang = query.get("lang", "EN")
@@ -256,22 +345,15 @@ def render(cfg, stats, query):
                            margin=dict(t=54, l=10, r=10, b=44))
         st.plotly_chart(fig2, use_container_width=True)
 
-    n_ev = sum(1 for t in titles if evidence.get(t["title_id"]))
-    _table_h = i18n.t(cfg, "cp_table_h", lang, "All roles — detail")
-    if n_ev:
-        _table_h += "  ·  " + i18n.t(cfg, "cp_ev_count", lang,
-                                     "📊 live market signal for {n} role(s)").format(n=n_ev)
-    with st.expander(_table_h, expanded=bool(n_ev)):
+    _has_code = any(_subcode(t) for t in titles)
+    with st.expander(i18n.t(cfg, "cp_table_h", lang, "All roles — detail")):
         import pandas as pd
         rows = []
-        has_ev = n_ev > 0
-        has_code = any(_subcode(t) for t in titles)
         for t in sorted(titles, key=lambda x: (mid_salary(x) or 0)):
             b = t.get("_band")
-            e = evidence.get(t["title_id"])
-            row = {
+            rows.append({
                 i18n.t(cfg, "cp_c_title", lang, "Role"): _tname(t, lang),
-                **({i18n.t(cfg, "cp_c_code", lang, "Code"): (_subcode(t) or "—")} if has_code else {}),
+                **({i18n.t(cfg, "cp_c_code", lang, "Code"): (_subcode(t) or "—")} if _has_code else {}),
                 i18n.t(cfg, "cp_c_level", lang, "Level"): _level(t["level_label"], lang),
                 i18n.t(cfg, "cp_c_track", lang, "Track"): _track(cfg, lang, t["track"]),
                 "SSYK": t["primary_ssyk"],
@@ -280,19 +362,11 @@ def render(cfg, stats, query):
                     (f"{charts.fmt_value(b['lo_salary'], cfg)}–{charts.fmt_value(b['hi_salary'], cfg)}"
                      if b else "—"),
                 i18n.t(cfg, "cp_c_conf", lang, "Evidence"): _conf(cfg, lang, t["confidence"]),
-            }
-            if has_ev:
-                row[i18n.t(cfg, "cp_c_market", lang, "Market signal")] = (
-                    f"{int(e.get('ad_count') or 0)} " + i18n.t(cfg, "cp_ads", lang, "ads")
-                    + f" · {_ev_strength(cfg, lang, e.get('evidence_strength'))}" if e else "—")
-                row[i18n.t(cfg, "cp_c_skills", lang, "Top ad skills")] = (
-                    ", ".join(_ev_skills(e, 4)) if e else "—")
-            rows.append(row)
+            })
         st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
-        if has_ev:
-            st.caption(i18n.t(cfg, "cp_ev_attr", lang,
-                              "Market signal & top skills are aggregated from public job ads "
-                              "(Arbetsförmedlingen / JobTech, CC BY-SA) — indicative, not official."))
+
+    # ═══ 2c · Live market signal (from current job ads) ══════════════════════
+    _render_market_signal_section(cfg, lang, titles, evidence, primary)
 
     # ═══ 2b · Performance positioning — INTERNAL PREVIEW (not published) ═════
     role = (st.session_state.get("auth_user") or {}).get("role", "")
