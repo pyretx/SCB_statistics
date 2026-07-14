@@ -300,6 +300,15 @@ st.markdown("""
      color:#98A0AC; }  /* content set dynamically from home.toml at render */
   :is(.st-key-hero_video,.st-key-hero_tour) button p { font-size:14.5px !important; font-weight:600 !important;
      color:#0C1119 !important; white-space:nowrap; }
+  /* Lay the two pitch buttons in a tight, LEFT-aligned row (no column gutter) with
+     only a small gap between them — flush with the paragraph's left edge above.
+     .st-key-hero_vids IS the vertical flex block, so flip it to row directly. */
+  .st-key-hero_vids{ flex-direction:row !important; gap:10px !important;
+     align-items:center; width:auto; }
+  /* each element container must hug its button (max-content) so the buttons don't
+     overflow and overlap — then the 10px gap sits between the two pills. */
+  .st-key-hero_vids > [data-testid="stElementContainer"]{ width:max-content !important;
+     flex:0 0 auto !important; }
   /* Header Admin/Log-out buttons: keep icon + label on ONE row so the two
      buttons always share the same height — without this the flex content
      wraps at narrow widths (the gear landed above "Admin"). */
@@ -726,29 +735,20 @@ with hc1:
     """, unsafe_allow_html=True)
     # ── Pitch-video buttons (content/home.toml → [hero.video] + [hero.video2]);
     #    each opens the SAME pop-up player, side by side.
-    def _video_btn(vid, key):
-        if not (vid.get("file") and os.path.exists(vid["file"])):
-            return
-        if vid.get("duration"):
-            st.markdown(f"<style>.st-key-{key} button::after"
-                        f"{{content:'{vid['duration']}';}}</style>", unsafe_allow_html=True)
-        if st.button(vid.get("label", "Watch"), key=key):
-            st.session_state["_video_play"] = {"file": vid["file"], "label": vid.get("label", "")}
-            st.rerun()
-
     _vids = [(_hero.get("video", {}), "hero_video"), (_hero.get("video2", {}), "hero_tour")]
     _vids = [(v, k) for v, k in _vids if v.get("file") and os.path.exists(v["file"])]
+    # Duration chips injected BEFORE the row so the row holds only the two buttons
+    # (the CSS below lays them left-aligned with a small gap — see .st-key-hero_vids).
+    for v, k in _vids:
+        if v.get("duration"):
+            st.markdown(f"<style>.st-key-{k} button::after{{content:'{v['duration']}';}}</style>",
+                        unsafe_allow_html=True)
     if _vids:
-        try:                                   # side by side on modern Streamlit
-            _vrow = st.container(horizontal=True, gap="small")
-            with _vrow:
-                for v, k in _vids:
-                    _video_btn(v, k)
-        except TypeError:                      # fallback: narrow columns
-            _vcols = st.columns(len(_vids) + 1)
-            for i, (v, k) in enumerate(_vids):
-                with _vcols[i]:
-                    _video_btn(v, k)
+        with st.container(key="hero_vids"):
+            for v, k in _vids:
+                if st.button(v.get("label", "Watch"), key=k):
+                    st.session_state["_video_play"] = {"file": v["file"], "label": v.get("label", "")}
+                    st.rerun()
     st.markdown(f"""
     <div style="display:flex;gap:20px;margin-top:24px;flex-wrap:nowrap;align-items:stretch;">
       {_stats_html}
