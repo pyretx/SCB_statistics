@@ -1715,11 +1715,45 @@ def wp_section():
 # (The Work-permit editor is not a top-level section — it's Sweden's
 # country-specific action, opened from the Sweden data-source card.)
 # ── Section: Compliance register (read-only view of the Supabase register) ────
+# Friendly labels + colours for the five clearance states + release states, so the
+# admin Compliance tab reads in plain English (not code-like 'likely_verify').
+_CLR_ORDER = ["confirmed", "likely_verify", "provider_confirm", "owner_review", "restricted"]
+_CLR_LABEL = {"confirmed": "Confirmed", "likely_verify": "Likely — needs check",
+              "provider_confirm": "Ask provider", "owner_review": "Owner review",
+              "restricted": "Restricted"}
+_CLR_COLOR = {"confirmed": "#1B8A5A", "likely_verify": "#B26A00",
+              "provider_confirm": "#B26A00", "owner_review": "#8A5A00",
+              "restricted": "#C0453A"}
+_REL_ORDER = ["public_ok", "beta_ok", "internal_only", "blocked"]
+_REL_LABEL = {"public_ok": "Public", "beta_ok": "Beta", "internal_only": "Internal only",
+              "blocked": "Blocked"}
+_REL_COLOR = {"public_ok": "#1B8A5A", "beta_ok": "#B26A00", "internal_only": "#5B6472",
+              "blocked": "#C0453A"}
+_CLR_LBL2CODE = {v: k for k, v in _CLR_LABEL.items()}
+_REL_LBL2CODE = {v: k for k, v in _REL_LABEL.items()}
+_CLR_LBLCOLOR = {_CLR_LABEL[c]: _CLR_COLOR[c] for c in _CLR_ORDER}
+_REL_LBLCOLOR = {_REL_LABEL[c]: _REL_COLOR[c] for c in _REL_ORDER}
+
+
+def _chip(label: str, color: str) -> str:
+    return (f'<span style="display:inline-flex;align-items:center;font-family:'
+            f"'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;padding:2px 9px;"
+            f'border-radius:5px;color:{color};background:{color}1a;white-space:nowrap;">'
+            f'{label}</span>')
+
+
+def _cell_style(styler, func, cols):
+    """Apply a per-cell style, tolerant of pandas .map (2.1+) vs .applymap."""
+    try:
+        return styler.map(func, subset=cols)
+    except AttributeError:
+        return styler.applymap(func, subset=cols)
+
+
 def compliance_section():
-    """Admin view of the compliance register (docs/compliance-framework.md).
-    Read-only for now — records are edited in Supabase; inline editing is a later
-    phase. Guarded throughout so a missing table / DB error shows a message, never
-    a crash."""
+    """Admin view + inline editor for the compliance register
+    (docs/compliance-framework.md). Guarded throughout so a missing table / DB
+    error shows a message, never a crash."""
     import pandas as pd
     import compliance as comp
     C = _A().get("compliance", {})
@@ -1745,35 +1779,90 @@ def compliance_section():
     st.write("")
     st.caption(C.get("note_editing", C.get("note_readonly", "")))
 
+    # Legend — what the clearance chips mean.
+    with st.expander(C.get("legend_title", "What the statuses mean")):
+        st.markdown(
+            " &nbsp; ".join(_chip(_CLR_LABEL[c], _CLR_COLOR[c]) for c in _CLR_ORDER)
+            + '<div style="font-size:12.5px;color:#5B6472;margin-top:10px;line-height:1.6;">'
+            'Clearance is assessed per dataset across six dimensions (access, commercial use, '
+            'redistribution, deriving/visualising, storage/caching, attribution). A country\'s '
+            'overall clearance is the <b>worst</b> of its dataset\'s dimensions. '
+            '<b>Confirmed</b> = terms explicitly allow it · <b>Likely</b> = probably fine, not yet '
+            'checked · <b>Ask provider</b> = needs provider confirmation · <b>Owner review</b> = '
+            'escalated to you · <b>Restricted</b> = not permitted.</div>', unsafe_allow_html=True)
+
     if not impls:
         st.info(C.get("empty", ""))
         return
 
     import datetime as _dt
     _admin_email = (st.session_state.get("auth_user") or {}).get("email", "admin")
-    _REL = ["blocked", "internal_only", "beta_ok", "public_ok"]
 
-    # Country records (at-a-glance, read-only — clearance is derived)
+    # ── Search + clearance filter (applies to every table below) ─────────────
+    fc1, fc2 = st.columns([2, 1.4])
+    cq = (fc1.text_input("cmp_search", key="cmp_search", label_visibility="collapsed",
+                         placeholder=C.get("search_ph", "Search…")) or "").strip().lower()
+    sel_labels = fc2.multiselect(C.get("filter_status", "Filter by clearance"),
+                                 [_CLR_LABEL[c] for c in _CLR_ORDER], default=[], key="cmp_flt")
+    sel_codes = {_CLR_LBL2CODE[l] for l in sel_labels}   # empty = all
+
+    def _keep(r) -> bool:
+        if sel_codes and r.get("clearance_overall") not in sel_codes:
+            return False
+        if cq:
+            hay = (f"{_country_name(r['country_slug'])} {r.get('dataset_id', '')} "
+                   f"{r.get('release_status', '')}").lower()
+            return cq in hay
+        return True
+
+    fimpls = [r for r in impls if _keep(r)]
+
+    # ── Country records (styled, friendly labels) ────────────────────────────
     st.markdown(f"#### {C['h_countries']}")
-    st.dataframe(pd.DataFrame([{
-        C["col_country"]: _country_name(r["country_slug"]),
-        C["col_dataset"]: r.get("dataset_id", ""),
-        C["col_clearance"]: r.get("clearance_overall", ""),
-        C["col_release"]: r.get("release_status", ""),
-        C["col_grand"]: "✓" if r.get("grandfathered") else "",
-        C["col_public"]: "✓" if r.get("public_publishable") else "",
-    } for r in impls]), hide_index=True, use_container_width=True)
+    if not fimpls:
+        st.caption(C.get("no_match", "No matches."))
+    else:
+        cr_df = pd.DataFrame([{
+            C["col_country"]: _country_name(r["country_slug"]),
+            C["col_dataset"]: r.get("dataset_id", ""),
+            C["col_clearance"]: _CLR_LABEL.get(r.get("clearance_overall"), r.get("clearance_overall", "")),
+            C["col_release"]: _REL_LABEL.get(r.get("release_status"), r.get("release_status", "")),
+            C["col_grand"]: "✓" if r.get("grandfathered") else "",
+            C["col_public"]: "✓" if r.get("public_publishable") else "",
+        } for r in fimpls])
+        sty = cr_df.style
+        sty = _cell_style(sty, lambda v: (f"color:{_CLR_LBLCOLOR.get(v, '')};font-weight:600"
+                                          if v in _CLR_LBLCOLOR else ""), [C["col_clearance"]])
+        sty = _cell_style(sty, lambda v: (f"color:{_REL_LBLCOLOR.get(v, '')};font-weight:600"
+                                          if v in _REL_LBLCOLOR else ""), [C["col_release"]])
+        st.dataframe(sty, hide_index=True, use_container_width=True)
 
     # ── Datasets + EDITABLE per-dimension clearance ──────────────────────────
-    if datasets:
-        by_subject: dict = {}
-        for a in assessments:
-            by_subject.setdefault((a["subject_type"], a["subject_id"]), []).append(a)
+    by_subject: dict = {}
+    for a in assessments:
+        by_subject.setdefault((a["subject_type"], a["subject_id"]), []).append(a)
+
+    def _ds_keep(d) -> bool:
+        das = by_subject.get(("dataset", d["dataset_id"]), [])
+        worst = comp.rollup([a["status"] for a in das]) if das else None
+        if sel_codes and worst not in sel_codes:
+            return False
+        if cq:
+            return cq in (f"{d.get('title', '')} {d['dataset_id']} "
+                          f"{d.get('provider_id', '')}").lower()
+        return True
+
+    fdatasets = [d for d in datasets if _ds_keep(d)]
+    if fdatasets:
         st.markdown(f"#### {C['h_datasets']}")
-        for d in datasets:
+        _clr_opts = [_CLR_LABEL[c] for c in _CLR_ORDER]
+        for d in fdatasets:
             das = by_subject.get(("dataset", d["dataset_id"]), [])
-            worst = comp.rollup([a["status"] for a in das]) if das else "—"
-            with st.expander(f"{d.get('title', '')} · {d.get('dataset_id', '')}  ·  {worst}"):
+            worst = comp.rollup([a["status"] for a in das]) if das else None
+            title = f"{d.get('title', '')} · {d.get('dataset_id', '')}"
+            with st.expander(title):
+                if worst:
+                    st.markdown(_chip(_CLR_LABEL[worst], _CLR_COLOR[worst]), unsafe_allow_html=True)
                 lic = d.get("licence_name") or "—"
                 st.markdown(f"**{C['col_licence']}:** "
                             + (f"[{lic}]({d['licence_url']})" if d.get("licence_url") else lic))
@@ -1783,7 +1872,8 @@ def compliance_section():
                     continue
                 orig = {a["assessment_id"]: a for a in das}
                 df = pd.DataFrame([{
-                    C["col_dim"]: a["dimension"], C["col_status"]: a["status"],
+                    C["col_dim"]: a["dimension"],
+                    C["col_status"]: _CLR_LABEL.get(a["status"], a["status"]),
                     C["col_next"]: a.get("next_review_date") or "",
                     C["col_evidence"]: a.get("evidence_url") or "", "_id": a["assessment_id"],
                 } for a in das])
@@ -1793,8 +1883,8 @@ def compliance_section():
                     column_config={
                         C["col_dim"]: st.column_config.TextColumn(C["col_dim"], disabled=True),
                         C["col_status"]: st.column_config.SelectboxColumn(
-                            C["col_status"], options=comp.CLEARANCE_STATES, required=True),
-                        C["col_next"]: st.column_config.TextColumn(C["col_next"]),
+                            C["col_status"], options=_clr_opts, required=True),
+                        C["col_next"]: st.column_config.TextColumn(C["col_next"], help="YYYY-MM-DD"),
                         C["col_evidence"]: st.column_config.TextColumn(C["col_evidence"]),
                         "_id": None,
                     })
@@ -1805,9 +1895,10 @@ def compliance_section():
                         o = orig.get(row["_id"])
                         if not o:
                             continue
+                        new_status = _CLR_LBL2CODE.get(row[C["col_status"]], o["status"])
                         ch = {}
-                        if row[C["col_status"]] != o["status"]:
-                            ch["status"] = row[C["col_status"]]
+                        if new_status != o["status"]:
+                            ch["status"] = new_status
                         if (row[C["col_next"]] or "") != (o.get("next_review_date") or ""):
                             ch["next_review_date"] = row[C["col_next"]] or None
                         if (row[C["col_evidence"]] or "") != (o.get("evidence_url") or ""):
@@ -1834,49 +1925,54 @@ def compliance_section():
     # ── Release control — public listing / release state per country ─────────
     st.markdown(f"#### {C['h_release']}")
     st.caption(C.get("release_cap", ""))
-    rel_orig = {r["impl_id"]: r for r in impls}
-    rel_df = pd.DataFrame([{
-        C["col_country"]: _country_name(r["country_slug"]),
-        C["col_public"]: bool(r.get("public_publishable")),
-        C["col_release"]: r.get("release_status", "beta_ok"),
-        C["col_grand"]: bool(r.get("grandfathered")),
-        C["col_clearance"]: r.get("clearance_overall", ""),
-        "_id": r["impl_id"],
-    } for r in impls])
-    rel_edited = st.data_editor(
-        rel_df, key="cmp_release_ed", hide_index=True, use_container_width=True,
-        column_config={
-            C["col_country"]: st.column_config.TextColumn(C["col_country"], disabled=True),
-            C["col_public"]: st.column_config.CheckboxColumn(C["col_public"]),
-            C["col_release"]: st.column_config.SelectboxColumn(C["col_release"], options=_REL, required=True),
-            C["col_grand"]: st.column_config.CheckboxColumn(C["col_grand"]),
-            C["col_clearance"]: st.column_config.TextColumn(C["col_clearance"], disabled=True),
-            "_id": None,
-        })
-    if st.button(C["save_release"], key="cmp_release_save"):
-        n = 0
-        for _, row in rel_edited.iterrows():
-            o = rel_orig.get(row["_id"])
-            if not o:
-                continue
-            ch = {}
-            if bool(row[C["col_public"]]) != bool(o.get("public_publishable")):
-                ch["public_publishable"] = bool(row[C["col_public"]])
-            if row[C["col_release"]] != o.get("release_status"):
-                ch["release_status"] = row[C["col_release"]]
-            if bool(row[C["col_grand"]]) != bool(o.get("grandfathered")):
-                ch["grandfathered"] = bool(row[C["col_grand"]])
-            if ch and not comp.set_impl(row["_id"], **ch):
-                n += 1
-        if n:
-            try:
-                comp.country_notes.clear()
-            except Exception:
-                pass
-            st.success(C["released"].format(n=n))
-            st.rerun()
-        else:
-            st.info(C["saved_none"])
+    if not fimpls:
+        st.caption(C.get("no_match", "No matches."))
+    else:
+        _rel_opts = [_REL_LABEL[c] for c in _REL_ORDER]
+        rel_orig = {r["impl_id"]: r for r in fimpls}
+        rel_df = pd.DataFrame([{
+            C["col_country"]: _country_name(r["country_slug"]),
+            C["col_public"]: bool(r.get("public_publishable")),
+            C["col_release"]: _REL_LABEL.get(r.get("release_status"), "Beta"),
+            C["col_grand"]: bool(r.get("grandfathered")),
+            C["col_clearance"]: _CLR_LABEL.get(r.get("clearance_overall"), r.get("clearance_overall", "")),
+            "_id": r["impl_id"],
+        } for r in fimpls])
+        rel_edited = st.data_editor(
+            rel_df, key="cmp_release_ed", hide_index=True, use_container_width=True,
+            column_config={
+                C["col_country"]: st.column_config.TextColumn(C["col_country"], disabled=True),
+                C["col_public"]: st.column_config.CheckboxColumn(C["col_public"]),
+                C["col_release"]: st.column_config.SelectboxColumn(C["col_release"], options=_rel_opts, required=True),
+                C["col_grand"]: st.column_config.CheckboxColumn(C["col_grand"]),
+                C["col_clearance"]: st.column_config.TextColumn(C["col_clearance"], disabled=True),
+                "_id": None,
+            })
+        if st.button(C["save_release"], key="cmp_release_save"):
+            n = 0
+            for _, row in rel_edited.iterrows():
+                o = rel_orig.get(row["_id"])
+                if not o:
+                    continue
+                new_rel = _REL_LBL2CODE.get(row[C["col_release"]], o.get("release_status"))
+                ch = {}
+                if bool(row[C["col_public"]]) != bool(o.get("public_publishable")):
+                    ch["public_publishable"] = bool(row[C["col_public"]])
+                if new_rel != o.get("release_status"):
+                    ch["release_status"] = new_rel
+                if bool(row[C["col_grand"]]) != bool(o.get("grandfathered")):
+                    ch["grandfathered"] = bool(row[C["col_grand"]])
+                if ch and not comp.set_impl(row["_id"], **ch):
+                    n += 1
+            if n:
+                try:
+                    comp.country_notes.clear()
+                except Exception:
+                    pass
+                st.success(C["released"].format(n=n))
+                st.rerun()
+            else:
+                st.info(C["saved_none"])
 
     # Reviews due (overdue or within 30 days)
     st.markdown(f"#### {C['h_overdue']}")
@@ -1887,7 +1983,8 @@ def compliance_section():
     else:
         st.dataframe(pd.DataFrame([{
             C["col_subject"]: f"{a['subject_type']}:{a['subject_id']}",
-            C["col_dim"]: a["dimension"], C["col_status"]: a["status"],
+            C["col_dim"]: a["dimension"],
+            C["col_status"]: _CLR_LABEL.get(a["status"], a["status"]),
             C["col_next"]: a.get("next_review_date", "")} for a in overdue]),
             hide_index=True, use_container_width=True)
 

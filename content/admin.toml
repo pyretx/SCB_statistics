@@ -72,6 +72,10 @@ h_release    = "Release control"
 release_cap  = "Whether each country is publicly listed and its release state. Overall clearance is derived from the dataset dimensions above and is not edited here."
 save_release = "💾 Save release"
 released     = "Saved — {n} country change(s)."
+legend_title = "What the statuses mean"
+search_ph    = "🔍  Search country, provider or dataset…"
+filter_status = "Filter by clearance"
+no_match     = "No records match your search / filter."
 
 [data]
 caption        = "Each source shows its latest data year and how it refreshes."
