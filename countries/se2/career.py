@@ -264,31 +264,27 @@ def render(cfg, stats, query):
                             opacity=op, name=b["label"], customdata=s_hi,
                             hovertemplate="%{y} · " + b["label"]
                                           + "<br>%{base:,.0f}–%{customdata:,.0f} kr<extra></extra>"))
-                    fig.update_layout(barmode="overlay", height=120 + 28 * len(names),
-                                      xaxis_title=f"{cfg.currency_suffix}{cfg.per_label}",
-                                      legend=dict(orientation="h", y=1.03, x=0))
-                    st.plotly_chart(theme.style_fig(fig), use_container_width=True)
+                    fig.update_layout(barmode="overlay", height=150 + 28 * len(names),
+                                      xaxis_title=f"{cfg.currency_suffix}{cfg.per_label}")
+                    fig = theme.style_fig(fig)
+                    # Legend ABOVE the plot with real headroom (it was overlapping the
+                    # top bar), enforced after style_fig so the margin sticks.
+                    fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0),
+                                      margin=dict(t=66, l=10, r=10, b=44))
+                    st.plotly_chart(fig, use_container_width=True)
 
-                # Detail table (kept): per role, the salary at the selected level
-                # (or the full band when 'All levels').
-                trows = []
-                idx = None if sel == all_label else plabels.index(sel)
-                sal_col = (i18n.t(cfg, "cp_perf_sal", lang, "Illustrative salary")
-                           if sel == all_label else sel)
-                for tt in roles:
-                    s = seg.get(tt["name_en"])
-                    if sel == all_label:
-                        rng = (f"{charts.fmt_value(tt['_band']['lo_salary'], cfg)}–"
-                               f"{charts.fmt_value(tt['_band']['hi_salary'], cfg)}")
-                    else:
-                        rng = (f"{charts.fmt_value(s[idx][0], cfg)}–{charts.fmt_value(s[idx][1], cfg)}"
-                               if s else "—")
-                    trows.append({
-                        i18n.t(cfg, "cp_c_title", lang, "Role"): tt["name_en"],
-                        i18n.t(cfg, "cp_c_level", lang, "Level"): tt["level_label"],
-                        sal_col: rng,
-                    })
-                st.dataframe(pd.DataFrame(trows), hide_index=True, use_container_width=True)
+                    # Role picker → that role's five performance intervals (table).
+                    role_sel = st.selectbox(i18n.t(cfg, "cp_perf_role", lang, "Show intervals for role"),
+                                            names, key=f"{cfg.slug}_cp_perf_role")
+                    s = seg.get(role_sel)
+                    st.dataframe(pd.DataFrame([{
+                        i18n.t(cfg, "cp_perf_pos", lang, "Position"): b["label"],
+                        i18n.t(cfg, "cp_perf_within", lang, "Within level"):
+                            f"{float(b['rel_lo'])*100:.0f}–{float(b['rel_hi'])*100:.0f}%",
+                        i18n.t(cfg, "cp_perf_sal", lang, "Illustrative salary"):
+                            (f"{charts.fmt_value(s[i][0], cfg)}–{charts.fmt_value(s[i][1], cfg)}"
+                             if s else "—"),
+                    } for i, b in enumerate(bands)]), hide_index=True, use_container_width=True)
                 st.caption(i18n.t(cfg, "cp_perf_note", lang,
                                   "Internal preview — not shown to users. Public release requires "
                                   "individual-level, consented compensation evidence we do not have."))
