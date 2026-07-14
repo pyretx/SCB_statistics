@@ -134,6 +134,30 @@ def create_title(title_id: str, family_id: str, name_en: str, name_sv: str,
         return "Could not create title."
 
 
+def ai_titles() -> list[dict]:
+    """Roles created from approved AI new-title suggestions (evidence='ai_estimate').
+    Used by the admin 'approved AI roles' management table."""
+    rows, _ = _safe(lambda: list(
+        (auth._client(service=True).table(_T_TITLE).select("*")
+         .eq("evidence", "ai_estimate").order("title_id").execute()).data or []), "ai titles")
+    return rows
+
+
+def delete_title(title_id: str) -> str | None:
+    """Hard-remove a title (used to revoke an approved AI addition). Also removes any
+    relationships that reference it so nothing is left orphaned."""
+    try:
+        c = auth._client(service=True)
+        c.table(_T_REL).delete().eq("from_title", title_id).execute()
+        c.table(_T_REL).delete().eq("to_title", title_id).execute()
+        c.table(_T_TITLE).delete().eq("title_id", title_id).execute()
+        _clear_cache()
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"[careerpaths] delete_title failed: {e}")
+        return "Could not remove title."
+
+
 def set_relationship(rel_id: str, **changes) -> str | None:
     allowed = {"rel_type", "confidence", "review_status", "published", "explanation", "same_ssyk"}
     changes = {k: v for k, v in changes.items() if k in allowed}

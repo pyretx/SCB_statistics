@@ -2405,6 +2405,39 @@ def _cp_v1_page(C, cp, fams, _admin):
     else:
         st.caption(C.get("v1_off", "Turn on to enable the refresh + evidence."))
 
+    # ── Approved AI roles (revoke / manage) ──
+    ai = cp.ai_titles()
+    if ai:
+        st.markdown(f"**{C.get('v1_approved_h', 'Approved AI roles')}**")
+        st.caption(C.get("v1_approved_note",
+                         "Created from approved suggestions as unpublished drafts. Calibrate + publish "
+                         "them in the Percentile bands page, or remove one here to revoke the addition."))
+        hc = st.columns([2.6, 1.2, 1.6, 1.3, 1.1])
+        for col, txt in zip(hc, [C.get("col_role", "Role"), C.get("col_code", "Code"),
+                                 C.get("v1_fam", "Family"), C.get("v1_status", "Status"), ""]):
+            col.caption(txt)
+        for t in ai:
+            code = t.get("title_id")
+            rc = st.columns([2.6, 1.2, 1.6, 1.3, 1.1])
+            rc[0].write(t.get("name_en"))
+            rc[1].code(code, language=None)
+            rc[2].write(fam_lab_all(fams, t.get("family_id")))
+            rc[3].write("✅ " + C.get("v1_pub", "published") if t.get("published")
+                        else "📝 " + C.get("v1_draft", "draft"))
+            if rc[4].button(C.get("v1_remove", "Remove"), key=f"cp_ai_del_{code}"):
+                err = cp.delete_title(code)
+                if err:
+                    st.error(err)
+                else:
+                    for s in v1.suggestions("approved"):
+                        p = s.get("payload") or {}
+                        if str(p.get("ssyk")) == str(t.get("primary_ssyk")) \
+                                and p.get("norm_title") == t.get("name_en"):
+                            v1.set_suggestion(s["id"], "pending", _admin)
+                    cp.log_change("cp_title", str(code), "revoke", _admin, {"name": t.get("name_en")})
+                    st.success(C.get("v1_removed", "Removed — suggestion returned to the queue."))
+                    st.rerun()
+
     # Review queue
     st.markdown(f"**{C.get('v1_queue', 'Review queue')}**")
     sugg = v1.suggestions("pending")
