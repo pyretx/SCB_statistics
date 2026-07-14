@@ -105,19 +105,45 @@ def country_switcher(current: str):
         st.markdown(f'<img class="cc-flag" src="{theme.flag_uri(iso)}" alt=""'
                     f'{" style=opacity:.45" if dim else ""}>', unsafe_allow_html=True)
 
+    # Region per country (from the landing catalogue) → group the list with a
+    # heading per region, sorted A→Z within each. Keeps a 40-country list scannable.
+    regions = {}
+    try:
+        import content
+        for e in content.load("home").get("countries", {}).get("catalog", []):
+            regions[e.get("iso")] = e.get("region", "other")
+    except Exception:
+        pass
+    for it in items:
+        it["region"] = regions.get(it["iso"], "other")
+    _REGION_ORDER = [("europe", "Europe"), ("americas", "Americas"),
+                     ("apac", "Asia-Pacific"), ("other", "Other")]
+
+    def _row(it):
+        fc, lc = st.columns([1, 5], vertical_alignment="center")
+        with fc:
+            _flag(it["iso"], dim=(it["state"] != "open"))
+        if it["state"] == "open":
+            lc.page_link(it["page"], label=it["name"])
+        elif it["state"] == "locked":
+            lc.markdown(f'<div class="cc-soon">{it["name"]} · 🔒 locked</div>',
+                        unsafe_allow_html=True)
+        else:  # soon
+            lc.markdown(f'<div class="cc-soon">{it["name"]} · soon</div>',
+                        unsafe_allow_html=True)
+
     with st.popover(label, use_container_width=True):
-        for it in items:
-            fc, lc = st.columns([1, 5], vertical_alignment="center")
-            with fc:
-                _flag(it["iso"], dim=(it["state"] != "open"))
-            if it["state"] == "open":
-                lc.page_link(it["page"], label=it["name"])
-            elif it["state"] == "locked":
-                lc.markdown(f'<div class="cc-soon">{it["name"]} · 🔒 locked</div>',
-                            unsafe_allow_html=True)
-            else:  # soon
-                lc.markdown(f'<div class="cc-soon">{it["name"]} · soon</div>',
-                            unsafe_allow_html=True)
+        for rkey, rlabel in _REGION_ORDER:
+            grp = sorted((it for it in items if it["region"] == rkey),
+                         key=lambda it: it["name"])
+            if not grp:
+                continue
+            st.markdown(
+                f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
+                f'font-weight:600;letter-spacing:.12em;color:#8A9199;'
+                f'margin:12px 0 4px;">{rlabel.upper()}</div>', unsafe_allow_html=True)
+            for it in grp:
+                _row(it)
 
 
 def sidebar_identity():

@@ -128,8 +128,10 @@ def _occupation_picker(cfg, k, lang) -> tuple[tuple[str, ...], str]:
     label = f"{n_levels + 1}. {i18n.t(cfg, 'occupations', lang)}" if n_levels \
         else i18n.t(cfg, "occupations", lang)
     opt_to_code = {occ_label(name, code): code for code, name in pool.items()}
+    # Order options by occupation CODE (1, 2, 3, … / hierarchy order), not by the
+    # translated name — so "Managers (1)" precedes "Professionals (2)" etc.
     picked = st.multiselect(
-        label, sorted(opt_to_code), key=k("occ"),
+        label, sorted(opt_to_code, key=lambda lbl: opt_to_code[lbl]), key=k("occ"),
         placeholder=i18n.t(cfg, "occ_placeholder", lang), max_selections=8)
     return tuple(opt_to_code[p] for p in picked), scope
 
