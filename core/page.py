@@ -31,6 +31,93 @@ def _header(cfg, lang):
     """, unsafe_allow_html=True)
 
 
+_OFFICIAL_BADGE = ('<span style="display:inline-flex;align-items:center;font-family:'
+                   "'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;"
+                   'padding:1px 7px;border-radius:5px;color:#1B6FB0;background:rgba(10,99,166,.10);">'
+                   '{txt}</span>')
+_DERIVED_BADGE = ('<span style="display:inline-flex;align-items:center;font-family:'
+                  "'JetBrains Mono',monospace;font-size:10.5px;font-weight:600;"
+                  'padding:1px 7px;border-radius:5px;color:#B26A00;background:rgba(178,106,0,.13);">'
+                  '{txt}</span>')
+
+# transform_type → default English friendly name (per-country JA/etc. inherit these)
+_TF_LABEL = {
+    "currency_conversion": "Currency conversion", "period_conversion": "Monthly / annual conversion",
+    "inflation_adjustment": "Inflation adjustment", "aggregation": "Aggregation",
+    "ranking": "Ranking", "projection": "Projection", "reclassification": "Reclassification",
+    "cross_country_standardisation": "Cross-country standardisation",
+}
+
+
+def _sources_panel(cfg, lang):
+    """Phase 4 — derived-data labelling. A compact 'Sources & methods' expander
+    driven by the compliance register (single source of truth): official provider/
+    dataset/licence/attribution + each Salary Explorer calculation tagged Official
+    vs Salary-Explorer-calculation. When a country has SE calculations, an inline
+    note under the header points to it. Fully guarded — if the country isn't in the
+    register (or the DB is unreachable) nothing extra renders."""
+    try:
+        import html as _html
+        import compliance as comp
+        rec = comp.country_notes(cfg.slug)
+    except Exception:
+        return
+    if not rec:
+        return
+
+    def esc(x):
+        return _html.escape(str(x)) if x is not None else ""
+
+    off_txt = i18n.t(cfg, "badge_official", lang, "Official")
+    der_txt = i18n.t(cfg, "badge_se_calc", lang, "Salary Explorer calculation")
+    transforms = rec.get("transformations") or []
+    se_calcs = [t for t in transforms if t.get("origin") == "salary_explorer"]
+
+    # Inline note under the header when there are SE calculations.
+    if se_calcs:
+        st.markdown(
+            f'<div style="font-size:12.5px;color:#7A828F;margin:-2px 0 10px;">ⓘ '
+            f'{i18n.t(cfg, "derived_note", lang, "Some figures are Salary Explorer calculations")} — '
+            f'{i18n.t(cfg, "see_sources", lang, "see Sources &amp; methods below")}.</div>',
+            unsafe_allow_html=True)
+
+    with st.expander(i18n.t(cfg, "sources_methods", lang, "Sources & methods")):
+        prov = esc(rec.get("provider_name"))
+        ds = esc(rec.get("dataset_title"))
+        if rec.get("dataset_url"):
+            ds = f'[{ds}]({rec["dataset_url"]})'
+        st.markdown(f"**{esc(rec.get('provider_name') or '')}** — {ds}")
+        if rec.get("reference_period"):
+            st.caption(esc(rec["reference_period"]))
+        lic = esc(rec.get("licence_summary_plain") or rec.get("licence_name"))
+        if rec.get("licence_url") and rec.get("licence_name"):
+            lic += f' ([{esc(rec["licence_name"])}]({rec["licence_url"]}))'
+        if lic:
+            st.markdown(f"**{i18n.t(cfg, 'licence', lang, 'Licence')}:** {lic}")
+        if rec.get("required_attribution_text"):
+            st.markdown(f"**{i18n.t(cfg, 'attribution', lang, 'Attribution')}:** "
+                        f"`{esc(rec['required_attribution_text'])}`")
+
+        # Original values + each transformation, badged.
+        rows = []
+        if rec.get("displayed_original_values"):
+            rows.append(f'<div style="padding:6px 0;">'
+                        + _OFFICIAL_BADGE.format(txt=off_txt)
+                        + f' <span style="font-size:13.5px;color:#26303C;">{esc(rec["displayed_original_values"])}</span></div>')
+        for t in transforms:
+            is_off = t.get("origin") == "source_provided"
+            badge = (_OFFICIAL_BADGE if is_off else _DERIVED_BADGE).format(
+                txt=off_txt if is_off else der_txt)
+            name = i18n.t(cfg, f"tf_{t.get('transform_type')}", lang,
+                          _TF_LABEL.get(t.get("transform_type"), t.get("transform_type") or ""))
+            note = esc(t.get("method_note"))
+            rows.append(f'<div style="padding:6px 0;border-top:1px solid #EEF0F3;">{badge} '
+                        f'<span style="font-size:13.5px;font-weight:600;color:#0C1119;">{name}</span>'
+                        f'<div style="font-size:12.5px;color:#5B6472;margin-top:2px;">{note}</div></div>')
+        if rows:
+            st.markdown("".join(rows), unsafe_allow_html=True)
+
+
 def render_country(cfg):
     """Entry point used by app.py: render one country page from its config."""
     query = sidebar.render_sidebar(cfg)   # always render the sidebar/switcher
@@ -38,6 +125,7 @@ def render_country(cfg):
     lang = query.get("lang", "EN")
 
     _header(cfg, lang)                   # header ALWAYS first, at the top of the page
+    _sources_panel(cfg, lang)            # Phase 4: source + derived-data labelling
 
     view = states.view_mount()           # exclusive-view mount (guides/browsers)
     vk = f"{cfg.slug}_view"

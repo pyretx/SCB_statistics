@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import datetime as _dt
 
+import streamlit as st
+
 import auth
 
 _PUBLIC_VIEW = "v_compliance_public"
@@ -64,6 +66,15 @@ def public_country(country_slug: str) -> dict | None:
          .select("*").eq("country_slug", country_slug).limit(1).execute()).data or []),
         "public source")
     return rows[0] if rows else None
+
+
+@st.cache_data(show_spinner=False, ttl=3600)
+def country_notes(country_slug: str) -> dict | None:
+    """Cached per-country public record for the in-page 'Sources & methods' panel
+    (Phase 4 derived-data labelling). Cached for an hour so a country page render
+    never pays a DB round-trip on every rerun; returns None if not published or on
+    any error (the panel then simply doesn't show)."""
+    return public_country(country_slug)
 
 
 # ── Admin register reads (service client — server-side only) ─────────────────
