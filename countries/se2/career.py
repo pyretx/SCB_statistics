@@ -314,6 +314,11 @@ def render(cfg, stats, query):
     out_rels = [r for r in rels if r["from_title"] in from_ids]
     if not out_rels:
         out_rels = [r for r in rels if r["rel_type"] == "progression"]
+    # ONE consistent baseline for every "vs" figure: the median of the occupation
+    # the user selected. (Using each relationship's own predecessor made the diffs
+    # incomparable across cards — a higher role could show a smaller +.)
+    _bc = curves.get(primary)
+    base_mid = _bc.value_at(50).value if _bc and _bc.ok else None
     shown_any = False
     for rtype, heading in _REL_GROUPS:
         group = [r for r in out_rels if r["rel_type"] == rtype]
@@ -324,13 +329,10 @@ def render(cfg, stats, query):
         cols = st.columns(min(3, len(group)))
         for i, r in enumerate(group):
             to = by_id.get(r["to_title"])
-            frm = by_id.get(r["from_title"])
             if not to:
                 continue
             b = to.get("_band")
-            diff = None
-            if b and frm and frm.get("_band"):
-                diff = b["mid_salary"] - frm["_band"]["mid_salary"]
+            diff = (b["mid_salary"] - base_mid) if (b and base_mid is not None) else None
             ssyk_badge = (i18n.t(cfg, "cp_same_ssyk", lang, "↔ same SSYK") if r["same_ssyk"]
                           else f"→ SSYK {to['primary_ssyk']}")
             sal = (f"{charts.fmt_value(b['lo_salary'], cfg)}–{charts.fmt_value(b['hi_salary'], cfg)}"
@@ -340,7 +342,7 @@ def render(cfg, stats, query):
                 sign = "+" if diff >= 0 else "−"
                 color = "#1B8A5A" if diff >= 0 else "#C0453A"
                 diff_html = (f'<div style="font-size:12px;color:{color};font-weight:600;margin-top:4px;">'
-                             f'{sign}{charts.fmt_value(abs(diff), cfg)} {i18n.t(cfg,"cp_vs",lang,"vs current (indicative)")}</div>')
+                             f'{sign}{charts.fmt_value(abs(diff), cfg)} {i18n.t(cfg,"cp_vs",lang,"vs occupation median (indicative)")}</div>')
             gaps = ", ".join((r.get("skill_gaps") or [])[:3])
             with cols[i % len(cols)]:
                 st.markdown(

@@ -159,7 +159,7 @@ _CAREER_SV = {
     "cp_rel_specialist": "Byt till ett angränsande specialistyrke",
     "cp_rel_leadership": "Gå in i ledarskap", "cp_rel_lateral": "Relaterade sidosteg",
     "cp_no_moves": "Inga kartlagda steg för detta yrke ännu.",
-    "cp_gaps": "Typiska luckor", "cp_vs": "mot nuvarande (indikativt)",
+    "cp_gaps": "Typiska luckor", "cp_vs": "mot yrkets median (indikativt)",
     "cp_compare_h": "Jämför två roller", "cp_current": "Nuvarande roll",
     "cp_next": "Möjlig nästa roll", "cp_indic_diff": "Indikativ löneskillnad",
     "cp_indic_note": "median mot median; indikativt, inte garanterat",
