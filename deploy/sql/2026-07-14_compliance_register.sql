@@ -199,6 +199,17 @@ create index crl_subject_idx on public.compliance_review_log (subject_type, subj
 --  (The Streamlit app uses the service-role key server-side, which bypasses RLS.)
 -- ══════════════════════════════════════════════════════════════════════════════
 
+-- Enable RLS explicitly per table (static, so the SQL-editor linter sees it — the
+-- policy loop below only CREATES policies; without a permissive policy for anon,
+-- RLS with RLS enabled denies all anon/authenticated access to the base tables).
+alter table public.compliance_provider       enable row level security;
+alter table public.compliance_dataset         enable row level security;
+alter table public.compliance_access_method   enable row level security;
+alter table public.compliance_country_impl    enable row level security;
+alter table public.compliance_assessment      enable row level security;
+alter table public.compliance_transformation  enable row level security;
+alter table public.compliance_review_log      enable row level security;
+
 do $$
 declare t text;
 begin
@@ -207,8 +218,6 @@ begin
     'compliance_country_impl','compliance_assessment','compliance_transformation',
     'compliance_review_log']
   loop
-    execute format('alter table public.%I enable row level security;', t);
-
     -- Admins/master may SELECT (reuses app_metadata.role — only the service key can
     -- set it, so users cannot self-escalate).
     execute format($p$
