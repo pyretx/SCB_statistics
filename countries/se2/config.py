@@ -188,6 +188,10 @@ _CAREER_SV = {
     "cp_ms_ads_t": "Aktuella annonser", "cp_ms_noreg": "Inga exempelannonser för denna region.",
     "cp_skills": "Krav", "cp_cards_h": "Roller detta kan leda till",
     "cp_rel_entry": "Ingångsväg", "cp_rel_related": "Relaterat steg",
+    "cp_map_hint2": "Klicka på en roll för att kliva in i den och utforska vart den leder vidare; "
+                    "använd brödsmulan för att gå tillbaka.",
+    "cp_map_pick": "Välj en roll nedan för att kliva in i den och se vart den leder.",
+    "cp_map_expand": "Har vidare steg — klicka för att utforska vidare.",
     "cp_ev_attr": "Marknadssignal och vanligaste krav är aggregerade från publika platsannonser "
                   "(Arbetsförmedlingen / JobTech, CC BY-SA) — indikativt, inte officiellt.",
     "cp_compare_h": "Jämför två roller", "cp_current": "Nuvarande roll",

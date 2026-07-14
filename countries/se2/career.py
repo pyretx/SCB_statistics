@@ -197,12 +197,20 @@ _MAP_TEMPLATE = r"""
  .mtv { font-size:16px; font-weight:700; margin-top:4px; }
  .mskills { border:1px solid #E7E9ED; border-radius:12px; background:#fff; padding:11px 14px; margin-top:10px; box-shadow:0 1px 2px rgba(16,21,31,.04); }
  .cphint { font-size:11px; color:#98A0AC; margin-top:8px; }
+ .cpcrumbs { font-size:12px; color:#5B6472; margin-bottom:8px; min-height:16px; }
+ .cpcrumbs a { color:#0A63A6; cursor:pointer; text-decoration:none; }
+ .cpcrumbs a:hover { text-decoration:underline; }
+ .cpcrumbs .cur { color:#0C1119; font-weight:700; }
+ .cpcrumbs .sep { color:#C3C8D0; margin:0 6px; }
+ .cpnode .chev { color:#B4BAC4; font-weight:700; font-size:15px; margin-left:2px; }
+ .dhint { font-size:13px; color:#5B6472; }
 </style>
 <div class="cpwrap">
   <div class="cpeyebrow" id="cpeyebrow"></div>
   <div class="cptitle" id="cptitle"></div>
   <div class="cpsub" id="cpsub"></div>
   <div class="cplegend" id="cplegend"></div>
+  <div class="cpcrumbs" id="cpcrumbs"></div>
   <div class="cpmap" id="cpmap"><svg class="cpwires" id="cpwires"></svg></div>
   <div class="cpdetail" id="cpdetail"></div>
   <div class="cphint" id="cphint"></div>
@@ -215,106 +223,142 @@ const money = n => num(n) + ' kr';
 const diffStr = d => (d==null? '' : (d>=0?'+':'−') + num(Math.abs(d)) + ' kr');
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 document.getElementById('cpeyebrow').textContent = L.eyebrow;
-document.getElementById('cptitle').textContent = L.title;
 document.getElementById('cpsub').textContent = L.subtitle;
 document.getElementById('cphint').textContent = L.hint;
 document.getElementById('cplegend').innerHTML = (D.legend||[])
   .map(o=>`<span><span class="cpdot" style="background:${o.color}"></span>${esc(o.label)}${o.dashed?' <span style="opacity:.6">- -</span>':''}</span>`).join('');
 
+const R = D.roles, E = D.edges, OCC = D.occupation, RL = D.rellabels || {};
 const mapEl = document.getElementById('cpmap');
 const svg = document.getElementById('cpwires');
+const titleEl = document.getElementById('cptitle');
+const crumbEl = document.getElementById('cpcrumbs');
+const detailEl = document.getElementById('cpdetail');
 const rowH = 54, padY = 26;
-const H = Math.max(D.nodes.length*rowH + padY*2, 300);
-mapEl.style.height = H + 'px';
 
-const center = document.createElement('div');
-center.className = 'cpcenter';
-center.innerHTML = `<div class="lbl">${esc(L.you_here)}</div><div class="cname">${esc(D.center.name)}</div>`
-  + (D.center.lo!=null? `<div class="crange">${money(D.center.lo)}–${money(D.center.hi)}</div>`:'');
-mapEl.appendChild(center);
+const center0 = document.createElement('div');
+center0.className = 'cpcenter';
+mapEl.appendChild(center0);
 
-let sel = 0;
-D.nodes.forEach((n,i)=>{ if(n.rel==='progression' && sel===0) sel=i; });
-D.nodes.forEach((n,i)=>{
+let center = null, focus = null;
+let trail = [{id:null, name:OCC.name}];
+let NODES = [];
+
+const hasNext = id => E.some(e=>e.from===id && R[e.to]);
+const baseMid = () => center===null ? OCC.base_mid : (R[center]? R[center].mid : null);
+function outgoing(){
+  const froms = center===null ? new Set(OCC.from_ids) : null;
+  const seen=new Set(), out=[];
+  E.forEach(e=>{ const m = center===null ? froms.has(e.from) : e.from===center;
+    if(m && R[e.to] && !seen.has(e.to)){ seen.add(e.to); out.push(e); } });
+  return out;
+}
+function build(){
+  const base = baseMid();
+  return outgoing().map(e=>{ const r=R[e.to];
+    return {id:e.to, name:r.name, subcode:r.subcode, color:e.color, rel:e.rel,
+      level:r.level, conf:r.conf, ssyk:r.ssyk, same_ssyk:e.same_ssyk, gaps:e.gaps||[],
+      lo:r.lo, mid:r.mid, hi:r.hi, diff:(base!=null? r.mid-base : null),
+      ad_count:r.ad_count, skills:r.skills, education:r.education, experience:r.experience,
+      has_next:hasNext(e.to)};
+  }).sort((a,b)=> b.mid-a.mid);
+}
+function drawCenter(){
+  const info = center===null ? {name:OCC.name, lo:OCC.lo, hi:OCC.hi}
+                             : {name:R[center].name, lo:R[center].lo, hi:R[center].hi};
+  center0.innerHTML = `<div class="lbl">${esc(L.you_here)}</div><div class="cname">${esc(info.name)}</div>`
+    + (info.lo!=null? `<div class="crange">${money(info.lo)}–${money(info.hi)}</div>`:'');
+}
+function drawCrumbs(){
+  crumbEl.innerHTML = trail.map((c,i)=> i===trail.length-1
+      ? `<span class="cur">${esc(c.name)}</span>`
+      : `<a data-i="${i}">${esc(c.name)}</a>`).join('<span class="sep">›</span>');
+  crumbEl.querySelectorAll('a').forEach(a=> a.onclick=()=> goCrumb(+a.dataset.i));
+}
+function createNode(n,i){
   const d = document.createElement('div');
-  d.className = 'cpnode'; d.dataset.i = i; d.dataset.color = n.color; d.dataset.rel = n.rel;
-  d.style.top = (padY + i*rowH) + 'px';
+  d.className='cpnode'; d.dataset.i=i; d.dataset.color=n.color; d.dataset.rel=n.rel;
   d.innerHTML = `<span class="cpdot" style="background:${n.color}"></span>`
     + `<span class="nname">${esc(n.name)}</span>`
     + (n.diff!=null? `<span class="ndiff" style="color:${n.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(n.diff)}</span>`:'')
-    + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'');
-  d.onclick = () => select(i);
+    + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'')
+    + (n.has_next? `<span class="chev">›</span>`:'');
+  d.onclick = ()=> onNode(n.id);
   mapEl.appendChild(d);
-});
-
-function drawWires(){
-  const mr = mapEl.getBoundingClientRect();
-  const cr = center.getBoundingClientRect();
-  const cx = cr.right - mr.left, cy = cr.top - mr.top + cr.height/2;
-  let p = '';
-  mapEl.querySelectorAll('.cpnode').forEach(node=>{
-    const i = +node.dataset.i;
-    const r = node.getBoundingClientRect();
-    const nx = r.left - mr.left, ny = r.top - mr.top + r.height/2;
-    const mx = (cx+nx)/2;
-    const on = (i===sel);
-    const dash = (node.dataset.rel==='lateral' || node.dataset.rel==='related') ? ' stroke-dasharray="5 6"' : '';
-    p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
-      + `stroke="${node.dataset.color}" stroke-width="${on?3:1.5}" stroke-opacity="${on?0.9:0.35}"${dash}/>`;
-  });
-  svg.setAttribute('viewBox', `0 0 ${mr.width} ${mr.height}`);
-  svg.setAttribute('width', mr.width); svg.setAttribute('height', mr.height);
-  svg.innerHTML = p;
 }
-
-function renderDetail(n){
-  const skills = (n.skills||[]).filter(Boolean).slice(0,8)
-    .map(s=>`<span class="chip" style="background:rgba(192,69,58,.08);color:#C0453A">${esc(s)}</span>`).join('');
-  const gaps = (n.gaps||[]).filter(Boolean)
-    .map(s=>`<span class="chip" style="background:rgba(10,99,166,.08);color:#0A63A6">${esc(s)}</span>`).join('');
-  let ads;
-  if(n.ad_count){
-    ads = `<div class="mtiles">`
-      + `<div class="mtile red"><div class="mtl" style="color:#C0453A">${esc(L.ads_header)}</div><div class="mtv">${n.ad_count} ${esc(L.ads)}</div></div>`
-      + (n.experience? `<div class="mtile"><div class="mtl">${esc(L.experience)}</div><div class="mtv">${esc(n.experience)}</div></div>`:'')
-      + (n.education? `<div class="mtile"><div class="mtl">${esc(L.education)}</div><div class="mtv">${esc(n.education)}</div></div>`:'')
-      + `</div>`
-      + (skills? `<div class="mskills"><div class="mtl">${esc(L.skills)}</div><div style="margin-top:7px;">${skills}</div></div>`:'');
-  } else {
-    ads = `<div class="noads">${esc(L.no_ads)}</div>`;
+function render(){
+  NODES = build();
+  titleEl.textContent = L.title.replace('{r}', center===null? OCC.name : R[center].name);
+  drawCrumbs(); drawCenter();
+  mapEl.querySelectorAll('.cpnode').forEach(x=>x.remove());
+  NODES.forEach((n,i)=> createNode(n,i));
+  mapEl.style.height = Math.max(NODES.length*rowH + padY*2, 220) + 'px';
+  positionNodes(); drawWires(); renderDetail();
+}
+function onNode(id){
+  focus = id;
+  if(hasNext(id)){
+    const n = NODES.find(x=>x.id===id) || {};
+    trail.push({id, name:R[id].name, gaps:n.gaps||[], diff:n.diff, rel:n.rel, same:n.same_ssyk, color:n.color});
+    center = id;
   }
-  document.getElementById('cpdetail').innerHTML =
-    `<div class="drel"><span class="cpdot" style="background:${n.color}"></span> ${esc(n.rel_label)}</div>`
-    + `<div class="dname">${n.subcode? esc(n.subcode)+' · ':''}${esc(n.name)}</div>`
-    + `<div class="dmeta">${esc(n.level)} · ${n.same_ssyk? esc(L.same_ssyk):('→ SSYK '+esc(n.ssyk))} · ${esc(n.conf)}</div>`
-    + `<div class="drow"><div><div class="dlabel">${esc(L.range)}</div><div class="dval">${money(n.lo)}–${money(n.hi)}</div></div>`
-    + `<div><div class="dlabel">${esc(L.vs)}</div><div class="dval" style="color:${n.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(n.diff)}<span style="font-size:12px;font-weight:400;color:#8A919D"> /mo</span></div></div></div>`
-    + (gaps? `<div class="dlabel" style="margin-top:4px;">${esc(L.gaps)}</div><div style="margin-top:3px;">${gaps}</div>`:'')
-    + ads;
+  render();
 }
-
+function goCrumb(i){ trail = trail.slice(0,i+1); center = trail[i].id; focus = center; render(); }
 function positionNodes(){
   const W = mapEl.clientWidth;
-  center.style.left = Math.max(56, W*0.13) + 'px';
-  const maxD = Math.max(1, ...D.nodes.map(n=>Math.abs(n.diff||0)));
-  const pull = Math.min(W*0.40, 440);           // horizontal spread by leap size
+  center0.style.left = Math.max(56, W*0.13) + 'px';
+  const maxD = Math.max(1, ...NODES.map(n=>Math.abs(n.diff||0)));
+  const pull = Math.min(W*0.40, 440);
   mapEl.querySelectorAll('.cpnode').forEach(nd=>{
-    const i=+nd.dataset.i, n=D.nodes[i];
+    const i=+nd.dataset.i, n=NODES[i];
     nd.style.top = (padY + i*rowH) + 'px';
-    // clamp so small / lateral (≈0 diff) leaps still sit clear of the centre node
     const ratio = 0.22 + 0.78*(Math.abs(n.diff||0)/maxD);   // 1 = biggest leap → furthest right
     nd.style.right = (16 + (1-ratio)*pull) + 'px';
   });
 }
-function select(i){
-  sel = i;
-  mapEl.querySelectorAll('.cpnode').forEach(nd=> nd.classList.toggle('active', +nd.dataset.i===i));
-  renderDetail(D.nodes[i]);
-  positionNodes(); drawWires();
+function drawWires(){
+  const mr = mapEl.getBoundingClientRect(), cr = center0.getBoundingClientRect();
+  const cx = cr.right - mr.left, cy = cr.top - mr.top + cr.height/2;
+  let p = '';
+  mapEl.querySelectorAll('.cpnode').forEach(node=>{
+    const i=+node.dataset.i, r=node.getBoundingClientRect();
+    const nx=r.left-mr.left, ny=r.top-mr.top+r.height/2, mx=(cx+nx)/2;
+    const on = (NODES[i] && NODES[i].id===focus);
+    const dash = (node.dataset.rel==='lateral'||node.dataset.rel==='related')?' stroke-dasharray="5 6"':'';
+    p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
+      + `stroke="${node.dataset.color}" stroke-width="${on?3:1.5}" stroke-opacity="${on?0.9:0.35}"${dash}/>`;
+  });
+  svg.setAttribute('viewBox',`0 0 ${mr.width} ${mr.height}`);
+  svg.setAttribute('width',mr.width); svg.setAttribute('height',mr.height); svg.innerHTML=p;
 }
-function relayout(){ positionNodes(); drawWires(); }
-window.addEventListener('resize', relayout);
-requestAnimationFrame(()=>{ positionNodes(); select(sel); });
+function renderDetail(){
+  if(focus===null){ detailEl.innerHTML = `<div class="dhint">${esc(L.pick)}</div>`; return; }
+  let d;
+  if(focus===center){ const tl=trail[trail.length-1]||{};
+    d = Object.assign({}, R[focus], {id:focus, diff:tl.diff, gaps:tl.gaps||[], rel:tl.rel, same_ssyk:tl.same, color:tl.color, has_next:hasNext(focus)}); }
+  else { d = NODES.find(n=>n.id===focus) || Object.assign({id:focus, has_next:hasNext(focus)}, R[focus]); }
+  const skills=(d.skills||[]).filter(Boolean).slice(0,8).map(s=>`<span class="chip" style="background:rgba(192,69,58,.08);color:#C0453A">${esc(s)}</span>`).join('');
+  const gaps=(d.gaps||[]).filter(Boolean).map(s=>`<span class="chip" style="background:rgba(10,99,166,.08);color:#0A63A6">${esc(s)}</span>`).join('');
+  let ads = d.ad_count ? (`<div class="mtiles">`
+      + `<div class="mtile red"><div class="mtl" style="color:#C0453A">${esc(L.ads_header)}</div><div class="mtv">${d.ad_count} ${esc(L.ads)}</div></div>`
+      + (d.experience?`<div class="mtile"><div class="mtl">${esc(L.experience)}</div><div class="mtv">${esc(d.experience)}</div></div>`:'')
+      + (d.education?`<div class="mtile"><div class="mtl">${esc(L.education)}</div><div class="mtv">${esc(d.education)}</div></div>`:'')
+      + `</div>` + (skills?`<div class="mskills"><div class="mtl">${esc(L.skills)}</div><div style="margin-top:7px;">${skills}</div></div>`:''))
+      : `<div class="noads">${esc(L.no_ads)}</div>`;
+  detailEl.innerHTML =
+    (d.rel?`<div class="drel"><span class="cpdot" style="background:${d.color||'#0A63A6'}"></span> ${esc(RL[d.rel]||'')}</div>`:'')
+    + `<div class="dname">${d.subcode?esc(d.subcode)+' · ':''}${esc(d.name)}</div>`
+    + `<div class="dmeta">${esc(d.level)} · ${d.same_ssyk?esc(L.same_ssyk):('→ SSYK '+esc(d.ssyk))} · ${esc(d.conf)}</div>`
+    + `<div class="drow"><div><div class="dlabel">${esc(L.range)}</div><div class="dval">${money(d.lo)}–${money(d.hi)}</div></div>`
+    + (d.diff!=null?`<div><div class="dlabel">${esc(L.vs)}</div><div class="dval" style="color:${d.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(d.diff)}<span style="font-size:12px;font-weight:400;color:#8A919D"> /mo</span></div></div>`:'')
+    + `</div>`
+    + (gaps?`<div class="dlabel" style="margin-top:4px;">${esc(L.gaps)}</div><div style="margin-top:3px;">${gaps}</div>`:'')
+    + (d.has_next?`<div class="cphint" style="margin-top:8px;">↳ ${esc(L.expand_hint)}</div>`:'')
+    + ads;
+}
+window.addEventListener('resize', ()=>{ positionNodes(); drawWires(); });
+requestAnimationFrame(render);
 </script>
 """
 
@@ -328,9 +372,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
     import json
     import streamlit.components.v1 as components
 
-    from_ids = {t["title_id"] for t in titles if str(t["primary_ssyk"]) == primary}
-    out_rels = [r for r in rels if r["from_title"] in from_ids] or \
-               [r for r in rels if r["rel_type"] == "progression"]
+    yrs = i18n.t(cfg, "cp_ms_yrs", lang, "yrs")
     bc = curves.get(primary)
     base_mid = bc.value_at(50).value if bc and bc.ok else None
     c_lo = bc.value_at(25).value if bc and bc.ok else None
@@ -338,44 +380,6 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
 
     rel_color = {"progression": "#0A63A6", "specialist": "#5B8A72", "management": "#B26A00",
                  "leadership": "#B26A00", "lateral": "#8A919D", "entry": "#5B6472", "related": "#5B6472"}
-    rel_label = {rt: i18n.t(cfg, f"cp_rel_{rt}", lang, h) for rt, h in _REL_GROUPS}
-
-    nodes, seen = [], set()
-    for r in out_rels:
-        to = by_id.get(r["to_title"])
-        if not to or to["title_id"] in seen:
-            continue
-        b = to.get("_band")
-        if not b:
-            continue
-        seen.add(to["title_id"])
-        ev = evidence.get(to["title_id"]) or {}
-        exp = (ev.get("common_experience") or [])
-        ym = exp[0].get("years_median") if exp else None
-        edu = (ev.get("common_education") or [])
-        nodes.append({
-            "id": to["title_id"], "name": _tname(to, lang), "subcode": _subcode(to),
-            "rel": r["rel_type"], "rel_label": rel_label.get(r["rel_type"], r["rel_type"]),
-            "color": rel_color.get(r["rel_type"], "#5B6472"),
-            "level": _level(to["level_label"], lang), "conf": _conf(cfg, lang, to["confidence"]),
-            "same_ssyk": bool(r.get("same_ssyk")), "ssyk": str(to["primary_ssyk"]),
-            "lo": round(b["lo_salary"]), "mid": round(b["mid_salary"]), "hi": round(b["hi_salary"]),
-            "diff": (round(b["mid_salary"] - base_mid) if base_mid is not None else None),
-            "gaps": (r.get("skill_gaps") or [])[:4],
-            "ad_count": int(ev.get("ad_count") or 0),
-            "skills": [s.get("skill") for s in (ev.get("common_skills") or [])[:8]],
-            "education": (edu[0]["label"] if edu else None),
-            "experience": (f"{ym}+ {i18n.t(cfg, 'cp_ms_yrs', lang, 'yrs')}" if ym is not None else None),
-            "examples": [{"headline": a.get("headline"), "employer": a.get("employer"),
-                          "deadline": a.get("deadline"), "region": a.get("region"),
-                          "url": a.get("url"), "ref": a.get("id")} for a in (ev.get("example_ads") or [])],
-        })
-    if not nodes:
-        st.markdown(f"#### {i18n.t(cfg, 'cp_map_h', lang, 'Where can this role lead?')}")
-        st.caption(i18n.t(cfg, "cp_no_moves", lang, "No mapped moves for this occupation yet."))
-        return
-    nodes.sort(key=lambda n: -(n["mid"] or 0))
-
     _leg_lbl = {
         "progression": i18n.t(cfg, "cp_rel_progression", lang, "Advance within this occupation"),
         "specialist": i18n.t(cfg, "cp_rel_specialist", lang, "Specialist move"),
@@ -385,26 +389,69 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         "entry": i18n.t(cfg, "cp_rel_entry", lang, "Entry route"),
         "related": i18n.t(cfg, "cp_rel_related", lang, "Related move"),
     }
+
+    # ── Full family graph: every role a node, every relationship an edge.
+    # The component re-centres client-side on click (Option A), so we ship the
+    # whole graph once — bands + ad evidence precomputed for every role. ──
+    roles = {}
+    for t in titles:
+        b = t.get("_band")
+        if not b:
+            continue
+        ev = evidence.get(t["title_id"]) or {}
+        exp = (ev.get("common_experience") or [])
+        ym = exp[0].get("years_median") if exp else None
+        edu = (ev.get("common_education") or [])
+        roles[t["title_id"]] = {
+            "name": _tname(t, lang), "subcode": _subcode(t),
+            "level": _level(t["level_label"], lang), "conf": _conf(cfg, lang, t["confidence"]),
+            "ssyk": str(t["primary_ssyk"]),
+            "lo": round(b["lo_salary"]), "mid": round(b["mid_salary"]), "hi": round(b["hi_salary"]),
+            "ad_count": int(ev.get("ad_count") or 0),
+            "skills": [s.get("skill") for s in (ev.get("common_skills") or [])[:8]],
+            "education": (edu[0]["label"] if edu else None),
+            "experience": (f"{ym}+ {yrs}" if ym is not None else None),
+        }
+    edges = []
+    for r in rels:
+        if r["from_title"] in roles and r["to_title"] in roles:
+            edges.append({"from": r["from_title"], "to": r["to_title"], "rel": r["rel_type"],
+                          "same_ssyk": bool(r.get("same_ssyk")), "gaps": (r.get("skill_gaps") or [])[:4],
+                          "color": rel_color.get(r["rel_type"], "#5B6472")})
+    from_ids = [t["title_id"] for t in titles
+                if str(t["primary_ssyk"]) == primary and t["title_id"] in roles]
+
+    occ_dests = {e["to"] for e in edges if e["from"] in set(from_ids)}
+    if not occ_dests:
+        st.markdown(f"#### {i18n.t(cfg, 'cp_map_h', lang, 'Where can this role lead?')}")
+        st.caption(i18n.t(cfg, "cp_no_moves", lang, "No mapped moves for this occupation yet."))
+        return
+
+    present = {e["rel"] for e in edges}
     legend, _seen = [], set()
     for _rt in ["progression", "specialist", "management", "leadership", "lateral", "entry", "related"]:
         _lbl = _leg_lbl.get(_rt)
-        if _lbl and _lbl not in _seen and any(n["rel"] == _rt for n in nodes):
+        if _rt in present and _lbl and _lbl not in _seen:
             legend.append({"color": rel_color.get(_rt, "#5B6472"), "label": _lbl,
                            "dashed": _rt in ("lateral", "related")})
             _seen.add(_lbl)
 
+    # tallest fan across every possible centre → fixed iframe height (no clipping)
+    dist = {}
+    for e in edges:
+        dist.setdefault(e["from"], set()).add(e["to"])
+    max_fan = max([len(occ_dests)] + [len(v) for v in dist.values()])
+
     payload = {
-        "center": {"name": occ_name, "ssyk": str(primary),
-                   "lo": (round(c_lo) if c_lo else None), "hi": (round(c_hi) if c_hi else None)},
-        "nodes": nodes, "legend": legend,
+        "occupation": {"name": occ_name, "ssyk": str(primary), "from_ids": from_ids,
+                       "base_mid": (round(base_mid) if base_mid else None),
+                       "lo": (round(c_lo) if c_lo else None), "hi": (round(c_hi) if c_hi else None)},
+        "roles": roles, "edges": edges, "legend": legend, "rellabels": _leg_lbl,
         "labels": {
             "eyebrow": "CAREER PATHS · " + i18n.t(cfg, "cp_map_h", lang, "Where can this role lead?").upper(),
-            "title": i18n.t(cfg, "cp_map_from", lang, "Paths from {r}").format(r=occ_name),
+            "title": i18n.t(cfg, "cp_map_from", lang, "Paths from {r}"),
             "subtitle": f"{occ_name} · SSYK {primary} · "
                         + i18n.t(cfg, "cp_map_axis", lang, "positions reflect estimated salary midpoints"),
-            "leg_within": i18n.t(cfg, "cp_rel_progression", lang, "Advance within this occupation"),
-            "leg_spec": i18n.t(cfg, "cp_rel_specialist", lang, "Specialist move"),
-            "leg_lead": i18n.t(cfg, "cp_rel_leadership", lang, "Move into leadership"),
             "you_here": i18n.t(cfg, "cp_you_here", lang, "YOU ARE HERE"),
             "ads": i18n.t(cfg, "cp_ads", lang, "ads"),
             "range": i18n.t(cfg, "cp_ms_range", lang, "Estimated range"),
@@ -415,19 +462,19 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
             "experience": i18n.t(cfg, "cp_ms_exp", lang, "Typical experience"),
             "education": i18n.t(cfg, "cp_ms_edu", lang, "Top education req."),
             "skills": i18n.t(cfg, "cp_skills", lang, "Skills"),
-            "examples": i18n.t(cfg, "cp_ms_ex", lang, "Example ads · Platsbanken references"),
-            "apply_by": i18n.t(cfg, "cp_ms_dl", lang, "apply by {d}"),
-            "ref": i18n.t(cfg, "cp_ms_ref", lang, "ref"),
-            "expire": i18n.t(cfg, "cp_ms_expire", lang,
-                             "Links open the ad on Platsbanken and expire after the deadline."),
             "no_ads": i18n.t(cfg, "cp_ms_none", lang, "No live job-ad signal for this role yet."),
-            "hint": i18n.t(cfg, "cp_map_hint", lang,
-                           "Click a role to see its salary range, gaps and live job-ad requirements."),
+            "hint": i18n.t(cfg, "cp_map_hint2", lang,
+                           "Click a role to step into it and explore where it leads next; "
+                           "use the breadcrumb to go back."),
+            "pick": i18n.t(cfg, "cp_map_pick", lang,
+                           "Select a role below to step into it and see where it leads."),
+            "expand_hint": i18n.t(cfg, "cp_map_expand", lang,
+                                  "Has onward moves — click to explore further."),
         },
     }
     html = _MAP_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
-    map_h = max(len(nodes) * 54 + 52, 300)
-    components.html(html, height=140 + map_h + 300, scrolling=True)
+    map_h = max(max_fan * 54 + 52, 240)
+    components.html(html, height=150 + map_h + 320, scrolling=True)
 
 
 def _render_role_cards(cfg, lang, primary, titles, rels, by_id, curves, evidence):
