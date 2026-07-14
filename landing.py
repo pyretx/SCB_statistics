@@ -402,73 +402,79 @@ def _auth_dialog():
         if _seg:  # None only if the active pill is clicked again (deselect)
             st.session_state["_auth_mode"] = _seg
         mode = st.session_state.get("_auth_mode", _f["mode_sign_in"])
+        _is_create = (mode == _f["mode_create"])
 
         st.caption(_f["intro"])
 
-        if mode == _f["mode_create"]:
-            name = st.text_input(_f["name_label"], key="_su_name", placeholder=_f["name_ph"])
-        email = st.text_input(_f["email_label"], key="_auth_email", placeholder=_f["email_ph"])
-        pw = st.text_input(_f["password_label"], key="_auth_pw", type="password",
-                           placeholder=_f["password_ph"])
+        # Fields + primary action live in a FORM. A bare st.text_input only
+        # commits its value on Enter/blur, so a browser/Google-autofilled
+        # password stayed "uncommitted" and the click read it as empty
+        # ("password required", reported on mobile). A form commits every field
+        # together when the submit button is pressed, capturing autofilled values.
+        with st.form("auth_form", border=False, clear_on_submit=False):
+            name = (st.text_input(_f["name_label"], key="_su_name",
+                                  placeholder=_f["name_ph"]) if _is_create else "")
+            email = st.text_input(_f["email_label"], key="_auth_email",
+                                  placeholder=_f["email_ph"])
+            pw = st.text_input(_f["password_label"], key="_auth_pw", type="password",
+                               placeholder=_f["password_ph"])
+            _submitted = st.form_submit_button(
+                _f["create_button"] if _is_create else _f["sign_in_button"],
+                type="primary", use_container_width=True)
 
-        if mode == _f["mode_sign_in"]:
-            if st.button(_f["sign_in_button"], type="primary", use_container_width=True):
-                user, err = auth.sign_in(email.strip(), pw)
-                if user:
-                    st.session_state["auth_user"] = user
-                    st.session_state.pop("_auth_pw", None)
-                    st.session_state.pop("_confirmed_msg", None)
-                    st.session_state.pop("_resend_for", None)
-                    st.session_state["_show_auth"] = False
-                    st.rerun()
+        if _submitted and not _is_create:
+            user, err = auth.sign_in(email.strip(), pw)
+            if user:
+                st.session_state["auth_user"] = user
+                st.session_state.pop("_auth_pw", None)
+                st.session_state.pop("_confirmed_msg", None)
+                st.session_state.pop("_resend_for", None)
+                st.session_state["_show_auth"] = False
+                st.rerun()
+            else:
+                st.error(_m["sign_in_failed"].format(err=err))
+                # 'Email not confirmed' → offer a fresh confirmation link
+                # (the first one is often consumed by a mail-app preview).
+                if "confirm" in str(err).lower():
+                    st.session_state["_resend_for"] = email.strip()
+        elif _submitted and _is_create:
+            if not name.strip() or not email.strip() or not pw:
+                st.error(_m["missing_fields"])
+            else:
+                # sign_up stores the account in Supabase as a *standard* user
+                # (the public client can't set app_metadata.role, so no
+                # self-registration can ever mint an admin). redirect_to brings
+                # the confirmation-email link back here with ?confirmed=1.
+                _base = _app_base_url()
+                _redir = f"{_base}/?confirmed=1" if _base else None
+                user, err = auth.sign_up(email.strip(), pw, name.strip(),
+                                         redirect_to=_redir)
+                if not user:
+                    st.error(_m["create_failed"].format(err=err))
                 else:
-                    st.error(_m["sign_in_failed"].format(err=err))
-                    # 'Email not confirmed' → offer a fresh confirmation link
-                    # (the first one is often consumed by a mail-app preview).
-                    if "confirm" in str(err).lower():
-                        st.session_state["_resend_for"] = email.strip()
-            if st.session_state.get("_resend_for"):
-                if st.button(_m["resend_button"], key="_auth_resend",
-                             use_container_width=True):
-                    _base = _app_base_url()
-                    _redir = f"{_base}/?confirmed=1" if _base else None
-                    _rerr = auth.resend_confirmation(
-                        st.session_state["_resend_for"], _redir)
-                    if _rerr:
-                        st.error(_m["resend_failed"].format(err=_rerr))
-                    else:
-                        st.success(_m["resent"].format(
-                            email=st.session_state.pop("_resend_for")))
-        else:
-            if st.button(_f["create_button"], type="primary", use_container_width=True):
-                if not name.strip() or not email.strip() or not pw:
-                    st.error(_m["missing_fields"])
-                else:
-                    # sign_up stores the account in Supabase as a *standard*
-                    # user (the public client can't set app_metadata.role, so
-                    # no self-registration can ever mint an admin). redirect_to
-                    # brings the confirmation-email link back here with
-                    # ?confirmed=1 so we can greet them.
-                    _base = _app_base_url()
-                    _redir = f"{_base}/?confirmed=1" if _base else None
-                    user, err = auth.sign_up(email.strip(), pw, name.strip(),
-                                             redirect_to=_redir)
-                    if not user:
-                        st.error(_m["create_failed"].format(err=err))
-                    else:
+                    # If the project doesn't require email confirmation the
+                    # account is usable immediately — sign them straight in. If
+                    # it does, sign-in fails cleanly → "check your inbox".
+                    signed, _ = auth.sign_in(email.strip(), pw)
+                    if signed:
+                        st.session_state["auth_user"] = signed
                         st.session_state.pop("_auth_pw", None)
-                        # If the project doesn't require email confirmation the
-                        # account is usable immediately — sign them straight in
-                        # so they don't have to re-enter credentials. If it does
-                        # require confirmation, sign-in fails cleanly and we fall
-                        # back to the "check your inbox" message.
-                        signed, _ = auth.sign_in(email.strip(), pw)
-                        if signed:
-                            st.session_state["auth_user"] = signed
-                            st.session_state["_show_auth"] = False
-                            st.rerun()
-                        else:
-                            st.success(_m["check_inbox"])
+                        st.session_state["_show_auth"] = False
+                        st.rerun()
+                    else:
+                        st.success(_m["check_inbox"])
+
+        # Resend confirmation (sign-in mode, after an 'email not confirmed'
+        # failure) — a normal button, outside the form.
+        if not _is_create and st.session_state.get("_resend_for"):
+            if st.button(_m["resend_button"], key="_auth_resend", use_container_width=True):
+                _base = _app_base_url()
+                _redir = f"{_base}/?confirmed=1" if _base else None
+                _rerr = auth.resend_confirmation(st.session_state["_resend_for"], _redir)
+                if _rerr:
+                    st.error(_m["resend_failed"].format(err=_rerr))
+                else:
+                    st.success(_m["resent"].format(email=st.session_state.pop("_resend_for")))
 
         st.caption(_f["terms"])
         if st.button(_f["close"], key="_auth_close"):
