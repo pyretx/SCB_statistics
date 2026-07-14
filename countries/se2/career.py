@@ -215,21 +215,49 @@ def render(cfg, stats, query):
                 vcur = curves.get(str(t["primary_ssyk"]))
                 lo_p, hi_p = float(t["lo_pct"]), float(t["hi_pct"])
                 import pandas as pd
-                rows = []
-                for band in bands:
+                # ascending performance ramp (slate → blue → green → gold → amber)
+                _PERF_COLORS = ["#9AA7B4", "#6FA8C4", "#5B9E7A", "#D0A72E", "#C77E2A"]
+                brows = []
+                for i, band in enumerate(bands):
                     p_lo = lo_p + float(band["rel_lo"]) * (hi_p - lo_p)
                     p_hi = lo_p + float(band["rel_hi"]) * (hi_p - lo_p)
                     s_lo = vcur.value_at(p_lo).value if vcur and vcur.ok else None
                     s_hi = vcur.value_at(p_hi).value if vcur and vcur.ok else None
-                    rows.append({
-                        i18n.t(cfg, "cp_perf_pos", lang, "Position"): band["label"],
-                        i18n.t(cfg, "cp_perf_within", lang, "Within level"):
-                            f"{float(band['rel_lo'])*100:.0f}–{float(band['rel_hi'])*100:.0f}%",
-                        i18n.t(cfg, "cp_perf_sal", lang, "Illustrative salary"):
-                            (f"{charts.fmt_value(s_lo, cfg)}–{charts.fmt_value(s_hi, cfg)}"
-                             if s_lo is not None else "—"),
-                    })
-                st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+                    brows.append({"label": band["label"], "s_lo": s_lo, "s_hi": s_hi,
+                                  "color": _PERF_COLORS[i % len(_PERF_COLORS)],
+                                  "within": f"{float(band['rel_lo'])*100:.0f}–{float(band['rel_hi'])*100:.0f}%"})
+
+                # ── Colour-coded salary bar (segment widths ∝ SEK span) ──
+                valid = [b for b in brows if b["s_lo"] is not None and b["s_hi"] is not None]
+                if valid and (valid[-1]["s_hi"] - valid[0]["s_lo"]) > 0:
+                    total = valid[-1]["s_hi"] - valid[0]["s_lo"]
+                    segs = "".join(
+                        f'<div title="{b["label"]}: {charts.fmt_value(b["s_lo"], cfg)}–'
+                        f'{charts.fmt_value(b["s_hi"], cfg)}" style="flex:{max((b["s_hi"]-b["s_lo"])/total*100, 5):.2f};'
+                        f'background:{b["color"]};" ></div>' for b in valid)
+                    legend = "".join(
+                        f'<span style="display:inline-flex;align-items:center;gap:6px;margin:0 14px 4px 0;'
+                        f'font-size:12px;color:#5B6472;"><span style="width:12px;height:12px;border-radius:3px;'
+                        f'background:{b["color"]};display:inline-block;"></span>{b["label"]}</span>'
+                        for b in valid)
+                    st.markdown(
+                        f'<div style="display:flex;height:44px;border-radius:9px;overflow:hidden;'
+                        f'border:1px solid #E7E9ED;">{segs}</div>'
+                        f'<div style="display:flex;justify-content:space-between;font-family:'
+                        f"'JetBrains Mono',monospace;font-size:11px;color:#98A0AC;margin:5px 0 10px;\">"
+                        f'<span>{charts.fmt_value(valid[0]["s_lo"], cfg)}</span>'
+                        f'<span>{charts.fmt_value(valid[-1]["s_hi"], cfg)}</span></div>'
+                        f'<div style="display:flex;flex-wrap:wrap;">{legend}</div>',
+                        unsafe_allow_html=True)
+
+                # ── Table (kept) ──
+                st.dataframe(pd.DataFrame([{
+                    i18n.t(cfg, "cp_perf_pos", lang, "Position"): b["label"],
+                    i18n.t(cfg, "cp_perf_within", lang, "Within level"): b["within"],
+                    i18n.t(cfg, "cp_perf_sal", lang, "Illustrative salary"):
+                        (f"{charts.fmt_value(b['s_lo'], cfg)}–{charts.fmt_value(b['s_hi'], cfg)}"
+                         if b["s_lo"] is not None else "—"),
+                } for b in brows]), hide_index=True, use_container_width=True)
                 st.caption(i18n.t(cfg, "cp_perf_note", lang,
                                   "Internal preview — not shown to users. Public release requires "
                                   "individual-level, consented compensation evidence we do not have."))
