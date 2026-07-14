@@ -1911,11 +1911,13 @@ def compliance_section():
                                 label_visibility="collapsed",
                                 format_func=lambda v: _VIEWS[v]) or st.session_state["cmp_view"]
 
-    def _goto(v, country_name=None):
+    def _nav(v, country_name=None):
+        # on_click CALLBACK: runs before the rerun instantiates the widgets, so it
+        # may set the segmented/selectbox keys. (Setting them inline AFTER the
+        # widgets render raises StreamlitAPIException — the bug this replaces.)
         st.session_state["cmp_view"] = v
         if country_name is not None:
             st.session_state["cmp_focus_name"] = country_name
-        st.rerun()
 
     st.write("")
 
@@ -1955,10 +1957,10 @@ def compliance_section():
                 nm = slug2name[r["country_slug"]]
                 st.markdown(f"**{C.get('selected', 'Selected')}: {nm}** · `{r.get('dataset_id', '')}`")
                 b1, b2 = st.columns(2)
-                if b1.button(C.get("open_ds", "📄 Open dataset & clearance"), key="cmp_rec_ds"):
-                    _goto("datasets", nm)
-                if b2.button(C.get("open_release", "🚦 Open release control"), key="cmp_rec_rel"):
-                    _goto("release", nm)
+                b1.button(C.get("open_ds", "📄 Open dataset & clearance"), key="cmp_rec_ds",
+                          on_click=_nav, args=("datasets", nm))
+                b2.button(C.get("open_release", "🚦 Open release control"), key="cmp_rec_rel",
+                          on_click=_nav, args=("release", nm))
             else:
                 st.caption(C.get("focus_hint", "Select a row to jump to its dataset or release."))
 
@@ -1969,8 +1971,8 @@ def compliance_section():
             fds_id = impl_by_slug.get(focus_slug, {}).get("dataset_id")
             fdatasets = [ds_by_id[fds_id]] if fds_id in ds_by_id else []
             st.info(C.get("focused_ds", "Showing the dataset behind {name}.").format(name=slug2name[focus_slug]))
-            if st.button(C.get("show_all_ds", "← Show all datasets"), key="cmp_ds_clearfocus"):
-                _goto("datasets", "")
+            st.button(C.get("show_all_ds", "← Show all datasets"), key="cmp_ds_clearfocus",
+                      on_click=_nav, args=("datasets", ""))
         else:
             fdatasets = [d for d in datasets
                          if _clr_ok(comp.rollup([a["status"] for a in by_subject.get(("dataset", d["dataset_id"]), [])])
@@ -1984,9 +1986,9 @@ def compliance_section():
                 unames = ", ".join(sorted(slug2name[u["country_slug"]] for u in users))
                 st.caption(C.get("used_by", "Used by {n}: {names}").format(n=len(users), names=unames))
                 if len(users) == 1:
-                    if st.button(C.get("open_release", "🚦 Open release control"),
-                                 key=f"cmp_ds2rel_{d['dataset_id']}"):
-                        _goto("release", slug2name[users[0]["country_slug"]])
+                    st.button(C.get("open_release", "🚦 Open release control"),
+                              key=f"cmp_ds2rel_{d['dataset_id']}",
+                              on_click=_nav, args=("release", slug2name[users[0]["country_slug"]]))
                 _cmp_dataset_editor(d, das, C, comp, pd, _dt, _admin_email)
 
     # ═══ VIEW: Release control ═══════════════════════════════════════════════
@@ -1996,8 +1998,8 @@ def compliance_section():
         rows = [r for r in impls if (not focus_slug or r["country_slug"] == focus_slug)
                 and _clr_ok(r.get("clearance_overall"))]
         if focus_slug and rows:
-            if st.button(C.get("open_ds", "📄 Open dataset & clearance"), key="cmp_rel2ds"):
-                _goto("datasets", slug2name[focus_slug])
+            st.button(C.get("open_ds", "📄 Open dataset & clearance"), key="cmp_rel2ds",
+                      on_click=_nav, args=("datasets", slug2name[focus_slug]))
         if not rows:
             st.caption(C.get("no_match", "No matches."))
         else:
