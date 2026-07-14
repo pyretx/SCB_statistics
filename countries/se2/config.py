@@ -160,6 +160,12 @@ _CAREER_SV = {
     "cp_rel_leadership": "Gå in i ledarskap", "cp_rel_lateral": "Relaterade sidosteg",
     "cp_no_moves": "Inga kartlagda steg för detta yrke ännu.",
     "cp_gaps": "Typiska luckor", "cp_vs": "mot yrkets median (indikativt)",
+    "cp_c_market": "Marknadssignal", "cp_c_skills": "Vanligaste annonskrav", "cp_ads": "annonser",
+    "cp_ev_strong": "Stark signal", "cp_ev_moderate": "Måttlig signal", "cp_ev_limited": "Begränsad signal",
+    "cp_ev_based": "baserat på {n} annonser · Arbetsförmedlingen",
+    "cp_ev_skills": "Efterfrågade färdigheter",
+    "cp_ev_attr": "Marknadssignal och vanligaste krav är aggregerade från publika platsannonser "
+                  "(Arbetsförmedlingen / JobTech, CC BY-SA) — indikativt, inte officiellt.",
     "cp_compare_h": "Jämför två roller", "cp_current": "Nuvarande roll",
     "cp_next": "Möjlig nästa roll", "cp_indic_diff": "Indikativ löneskillnad",
     "cp_indic_note": "median mot median; indikativt, inte garanterat",

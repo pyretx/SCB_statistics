@@ -90,6 +90,24 @@ def _esc(x):
     return html.escape(str(x)) if x is not None else ""
 
 
+# ── Job-ad evidence (v1) — real Arbetsförmedlingen signal, when present ───────
+_EV_STRENGTH = {"strong": "Strong signal", "moderate": "Moderate signal", "limited": "Limited signal"}
+
+
+def _ev_strength(cfg, lang, code):
+    return i18n.t(cfg, f"cp_ev_{code}", lang, _EV_STRENGTH.get(code, code))
+
+
+def _ev_ads(cfg, lang, e):
+    """"based on N ads · Arbetsförmedlingen" attribution line for an evidence row."""
+    return i18n.t(cfg, "cp_ev_based", lang, "based on {n} ads · Arbetsförmedlingen").format(
+        n=int(e.get("ad_count") or 0))
+
+
+def _ev_skills(e, k=3):
+    return [s.get("skill") for s in (e.get("common_skills") or [])[:k] if s.get("skill")]
+
+
 def render(cfg, stats, query):
     import careerpaths as cp
     lang = query.get("lang", "EN")
@@ -129,6 +147,12 @@ def render(cfg, stats, query):
     titles = cp.titles_for_family(fam)
     rels = cp.relationships_for_family(fam)
     by_id = {t["title_id"]: t for t in titles}
+    # Real job-ad evidence (v1) — {} when the pipeline hasn't run / tables absent.
+    try:
+        import careerpaths_v1 as cpv1
+        evidence = cpv1.evidence()
+    except Exception:
+        evidence = {}
     year, sex = _year(cfg, query), query.get("sex", "total")
 
     # ── Selected occupation + its career family ──────────────────────────────
@@ -226,9 +250,11 @@ def render(cfg, stats, query):
     with st.expander(i18n.t(cfg, "cp_table_h", lang, "All roles — detail")):
         import pandas as pd
         rows = []
+        has_ev = any(evidence.get(t["title_id"]) for t in titles)
         for t in sorted(titles, key=lambda x: (mid_salary(x) or 0)):
             b = t.get("_band")
-            rows.append({
+            e = evidence.get(t["title_id"])
+            row = {
                 i18n.t(cfg, "cp_c_title", lang, "Role"): _tname(t, lang),
                 i18n.t(cfg, "cp_c_level", lang, "Level"): _level(t["level_label"], lang),
                 i18n.t(cfg, "cp_c_track", lang, "Track"): _track(cfg, lang, t["track"]),
@@ -238,8 +264,19 @@ def render(cfg, stats, query):
                     (f"{charts.fmt_value(b['lo_salary'], cfg)}–{charts.fmt_value(b['hi_salary'], cfg)}"
                      if b else "—"),
                 i18n.t(cfg, "cp_c_conf", lang, "Evidence"): _conf(cfg, lang, t["confidence"]),
-            })
+            }
+            if has_ev:
+                row[i18n.t(cfg, "cp_c_market", lang, "Market signal")] = (
+                    f"{int(e.get('ad_count') or 0)} " + i18n.t(cfg, "cp_ads", lang, "ads")
+                    + f" · {_ev_strength(cfg, lang, e.get('evidence_strength'))}" if e else "—")
+                row[i18n.t(cfg, "cp_c_skills", lang, "Top ad skills")] = (
+                    ", ".join(_ev_skills(e, 4)) if e else "—")
+            rows.append(row)
         st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+        if has_ev:
+            st.caption(i18n.t(cfg, "cp_ev_attr", lang,
+                              "Market signal & top skills are aggregated from public job ads "
+                              "(Arbetsförmedlingen / JobTech, CC BY-SA) — indicative, not official."))
 
     # ═══ 2b · Performance positioning — INTERNAL PREVIEW (not published) ═════
     role = (st.session_state.get("auth_user") or {}).get("role", "")
@@ -344,6 +381,16 @@ def render(cfg, stats, query):
                 diff_html = (f'<div style="font-size:12px;color:{color};font-weight:600;margin-top:4px;">'
                              f'{sign}{charts.fmt_value(abs(diff), cfg)} {i18n.t(cfg,"cp_vs",lang,"vs occupation median (indicative)")}</div>')
             gaps = ", ".join((r.get("skill_gaps") or [])[:3])
+            ev = evidence.get(to["title_id"])
+            ev_html = ""
+            if ev:
+                sk = _ev_skills(ev, 3)
+                sk_html = (f'<div style="font-size:12px;color:#5B6472;margin-top:4px;">'
+                           f'{i18n.t(cfg,"cp_ev_skills",lang,"In-demand skills")}: '
+                           f'{_esc(", ".join(sk))}</div>' if sk else "")
+                ev_html = (
+                    f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
+                    f'color:#1B8A5A;margin-top:8px;">{_esc(_ev_ads(cfg, lang, ev))}</div>' + sk_html)
             with cols[i % len(cols)]:
                 st.markdown(
                     f'<div style="border:1px solid #E7E9ED;border-radius:12px;padding:13px 15px;'
@@ -356,6 +403,7 @@ def render(cfg, stats, query):
                     f'{diff_html}'
                     + (f'<div style="font-size:12px;color:#5B6472;margin-top:6px;">'
                        f'{i18n.t(cfg,"cp_gaps",lang,"Typical gaps")}: {_esc(gaps)}</div>' if gaps else "")
+                    + ev_html
                     + '</div>', unsafe_allow_html=True)
     if not shown_any:
         st.caption(i18n.t(cfg, "cp_no_moves", lang, "No mapped moves for this occupation yet."))
