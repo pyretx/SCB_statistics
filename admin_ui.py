@@ -1743,13 +1743,17 @@ def compliance_section():
     _kpi(k5, "c_public", _IC_ZAP, "#1B8A5A", "rgba(27,138,90,.12)", n_public, C["kpi_public"])
 
     st.write("")
-    st.caption(C.get("note_readonly", ""))
+    st.caption(C.get("note_editing", C.get("note_readonly", "")))
 
     if not impls:
         st.info(C.get("empty", ""))
         return
 
-    # Country records
+    import datetime as _dt
+    _admin_email = (st.session_state.get("auth_user") or {}).get("email", "admin")
+    _REL = ["blocked", "internal_only", "beta_ok", "public_ok"]
+
+    # Country records (at-a-glance, read-only — clearance is derived)
     st.markdown(f"#### {C['h_countries']}")
     st.dataframe(pd.DataFrame([{
         C["col_country"]: _country_name(r["country_slug"]),
@@ -1760,25 +1764,119 @@ def compliance_section():
         C["col_public"]: "✓" if r.get("public_publishable") else "",
     } for r in impls]), hide_index=True, use_container_width=True)
 
-    # Datasets + their per-dimension assessments
+    # ── Datasets + EDITABLE per-dimension clearance ──────────────────────────
     if datasets:
         by_subject: dict = {}
         for a in assessments:
             by_subject.setdefault((a["subject_type"], a["subject_id"]), []).append(a)
         st.markdown(f"#### {C['h_datasets']}")
         for d in datasets:
-            with st.expander(f"{d.get('title', '')} · {d.get('dataset_id', '')}"):
+            das = by_subject.get(("dataset", d["dataset_id"]), [])
+            worst = comp.rollup([a["status"] for a in das]) if das else "—"
+            with st.expander(f"{d.get('title', '')} · {d.get('dataset_id', '')}  ·  {worst}"):
                 lic = d.get("licence_name") or "—"
                 st.markdown(f"**{C['col_licence']}:** "
                             + (f"[{lic}]({d['licence_url']})" if d.get("licence_url") else lic))
                 if d.get("licence_summary_plain"):
                     st.caption(d["licence_summary_plain"])
-                das = by_subject.get(("dataset", d["dataset_id"]), [])
-                if das:
-                    st.dataframe(pd.DataFrame([{
-                        C["col_dim"]: a["dimension"], C["col_status"]: a["status"],
-                        C["col_next"]: a.get("next_review_date", "")} for a in das]),
-                        hide_index=True, use_container_width=True)
+                if not das:
+                    continue
+                orig = {a["assessment_id"]: a for a in das}
+                df = pd.DataFrame([{
+                    C["col_dim"]: a["dimension"], C["col_status"]: a["status"],
+                    C["col_next"]: a.get("next_review_date") or "",
+                    C["col_evidence"]: a.get("evidence_url") or "", "_id": a["assessment_id"],
+                } for a in das])
+                edited = st.data_editor(
+                    df, key=f"cmp_ed_{d['dataset_id']}", hide_index=True,
+                    use_container_width=True,
+                    column_config={
+                        C["col_dim"]: st.column_config.TextColumn(C["col_dim"], disabled=True),
+                        C["col_status"]: st.column_config.SelectboxColumn(
+                            C["col_status"], options=comp.CLEARANCE_STATES, required=True),
+                        C["col_next"]: st.column_config.TextColumn(C["col_next"]),
+                        C["col_evidence"]: st.column_config.TextColumn(C["col_evidence"]),
+                        "_id": None,
+                    })
+                if st.button(C["save_clear"], key=f"cmp_save_{d['dataset_id']}"):
+                    n_ok = n_err = 0
+                    today = _dt.date.today().isoformat()
+                    for _, row in edited.iterrows():
+                        o = orig.get(row["_id"])
+                        if not o:
+                            continue
+                        ch = {}
+                        if row[C["col_status"]] != o["status"]:
+                            ch["status"] = row[C["col_status"]]
+                        if (row[C["col_next"]] or "") != (o.get("next_review_date") or ""):
+                            ch["next_review_date"] = row[C["col_next"]] or None
+                        if (row[C["col_evidence"]] or "") != (o.get("evidence_url") or ""):
+                            ch["evidence_url"] = row[C["col_evidence"]] or None
+                        if ch:
+                            err = comp.set_assessment(
+                                row["_id"], reviewed_by=_admin_email, reviewed_date=today, **ch)
+                            n_err += 1 if err else 0
+                            n_ok += 0 if err else 1
+                    if n_ok:
+                        comp.recompute_for_dataset(d["dataset_id"])
+                        try:
+                            comp.country_notes.clear()
+                        except Exception:
+                            pass
+                    if n_err:
+                        st.error(C["save_err"].format(n=n_err))
+                    if n_ok:
+                        st.success(C["saved"].format(n=n_ok))
+                        st.rerun()
+                    elif not n_err:
+                        st.info(C["saved_none"])
+
+    # ── Release control — public listing / release state per country ─────────
+    st.markdown(f"#### {C['h_release']}")
+    st.caption(C.get("release_cap", ""))
+    rel_orig = {r["impl_id"]: r for r in impls}
+    rel_df = pd.DataFrame([{
+        C["col_country"]: _country_name(r["country_slug"]),
+        C["col_public"]: bool(r.get("public_publishable")),
+        C["col_release"]: r.get("release_status", "beta_ok"),
+        C["col_grand"]: bool(r.get("grandfathered")),
+        C["col_clearance"]: r.get("clearance_overall", ""),
+        "_id": r["impl_id"],
+    } for r in impls])
+    rel_edited = st.data_editor(
+        rel_df, key="cmp_release_ed", hide_index=True, use_container_width=True,
+        column_config={
+            C["col_country"]: st.column_config.TextColumn(C["col_country"], disabled=True),
+            C["col_public"]: st.column_config.CheckboxColumn(C["col_public"]),
+            C["col_release"]: st.column_config.SelectboxColumn(C["col_release"], options=_REL, required=True),
+            C["col_grand"]: st.column_config.CheckboxColumn(C["col_grand"]),
+            C["col_clearance"]: st.column_config.TextColumn(C["col_clearance"], disabled=True),
+            "_id": None,
+        })
+    if st.button(C["save_release"], key="cmp_release_save"):
+        n = 0
+        for _, row in rel_edited.iterrows():
+            o = rel_orig.get(row["_id"])
+            if not o:
+                continue
+            ch = {}
+            if bool(row[C["col_public"]]) != bool(o.get("public_publishable")):
+                ch["public_publishable"] = bool(row[C["col_public"]])
+            if row[C["col_release"]] != o.get("release_status"):
+                ch["release_status"] = row[C["col_release"]]
+            if bool(row[C["col_grand"]]) != bool(o.get("grandfathered")):
+                ch["grandfathered"] = bool(row[C["col_grand"]])
+            if ch and not comp.set_impl(row["_id"], **ch):
+                n += 1
+        if n:
+            try:
+                comp.country_notes.clear()
+            except Exception:
+                pass
+            st.success(C["released"].format(n=n))
+            st.rerun()
+        else:
+            st.info(C["saved_none"])
 
     # Reviews due (overdue or within 30 days)
     st.markdown(f"#### {C['h_overdue']}")

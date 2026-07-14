@@ -124,3 +124,67 @@ def rollup(statuses) -> str:
     if not present:
         return "likely_verify"
     return min(present, key=CLEARANCE_STATES.index)
+
+
+# ── Admin writes (service client — server-side only) ─────────────────────────
+def set_assessment(assessment_id: str, *, status=None, next_review_date=None,
+                   evidence_url=None, evidence_note=None,
+                   reviewed_by=None, reviewed_date=None) -> str | None:
+    """Update one assessment (a dimension verdict). None on success, else a safe
+    error string. Only whitelisted fields are written."""
+    changes: dict = {}
+    if status is not None:
+        if status not in CLEARANCE_STATES:
+            return "Invalid status."
+        changes["status"] = status
+    for k, v in (("next_review_date", next_review_date), ("evidence_url", evidence_url),
+                 ("evidence_note", evidence_note), ("reviewed_by", reviewed_by),
+                 ("reviewed_date", reviewed_date)):
+        if v is not None:
+            changes[k] = v or None      # "" → NULL
+    if not changes:
+        return None
+    try:
+        (auth._client(service=True).table(_T_ASSESS)
+         .update(changes).eq("assessment_id", assessment_id).execute())
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"[compliance] set_assessment failed: {e}")
+        return "Could not save assessment."
+
+
+def set_impl(impl_id: str, **changes) -> str | None:
+    """Update a country implementation's gate fields (release_status,
+    public_publishable, grandfathered, clearance_overall). Ignores other keys."""
+    allowed = {"release_status", "public_publishable", "grandfathered", "clearance_overall"}
+    changes = {k: v for k, v in changes.items() if k in allowed}
+    if not changes:
+        return None
+    try:
+        (auth._client(service=True).table(_T_IMPL)
+         .update(changes).eq("impl_id", impl_id).execute())
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"[compliance] set_impl failed: {e}")
+        return "Could not save implementation."
+
+
+def recompute_for_dataset(dataset_id: str) -> int:
+    """After dataset-dimension edits, recompute clearance_overall (worst of the
+    dataset's dimensions + each impl's access-method dimensions) for every impl on
+    that dataset. Returns how many impls changed."""
+    ass, _ = assessments()
+    impls, _ = country_impls()
+    ds_status = [a["status"] for a in ass
+                 if a["subject_type"] == "dataset" and a["subject_id"] == dataset_id]
+    changed = 0
+    for im in impls:
+        if im.get("dataset_id") != dataset_id:
+            continue
+        acc_status = [a["status"] for a in ass
+                      if a["subject_type"] == "access" and a["subject_id"] == im.get("access_id")]
+        overall = rollup(ds_status + acc_status)
+        if overall != im.get("clearance_overall"):
+            if not set_impl(im["impl_id"], clearance_overall=overall):
+                changed += 1
+    return changed
