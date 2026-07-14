@@ -718,11 +718,15 @@ def render(cfg, stats, query):
     primary = occ_codes[0]
     fam = cp.family_for_ssyk(primary)
     if not fam:
+        _names = cp.family_names()
+        _covered = sorted(filter(None, {
+            ((_names.get(fid, {}).get("sv") or _names.get(fid, {}).get("en")) if lang == "SV"
+             else (_names.get(fid, {}).get("en") or _names.get(fid, {}).get("sv")))
+            for fid in {t.get("family_id") for t in cp.public_titles()}}))
         st.info(i18n.t(cfg, "cp_uncovered", lang,
-                       "Career Paths currently covers a set of professional families "
-                       "(HR, Software & ICT, Finance, Sales & Marketing, Healthcare, Legal, "
-                       "Logistics and Engineering). Open an occupation in one of those to "
-                       "explore its career map."))
+                       "Career Paths currently covers {n} professional families: {list}. "
+                       "Open an occupation in one of those to explore its career map.")
+                .format(n=len(_covered), list=", ".join(_covered)))
         return
 
     titles = cp.titles_for_family(fam)

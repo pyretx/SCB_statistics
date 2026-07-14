@@ -137,9 +137,8 @@ _CAREER_SV = {
                      "Löneintervallen är uppskattningar baserade på SCB:s officiella fördelning och "
                      "överlappar normalt. Lön mäter inte individuell prestation.",
     "cp_pick": "Välj ett yrke i sidofältet för att se dess karriärvägar.",
-    "cp_uncovered": "Karriärvägar täcker för närvarande ett antal professionella familjer (HR, IT, "
-                    "ekonomi, försäljning & marknad, vård, juridik, logistik och ingenjör). Öppna "
-                    "ett yrke i någon av dessa för att utforska dess karriärkarta.",
+    "cp_uncovered": "Karriärvägar täcker för närvarande {n} professionella familjer: {list}. "
+                    "Öppna ett yrke i någon av dessa för att utforska dess karriärkarta.",
     "cp_selected": "Valt yrke", "cp_family": "Karriärfamilj",
     "cp_curve_h": "Officiell lönekurva",
     "cp_curve_cap": "SCB:s officiella percentilfördelning för detta yrke. Punkterna är publicerade "
