@@ -945,6 +945,37 @@ def _update_spain_data(status, log) -> UpdateResult:
                         f"occupations) · {_commit_note('spain_earnings.json.gz')}")
 
 
+# ── Japan · e-Stat 0003426334 (Basic Survey on Wage Structure) — bundled ──────
+def _check_japan_data() -> SourceStatus:
+    from countries.japan import build as jpbuild
+    info = jpbuild.bundled_info()
+    yrs = info.get("years") or []
+    span = f"{min(yrs)}–{max(yrs)}" if len(yrs) > 1 else str(info.get("year", "—"))
+    s = SourceStatus("japan_data", "Japan", "e-Stat",
+                     current=f"{span} · built {info.get('built_at', '—')}")
+    s.latest = span
+    s.update_available = False
+    s.note = _notes().get("japan_data", "Bundled e-Stat snapshot — rebuild re-fetches "
+                          "table 0003426334 (needs [estat] app_id in secrets).")
+    return s
+
+
+def _update_japan_data(status, log) -> UpdateResult:
+    from countries.japan import build as jpbuild
+    res = jpbuild.build(log=log)
+    if res.get("codes", 0) < 5:
+        return UpdateResult("japan_data", OUT_VALIDATION, f"too few groups: {res}")
+    try:
+        from countries.japan import provider as jpprov
+        jpprov._load.clear()
+    except Exception:
+        pass
+    return UpdateResult("japan_data", OUT_UPDATED,
+                        f"{res['built_at']} · {res['codes']} groups, "
+                        f"{len(res.get('years', []))} years · "
+                        f"{_commit_note('japan_earnings.json.gz')}")
+
+
 # ── New Zealand · Stats NZ ADE INC_INC_004 — bundled snapshot (SDMX API) ──────
 def _check_newzealand_data() -> SourceStatus:
     from countries.newzealand import build as nzbuild
@@ -1165,7 +1196,8 @@ _CHECKERS = {"sweden_data": _check_sweden_data, "sweden_labels": _check_sweden_l
              "brazil_data": _check_brazil_data,
              "mexico_data": _check_mexico_data,
              "switzerland_data": _check_switzerland_data,
-             "spain_data": _check_spain_data}
+             "spain_data": _check_spain_data,
+             "japan_data": _check_japan_data}
 _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden_labels,
              "france_api": _update_france_api, "france_micro": _update_france_micro,
              "norway_data": _update_norway_data, "norway_labels": _update_norway_labels,
@@ -1189,7 +1221,8 @@ _UPDATERS = {"sweden_data": _update_sweden_data, "sweden_labels": _update_sweden
              "brazil_data": _update_brazil_data,
              "mexico_data": _update_mexico_data,
              "switzerland_data": _update_switzerland_data,
-             "spain_data": _update_spain_data}
+             "spain_data": _update_spain_data,
+             "japan_data": _update_japan_data}
 _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "sweden_labels": ("Sweden", "SCB · SSYK labels"),
          "france_api": ("France", "INSEE Melodi · API"),
@@ -1216,7 +1249,8 @@ _BASE = {"sweden_data": ("Sweden", "SCB · data year"),
          "brazil_data": ("Brazil", "IBGE"),
          "mexico_data": ("Mexico", "INEGI ENOE"),
          "switzerland_data": ("Switzerland", "FSO LSE"),
-         "spain_data": ("Spain", "INE")}
+         "spain_data": ("Spain", "INE"),
+         "japan_data": ("Japan", "e-Stat")}
 SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "norway_data", "norway_labels", "us_data",
                 "denmark_data", "denmark_labels",
@@ -1226,7 +1260,7 @@ SOURCE_ORDER = ["sweden_data", "sweden_labels", "france_api", "france_micro",
                 "netherlands_data", "netherlands_labels",
                 "uk_data", "germany_data", "canada_data",
                 "newzealand_data", "australia_data", "slovenia_data", "brazil_data",
-                "mexico_data", "switzerland_data", "spain_data"]
+                "mexico_data", "switzerland_data", "spain_data", "japan_data"]
 
 # Register the Eurostat-SES countries into the maps + order (generic handler).
 for _k in _EUROSTAT_SES:

@@ -242,6 +242,12 @@ source = "Eurostat SES"
 type = "bundled file"
 desc = "Bundled snapshot from the open Eurostat API (earn_ses_21; mean gross monthly earnings in EUR by ISCO-08 major group × sex, 2006–2022). Beta country."
 
+[data.japan]
+name = "Japan"
+source = "e-Stat (Basic Survey on Wage Structure)"
+type = "bundled file"
+desc = "Bundled snapshot from the open e-Stat API (table 0003426334; mean scheduled monthly cash earnings in JPY by 11 JSCO-2020 major occupation groups × sex, 2020–2023). Needs [estat] app_id in secrets. Rebuild re-fetches from e-Stat. Beta country."
+
 [data.serbia]
 name = "Serbia"
 source = "Eurostat SES"

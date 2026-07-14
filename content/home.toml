@@ -173,7 +173,7 @@ catalog = [
   { name = "Australia",      iso = "au", region = "apac", source = "ABS",      status = "live", slug = "australia" },
   { name = "China",          iso = "cn", region = "apac", source = "NBS",      status = "soon" },
   { name = "India",          iso = "in", region = "apac", source = "MOSPI",    status = "soon" },
-  { name = "Japan",          iso = "jp", region = "apac", source = "E-STAT",   status = "soon" },
+  { name = "Japan",          iso = "jp", region = "apac", source = "E-STAT",   status = "beta", slug = "japan" },
   { name = "New Zealand",    iso = "nz", region = "apac", source = "STATS NZ", status = "beta", slug = "newzealand" },
   { name = "Singapore",      iso = "sg", region = "apac", source = "SINGSTAT", status = "soon" },
   { name = "South Korea",    iso = "kr", region = "apac", source = "KOSIS",    status = "soon" },
@@ -304,6 +304,7 @@ cy = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU s
 mt = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
 rs = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2014–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
 mk = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2010–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
+jp = ["Mean earnings & gender split · 11 JSCO major groups", "Basic Survey on Wage Structure · 2020–2023 trend", "Scheduled monthly cash earnings · e-Stat · 2023"]
 
 [footer]
 note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France) · SSB (Norway) · BLS (United States)"

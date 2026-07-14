@@ -639,6 +639,13 @@ _EUROSTAT_ADMIN = {"lithuania": "lt", "belgium": "be", "portugal": "pt", "austri
                    "northmacedonia": "mk"}
 
 
+def _japan_card(query, D, flt="all"):
+    from countries.japan import build as jpbuild
+    from countries.japan.provider import _leaves as jp_leaves
+    _bundled_card(query, D, flt, tkey="japan", iso="jp", keys=["japan_data"],
+                  build_mod=jpbuild, leaves_fn=jp_leaves, kw=("estat", "jsco", "wage"))
+
+
 def _eurostat_cards(query, D, flt="all"):
     import importlib
     from countries import eurostat_ses
@@ -1047,6 +1054,7 @@ def data_section():
     _slovenia_card(query, D, flt)
     _switzerland_card(query, D, flt)
     _spain_card(query, D, flt)
+    _japan_card(query, D, flt)
     _eurostat_cards(query, D, flt)
     _newzealand_card(query, D, flt)
     _australia_card(query, D, flt)
