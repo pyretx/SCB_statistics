@@ -284,21 +284,21 @@ st.markdown("""
                 object-fit:cover !important; display:block; border:1px solid rgba(0,0,0,.08); }
   /* ── "Watch the demo" pitch-video button (design tokens from the export):
      white pill, blue 30px play circle (::before), mono duration chip (::after). */
-  .st-key-hero_video button { display:inline-flex; align-items:center; gap:11px;
+  :is(.st-key-hero_video,.st-key-hero_tour) button { display:inline-flex; align-items:center; gap:11px;
      margin-top:10px; font-size:14.5px; font-weight:600; color:#0C1119 !important;
      background:#fff !important; border:1px solid #DDE1E6 !important;
      padding:10px 18px 10px 12px !important; border-radius:12px !important;
      box-shadow:0 2px 8px rgba(16,21,31,.06); width:auto; }
-  .st-key-hero_video button:hover { border-color:#C9CFD8 !important;
+  :is(.st-key-hero_video,.st-key-hero_tour) button:hover { border-color:#C9CFD8 !important;
      box-shadow:0 4px 12px rgba(16,21,31,.10); }
-  .st-key-hero_video button::before { content:''; width:30px; height:30px;
+  :is(.st-key-hero_video,.st-key-hero_tour) button::before { content:''; width:30px; height:30px;
      border-radius:50%; flex:0 0 auto; background:#0A63A6
      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 4.5v15l13-7.5z'/></svg>")
      center/12px 12px no-repeat; }
-  .st-key-hero_video button::after { content:'';
+  :is(.st-key-hero_video,.st-key-hero_tour) button::after { content:'';
      font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
      color:#98A0AC; }  /* content set dynamically from home.toml at render */
-  .st-key-hero_video button p { font-size:14.5px !important; font-weight:600 !important;
+  :is(.st-key-hero_video,.st-key-hero_tour) button p { font-size:14.5px !important; font-weight:600 !important;
      color:#0C1119 !important; white-space:nowrap; }
   /* Header Admin/Log-out buttons: keep icon + label on ONE row so the two
      buttons always share the same height — without this the flex content
@@ -664,16 +664,20 @@ if st.session_state.get("_show_profile"):
     _profile_dialog()
 
 
-@st.dialog(C["hero"].get("video", {}).get("label", "Watch the demo"), width="large")
-def _video_dialog():
-    # Reset the flag immediately: the X-dismiss triggers a rerun, and with the
-    # flag cleared the dialog isn't re-invoked (video plays without reruns).
-    st.session_state["_show_video"] = False
-    st.video(C["hero"]["video"]["file"], autoplay=True)
+def _play_video_dialog():
+    # Reset immediately: the X-dismiss triggers a rerun, and with the state
+    # cleared the dialog isn't re-invoked (the video plays without reruns).
+    v = st.session_state.get("_video_play")
+    st.session_state["_video_play"] = None
+    if v and v.get("file"):
+        st.video(v["file"], autoplay=True)
 
 
-if st.session_state.get("_show_video"):
-    _video_dialog()
+# One player for either pitch video — the title follows whichever button opened it
+# (dynamic-title dialog: st.dialog(title)(fn)()).
+_vp = st.session_state.get("_video_play")
+if _vp:
+    st.dialog(_vp.get("label") or "Video", width="large")(_play_video_dialog)()
 
 st.divider()
 
@@ -720,16 +724,31 @@ with hc1:
       {_hero["intro"]}
     </p>
     """, unsafe_allow_html=True)
-    # ── Pitch-video button (content/home.toml → [hero.video]); opens the pop-up.
-    _vid = _hero.get("video", {})
-    if _vid.get("file") and os.path.exists(_vid["file"]):
-        if _vid.get("duration"):
-            st.markdown(f"<style>.st-key-hero_video button::after"
-                        f"{{content:'{_vid['duration']}';}}</style>",
-                        unsafe_allow_html=True)
-        if st.button(_vid.get("label", "Watch the demo"), key="hero_video"):
-            st.session_state["_show_video"] = True
+    # ── Pitch-video buttons (content/home.toml → [hero.video] + [hero.video2]);
+    #    each opens the SAME pop-up player, side by side.
+    def _video_btn(vid, key):
+        if not (vid.get("file") and os.path.exists(vid["file"])):
+            return
+        if vid.get("duration"):
+            st.markdown(f"<style>.st-key-{key} button::after"
+                        f"{{content:'{vid['duration']}';}}</style>", unsafe_allow_html=True)
+        if st.button(vid.get("label", "Watch"), key=key):
+            st.session_state["_video_play"] = {"file": vid["file"], "label": vid.get("label", "")}
             st.rerun()
+
+    _vids = [(_hero.get("video", {}), "hero_video"), (_hero.get("video2", {}), "hero_tour")]
+    _vids = [(v, k) for v, k in _vids if v.get("file") and os.path.exists(v["file"])]
+    if _vids:
+        try:                                   # side by side on modern Streamlit
+            _vrow = st.container(horizontal=True, gap="small")
+            with _vrow:
+                for v, k in _vids:
+                    _video_btn(v, k)
+        except TypeError:                      # fallback: narrow columns
+            _vcols = st.columns(len(_vids) + 1)
+            for i, (v, k) in enumerate(_vids):
+                with _vcols[i]:
+                    _video_btn(v, k)
     st.markdown(f"""
     <div style="display:flex;gap:20px;margin-top:24px;flex-wrap:nowrap;align-items:stretch;">
       {_stats_html}

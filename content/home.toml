@@ -38,6 +38,12 @@ label    = "Watch the demo"
 duration = "1:00"
 file     = "assets/video/Salary Explorer low.mp4"
 
+# Second pitch button next to "Watch the demo" — the feature tour. Same pop-up.
+[hero.video2]
+label    = "Feature Tour"
+duration = "0:57"
+file     = "assets/video/Feature Tour low.mp4"
+
 # The live-preview card (right of the hero). Each slide previews one occupation.
 # occ_code/year: leave occ_code = "" to skip the live fetch and just show the
 # fallback figures (used for the France slide). fallback = the numbers shown if
