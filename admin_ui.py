@@ -2050,8 +2050,179 @@ def compliance_section():
                     st.info(C["saved_none"])
 
 
+# ── Section: Career Paths (Sweden beta) calibration ──────────────────────────
+_CP_TRACKS = ["ic", "specialist", "management"]
+_CP_CONF = ["strong", "moderate", "limited", "experimental"]
+_CP_REV = ["draft", "reviewed", "approved"]
+_CP_RTYPES = ["progression", "leadership", "specialist", "lateral", "entry", "related"]
+
+
+def career_section():
+    """Calibrate the curated Career Paths estimates (edit bands/tracks/confidence/
+    publish; audit-logged). Guarded so a missing table shows a message, not a crash."""
+    import pandas as pd
+    import careerpaths as cp
+    C = _A().get("career", {})
+    st.caption(C.get("caption", ""))
+
+    fams, ferr = cp.families()
+    if ferr:
+        st.info(C.get("unavailable", "{err}").format(err=ferr))
+        return
+    if not fams:
+        st.info(C.get("empty", ""))
+        return
+    titles, _ = cp.titles()
+    rels, _ = cp.relationships()
+    _admin = (st.session_state.get("auth_user") or {}).get("email", "admin")
+
+    n_tpub = sum(1 for t in titles if t.get("published"))
+    n_rpub = sum(1 for r in rels if r.get("published"))
+    n_draft = sum(1 for t in titles if t.get("review_status") != "approved")
+    k1, k2, k3, k4 = st.columns(4)
+    _kpi(k1, "cp_fam", _IC_GLOBE, "#0A63A6", "rgba(10,99,166,.10)", len(fams), C["kpi_families"])
+    _kpi(k2, "cp_tit", _IC_GLOBE, "#0A63A6", "rgba(10,99,166,.10)", f"{n_tpub}/{len(titles)}", C["kpi_titles"])
+    _kpi(k3, "cp_rel", _IC_ZAP, "#1B8A5A", "rgba(27,138,90,.12)", f"{n_rpub}/{len(rels)}", C["kpi_rels"])
+    _kpi(k4, "cp_drf", _IC_ALERT, "#B26A00", "rgba(178,106,0,.13)", n_draft, C["kpi_draft"])
+    st.write("")
+    st.caption(C.get("note", ""))
+    by_id = {t["title_id"]: t for t in titles}
+
+    for f in fams:
+        fid = f["family_id"]
+        with st.container(border=True, key=f"cpfam_{fid}"):
+            hc1, hc2 = st.columns([2, 1.4], vertical_alignment="center")
+            hc1.markdown(f"#### {f.get('name_en', fid)}  ·  `{fid}`")
+            pub = hc2.toggle(C.get("fam_publish", "Published"), value=bool(f.get("published")),
+                             key=f"cp_fpub_{fid}")
+            if pub != bool(f.get("published")):
+                cp.set_family_published(fid, pub)
+                cp.log_change("cp_family", fid, "publish" if pub else "unpublish", _admin,
+                              {"published": pub})
+                st.rerun()
+
+            # ── Titles editor ──
+            ftitles = [t for t in titles if t.get("family_id") == fid]
+            if ftitles:
+                st.markdown(f"**{C.get('h_titles', 'Titles')}**")
+                torig = {t["title_id"]: t for t in ftitles}
+                tdf = pd.DataFrame([{
+                    C["col_role"]: t["name_en"], "SSYK": t["primary_ssyk"],
+                    C["col_track"]: t["track"], C["col_level"]: t["level_label"],
+                    C["col_idx"]: int(t.get("level_index") or 1),
+                    C["col_lo"]: float(t["lo_pct"]), C["col_mid"]: float(t["mid_pct"]),
+                    C["col_hi"]: float(t["hi_pct"]), C["col_conf"]: t["confidence"],
+                    C["col_rev"]: t["review_status"], C["col_pub"]: bool(t.get("published")),
+                    "_id": t["title_id"],
+                } for t in ftitles])
+                ted = st.data_editor(
+                    tdf, key=f"cp_ted_{fid}", hide_index=True, use_container_width=True,
+                    column_config={
+                        C["col_role"]: st.column_config.TextColumn(C["col_role"], disabled=True),
+                        "SSYK": st.column_config.TextColumn("SSYK", disabled=True),
+                        C["col_track"]: st.column_config.SelectboxColumn(C["col_track"], options=_CP_TRACKS, required=True),
+                        C["col_level"]: st.column_config.TextColumn(C["col_level"]),
+                        C["col_idx"]: st.column_config.NumberColumn(C["col_idx"], min_value=1, max_value=9, step=1),
+                        C["col_lo"]: st.column_config.NumberColumn(C["col_lo"], min_value=0, max_value=100, step=1),
+                        C["col_mid"]: st.column_config.NumberColumn(C["col_mid"], min_value=0, max_value=100, step=1),
+                        C["col_hi"]: st.column_config.NumberColumn(C["col_hi"], min_value=0, max_value=100, step=1),
+                        C["col_conf"]: st.column_config.SelectboxColumn(C["col_conf"], options=_CP_CONF, required=True),
+                        C["col_rev"]: st.column_config.SelectboxColumn(C["col_rev"], options=_CP_REV, required=True),
+                        C["col_pub"]: st.column_config.CheckboxColumn(C["col_pub"]),
+                        "_id": None,
+                    })
+                if st.button(C["save_titles"], key=f"cp_tsave_{fid}"):
+                    n_ok = n_err = 0
+                    for _, row in ted.iterrows():
+                        o = torig.get(row["_id"])
+                        if not o:
+                            continue
+                        ch = {}
+                        for col, field, cast in (
+                                (C["col_track"], "track", str), (C["col_level"], "level_label", str),
+                                (C["col_idx"], "level_index", int), (C["col_lo"], "lo_pct", float),
+                                (C["col_mid"], "mid_pct", float), (C["col_hi"], "hi_pct", float),
+                                (C["col_conf"], "confidence", str), (C["col_rev"], "review_status", str),
+                                (C["col_pub"], "published", bool)):
+                            new = cast(row[col])
+                            if new != cast(o.get(field) if o.get(field) is not None else new):
+                                ch[field] = new
+                        if ch:
+                            err = cp.set_title(row["_id"], **ch)
+                            if err:
+                                n_err += 1
+                            else:
+                                n_ok += 1
+                                cp.log_change("cp_title", row["_id"], "edit", _admin, ch)
+                    if n_ok:
+                        cp._clear_cache()
+                    if n_err:
+                        st.error(C["save_err"].format(n=n_err))
+                    if n_ok:
+                        st.success(C["saved"].format(n=n_ok))
+                        st.rerun()
+                    elif not n_err:
+                        st.info(C["saved_none"])
+
+            # ── Relationships editor ──
+            frels = [r for r in rels if r.get("family_id") == fid]
+            if frels:
+                st.markdown(f"**{C.get('h_rels', 'Relationships')}**")
+                rorig = {r["rel_id"]: r for r in frels}
+                rdf = pd.DataFrame([{
+                    C["col_from"]: by_id.get(r["from_title"], {}).get("name_en", r["from_title"]),
+                    C["col_to"]: by_id.get(r["to_title"], {}).get("name_en", r["to_title"]),
+                    C["col_type"]: r["rel_type"], C["col_conf"]: r["confidence"],
+                    C["col_rev"]: r["review_status"], C["col_pub"]: bool(r.get("published")),
+                    C["col_expl"]: r.get("explanation") or "", "_id": r["rel_id"],
+                } for r in frels])
+                red = st.data_editor(
+                    rdf, key=f"cp_red_{fid}", hide_index=True, use_container_width=True,
+                    column_config={
+                        C["col_from"]: st.column_config.TextColumn(C["col_from"], disabled=True),
+                        C["col_to"]: st.column_config.TextColumn(C["col_to"], disabled=True),
+                        C["col_type"]: st.column_config.SelectboxColumn(C["col_type"], options=_CP_RTYPES, required=True),
+                        C["col_conf"]: st.column_config.SelectboxColumn(C["col_conf"], options=_CP_CONF, required=True),
+                        C["col_rev"]: st.column_config.SelectboxColumn(C["col_rev"], options=_CP_REV, required=True),
+                        C["col_pub"]: st.column_config.CheckboxColumn(C["col_pub"]),
+                        C["col_expl"]: st.column_config.TextColumn(C["col_expl"]),
+                        "_id": None,
+                    })
+                if st.button(C["save_rels"], key=f"cp_rsave_{fid}"):
+                    n_ok = n_err = 0
+                    for _, row in red.iterrows():
+                        o = rorig.get(row["_id"])
+                        if not o:
+                            continue
+                        ch = {}
+                        for col, field, cast in (
+                                (C["col_type"], "rel_type", str), (C["col_conf"], "confidence", str),
+                                (C["col_rev"], "review_status", str), (C["col_pub"], "published", bool),
+                                (C["col_expl"], "explanation", str)):
+                            new = cast(row[col]) if row[col] is not None else ("" if cast is str else row[col])
+                            cur = o.get(field)
+                            if new != (cast(cur) if cur is not None else ("" if cast is str else cur)):
+                                ch[field] = new
+                        if ch:
+                            err = cp.set_relationship(row["_id"], **ch)
+                            if err:
+                                n_err += 1
+                            else:
+                                n_ok += 1
+                                cp.log_change("cp_relationship", row["_id"], "edit", _admin, ch)
+                    if n_ok:
+                        cp._clear_cache()
+                    if n_err:
+                        st.error(C["save_err"].format(n=n_err))
+                    if n_ok:
+                        st.success(C["saved"].format(n=n_ok))
+                        st.rerun()
+                    elif not n_err:
+                        st.info(C["saved_none"])
+
+
 SECTIONS = {"overview": overview_section, "data": data_section,
-            "compliance": compliance_section,
+            "compliance": compliance_section, "career": career_section,
             "users": users_section, "feedback": feedback_section,
             "messages": qvistin_messages_section}
 

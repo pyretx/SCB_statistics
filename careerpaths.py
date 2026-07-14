@@ -131,3 +131,15 @@ def _clear_cache():
             fn.clear()
         except Exception:
             pass
+
+
+def log_change(subject_type: str, subject_id: str, action: str, actor: str,
+               before_after: dict | None = None) -> None:
+    """Append an audit entry (reuses the compliance_review_log table — generic
+    subject_type/subject_id). Never raises."""
+    try:
+        (auth._client(service=True).table("compliance_review_log").insert({
+            "subject_type": subject_type, "subject_id": subject_id,
+            "action": action, "actor": actor, "before_after": before_after or {}}).execute())
+    except Exception as e:  # noqa: BLE001
+        print(f"[careerpaths] log_change failed: {e}")
