@@ -127,9 +127,12 @@ def top(active: str):
             """, unsafe_allow_html=True)
             st.page_link("landing.py", label=brand)
     with right:
-        # Right-aligned, non-truncating nav (leading spacer pushes links right;
-        # short labels from content/about.toml keep them on one line).
-        cols = st.columns([0.6, 0.5, 1.15, 0.8, 1.15])
+        # Right-aligned, non-truncating nav (small leading spacer pushes links
+        # right; short labels from content/about.toml + generous columns keep each
+        # on one line — a too-narrow column made "Home" truncate to "H").
+        st.markdown("<style>[data-testid='stPageLink'] a p{white-space:nowrap;}</style>",
+                    unsafe_allow_html=True)
+        cols = st.columns([0.3, 1.0, 1.5, 1.0, 1.3])
         cols[1].page_link("landing.py", label=N["home"], icon=":material/home:")
         cols[2].page_link("methodology.py", label=N.get("methodology_short", N["methodology"]))
         cols[3].page_link("about.py", label=N.get("about_short", N["about"]))
