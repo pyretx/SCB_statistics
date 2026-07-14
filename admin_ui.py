@@ -1750,11 +1750,78 @@ def _cell_style(styler, func, cols):
         return styler.applymap(func, subset=cols)
 
 
+def _cmp_dataset_editor(d, das, C, comp, pd, _dt, _admin_email):
+    """One dataset's licence + editable per-dimension clearance grid + Save."""
+    worst = comp.rollup([a["status"] for a in das]) if das else None
+    if worst:
+        st.markdown(_chip(_CLR_LABEL[worst], _CLR_COLOR[worst]), unsafe_allow_html=True)
+    lic = d.get("licence_name") or "—"
+    st.markdown(f"**{C['col_licence']}:** "
+                + (f"[{lic}]({d['licence_url']})" if d.get("licence_url") else lic))
+    if d.get("licence_summary_plain"):
+        st.caption(d["licence_summary_plain"])
+    if not das:
+        return
+    _clr_opts = [_CLR_LABEL[c] for c in _CLR_ORDER]
+    orig = {a["assessment_id"]: a for a in das}
+    df = pd.DataFrame([{
+        C["col_dim"]: a["dimension"],
+        C["col_status"]: _CLR_LABEL.get(a["status"], a["status"]),
+        C["col_next"]: a.get("next_review_date") or "",
+        C["col_evidence"]: a.get("evidence_url") or "", "_id": a["assessment_id"],
+    } for a in das])
+    edited = st.data_editor(
+        df, key=f"cmp_ed_{d['dataset_id']}", hide_index=True, use_container_width=True,
+        column_config={
+            C["col_dim"]: st.column_config.TextColumn(C["col_dim"], disabled=True),
+            C["col_status"]: st.column_config.SelectboxColumn(
+                C["col_status"], options=_clr_opts, required=True),
+            C["col_next"]: st.column_config.TextColumn(C["col_next"], help="YYYY-MM-DD"),
+            C["col_evidence"]: st.column_config.LinkColumn(C["col_evidence"]),
+            "_id": None,
+        })
+    if st.button(C["save_clear"], key=f"cmp_save_{d['dataset_id']}"):
+        n_ok = n_err = 0
+        today = _dt.date.today().isoformat()
+        for _, row in edited.iterrows():
+            o = orig.get(row["_id"])
+            if not o:
+                continue
+            new_status = _CLR_LBL2CODE.get(row[C["col_status"]], o["status"])
+            ch = {}
+            if new_status != o["status"]:
+                ch["status"] = new_status
+            if (row[C["col_next"]] or "") != (o.get("next_review_date") or ""):
+                ch["next_review_date"] = row[C["col_next"]] or None
+            if (row[C["col_evidence"]] or "") != (o.get("evidence_url") or ""):
+                ch["evidence_url"] = row[C["col_evidence"]] or None
+            if ch:
+                err = comp.set_assessment(
+                    row["_id"], reviewed_by=_admin_email, reviewed_date=today, **ch)
+                n_err += 1 if err else 0
+                n_ok += 0 if err else 1
+        if n_ok:
+            comp.recompute_for_dataset(d["dataset_id"])
+            try:
+                comp.country_notes.clear()
+            except Exception:
+                pass
+        if n_err:
+            st.error(C["save_err"].format(n=n_err))
+        if n_ok:
+            st.success(C["saved"].format(n=n_ok))
+            st.rerun()
+        elif not n_err:
+            st.info(C["saved_none"])
+
+
 def compliance_section():
     """Admin view + inline editor for the compliance register
-    (docs/compliance-framework.md). Guarded throughout so a missing table / DB
-    error shows a message, never a crash."""
+    (docs/compliance-framework.md). Three sub-views (Country records / Datasets &
+    clearance / Release control) share a country focus, so you can jump between a
+    country's clearance and its release. Guarded so a DB error shows a message."""
     import pandas as pd
+    import datetime as _dt
     import compliance as comp
     C = _A().get("compliance", {})
     st.caption(C.get("caption", ""))
@@ -1769,17 +1836,24 @@ def compliance_section():
     rc = comp.review_counts()
     n_public = sum(1 for r in impls if r.get("public_publishable"))
 
+    # ── KPI tiles (Reviews-due lives here, as tiles) ─────────────────────────
     k1, k2, k3, k4, k5 = st.columns(5)
     _kpi(k1, "c_overdue", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", rc["overdue"], C["kpi_overdue"])
     _kpi(k2, "c_soon", _IC_ALERT, "#B26A00", "rgba(178,106,0,.13)", rc["due_soon"], C["kpi_soon"])
     _kpi(k3, "c_countries", _IC_GLOBE, "#0A63A6", "rgba(10,99,166,.10)", len(impls), C["kpi_countries"])
     _kpi(k4, "c_datasets", _IC_GLOBE, "#0A63A6", "rgba(10,99,166,.10)", len(datasets), C["kpi_datasets"])
     _kpi(k5, "c_public", _IC_ZAP, "#1B8A5A", "rgba(27,138,90,.12)", n_public, C["kpi_public"])
+    if overdue and not oerr:
+        with st.expander(C.get("overdue_show", "Show reviews due") + f" ({len(overdue)})"):
+            st.dataframe(pd.DataFrame([{
+                C["col_subject"]: f"{a['subject_type']}:{a['subject_id']}",
+                C["col_dim"]: a["dimension"],
+                C["col_status"]: _CLR_LABEL.get(a["status"], a["status"]),
+                C["col_next"]: a.get("next_review_date", "")} for a in overdue]),
+                hide_index=True, use_container_width=True)
 
     st.write("")
     st.caption(C.get("note_editing", C.get("note_readonly", "")))
-
-    # Legend — what the clearance chips mean.
     with st.expander(C.get("legend_title", "What the statuses mean")):
         st.markdown(
             " &nbsp; ".join(_chip(_CLR_LABEL[c], _CLR_COLOR[c]) for c in _CLR_ORDER)
@@ -1795,198 +1869,183 @@ def compliance_section():
         st.info(C.get("empty", ""))
         return
 
-    import datetime as _dt
     _admin_email = (st.session_state.get("auth_user") or {}).get("email", "admin")
 
-    # ── Search + clearance filter (applies to every table below) ─────────────
-    fc1, fc2 = st.columns([2, 1.4])
-    cq = (fc1.text_input("cmp_search", key="cmp_search", label_visibility="collapsed",
-                         placeholder=C.get("search_ph", "Search…")) or "").strip().lower()
-    sel_labels = fc2.multiselect(C.get("filter_status", "Filter by clearance"),
-                                 [_CLR_LABEL[c] for c in _CLR_ORDER], default=[], key="cmp_flt")
-    sel_codes = {_CLR_LBL2CODE[l] for l in sel_labels}   # empty = all
-
-    def _keep(r) -> bool:
-        if sel_codes and r.get("clearance_overall") not in sel_codes:
-            return False
-        if cq:
-            hay = (f"{_country_name(r['country_slug'])} {r.get('dataset_id', '')} "
-                   f"{r.get('release_status', '')}").lower()
-            return cq in hay
-        return True
-
-    fimpls = [r for r in impls if _keep(r)]
-
-    # ── Country records (styled, friendly labels) ────────────────────────────
-    st.markdown(f"#### {C['h_countries']}")
-    if not fimpls:
-        st.caption(C.get("no_match", "No matches."))
-    else:
-        cr_df = pd.DataFrame([{
-            C["col_country"]: _country_name(r["country_slug"]),
-            C["col_dataset"]: r.get("dataset_id", ""),
-            C["col_clearance"]: _CLR_LABEL.get(r.get("clearance_overall"), r.get("clearance_overall", "")),
-            C["col_release"]: _REL_LABEL.get(r.get("release_status"), r.get("release_status", "")),
-            C["col_grand"]: "✓" if r.get("grandfathered") else "",
-            C["col_public"]: "✓" if r.get("public_publishable") else "",
-        } for r in fimpls])
-        sty = cr_df.style
-        sty = _cell_style(sty, lambda v: (f"color:{_CLR_LBLCOLOR.get(v, '')};font-weight:600"
-                                          if v in _CLR_LBLCOLOR else ""), [C["col_clearance"]])
-        sty = _cell_style(sty, lambda v: (f"color:{_REL_LBLCOLOR.get(v, '')};font-weight:600"
-                                          if v in _REL_LBLCOLOR else ""), [C["col_release"]])
-        st.dataframe(sty, hide_index=True, use_container_width=True)
-
-    # ── Datasets + EDITABLE per-dimension clearance ──────────────────────────
+    # Lookups
+    slug2name = {r["country_slug"]: _country_name(r["country_slug"]) for r in impls}
+    name2slug = {v: k for k, v in slug2name.items()}
+    ds_by_id = {d["dataset_id"]: d for d in datasets}
+    impl_by_slug = {r["country_slug"]: r for r in impls}
+    impls_by_ds: dict = {}
+    for r in impls:
+        impls_by_ds.setdefault(r.get("dataset_id"), []).append(r)
     by_subject: dict = {}
     for a in assessments:
         by_subject.setdefault((a["subject_type"], a["subject_id"]), []).append(a)
 
-    def _ds_keep(d) -> bool:
-        das = by_subject.get(("dataset", d["dataset_id"]), [])
-        worst = comp.rollup([a["status"] for a in das]) if das else None
-        if sel_codes and worst not in sel_codes:
-            return False
-        if cq:
-            return cq in (f"{d.get('title', '')} {d['dataset_id']} "
-                          f"{d.get('provider_id', '')}").lower()
-        return True
+    # ── Focus (searchable country picker = per-keystroke) + clearance filter ──
+    st.write("")
+    fc1, fc2 = st.columns([2, 1.4], vertical_alignment="bottom")
+    names_sorted = sorted(slug2name.values())
+    st.session_state.setdefault("cmp_focus_name", "")
+    if st.session_state["cmp_focus_name"] not in ([""] + names_sorted):
+        st.session_state["cmp_focus_name"] = ""
+    focus_name = fc1.selectbox(
+        C.get("find_country", "Find a country (type to search)"), [""] + names_sorted,
+        key="cmp_focus_name",
+        format_func=lambda x: x or C.get("all_countries", "— All countries —"))
+    focus_slug = name2slug.get(focus_name, "")
+    sel_labels = fc2.multiselect(C.get("filter_status", "Filter by clearance"),
+                                 [_CLR_LABEL[c] for c in _CLR_ORDER], default=[], key="cmp_flt")
+    sel_codes = {_CLR_LBL2CODE[l] for l in sel_labels}
 
-    fdatasets = [d for d in datasets if _ds_keep(d)]
-    if fdatasets:
+    def _clr_ok(code) -> bool:
+        return not sel_codes or code in sel_codes
+
+    # ── Sub-view nav (segmented, programmatically switchable for cross-nav) ──
+    _VIEWS = {"records": C.get("v_records", "Country records"),
+              "datasets": C.get("v_datasets", "Datasets & clearance"),
+              "release": C.get("v_release", "Release control")}
+    st.session_state.setdefault("cmp_view", "records")
+    view = st.segmented_control("cmpview", list(_VIEWS), key="cmp_view",
+                                label_visibility="collapsed",
+                                format_func=lambda v: _VIEWS[v]) or st.session_state["cmp_view"]
+
+    def _goto(v, country_name=None):
+        st.session_state["cmp_view"] = v
+        if country_name is not None:
+            st.session_state["cmp_focus_name"] = country_name
+        st.rerun()
+
+    st.write("")
+
+    # ═══ VIEW: Country records ═══════════════════════════════════════════════
+    if view == "records":
+        rows = [r for r in impls if (not focus_slug or r["country_slug"] == focus_slug)
+                and _clr_ok(r.get("clearance_overall"))]
+        st.markdown(f"#### {C['h_countries']}")
+        if not rows:
+            st.caption(C.get("no_match", "No matches."))
+        else:
+            cr_df = pd.DataFrame([{
+                C["col_country"]: slug2name[r["country_slug"]],
+                C["col_dataset"]: r.get("dataset_id", ""),
+                C["col_clearance"]: _CLR_LABEL.get(r.get("clearance_overall"), r.get("clearance_overall", "")),
+                C["col_release"]: _REL_LABEL.get(r.get("release_status"), r.get("release_status", "")),
+                C["col_grand"]: "✓" if r.get("grandfathered") else "",
+                C["col_public"]: "✓" if r.get("public_publishable") else "",
+            } for r in rows])
+            sty = cr_df.style
+            sty = _cell_style(sty, lambda v: (f"color:{_CLR_LBLCOLOR.get(v, '')};font-weight:600"
+                                              if v in _CLR_LBLCOLOR else ""), [C["col_clearance"]])
+            sty = _cell_style(sty, lambda v: (f"color:{_REL_LBLCOLOR.get(v, '')};font-weight:600"
+                                              if v in _REL_LBLCOLOR else ""), [C["col_release"]])
+            ev = st.dataframe(sty, hide_index=True, use_container_width=True,
+                              on_select="rerun", selection_mode="single-row", key="cmp_records_df")
+            sel = []
+            try:
+                sel = list(ev.selection["rows"])
+            except Exception:
+                try:
+                    sel = list(ev.selection.rows)
+                except Exception:
+                    sel = []
+            if sel:
+                r = rows[sel[0]]
+                nm = slug2name[r["country_slug"]]
+                st.markdown(f"**{C.get('selected', 'Selected')}: {nm}** · `{r.get('dataset_id', '')}`")
+                b1, b2 = st.columns(2)
+                if b1.button(C.get("open_ds", "📄 Open dataset & clearance"), key="cmp_rec_ds"):
+                    _goto("datasets", nm)
+                if b2.button(C.get("open_release", "🚦 Open release control"), key="cmp_rec_rel"):
+                    _goto("release", nm)
+            else:
+                st.caption(C.get("focus_hint", "Select a row to jump to its dataset or release."))
+
+    # ═══ VIEW: Datasets & clearance ══════════════════════════════════════════
+    elif view == "datasets":
         st.markdown(f"#### {C['h_datasets']}")
-        _clr_opts = [_CLR_LABEL[c] for c in _CLR_ORDER]
+        if focus_slug:
+            fds_id = impl_by_slug.get(focus_slug, {}).get("dataset_id")
+            fdatasets = [ds_by_id[fds_id]] if fds_id in ds_by_id else []
+            st.info(C.get("focused_ds", "Showing the dataset behind {name}.").format(name=slug2name[focus_slug]))
+            if st.button(C.get("show_all_ds", "← Show all datasets"), key="cmp_ds_clearfocus"):
+                _goto("datasets", "")
+        else:
+            fdatasets = [d for d in datasets
+                         if _clr_ok(comp.rollup([a["status"] for a in by_subject.get(("dataset", d["dataset_id"]), [])])
+                                    if by_subject.get(("dataset", d["dataset_id"])) else None)]
+        if not fdatasets:
+            st.caption(C.get("no_match", "No matches."))
         for d in fdatasets:
             das = by_subject.get(("dataset", d["dataset_id"]), [])
-            worst = comp.rollup([a["status"] for a in das]) if das else None
-            title = f"{d.get('title', '')} · {d.get('dataset_id', '')}"
-            with st.expander(title):
-                if worst:
-                    st.markdown(_chip(_CLR_LABEL[worst], _CLR_COLOR[worst]), unsafe_allow_html=True)
-                lic = d.get("licence_name") or "—"
-                st.markdown(f"**{C['col_licence']}:** "
-                            + (f"[{lic}]({d['licence_url']})" if d.get("licence_url") else lic))
-                if d.get("licence_summary_plain"):
-                    st.caption(d["licence_summary_plain"])
-                if not das:
-                    continue
-                orig = {a["assessment_id"]: a for a in das}
-                df = pd.DataFrame([{
-                    C["col_dim"]: a["dimension"],
-                    C["col_status"]: _CLR_LABEL.get(a["status"], a["status"]),
-                    C["col_next"]: a.get("next_review_date") or "",
-                    C["col_evidence"]: a.get("evidence_url") or "", "_id": a["assessment_id"],
-                } for a in das])
-                edited = st.data_editor(
-                    df, key=f"cmp_ed_{d['dataset_id']}", hide_index=True,
-                    use_container_width=True,
-                    column_config={
-                        C["col_dim"]: st.column_config.TextColumn(C["col_dim"], disabled=True),
-                        C["col_status"]: st.column_config.SelectboxColumn(
-                            C["col_status"], options=_clr_opts, required=True),
-                        C["col_next"]: st.column_config.TextColumn(C["col_next"], help="YYYY-MM-DD"),
-                        C["col_evidence"]: st.column_config.TextColumn(C["col_evidence"]),
-                        "_id": None,
-                    })
-                if st.button(C["save_clear"], key=f"cmp_save_{d['dataset_id']}"):
-                    n_ok = n_err = 0
-                    today = _dt.date.today().isoformat()
-                    for _, row in edited.iterrows():
-                        o = orig.get(row["_id"])
-                        if not o:
-                            continue
-                        new_status = _CLR_LBL2CODE.get(row[C["col_status"]], o["status"])
-                        ch = {}
-                        if new_status != o["status"]:
-                            ch["status"] = new_status
-                        if (row[C["col_next"]] or "") != (o.get("next_review_date") or ""):
-                            ch["next_review_date"] = row[C["col_next"]] or None
-                        if (row[C["col_evidence"]] or "") != (o.get("evidence_url") or ""):
-                            ch["evidence_url"] = row[C["col_evidence"]] or None
-                        if ch:
-                            err = comp.set_assessment(
-                                row["_id"], reviewed_by=_admin_email, reviewed_date=today, **ch)
-                            n_err += 1 if err else 0
-                            n_ok += 0 if err else 1
-                    if n_ok:
-                        comp.recompute_for_dataset(d["dataset_id"])
-                        try:
-                            comp.country_notes.clear()
-                        except Exception:
-                            pass
-                    if n_err:
-                        st.error(C["save_err"].format(n=n_err))
-                    if n_ok:
-                        st.success(C["saved"].format(n=n_ok))
-                        st.rerun()
-                    elif not n_err:
-                        st.info(C["saved_none"])
+            users = impls_by_ds.get(d["dataset_id"], [])
+            with st.expander(f"{d.get('title', '')} · {d.get('dataset_id', '')}", expanded=bool(focus_slug)):
+                unames = ", ".join(sorted(slug2name[u["country_slug"]] for u in users))
+                st.caption(C.get("used_by", "Used by {n}: {names}").format(n=len(users), names=unames))
+                if len(users) == 1:
+                    if st.button(C.get("open_release", "🚦 Open release control"),
+                                 key=f"cmp_ds2rel_{d['dataset_id']}"):
+                        _goto("release", slug2name[users[0]["country_slug"]])
+                _cmp_dataset_editor(d, das, C, comp, pd, _dt, _admin_email)
 
-    # ── Release control — public listing / release state per country ─────────
-    st.markdown(f"#### {C['h_release']}")
-    st.caption(C.get("release_cap", ""))
-    if not fimpls:
-        st.caption(C.get("no_match", "No matches."))
+    # ═══ VIEW: Release control ═══════════════════════════════════════════════
     else:
-        _rel_opts = [_REL_LABEL[c] for c in _REL_ORDER]
-        rel_orig = {r["impl_id"]: r for r in fimpls}
-        rel_df = pd.DataFrame([{
-            C["col_country"]: _country_name(r["country_slug"]),
-            C["col_public"]: bool(r.get("public_publishable")),
-            C["col_release"]: _REL_LABEL.get(r.get("release_status"), "Beta"),
-            C["col_grand"]: bool(r.get("grandfathered")),
-            C["col_clearance"]: _CLR_LABEL.get(r.get("clearance_overall"), r.get("clearance_overall", "")),
-            "_id": r["impl_id"],
-        } for r in fimpls])
-        rel_edited = st.data_editor(
-            rel_df, key="cmp_release_ed", hide_index=True, use_container_width=True,
-            column_config={
-                C["col_country"]: st.column_config.TextColumn(C["col_country"], disabled=True),
-                C["col_public"]: st.column_config.CheckboxColumn(C["col_public"]),
-                C["col_release"]: st.column_config.SelectboxColumn(C["col_release"], options=_rel_opts, required=True),
-                C["col_grand"]: st.column_config.CheckboxColumn(C["col_grand"]),
-                C["col_clearance"]: st.column_config.TextColumn(C["col_clearance"], disabled=True),
-                "_id": None,
-            })
-        if st.button(C["save_release"], key="cmp_release_save"):
-            n = 0
-            for _, row in rel_edited.iterrows():
-                o = rel_orig.get(row["_id"])
-                if not o:
-                    continue
-                new_rel = _REL_LBL2CODE.get(row[C["col_release"]], o.get("release_status"))
-                ch = {}
-                if bool(row[C["col_public"]]) != bool(o.get("public_publishable")):
-                    ch["public_publishable"] = bool(row[C["col_public"]])
-                if new_rel != o.get("release_status"):
-                    ch["release_status"] = new_rel
-                if bool(row[C["col_grand"]]) != bool(o.get("grandfathered")):
-                    ch["grandfathered"] = bool(row[C["col_grand"]])
-                if ch and not comp.set_impl(row["_id"], **ch):
-                    n += 1
-            if n:
-                try:
-                    comp.country_notes.clear()
-                except Exception:
-                    pass
-                st.success(C["released"].format(n=n))
-                st.rerun()
-            else:
-                st.info(C["saved_none"])
-
-    # Reviews due (overdue or within 30 days)
-    st.markdown(f"#### {C['h_overdue']}")
-    if oerr:
-        st.caption("—")
-    elif not overdue:
-        st.success(C["overdue_none"])
-    else:
-        st.dataframe(pd.DataFrame([{
-            C["col_subject"]: f"{a['subject_type']}:{a['subject_id']}",
-            C["col_dim"]: a["dimension"],
-            C["col_status"]: _CLR_LABEL.get(a["status"], a["status"]),
-            C["col_next"]: a.get("next_review_date", "")} for a in overdue]),
-            hide_index=True, use_container_width=True)
+        st.markdown(f"#### {C['h_release']}")
+        st.caption(C.get("release_cap", ""))
+        rows = [r for r in impls if (not focus_slug or r["country_slug"] == focus_slug)
+                and _clr_ok(r.get("clearance_overall"))]
+        if focus_slug and rows:
+            if st.button(C.get("open_ds", "📄 Open dataset & clearance"), key="cmp_rel2ds"):
+                _goto("datasets", slug2name[focus_slug])
+        if not rows:
+            st.caption(C.get("no_match", "No matches."))
+        else:
+            _rel_opts = [_REL_LABEL[c] for c in _REL_ORDER]
+            rel_orig = {r["impl_id"]: r for r in rows}
+            rel_df = pd.DataFrame([{
+                C["col_country"]: slug2name[r["country_slug"]],
+                C["col_public"]: bool(r.get("public_publishable")),
+                C["col_release"]: _REL_LABEL.get(r.get("release_status"), "Beta"),
+                C["col_grand"]: bool(r.get("grandfathered")),
+                C["col_clearance"]: _CLR_LABEL.get(r.get("clearance_overall"), r.get("clearance_overall", "")),
+                "_id": r["impl_id"],
+            } for r in rows])
+            rel_edited = st.data_editor(
+                rel_df, key="cmp_release_ed", hide_index=True, use_container_width=True,
+                column_config={
+                    C["col_country"]: st.column_config.TextColumn(C["col_country"], disabled=True),
+                    C["col_public"]: st.column_config.CheckboxColumn(C["col_public"]),
+                    C["col_release"]: st.column_config.SelectboxColumn(C["col_release"], options=_rel_opts, required=True),
+                    C["col_grand"]: st.column_config.CheckboxColumn(C["col_grand"]),
+                    C["col_clearance"]: st.column_config.TextColumn(C["col_clearance"], disabled=True),
+                    "_id": None,
+                })
+            if st.button(C["save_release"], key="cmp_release_save"):
+                n = 0
+                for _, row in rel_edited.iterrows():
+                    o = rel_orig.get(row["_id"])
+                    if not o:
+                        continue
+                    new_rel = _REL_LBL2CODE.get(row[C["col_release"]], o.get("release_status"))
+                    ch = {}
+                    if bool(row[C["col_public"]]) != bool(o.get("public_publishable")):
+                        ch["public_publishable"] = bool(row[C["col_public"]])
+                    if new_rel != o.get("release_status"):
+                        ch["release_status"] = new_rel
+                    if bool(row[C["col_grand"]]) != bool(o.get("grandfathered")):
+                        ch["grandfathered"] = bool(row[C["col_grand"]])
+                    if ch and not comp.set_impl(row["_id"], **ch):
+                        n += 1
+                if n:
+                    try:
+                        comp.country_notes.clear()
+                    except Exception:
+                        pass
+                    st.success(C["released"].format(n=n))
+                    st.rerun()
+                else:
+                    st.info(C["saved_none"])
 
 
 SECTIONS = {"overview": overview_section, "data": data_section,
