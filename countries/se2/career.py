@@ -295,19 +295,32 @@ function layoutNodes(){
   // fixed comfortable column width so pills never overlap; overflow → horizontal pan
   const colStep = Math.max(250, (availW - x0 - 24) / sel);
   const byL = {}; shownIds().forEach(id=> (byL[LAYER[id]]=byL[LAYER[id]]||[]).push(id));
-  let maxCount = 1;
-  Object.values(byL).forEach(a=>{ a.sort((p,q)=> R[q].mid-R[p].mid); maxCount=Math.max(maxCount,a.length); });
-  const rowH = 66;
-  const mapH = Math.max(maxCount*rowH + 28, 210);
+  const layersSorted = Object.keys(byL).map(Number).sort((a,b)=>a-b);
+  // Order each layer to reduce line crossings: first shown layer by salary,
+  // each deeper layer by its parent's position (barycenter), salary as tie-break.
+  const orderIndex = {};
+  layersSorted.forEach((Lr, li)=>{
+    const arr = byL[Lr];
+    if(li===0){ arr.sort((p,q)=> R[q].mid - R[p].mid); }
+    else { arr.sort((p,q)=>{
+      const pp = orderIndex[PARENT[p]] ?? 1e9, qp = orderIndex[PARENT[q]] ?? 1e9;
+      return pp!==qp ? pp-qp : (R[q].mid - R[p].mid); }); }
+    arr.forEach((id,i)=> orderIndex[id]=i);
+  });
+  let maxCount = 1; layersSorted.forEach(Lr=> maxCount=Math.max(maxCount, byL[Lr].length));
+  const rowH = 84;   // fixed row pitch > pill height → generous gaps, no overlap
+  const mapH = Math.max(maxCount*rowH + 16, 200);
   const contentW = x0 + (sel-1)*colStep + NODEW + 26;
   canvas.style.width = Math.max(contentW, availW) + 'px';
   canvas.style.height = mapH + 'px';
   mapEl.style.height = (mapH + (contentW > availW ? 14 : 0)) + 'px';
-  shownIds().forEach(id=>{ const el=nodeEls[id]; if(!el) return; const Lr=LAYER[id];
-    const arr=byL[Lr], idx=arr.indexOf(id), cnt=arr.length;
-    const yStep = mapH/(cnt+1), y = yStep*(idx+1);
-    el.style.left = (x0 + (Lr-1)*colStep) + 'px';
-    el.style.top = (y - el.offsetHeight/2) + 'px';
+  layersSorted.forEach(Lr=>{
+    const arr = byL[Lr], cnt = arr.length;
+    const startY = (mapH - cnt*rowH)/2 + rowH/2;   // vertically centre each column
+    arr.forEach((id, idx)=>{ const el=nodeEls[id]; if(!el) return;
+      el.style.left = (x0 + (Lr-1)*colStep) + 'px';
+      el.style.top = (startY + idx*rowH - el.offsetHeight/2) + 'px';
+    });
   });
 }
 function drawWires(){
@@ -509,7 +522,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         },
     }
     html = _MAP_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
-    map_h = max(max_layer_width * 66 + 42, 220)
+    map_h = max(max_layer_width * 84 + 30, 200)
     components.html(html, height=150 + map_h + 320, scrolling=True)
 
 
