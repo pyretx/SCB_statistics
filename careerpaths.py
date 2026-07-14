@@ -69,11 +69,12 @@ def family_for_ssyk(ssyk: str) -> str | None:
 
 @st.cache_data(show_spinner=False, ttl=3600)
 def family_names() -> dict:
-    """{family_id: display name} — non-sensitive labels for the tab header."""
+    """{family_id: {'en': name_en, 'sv': name_sv}} — non-sensitive labels for the
+    tab header (language-aware)."""
     rows, _ = _safe(lambda: list(
-        (auth._client(service=True).table(_T_FAMILY).select("family_id,name_en").execute()).data or []),
+        (auth._client(service=True).table(_T_FAMILY).select("family_id,name_en,name_sv").execute()).data or []),
         "family names")
-    return {r["family_id"]: r["name_en"] for r in rows}
+    return {r["family_id"]: {"en": r.get("name_en"), "sv": r.get("name_sv")} for r in rows}
 
 
 def titles_for_family(family_id: str) -> list[dict]:

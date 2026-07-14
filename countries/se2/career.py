@@ -7,9 +7,11 @@ positioned by *actual salary* (each computed live from its OWN SSYK's SCB curve 
 core.interp), a simple career map (advance / specialist / leadership / lateral), and
 a role comparison. Everything is a clearly-labelled estimate with a confidence tag.
 
+Bilingual (EN + Svenska): all chrome via i18n (keys in countries/se2/config.py),
+title/family names from name_sv, level/track/confidence via the helpers below.
+
 Data: careerpaths.py (curated cp_* register). No AI, no job-ad access at runtime.
-See docs/career-paths-assessment.md. Beta-gated + Sweden-only (registered in config
-+ core/tabs._BETA_TABS).
+Beta-gated + Sweden-only (registered in config + core/tabs._BETA_TABS).
 """
 from __future__ import annotations
 
@@ -31,6 +33,31 @@ _REL_GROUPS = [
     ("leadership", "Move into leadership"),
     ("lateral", "Related lateral moves"),
 ]
+# Swedish for the fixed set of curated level labels (level_label has no name_sv).
+_LEVEL_SV = {
+    "Entry / Associate": "Ingång / Junior", "Professional": "Yrkesperson",
+    "Senior Professional": "Senior yrkesperson", "Lead / Advanced": "Ledande / Avancerad",
+    "Principal / Staff": "Principal / Staff", "Specialist": "Specialist",
+    "Management": "Ledning", "Lead / Specialist": "Ledande / specialist",
+    "Senior / Specialist": "Senior / specialist",
+}
+
+
+def _tname(t, lang):
+    """Title display name — Swedish where available."""
+    return (t.get("name_sv") or t["name_en"]) if lang == "SV" else t["name_en"]
+
+
+def _level(label, lang):
+    return _LEVEL_SV.get(label, label) if lang == "SV" else label
+
+
+def _track(cfg, lang, code):
+    return i18n.t(cfg, f"cp_track_{code}", lang, _TRACK_LABEL.get(code, code))
+
+
+def _conf(cfg, lang, code):
+    return i18n.t(cfg, f"cp_conf_{code}", lang, _CONF_LABEL.get(code, code))
 
 
 def _year(cfg, query) -> int:
@@ -42,7 +69,6 @@ def _year(cfg, query) -> int:
 
 
 def _curves(cfg, ssyks, sex, year, lang):
-    """{ssyk: SalaryCurve} + the raw stats frame, from one SCB fetch."""
     from core import interp
     d = cfg.provider.occupation_stats(sector="0", occ_codes=tuple(ssyks), sex=sex,
                                       year=year, years=(year,), lang=lang)
@@ -54,7 +80,6 @@ def _curves(cfg, ssyks, sex, year, lang):
 
 
 def _band_for(title, curves):
-    """Attach computed salary band (from the title's own SSYK curve) → dict or None."""
     c = curves.get(str(title.get("primary_ssyk")))
     if not c or not c.ok:
         return None
@@ -95,9 +120,10 @@ def render(cfg, stats, query):
     fam = cp.family_for_ssyk(primary)
     if not fam:
         st.info(i18n.t(cfg, "cp_uncovered", lang,
-                       "Career Paths currently covers Human Resources and Software & ICT. "
-                       "Open an occupation in one of those families (e.g. Software- and system "
-                       "developers, or HR specialists) to explore its career map."))
+                       "Career Paths currently covers a set of professional families "
+                       "(HR, Software & ICT, Finance, Sales & Marketing, Healthcare, Legal, "
+                       "Logistics and Engineering). Open an occupation in one of those to "
+                       "explore its career map."))
         return
 
     titles = cp.titles_for_family(fam)
@@ -113,7 +139,8 @@ def render(cfg, stats, query):
                     else cfg.provider.occupations(lang).get(primary, primary))
     except Exception:
         occ_name = cfg.provider.occupations(lang).get(primary, primary)
-    fam_name = cp.family_names().get(fam, fam)
+    _fr = cp.family_names().get(fam, {})
+    fam_name = (_fr.get("sv") or _fr.get("en") or fam) if lang == "SV" else (_fr.get("en") or fam)
     st.markdown(
         f'<div style="font-size:14px;color:#26303C;margin:2px 0 14px;">'
         f'{i18n.t(cfg, "cp_selected", lang, "Selected occupation")}: '
@@ -138,7 +165,7 @@ def render(cfg, stats, query):
                       "them is interpolated — not published by SCB."))
     vc = curves.get(primary)
     if vc and vc.ok:
-        xs = [p / 2 for p in range(20, 181)]  # 10..90 step .5
+        xs = [p / 2 for p in range(20, 181)]
         ys = [vc.value_at(p).value for p in xs]
         fig = go.Figure()
         fig.add_trace(go.Scatter(x=xs, y=ys, mode="lines", line=dict(color=theme.ACCENT, width=2.5),
@@ -149,11 +176,13 @@ def render(cfg, stats, query):
         fig.add_trace(go.Scatter(x=pub_x, y=pub_y, mode="markers",
                                  marker=dict(color=theme.ACCENT, size=9, line=dict(color="#fff", width=2)),
                                  name=i18n.t(cfg, "cp_published", lang, "Published (SCB)"),
-                                 hovertemplate="P%{x:.0f} · %{y:,.0f} kr (published)<extra></extra>"))
+                                 hovertemplate="P%{x:.0f} · %{y:,.0f} kr<extra></extra>"))
         fig.update_layout(height=300, xaxis_title=i18n.t(cfg, "x_percentile", lang, "Percentile"),
-                          yaxis_title=f"{cfg.currency_suffix}{cfg.per_label}", showlegend=True,
-                          legend=dict(orientation="h", y=1.15, x=0))
-        st.plotly_chart(theme.style_fig(fig), use_container_width=True)
+                          yaxis_title=f"{cfg.currency_suffix}{cfg.per_label}", showlegend=True)
+        fig = theme.style_fig(fig)
+        fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0),
+                          margin=dict(t=44, l=10, r=10, b=44))
+        st.plotly_chart(fig, use_container_width=True)
     else:
         st.caption(i18n.t(cfg, "cp_no_curve", lang, "No SCB distribution available for this occupation/year."))
 
@@ -172,49 +201,47 @@ def render(cfg, stats, query):
             if not rows:
                 continue
             fig2.add_trace(go.Bar(
-                orientation="h", y=[t["name_en"] for t in rows],
+                orientation="h", y=[_tname(t, lang) for t in rows],
                 x=[t["_band"]["hi_salary"] - t["_band"]["lo_salary"] for t in rows],
                 base=[t["_band"]["lo_salary"] for t in rows],
                 marker=dict(color=_TRACK_COLOR[tr], line=dict(width=0)), opacity=0.55,
-                name=_TRACK_LABEL[tr],
-                customdata=[[t["primary_ssyk"], t["mid_pct"], _CONF_LABEL.get(t["confidence"], t["confidence"]),
+                name=_track(cfg, lang, tr),
+                customdata=[[t["primary_ssyk"], t["mid_pct"], _conf(cfg, lang, t["confidence"]),
                              t["_band"]["mid_salary"]] for t in rows],
                 hovertemplate="%{y}<br>SSYK %{customdata[0]} · ~P%{customdata[1]:.0f}"
-                              "<br>%{base:,.0f}–%{x:,.0f} kr (mid %{customdata[3]:,.0f})"
+                              "<br>%{base:,.0f}–%{x:,.0f} kr (~%{customdata[3]:,.0f})"
                               "<br>%{customdata[2]}<extra></extra>"))
-        # mid markers
         fig2.add_trace(go.Scatter(
-            orientation="h", y=[t["name_en"] for t in banded],
+            orientation="h", y=[_tname(t, lang) for t in banded],
             x=[t["_band"]["mid_salary"] for t in banded], mode="markers",
             marker=dict(color="#0C1119", size=7, symbol="line-ns-open"),
             showlegend=False, hoverinfo="skip"))
-        fig2.update_layout(height=90 + 26 * len(banded), barmode="overlay",
-                           xaxis_title=f"{cfg.currency_suffix}{cfg.per_label}",
-                           legend=dict(orientation="h", y=1.06, x=0))
-        st.plotly_chart(theme.style_fig(fig2), use_container_width=True)
+        fig2.update_layout(height=120 + 26 * len(banded), barmode="overlay",
+                           xaxis_title=f"{cfg.currency_suffix}{cfg.per_label}")
+        fig2 = theme.style_fig(fig2)
+        fig2.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0),
+                           margin=dict(t=54, l=10, r=10, b=44))
+        st.plotly_chart(fig2, use_container_width=True)
 
-    # Table (accessible fallback + full detail)
     with st.expander(i18n.t(cfg, "cp_table_h", lang, "All roles — detail")):
         import pandas as pd
         rows = []
         for t in sorted(titles, key=lambda x: (mid_salary(x) or 0)):
             b = t.get("_band")
             rows.append({
-                i18n.t(cfg, "cp_c_title", lang, "Role"): t["name_en"],
-                i18n.t(cfg, "cp_c_level", lang, "Level"): t["level_label"],
-                i18n.t(cfg, "cp_c_track", lang, "Track"): _TRACK_LABEL.get(t["track"], t["track"]),
+                i18n.t(cfg, "cp_c_title", lang, "Role"): _tname(t, lang),
+                i18n.t(cfg, "cp_c_level", lang, "Level"): _level(t["level_label"], lang),
+                i18n.t(cfg, "cp_c_track", lang, "Track"): _track(cfg, lang, t["track"]),
                 "SSYK": t["primary_ssyk"],
                 i18n.t(cfg, "cp_c_pct", lang, "Est. percentile"): f"P{t['lo_pct']:.0f}–P{t['hi_pct']:.0f}",
                 i18n.t(cfg, "cp_c_salary", lang, "Est. salary"):
                     (f"{charts.fmt_value(b['lo_salary'], cfg)}–{charts.fmt_value(b['hi_salary'], cfg)}"
                      if b else "—"),
-                i18n.t(cfg, "cp_c_conf", lang, "Evidence"): _CONF_LABEL.get(t["confidence"], t["confidence"]),
+                i18n.t(cfg, "cp_c_conf", lang, "Evidence"): _conf(cfg, lang, t["confidence"]),
             })
         st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
     # ═══ 2b · Performance positioning — INTERNAL PREVIEW (not published) ═════
-    # Shown only to admins (or if perf_config.enabled_public, which stays false
-    # until evidence exists). Illustrative only — never a measure of performance.
     role = (st.session_state.get("auth_user") or {}).get("role", "")
     pcfg = cp.perf_config()
     if (role in ("admin", "master") or pcfg.get("enabled_public")) and banded:
@@ -226,30 +253,25 @@ def render(cfg, stats, query):
                            "Illustrative compensation-positioning model only — NOT a measure of "
                            "individual performance, and salary does not prove performance."))
                 import pandas as pd
-                # Soft performance palette (by position 1..5):
-                # Developing=orange · Progressing=yellow · Fully effective=green ·
-                # Strong=light blue · Exceptional=dark blue.
+                # Soft palette (position 1..5): Developing=orange · Progressing=yellow
+                # · Fully effective=green · Strong=light blue · Exceptional=dark blue.
                 _PERF_COLORS = ["#E8A15C", "#EAC85E", "#7FBF8A", "#8CC0DE", "#3E6DA3"]
                 plabels = [b["label"] for b in bands]
                 all_label = i18n.t(cfg, "cp_perf_all", lang, "All levels")
-
-                # Filter: highlight one performance level across every role.
                 sel = st.selectbox(
                     i18n.t(cfg, "cp_perf_filter", lang, "Highlight performance level"),
                     [all_label] + plabels, key=f"{cfg.slug}_cp_perf_filter")
 
-                # Per-role performance sub-ranges: each role's salary band split into
-                # the five performance segments (from its OWN SSYK curve).
                 roles = sorted(banded, key=lambda x: x["_band"]["mid_salary"])
                 seg = {}
                 for tt in roles:
                     vc = curves.get(str(tt["primary_ssyk"]))
                     lo_p, hi_p = float(tt["lo_pct"]), float(tt["hi_pct"])
-                    seg[tt["name_en"]] = ([
+                    seg[_tname(tt, lang)] = ([
                         (vc.value_at(lo_p + float(b["rel_lo"]) * (hi_p - lo_p)).value,
                          vc.value_at(lo_p + float(b["rel_hi"]) * (hi_p - lo_p)).value)
                         for b in bands] if vc and vc.ok else None)
-                names = [tt["name_en"] for tt in roles if seg.get(tt["name_en"])]
+                names = [_tname(tt, lang) for tt in roles if seg.get(_tname(tt, lang))]
 
                 if names:
                     fig = go.Figure()
@@ -267,13 +289,10 @@ def render(cfg, stats, query):
                     fig.update_layout(barmode="overlay", height=150 + 28 * len(names),
                                       xaxis_title=f"{cfg.currency_suffix}{cfg.per_label}")
                     fig = theme.style_fig(fig)
-                    # Legend ABOVE the plot with real headroom (it was overlapping the
-                    # top bar), enforced after style_fig so the margin sticks.
                     fig.update_layout(legend=dict(orientation="h", yanchor="bottom", y=1.0, x=0),
                                       margin=dict(t=66, l=10, r=10, b=44))
                     st.plotly_chart(fig, use_container_width=True)
 
-                    # Role picker → that role's five performance intervals (table).
                     role_sel = st.selectbox(i18n.t(cfg, "cp_perf_role", lang, "Show intervals for role"),
                                             names, key=f"{cfg.slug}_cp_perf_role")
                     s = seg.get(role_sel)
@@ -294,7 +313,6 @@ def render(cfg, stats, query):
     from_ids = {t["title_id"] for t in titles if str(t["primary_ssyk"]) == primary}
     out_rels = [r for r in rels if r["from_title"] in from_ids]
     if not out_rels:
-        # fall back to the whole family's progression if the exact SSYK has no mapped moves
         out_rels = [r for r in rels if r["rel_type"] == "progression"]
     shown_any = False
     for rtype, heading in _REL_GROUPS:
@@ -313,7 +331,8 @@ def render(cfg, stats, query):
             diff = None
             if b and frm and frm.get("_band"):
                 diff = b["mid_salary"] - frm["_band"]["mid_salary"]
-            ssyk_badge = ("↔ same SSYK" if r["same_ssyk"] else f"→ SSYK {to['primary_ssyk']}")
+            ssyk_badge = (i18n.t(cfg, "cp_same_ssyk", lang, "↔ same SSYK") if r["same_ssyk"]
+                          else f"→ SSYK {to['primary_ssyk']}")
             sal = (f"{charts.fmt_value(b['lo_salary'], cfg)}–{charts.fmt_value(b['hi_salary'], cfg)}"
                    if b else "—")
             diff_html = ""
@@ -327,10 +346,10 @@ def render(cfg, stats, query):
                 st.markdown(
                     f'<div style="border:1px solid #E7E9ED;border-radius:12px;padding:13px 15px;'
                     f'margin-bottom:10px;background:#fff;">'
-                    f'<div style="font-weight:700;font-size:14.5px;color:#0C1119;">{_esc(to["name_en"])}</div>'
+                    f'<div style="font-weight:700;font-size:14.5px;color:#0C1119;">{_esc(_tname(to, lang))}</div>'
                     f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10.5px;color:#98A0AC;'
-                    f'margin:3px 0 8px;">{_esc(to["level_label"])} · {_esc(ssyk_badge)} · '
-                    f'{_esc(_CONF_LABEL.get(to["confidence"], to["confidence"]))}</div>'
+                    f'margin:3px 0 8px;">{_esc(_level(to["level_label"], lang))} · {_esc(ssyk_badge)} · '
+                    f'{_esc(_conf(cfg, lang, to["confidence"]))}</div>'
                     f'<div style="font-size:13px;color:#26303C;">{sal}</div>'
                     f'{diff_html}'
                     + (f'<div style="font-size:12px;color:#5B6472;margin-top:6px;">'
@@ -341,7 +360,7 @@ def render(cfg, stats, query):
 
     # ═══ 4 · Compare two roles ═══════════════════════════════════════════════
     with st.expander(i18n.t(cfg, "cp_compare_h", lang, "Compare two roles")):
-        names = {t["name_en"]: t for t in titles}
+        names = {_tname(t, lang): t for t in titles}
         c1, c2 = st.columns(2)
         a = c1.selectbox(i18n.t(cfg, "cp_current", lang, "Current role"), list(names),
                          key=f"{cfg.slug}_cp_a")
@@ -351,11 +370,11 @@ def render(cfg, stats, query):
 
         def cell(t):
             bd = t.get("_band")
-            return (f"SSYK {t['primary_ssyk']} · {_TRACK_LABEL.get(t['track'], t['track'])}<br>"
-                    f"{t['level_label']}<br>P{t['lo_pct']:.0f}–P{t['hi_pct']:.0f}<br>"
+            return (f"SSYK {t['primary_ssyk']} · {_track(cfg, lang, t['track'])}<br>"
+                    f"{_level(t['level_label'], lang)}<br>P{t['lo_pct']:.0f}–P{t['hi_pct']:.0f}<br>"
                     + (f"{charts.fmt_value(bd['lo_salary'], cfg)}–{charts.fmt_value(bd['hi_salary'], cfg)}"
                        if bd else "—")
-                    + f"<br>{_CONF_LABEL.get(t['confidence'], t['confidence'])}")
+                    + f"<br>{_conf(cfg, lang, t['confidence'])}")
         diff = None
         if ta.get("_band") and tb.get("_band"):
             diff = tb["_band"]["mid_salary"] - ta["_band"]["mid_salary"]

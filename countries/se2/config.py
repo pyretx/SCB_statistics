@@ -125,6 +125,58 @@ _WP_SV = {
     "wp_rules_expander": "Regelsiffror som används",
 }
 
+# Career Paths (beta) tab strings. EN uses the in-code defaults; only the tab label
+# is centralised here. SV translates the whole tab.
+_CAREER_EN = {"tab_career": "Career Paths (beta)"}
+_CAREER_SV = {
+    "tab_career": "Karriärvägar (beta)",
+    "cp_disclaimer": "Karriärnivåer, löneintervall, percentilpositioner och karriärrelationer är "
+                     "<b>Qvistin-genererade uppskattningar</b> — inte officiella karriärstrukturer "
+                     "från SCB eller Arbetsförmedlingen. En SSYK-kod kan innehålla flera "
+                     "senioritetsnivåer; nivåerna härleds från jobbtitlar, ansvar och erfarenhet. "
+                     "Löneintervallen är uppskattningar baserade på SCB:s officiella fördelning och "
+                     "överlappar normalt. Lön mäter inte individuell prestation.",
+    "cp_pick": "Välj ett yrke i sidofältet för att se dess karriärvägar.",
+    "cp_uncovered": "Karriärvägar täcker för närvarande ett antal professionella familjer (HR, IT, "
+                    "ekonomi, försäljning & marknad, vård, juridik, logistik och ingenjör). Öppna "
+                    "ett yrke i någon av dessa för att utforska dess karriärkarta.",
+    "cp_selected": "Valt yrke", "cp_family": "Karriärfamilj",
+    "cp_curve_h": "Officiell lönekurva",
+    "cp_curve_cap": "SCB:s officiella percentilfördelning för detta yrke. Punkterna är publicerade "
+                    "percentiler (P10/P25/P50/P75/P90); linjen mellan dem är interpolerad — "
+                    "publiceras inte av SCB.",
+    "cp_interp": "Interpolerad", "cp_published": "Publicerad (SCB)",
+    "cp_no_curve": "Ingen SCB-fördelning tillgänglig för detta yrke/år.",
+    "cp_levels_h": "Uppskattade karriärnivåer (efter lön)",
+    "cp_levels_cap": "Varje stapel är ett Qvistin-uppskattat löneintervall för en roll, beräknat "
+                     "från rollens egen officiella SSYK-fördelning. Intervallen överlappar normalt "
+                     "— en stark yrkesperson kan tjäna mer än en nyutnämnd senior. Färg = karriärspår.",
+    "cp_table_h": "Alla roller — detaljer",
+    "cp_c_title": "Roll", "cp_c_level": "Nivå", "cp_c_track": "Spår",
+    "cp_c_pct": "Uppsk. percentil", "cp_c_salary": "Uppsk. lön", "cp_c_conf": "Underlag",
+    "cp_map_h": "Vart kan denna roll leda?",
+    "cp_rel_progression": "Avancera inom yrket",
+    "cp_rel_specialist": "Byt till ett angränsande specialistyrke",
+    "cp_rel_leadership": "Gå in i ledarskap", "cp_rel_lateral": "Relaterade sidosteg",
+    "cp_no_moves": "Inga kartlagda steg för detta yrke ännu.",
+    "cp_gaps": "Typiska luckor", "cp_vs": "mot nuvarande (indikativt)",
+    "cp_compare_h": "Jämför två roller", "cp_current": "Nuvarande roll",
+    "cp_next": "Möjlig nästa roll", "cp_indic_diff": "Indikativ löneskillnad",
+    "cp_indic_note": "median mot median; indikativt, inte garanterat",
+    "cp_same_ssyk": "↔ samma SSYK",
+    "cp_perf_h": "Prestationsposition — intern förhandsvisning (ej publicerad)",
+    "cp_perf_filter": "Markera prestationsnivå", "cp_perf_all": "Alla nivåer",
+    "cp_perf_pos": "Position", "cp_perf_within": "Inom nivån",
+    "cp_perf_sal": "Illustrativ lön", "cp_perf_role": "Visa intervall för roll",
+    "cp_perf_note": "Intern förhandsvisning — visas inte för användare. Publik lansering kräver "
+                    "individuell, samtyckt ersättningsdata som vi inte har.",
+    "cp_track_ic": "Individuell bidragsgivare", "cp_track_specialist": "Specialist",
+    "cp_track_management": "Ledning",
+    "cp_conf_strong": "Starkt underlag", "cp_conf_moderate": "Måttligt underlag",
+    "cp_conf_limited": "Begränsat underlag", "cp_conf_experimental": "Experimentellt",
+    "x_percentile": "Percentil",
+}
+
 _SECTOR_CODES = ("0", "1-3", "1", "2", "3", "4-5", "4", "5")
 
 # Structured guides (the approved User-Guide design; rendered by core/panels.py)
@@ -299,13 +351,13 @@ CONFIG = CountryConfig(
             "title": "Swedish Salary Explorer",
             "caption": f"SCB salary structure statistics · monthly SEK · 2014–{latest_year()}",
             **{f"sector_{c}": n for c, n in SECTORS["EN"].items()},
-            **_WP_EN,
+            **_WP_EN, **_CAREER_EN,
         },
         "SV": {
             "title": "Svensk löneutforskare",
             "caption": f"SCB:s lönestrukturstatistik · månadslön SEK · 2014–{latest_year()}",
             **{f"sector_{c}": n for c, n in SECTORS["SV"].items()},
-            **_WP_SV,
+            **_WP_SV, **_CAREER_SV,
         },
     },
     guide={"EN": _GUIDE_EN, "SV": _GUIDE_SV},
