@@ -2085,16 +2085,33 @@ def career_section():
     _kpi(k3, "cp_rel", _IC_ZAP, "#1B8A5A", "rgba(27,138,90,.12)", f"{n_rpub}/{len(rels)}", C["kpi_rels"])
     _kpi(k4, "cp_drf", _IC_ALERT, "#B26A00", "rgba(178,106,0,.13)", n_draft, C["kpi_draft"])
     st.write("")
+    q = (st.text_input("cp_search", key="cp_search", label_visibility="collapsed",
+                       placeholder=C.get("search_ph", "Search…")) or "").strip().lower()
     st.caption(C.get("note", ""))
     by_id = {t["title_id"]: t for t in titles}
 
+    def _tmatch(t):
+        return q in (str(t.get("name_en", "")) + " " + str(t.get("primary_ssyk", ""))).lower()
+
+    def _rmatch(r):
+        return q in (str(by_id.get(r["from_title"], {}).get("name_en", "")) + " "
+                     + str(by_id.get(r["to_title"], {}).get("name_en", ""))).lower()
+
+    shown = 0
     for f in fams:
         fid = f["family_id"]
-        with st.container(border=True, key=f"cpfam_{fid}"):
-            hc1, hc2 = st.columns([2, 1.4], vertical_alignment="center")
-            hc1.markdown(f"#### {f.get('name_en', fid)}  ·  `{fid}`")
-            pub = hc2.toggle(C.get("fam_publish", "Published"), value=bool(f.get("published")),
-                             key=f"cp_fpub_{fid}")
+        fam_titles = [t for t in titles if t.get("family_id") == fid]
+        fam_rels = [r for r in rels if r.get("family_id") == fid]
+        fam_hit = (not q) or q in (str(f.get("name_en", "")) + " " + fid).lower()
+        mt = fam_titles if fam_hit else [t for t in fam_titles if _tmatch(t)]
+        mr = fam_rels if fam_hit else [r for r in fam_rels if _rmatch(r)]
+        if q and not fam_hit and not mt and not mr:
+            continue
+        shown += 1
+        # Collapsible per family (auto-open on a search match) so the page scales.
+        with st.expander(f"{f.get('name_en', fid)}  ·  {fid}", expanded=bool(q)):
+            pub = st.toggle(C.get("fam_publish", "Published"), value=bool(f.get("published")),
+                            key=f"cp_fpub_{fid}")
             if pub != bool(f.get("published")):
                 cp.set_family_published(fid, pub)
                 cp.log_change("cp_family", fid, "publish" if pub else "unpublish", _admin,
@@ -2102,7 +2119,7 @@ def career_section():
                 st.rerun()
 
             # ── Titles editor ──
-            ftitles = [t for t in titles if t.get("family_id") == fid]
+            ftitles = mt
             if ftitles:
                 st.markdown(f"**{C.get('h_titles', 'Titles')}**")
                 torig = {t["title_id"]: t for t in ftitles}
@@ -2165,7 +2182,7 @@ def career_section():
                         st.info(C["saved_none"])
 
             # ── Relationships editor ──
-            frels = [r for r in rels if r.get("family_id") == fid]
+            frels = mr
             if frels:
                 st.markdown(f"**{C.get('h_rels', 'Relationships')}**")
                 rorig = {r["rel_id"]: r for r in frels}
@@ -2219,6 +2236,8 @@ def career_section():
                         st.rerun()
                     elif not n_err:
                         st.info(C["saved_none"])
+    if q and not shown:
+        st.caption(C.get("no_match", "No match."))
 
 
 SECTIONS = {"overview": overview_section, "data": data_section,
