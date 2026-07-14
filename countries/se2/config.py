@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from core.model import CountryConfig, Capabilities
 
-from . import workpermit
+from . import career, workpermit
 from .labels import SECTORS
 from .provider import Sweden2Provider, latest_year
 
@@ -285,7 +285,8 @@ CONFIG = CountryConfig(
     ),
     tabs=("overview", "distribution", "trend", "where", "leaderboard",
           "sex", "age", "education", "region", "import_overlay"),
-    extra_tabs={"workpermit": workpermit.render},   # Sweden-specific extra tab
+    # Sweden-specific extra tabs. "career" is beta-gated (core/tabs._BETA_TABS).
+    extra_tabs={"workpermit": workpermit.render, "career": career.render},
     access="public",                          # THE public Sweden page
     url_path="sweden",                        # serves /sweden (slug stays "se2")
     fetch_mode="search",

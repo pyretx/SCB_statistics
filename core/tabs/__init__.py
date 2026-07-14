@@ -28,13 +28,14 @@ TABS = {
     "import_overlay": import_overlay.render,   # beta-gated (see render_tabs)
 }
 # Tab ids only admins/beta testers ever see in the tab bar.
-_BETA_TABS = {"import_overlay"}
+_BETA_TABS = {"import_overlay", "career"}
 # Canonical framework tab names (the single standard; see docs/architecture.md).
 _FALLBACK = {"overview": "Overview", "distribution": "Salary distribution",
              "sex": "By gender", "trend": "Trend", "where": "Where do I stand?",
              "leaderboard": "Leaderboard", "stats": "Basic statistics",
              "age": "By age", "education": "By education", "region": "By region",
-             "region_sim": "By region", "import_overlay": "Import overlay (beta)"}
+             "region_sim": "By region", "import_overlay": "Import overlay (beta)",
+             "career": "Career Paths — Beta"}
 
 
 _TAB_CSS = """
