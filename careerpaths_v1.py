@@ -128,3 +128,22 @@ def raw_title_map(status=None) -> list[dict]:
             b = b.eq("status", status)
         return list((b.order("ad_count", desc=True).execute()).data or [])
     return _safe(q, "raw title map", []) or []
+
+
+# ── Writes (used by the pipeline orchestrator) ───────────────────────────────
+def upsert_evidence(rows: list[dict]) -> None:
+    if rows:
+        _safe(lambda: auth._client(service=True).table(_T_EVID)
+              .upsert(rows, on_conflict="title_id").execute(), "upsert_evidence")
+
+
+def upsert_raw_titles(rows: list[dict]) -> None:
+    if rows:
+        _safe(lambda: auth._client(service=True).table(_T_RTM)
+              .upsert(rows, on_conflict="raw_title,ssyk").execute(), "upsert_raw_titles")
+
+
+def add_suggestions(rows: list[dict]) -> None:
+    if rows:
+        _safe(lambda: auth._client(service=True).table(_T_SUG).insert(rows).execute(),
+              "add_suggestions")
