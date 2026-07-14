@@ -105,6 +105,23 @@ def render(cfg, stats, query):
     by_id = {t["title_id"]: t for t in titles}
     year, sex = _year(cfg, query), query.get("sex", "total")
 
+    # ── Selected occupation + its career family ──────────────────────────────
+    occ_name = primary
+    try:
+        m = stats[stats["occ_code"].astype(str) == primary] if stats is not None else None
+        occ_name = (m.iloc[0]["occ_name"] if m is not None and not m.empty
+                    else cfg.provider.occupations(lang).get(primary, primary))
+    except Exception:
+        occ_name = cfg.provider.occupations(lang).get(primary, primary)
+    fam_name = cp.family_names().get(fam, fam)
+    st.markdown(
+        f'<div style="font-size:14px;color:#26303C;margin:2px 0 14px;">'
+        f'{i18n.t(cfg, "cp_selected", lang, "Selected occupation")}: '
+        f'<b>{_esc(occ_name)}</b> <span style="font-family:\'JetBrains Mono\',monospace;'
+        f'color:#98A0AC;font-size:12px;">SSYK {_esc(primary)}</span>'
+        f' &nbsp;·&nbsp; {i18n.t(cfg, "cp_family", lang, "Career family")}: '
+        f'<b>{_esc(fam_name)}</b></div>', unsafe_allow_html=True)
+
     with st.spinner("…"):
         curves = _curves(cfg, sorted({t["primary_ssyk"] for t in titles}), sex, year, lang)
     for t in titles:
@@ -208,56 +225,70 @@ def render(cfg, stats, query):
                 st.warning(pcfg.get("disclaimer",
                            "Illustrative compensation-positioning model only — NOT a measure of "
                            "individual performance, and salary does not prove performance."))
-                opts = {t["name_en"]: t for t in banded}
-                sel = st.selectbox(i18n.t(cfg, "cp_perf_level", lang, "Career level"),
-                                   list(opts), key=f"{cfg.slug}_cp_perf_sel")
-                t = opts[sel]
-                vcur = curves.get(str(t["primary_ssyk"]))
-                lo_p, hi_p = float(t["lo_pct"]), float(t["hi_pct"])
                 import pandas as pd
-                # ascending performance ramp (slate → blue → green → gold → amber)
-                _PERF_COLORS = ["#9AA7B4", "#6FA8C4", "#5B9E7A", "#D0A72E", "#C77E2A"]
-                brows = []
-                for i, band in enumerate(bands):
-                    p_lo = lo_p + float(band["rel_lo"]) * (hi_p - lo_p)
-                    p_hi = lo_p + float(band["rel_hi"]) * (hi_p - lo_p)
-                    s_lo = vcur.value_at(p_lo).value if vcur and vcur.ok else None
-                    s_hi = vcur.value_at(p_hi).value if vcur and vcur.ok else None
-                    brows.append({"label": band["label"], "s_lo": s_lo, "s_hi": s_hi,
-                                  "color": _PERF_COLORS[i % len(_PERF_COLORS)],
-                                  "within": f"{float(band['rel_lo'])*100:.0f}–{float(band['rel_hi'])*100:.0f}%"})
+                # Soft performance palette (by position 1..5):
+                # Developing=orange · Progressing=yellow · Fully effective=green ·
+                # Strong=light blue · Exceptional=dark blue.
+                _PERF_COLORS = ["#E8A15C", "#EAC85E", "#7FBF8A", "#8CC0DE", "#3E6DA3"]
+                plabels = [b["label"] for b in bands]
+                all_label = i18n.t(cfg, "cp_perf_all", lang, "All levels")
 
-                # ── Colour-coded salary bar (segment widths ∝ SEK span) ──
-                valid = [b for b in brows if b["s_lo"] is not None and b["s_hi"] is not None]
-                if valid and (valid[-1]["s_hi"] - valid[0]["s_lo"]) > 0:
-                    total = valid[-1]["s_hi"] - valid[0]["s_lo"]
-                    segs = "".join(
-                        f'<div title="{b["label"]}: {charts.fmt_value(b["s_lo"], cfg)}–'
-                        f'{charts.fmt_value(b["s_hi"], cfg)}" style="flex:{max((b["s_hi"]-b["s_lo"])/total*100, 5):.2f};'
-                        f'background:{b["color"]};" ></div>' for b in valid)
-                    legend = "".join(
-                        f'<span style="display:inline-flex;align-items:center;gap:6px;margin:0 14px 4px 0;'
-                        f'font-size:12px;color:#5B6472;"><span style="width:12px;height:12px;border-radius:3px;'
-                        f'background:{b["color"]};display:inline-block;"></span>{b["label"]}</span>'
-                        for b in valid)
-                    st.markdown(
-                        f'<div style="display:flex;height:44px;border-radius:9px;overflow:hidden;'
-                        f'border:1px solid #E7E9ED;">{segs}</div>'
-                        f'<div style="display:flex;justify-content:space-between;font-family:'
-                        f"'JetBrains Mono',monospace;font-size:11px;color:#98A0AC;margin:5px 0 10px;\">"
-                        f'<span>{charts.fmt_value(valid[0]["s_lo"], cfg)}</span>'
-                        f'<span>{charts.fmt_value(valid[-1]["s_hi"], cfg)}</span></div>'
-                        f'<div style="display:flex;flex-wrap:wrap;">{legend}</div>',
-                        unsafe_allow_html=True)
+                # Filter: highlight one performance level across every role.
+                sel = st.selectbox(
+                    i18n.t(cfg, "cp_perf_filter", lang, "Highlight performance level"),
+                    [all_label] + plabels, key=f"{cfg.slug}_cp_perf_filter")
 
-                # ── Table (kept) ──
-                st.dataframe(pd.DataFrame([{
-                    i18n.t(cfg, "cp_perf_pos", lang, "Position"): b["label"],
-                    i18n.t(cfg, "cp_perf_within", lang, "Within level"): b["within"],
-                    i18n.t(cfg, "cp_perf_sal", lang, "Illustrative salary"):
-                        (f"{charts.fmt_value(b['s_lo'], cfg)}–{charts.fmt_value(b['s_hi'], cfg)}"
-                         if b["s_lo"] is not None else "—"),
-                } for b in brows]), hide_index=True, use_container_width=True)
+                # Per-role performance sub-ranges: each role's salary band split into
+                # the five performance segments (from its OWN SSYK curve).
+                roles = sorted(banded, key=lambda x: x["_band"]["mid_salary"])
+                seg = {}
+                for tt in roles:
+                    vc = curves.get(str(tt["primary_ssyk"]))
+                    lo_p, hi_p = float(tt["lo_pct"]), float(tt["hi_pct"])
+                    seg[tt["name_en"]] = ([
+                        (vc.value_at(lo_p + float(b["rel_lo"]) * (hi_p - lo_p)).value,
+                         vc.value_at(lo_p + float(b["rel_hi"]) * (hi_p - lo_p)).value)
+                        for b in bands] if vc and vc.ok else None)
+                names = [tt["name_en"] for tt in roles if seg.get(tt["name_en"])]
+
+                if names:
+                    fig = go.Figure()
+                    for i, b in enumerate(bands):
+                        base = [seg[n][i][0] for n in names]
+                        width = [seg[n][i][1] - seg[n][i][0] for n in names]
+                        s_hi = [seg[n][i][1] for n in names]
+                        op = 1.0 if sel in (all_label, b["label"]) else 0.18
+                        fig.add_trace(go.Bar(
+                            orientation="h", y=names, x=width, base=base,
+                            marker=dict(color=_PERF_COLORS[i % 5], line=dict(width=0)),
+                            opacity=op, name=b["label"], customdata=s_hi,
+                            hovertemplate="%{y} · " + b["label"]
+                                          + "<br>%{base:,.0f}–%{customdata:,.0f} kr<extra></extra>"))
+                    fig.update_layout(barmode="overlay", height=120 + 28 * len(names),
+                                      xaxis_title=f"{cfg.currency_suffix}{cfg.per_label}",
+                                      legend=dict(orientation="h", y=1.03, x=0))
+                    st.plotly_chart(theme.style_fig(fig), use_container_width=True)
+
+                # Detail table (kept): per role, the salary at the selected level
+                # (or the full band when 'All levels').
+                trows = []
+                idx = None if sel == all_label else plabels.index(sel)
+                sal_col = (i18n.t(cfg, "cp_perf_sal", lang, "Illustrative salary")
+                           if sel == all_label else sel)
+                for tt in roles:
+                    s = seg.get(tt["name_en"])
+                    if sel == all_label:
+                        rng = (f"{charts.fmt_value(tt['_band']['lo_salary'], cfg)}–"
+                               f"{charts.fmt_value(tt['_band']['hi_salary'], cfg)}")
+                    else:
+                        rng = (f"{charts.fmt_value(s[idx][0], cfg)}–{charts.fmt_value(s[idx][1], cfg)}"
+                               if s else "—")
+                    trows.append({
+                        i18n.t(cfg, "cp_c_title", lang, "Role"): tt["name_en"],
+                        i18n.t(cfg, "cp_c_level", lang, "Level"): tt["level_label"],
+                        sal_col: rng,
+                    })
+                st.dataframe(pd.DataFrame(trows), hide_index=True, use_container_width=True)
                 st.caption(i18n.t(cfg, "cp_perf_note", lang,
                                   "Internal preview — not shown to users. Public release requires "
                                   "individual-level, consented compensation evidence we do not have."))

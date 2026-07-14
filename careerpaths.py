@@ -67,6 +67,15 @@ def family_for_ssyk(ssyk: str) -> str | None:
     return None
 
 
+@st.cache_data(show_spinner=False, ttl=3600)
+def family_names() -> dict:
+    """{family_id: display name} — non-sensitive labels for the tab header."""
+    rows, _ = _safe(lambda: list(
+        (auth._client(service=True).table(_T_FAMILY).select("family_id,name_en").execute()).data or []),
+        "family names")
+    return {r["family_id"]: r["name_en"] for r in rows}
+
+
 def titles_for_family(family_id: str) -> list[dict]:
     return [t for t in public_titles() if t.get("family_id") == family_id]
 
@@ -126,7 +135,7 @@ def set_family_published(family_id: str, published: bool) -> str | None:
 
 
 def _clear_cache():
-    for fn in (public_titles, public_relationships):
+    for fn in (public_titles, public_relationships, family_names):
         try:
             fn.clear()
         except Exception:
