@@ -165,6 +165,7 @@ _CAREER_SV = {
     "cp_ev_strong": "Stark signal", "cp_ev_moderate": "Måttlig signal", "cp_ev_limited": "Begränsad signal",
     "cp_ev_based": "baserat på {n} annonser · Arbetsförmedlingen",
     "cp_ev_skills": "Efterfrågade färdigheter",
+    "cp_ev_count": "📊 marknadssignal för {n} roll(er)",
     "cp_ev_attr": "Marknadssignal och vanligaste krav är aggregerade från publika platsannonser "
                   "(Arbetsförmedlingen / JobTech, CC BY-SA) — indikativt, inte officiellt.",
     "cp_compare_h": "Jämför två roller", "cp_current": "Nuvarande roll",

@@ -256,10 +256,15 @@ def render(cfg, stats, query):
                            margin=dict(t=54, l=10, r=10, b=44))
         st.plotly_chart(fig2, use_container_width=True)
 
-    with st.expander(i18n.t(cfg, "cp_table_h", lang, "All roles — detail")):
+    n_ev = sum(1 for t in titles if evidence.get(t["title_id"]))
+    _table_h = i18n.t(cfg, "cp_table_h", lang, "All roles — detail")
+    if n_ev:
+        _table_h += "  ·  " + i18n.t(cfg, "cp_ev_count", lang,
+                                     "📊 live market signal for {n} role(s)").format(n=n_ev)
+    with st.expander(_table_h, expanded=bool(n_ev)):
         import pandas as pd
         rows = []
-        has_ev = any(evidence.get(t["title_id"]) for t in titles)
+        has_ev = n_ev > 0
         has_code = any(_subcode(t) for t in titles)
         for t in sorted(titles, key=lambda x: (mid_salary(x) or 0)):
             b = t.get("_band")
