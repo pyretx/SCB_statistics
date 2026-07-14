@@ -253,15 +253,23 @@ function outgoing(){
     if(m && R[e.to] && !seen.has(e.to)){ seen.add(e.to); out.push(e); } });
   return out;
 }
+const grp = rel => (rel==='management'||rel==='leadership') ? 'leadership'
+                 : (rel==='progression') ? 'advance' : rel;
 function build(){
   const base = baseMid();
-  return outgoing().map(e=>{ const r=R[e.to];
-    return {id:e.to, name:r.name, subcode:r.subcode, color:e.color, rel:e.rel,
+  const arr = outgoing().map(e=>{ const r=R[e.to];
+    return {id:e.to, name:r.name, subcode:r.subcode, color:e.color, rel:e.rel, grp:grp(e.rel),
       level:r.level, conf:r.conf, ssyk:r.ssyk, same_ssyk:e.same_ssyk, gaps:e.gaps||[],
       lo:r.lo, mid:r.mid, hi:r.hi, diff:(base!=null? r.mid-base : null),
       ad_count:r.ad_count, skills:r.skills, education:r.education, experience:r.experience,
       has_next:hasNext(e.to)};
-  }).sort((a,b)=> b.mid-a.mid);
+  });
+  // Cluster by move type, highest-paying cluster on top; sort by salary within.
+  const gmax = {};
+  arr.forEach(n=>{ gmax[n.grp] = Math.max(gmax[n.grp] ?? -1e12, n.mid); });
+  arr.sort((a,b)=> (a.grp===b.grp) ? (b.mid - a.mid)
+                 : ((gmax[b.grp]-gmax[a.grp]) || (a.grp<b.grp?-1:1)));
+  return arr;
 }
 function drawCenter(){
   const info = center===null ? {name:OCC.name, lo:OCC.lo, hi:OCC.hi}
