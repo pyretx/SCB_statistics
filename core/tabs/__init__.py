@@ -35,7 +35,7 @@ _FALLBACK = {"overview": "Overview", "distribution": "Salary distribution",
              "leaderboard": "Leaderboard", "stats": "Basic statistics",
              "age": "By age", "education": "By education", "region": "By region",
              "region_sim": "By region", "import_overlay": "Import overlay (beta)",
-             "career": "Career Paths — Beta"}
+             "career": "Career Paths (beta)"}
 
 
 _TAB_CSS = """
@@ -68,6 +68,9 @@ def visible_tabs(cfg) -> list[str]:
     enabled = ([t for t in cfg.tabs if t in TABS] + list(extra)) or ["overview"]
     if not access.is_beta_or_admin(cfg):
         enabled = [t for t in enabled if t not in _BETA_TABS] or ["overview"]
+    # Beta tabs always cluster at the END, in their existing relative order, so the
+    # "(beta)" tabs sit together after the stable tabs (framework-wide).
+    enabled = [t for t in enabled if t not in _BETA_TABS] + [t for t in enabled if t in _BETA_TABS]
     return enabled
 
 
