@@ -133,6 +133,47 @@ def _clear_cache():
             pass
 
 
+# ── Performance overlay (internal preview; never public unless enabled) ──────
+def perf_bands() -> list[dict]:
+    rows, _ = _safe(lambda: list(
+        (auth._client(service=True).table("cp_perf_band").select("*")
+         .order("position").execute()).data or []), "performance bands")
+    return rows
+
+
+def perf_config() -> dict:
+    rows, _ = _safe(lambda: list(
+        (auth._client(service=True).table("cp_perf_config").select("*").limit(1).execute()).data or []),
+        "performance config")
+    return rows[0] if rows else {"enabled_public": False, "disclaimer": ""}
+
+
+def set_perf_band(band_id: str, **changes) -> str | None:
+    allowed = {"label", "position", "rel_lo", "rel_hi", "description"}
+    changes = {k: v for k, v in changes.items() if k in allowed}
+    if not changes:
+        return None
+    try:
+        auth._client(service=True).table("cp_perf_band").update(changes).eq("band_id", band_id).execute()
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"[careerpaths] set_perf_band failed: {e}")
+        return "Could not save band."
+
+
+def set_perf_config(**changes) -> str | None:
+    allowed = {"enabled_public", "disclaimer"}
+    changes = {k: v for k, v in changes.items() if k in allowed}
+    if not changes:
+        return None
+    try:
+        auth._client(service=True).table("cp_perf_config").update(changes).eq("id", 1).execute()
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"[careerpaths] set_perf_config failed: {e}")
+        return "Could not save config."
+
+
 def log_change(subject_type: str, subject_id: str, action: str, actor: str,
                before_after: dict | None = None) -> None:
     """Append an audit entry (reuses the compliance_review_log table — generic

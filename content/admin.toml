@@ -123,6 +123,11 @@ col_from     = "From"
 col_to       = "To"
 col_type     = "Type"
 col_expl     = "Explanation"
+perf_h       = "Performance overlay (internal preview — not published)"
+perf_missing = "Run deploy/sql/2026-07-14_career_perf_overlay.sql to enable the overlay."
+perf_public  = "Enable for public (keep OFF — no evidence for public release)"
+perf_save    = "💾 Save overlay bands"
+perf_note    = "The five-point overlay illustrates positions WITHIN a level's salary range. It is not a measure of individual performance and must not be enabled publicly without individual-level consented evidence."
 
 [data]
 caption        = "Each source shows its latest data year and how it refreshes."

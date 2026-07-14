@@ -2239,6 +2239,67 @@ def career_section():
     if q and not shown:
         st.caption(C.get("no_match", "No match."))
 
+    # ── Performance overlay (internal preview — not published) ───────────────
+    st.write("")
+    with st.expander(C.get("perf_h", "Performance overlay (internal preview)")):
+        st.caption(C.get("perf_note", ""))
+        pcfg = cp.perf_config()
+        bands = cp.perf_bands()
+        if not bands:
+            st.caption(C.get("perf_missing", "Run the overlay migration to enable."))
+        else:
+            en = st.toggle(C.get("perf_public", "Enable for public"),
+                           value=bool(pcfg.get("enabled_public")), key="cp_perf_pub")
+            if en != bool(pcfg.get("enabled_public")):
+                cp.set_perf_config(enabled_public=en)
+                cp.log_change("cp_perf_config", "1", "publish" if en else "unpublish", _admin,
+                              {"enabled_public": en})
+                st.rerun()
+            porig = {b["band_id"]: b for b in bands}
+            pdf = pd.DataFrame([{
+                "Position": b["label"], "Order": int(b["position"]),
+                "Rel lo": float(b["rel_lo"]), "Rel hi": float(b["rel_hi"]),
+                "Description": b.get("description") or "", "_id": b["band_id"],
+            } for b in bands])
+            ped = st.data_editor(
+                pdf, key="cp_perf_ed", hide_index=True, use_container_width=True,
+                column_config={
+                    "Position": st.column_config.TextColumn("Position"),
+                    "Order": st.column_config.NumberColumn("Order", min_value=1, max_value=9, step=1),
+                    "Rel lo": st.column_config.NumberColumn("Rel lo", min_value=0.0, max_value=1.0, step=0.05),
+                    "Rel hi": st.column_config.NumberColumn("Rel hi", min_value=0.0, max_value=1.0, step=0.05),
+                    "Description": st.column_config.TextColumn("Description"),
+                    "_id": None,
+                })
+            if st.button(C.get("perf_save", "Save"), key="cp_perf_save"):
+                n_ok = n_err = 0
+                for _, row in ped.iterrows():
+                    o = porig.get(row["_id"])
+                    if not o:
+                        continue
+                    ch = {}
+                    for col, field, cast in (("Position", "label", str), ("Order", "position", int),
+                                             ("Rel lo", "rel_lo", float), ("Rel hi", "rel_hi", float),
+                                             ("Description", "description", str)):
+                        new = cast(row[col]) if row[col] is not None else ""
+                        cur = o.get(field)
+                        if new != (cast(cur) if cur is not None else ""):
+                            ch[field] = new
+                    if ch:
+                        err = cp.set_perf_band(row["_id"], **ch)
+                        if err:
+                            n_err += 1
+                        else:
+                            n_ok += 1
+                            cp.log_change("cp_perf_band", row["_id"], "edit", _admin, ch)
+                if n_err:
+                    st.error(C["save_err"].format(n=n_err))
+                if n_ok:
+                    st.success(C["saved"].format(n=n_ok))
+                    st.rerun()
+                elif not n_err:
+                    st.info(C["saved_none"])
+
 
 SECTIONS = {"overview": overview_section, "data": data_section,
             "compliance": compliance_section, "career": career_section,

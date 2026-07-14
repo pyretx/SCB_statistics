@@ -195,6 +195,45 @@ def render(cfg, stats, query):
             })
         st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
 
+    # ═══ 2b · Performance positioning — INTERNAL PREVIEW (not published) ═════
+    # Shown only to admins (or if perf_config.enabled_public, which stays false
+    # until evidence exists). Illustrative only — never a measure of performance.
+    role = (st.session_state.get("auth_user") or {}).get("role", "")
+    pcfg = cp.perf_config()
+    if (role in ("admin", "master") or pcfg.get("enabled_public")) and banded:
+        bands = cp.perf_bands()
+        if bands:
+            with st.expander("🔒 " + i18n.t(cfg, "cp_perf_h", lang,
+                                            "Performance positioning — internal preview (not published)")):
+                st.warning(pcfg.get("disclaimer",
+                           "Illustrative compensation-positioning model only — NOT a measure of "
+                           "individual performance, and salary does not prove performance."))
+                opts = {t["name_en"]: t for t in banded}
+                sel = st.selectbox(i18n.t(cfg, "cp_perf_level", lang, "Career level"),
+                                   list(opts), key=f"{cfg.slug}_cp_perf_sel")
+                t = opts[sel]
+                vcur = curves.get(str(t["primary_ssyk"]))
+                lo_p, hi_p = float(t["lo_pct"]), float(t["hi_pct"])
+                import pandas as pd
+                rows = []
+                for band in bands:
+                    p_lo = lo_p + float(band["rel_lo"]) * (hi_p - lo_p)
+                    p_hi = lo_p + float(band["rel_hi"]) * (hi_p - lo_p)
+                    s_lo = vcur.value_at(p_lo).value if vcur and vcur.ok else None
+                    s_hi = vcur.value_at(p_hi).value if vcur and vcur.ok else None
+                    rows.append({
+                        i18n.t(cfg, "cp_perf_pos", lang, "Position"): band["label"],
+                        i18n.t(cfg, "cp_perf_within", lang, "Within level"):
+                            f"{float(band['rel_lo'])*100:.0f}–{float(band['rel_hi'])*100:.0f}%",
+                        i18n.t(cfg, "cp_perf_sal", lang, "Illustrative salary"):
+                            (f"{charts.fmt_value(s_lo, cfg)}–{charts.fmt_value(s_hi, cfg)}"
+                             if s_lo is not None else "—"),
+                    })
+                st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+                st.caption(i18n.t(cfg, "cp_perf_note", lang,
+                                  "Internal preview — not shown to users. Public release requires "
+                                  "individual-level, consented compensation evidence we do not have."))
+
     # ═══ 3 · Career map from the viewed occupation ═══════════════════════════
     st.markdown(f"#### {i18n.t(cfg, 'cp_map_h', lang, 'Where can this role lead?')}")
     from_ids = {t["title_id"] for t in titles if str(t["primary_ssyk"]) == primary}
