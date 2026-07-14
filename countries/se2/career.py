@@ -197,12 +197,12 @@ _MAP_TEMPLATE = r"""
  .mtv { font-size:16px; font-weight:700; margin-top:4px; }
  .mskills { border:1px solid #E7E9ED; border-radius:12px; background:#fff; padding:11px 14px; margin-top:10px; box-shadow:0 1px 2px rgba(16,21,31,.04); }
  .cphint { font-size:11px; color:#98A0AC; margin-top:8px; }
- .cpcrumbs { font-size:12px; color:#5B6472; margin-bottom:8px; min-height:16px; }
- .cpcrumbs a { color:#0A63A6; cursor:pointer; text-decoration:none; }
- .cpcrumbs a:hover { text-decoration:underline; }
- .cpcrumbs .cur { color:#0C1119; font-weight:700; }
- .cpcrumbs .sep { color:#C3C8D0; margin:0 6px; }
- .cpnode .chev { color:#B4BAC4; font-weight:700; font-size:15px; margin-left:2px; }
+ .cplevels { display:flex; align-items:center; gap:6px; margin-bottom:9px; font-size:12px; flex-wrap:wrap; }
+ .cplevels .lbl { color:#5B6472; margin-right:2px; }
+ .cplevels button { border:1px solid #E7E9ED; background:#fff; color:#26303C; border-radius:8px;
+   padding:3px 11px; cursor:pointer; font-size:12px; font-weight:600; }
+ .cplevels button:hover { border-color:#0A63A6; }
+ .cplevels button.on { background:#0A63A6; color:#fff; border-color:#0A63A6; }
  .dhint { font-size:13px; color:#5B6472; }
 </style>
 <div class="cpwrap">
@@ -210,7 +210,7 @@ _MAP_TEMPLATE = r"""
   <div class="cptitle" id="cptitle"></div>
   <div class="cpsub" id="cpsub"></div>
   <div class="cplegend" id="cplegend"></div>
-  <div class="cpcrumbs" id="cpcrumbs"></div>
+  <div class="cplevels" id="cplevels"></div>
   <div class="cpmap" id="cpmap"><svg class="cpwires" id="cpwires"></svg></div>
   <div class="cpdetail" id="cpdetail"></div>
   <div class="cphint" id="cphint"></div>
@@ -229,123 +229,110 @@ document.getElementById('cplegend').innerHTML = (D.legend||[])
   .map(o=>`<span><span class="cpdot" style="background:${o.color}"></span>${esc(o.label)}${o.dashed?' <span style="opacity:.6">- -</span>':''}</span>`).join('');
 
 const R = D.roles, E = D.edges, OCC = D.occupation, RL = D.rellabels || {};
+const LAYER = D.layer, PARENT = D.parent, CENTERIDS = new Set(D.center_ids||[]), MAXL = D.max_layer||1;
 const mapEl = document.getElementById('cpmap');
 const svg = document.getElementById('cpwires');
 const titleEl = document.getElementById('cptitle');
-const crumbEl = document.getElementById('cpcrumbs');
+const levelsEl = document.getElementById('cplevels');
 const detailEl = document.getElementById('cpdetail');
-const rowH = 54, padY = 26;
 
 const center0 = document.createElement('div');
 center0.className = 'cpcenter';
 mapEl.appendChild(center0);
 
-let center = null, focus = null;
-let trail = [{id:null, name:OCC.name}];
-let NODES = [];
+// the edge that leads INTO each node along its longest-path parent (colour/rel/gaps)
+const edgeInto = {};
+E.forEach(e=>{ if(PARENT[e.to]===e.from) edgeInto[e.to]=e; });
 
-const hasNext = id => E.some(e=>e.from===id && R[e.to]);
-const baseMid = () => center===null ? OCC.base_mid : (R[center]? R[center].mid : null);
-function outgoing(){
-  const froms = center===null ? new Set(OCC.from_ids) : null;
-  const seen=new Set(), out=[];
-  E.forEach(e=>{ const m = center===null ? froms.has(e.from) : e.from===center;
-    if(m && R[e.to] && !seen.has(e.to)){ seen.add(e.to); out.push(e); } });
-  return out;
+const ALL = Object.keys(LAYER).filter(id=> LAYER[id]>=1 && R[id]);
+let sel = Math.min(2, MAXL) || 1;
+let focus = null, hoverPath = null, focusPath = null, nodeEls = {};
+
+function pathTo(id){ const s=new Set(); let cur=id, g=0;
+  while(cur!=null && PARENT[cur]!==undefined && g++<60){ s.add(PARENT[cur]+'>'+cur); cur=PARENT[cur]; }
+  return s; }
+function levelButtons(){
+  let h = `<span class="lbl">${esc(L.levels_lbl)}</span>`;
+  for(let l=1;l<=MAXL;l++) h += `<button data-l="${l}" class="${l===sel?'on':''}">${l}</button>`;
+  levelsEl.innerHTML = h;
+  levelsEl.querySelectorAll('button').forEach(b=> b.onclick=()=>{ sel=+b.dataset.l; render(); });
 }
-const grp = rel => (rel==='management'||rel==='leadership') ? 'leadership'
-                 : (rel==='progression') ? 'advance' : rel;
-function build(){
-  const base = baseMid();
-  const arr = outgoing().map(e=>{ const r=R[e.to];
-    return {id:e.to, name:r.name, subcode:r.subcode, color:e.color, rel:e.rel, grp:grp(e.rel),
-      level:r.level, conf:r.conf, ssyk:r.ssyk, same_ssyk:e.same_ssyk, gaps:e.gaps||[],
-      lo:r.lo, mid:r.mid, hi:r.hi, diff:(base!=null? r.mid-base : null),
-      ad_count:r.ad_count, skills:r.skills, education:r.education, experience:r.experience,
-      has_next:hasNext(e.to)};
-  });
-  // Cluster by move type, highest-paying cluster on top; sort by salary within.
-  const gmax = {};
-  arr.forEach(n=>{ gmax[n.grp] = Math.max(gmax[n.grp] ?? -1e12, n.mid); });
-  arr.sort((a,b)=> (a.grp===b.grp) ? (b.mid - a.mid)
-                 : ((gmax[b.grp]-gmax[a.grp]) || (a.grp<b.grp?-1:1)));
-  return arr;
-}
+function shownIds(){ return ALL.filter(id=> LAYER[id]<=sel); }
+function nodeObj(id){ const r=R[id], e=edgeInto[id]||{};
+  return {id, name:r.name, subcode:r.subcode, ssyk:r.ssyk, level:r.level, conf:r.conf,
+    lo:r.lo, mid:r.mid, hi:r.hi, diff:(OCC.base_mid!=null? r.mid-OCC.base_mid : null),
+    ad_count:r.ad_count, skills:r.skills, education:r.education, experience:r.experience,
+    color:e.color||'#5B6472', rel:e.rel, gaps:e.gaps||[], same_ssyk:e.same_ssyk}; }
 function drawCenter(){
-  const info = center===null ? {name:OCC.name, lo:OCC.lo, hi:OCC.hi}
-                             : {name:R[center].name, lo:R[center].lo, hi:R[center].hi};
-  center0.innerHTML = `<div class="lbl">${esc(L.you_here)}</div><div class="cname">${esc(info.name)}</div>`
-    + (info.lo!=null? `<div class="crange">${money(info.lo)}–${money(info.hi)}</div>`:'');
+  center0.innerHTML = `<div class="lbl">${esc(L.you_here)}</div><div class="cname">${esc(OCC.name)}</div>`
+    + (OCC.lo!=null? `<div class="crange">${money(OCC.lo)}–${money(OCC.hi)}</div>`:'');
 }
-function drawCrumbs(){
-  crumbEl.innerHTML = trail.map((c,i)=> i===trail.length-1
-      ? `<span class="cur">${esc(c.name)}</span>`
-      : `<a data-i="${i}">${esc(c.name)}</a>`).join('<span class="sep">›</span>');
-  crumbEl.querySelectorAll('a').forEach(a=> a.onclick=()=> goCrumb(+a.dataset.i));
-}
-function createNode(n,i){
+function markActive(){ Object.entries(nodeEls).forEach(([id,el])=> el.classList.toggle('active', id===focus)); }
+function createNode(n){
   const d = document.createElement('div');
-  d.className='cpnode'; d.dataset.i=i; d.dataset.color=n.color; d.dataset.rel=n.rel;
+  d.className='cpnode'; d.dataset.id=n.id; d.dataset.rel=n.rel||''; d.style.right='auto';
   d.innerHTML = `<span class="cpdot" style="background:${n.color}"></span>`
     + `<span class="nname">${esc(n.name)}</span>`
     + (n.diff!=null? `<span class="ndiff" style="color:${n.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(n.diff)}</span>`:'')
-    + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'')
-    + (n.has_next? `<span class="chev">›</span>`:'');
-  d.onclick = ()=> onNode(n.id);
-  mapEl.appendChild(d);
+    + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'');
+  d.onclick = ()=>{ focus=n.id; focusPath=pathTo(n.id); renderDetail(); drawWires(); markActive(); };
+  d.onmouseenter = ()=>{ hoverPath=pathTo(n.id); drawWires(); };
+  d.onmouseleave = ()=>{ hoverPath=null; drawWires(); };
+  mapEl.appendChild(d); nodeEls[n.id]=d;
 }
-function render(){
-  NODES = build();
-  titleEl.textContent = L.title.replace('{r}', center===null? OCC.name : R[center].name);
-  drawCrumbs(); drawCenter();
-  mapEl.querySelectorAll('.cpnode').forEach(x=>x.remove());
-  NODES.forEach((n,i)=> createNode(n,i));
-  mapEl.style.height = Math.max(NODES.length*rowH + padY*2, 220) + 'px';
-  positionNodes(); drawWires(); renderDetail();
-}
-function onNode(id){
-  focus = id;
-  if(hasNext(id)){
-    const n = NODES.find(x=>x.id===id) || {};
-    trail.push({id, name:R[id].name, gaps:n.gaps||[], diff:n.diff, rel:n.rel, same:n.same_ssyk, color:n.color});
-    center = id;
-  }
-  render();
-}
-function goCrumb(i){ trail = trail.slice(0,i+1); center = trail[i].id; focus = center; render(); }
-function positionNodes(){
+function layoutNodes(){
   const W = mapEl.clientWidth;
-  center0.style.left = Math.max(56, W*0.13) + 'px';
-  const maxD = Math.max(1, ...NODES.map(n=>Math.abs(n.diff||0)));
-  const pull = Math.min(W*0.40, 440);
-  mapEl.querySelectorAll('.cpnode').forEach(nd=>{
-    const i=+nd.dataset.i, n=NODES[i];
-    nd.style.top = (padY + i*rowH) + 'px';
-    const ratio = 0.22 + 0.78*(Math.abs(n.diff||0)/maxD);   // 1 = biggest leap → furthest right
-    nd.style.right = (16 + (1-ratio)*pull) + 'px';
+  center0.style.left = '16px';
+  const x0 = 16 + center0.offsetWidth + 28;
+  const colStep = Math.max(160, (W - x0 - 24) / sel);
+  const byL = {}; shownIds().forEach(id=> (byL[LAYER[id]]=byL[LAYER[id]]||[]).push(id));
+  let maxCount = 1;
+  Object.values(byL).forEach(a=>{ a.sort((p,q)=> R[q].mid-R[p].mid); maxCount=Math.max(maxCount,a.length); });
+  const mapH = Math.max(maxCount*54 + 44, 220);
+  mapEl.style.height = mapH+'px';
+  shownIds().forEach(id=>{ const el=nodeEls[id]; if(!el) return; const Lr=LAYER[id];
+    const arr=byL[Lr], idx=arr.indexOf(id), cnt=arr.length;
+    const yStep = mapH/(cnt+1), y = yStep*(idx+1);
+    el.style.left = (x0 + (Lr-1)*colStep) + 'px';
+    el.style.top = (y - el.offsetHeight/2) + 'px';
   });
 }
 function drawWires(){
-  const mr = mapEl.getBoundingClientRect(), cr = center0.getBoundingClientRect();
-  const cx = cr.right - mr.left, cy = cr.top - mr.top + cr.height/2;
-  let p = '';
-  mapEl.querySelectorAll('.cpnode').forEach(node=>{
-    const i=+node.dataset.i, r=node.getBoundingClientRect();
-    const nx=r.left-mr.left, ny=r.top-mr.top+r.height/2, mx=(cx+nx)/2;
-    const on = (NODES[i] && NODES[i].id===focus);
-    const dash = (node.dataset.rel==='lateral'||node.dataset.rel==='related')?' stroke-dasharray="5 6"':'';
+  const mr = mapEl.getBoundingClientRect();
+  const ids = new Set(shownIds());
+  let p='';
+  E.forEach(e=>{
+    if(!ids.has(e.to)) return;
+    const fromCenter = CENTERIDS.has(e.from);
+    if(!fromCenter && !ids.has(e.from)) return;
+    const srcEl = fromCenter? center0 : nodeEls[e.from];
+    const dstEl = nodeEls[e.to];
+    if(!srcEl || !dstEl) return;
+    const sr=srcEl.getBoundingClientRect(), dr=dstEl.getBoundingClientRect();
+    const cx=sr.right-mr.left, cy=sr.top-mr.top+sr.height/2;
+    const nx=dr.left-mr.left, ny=dr.top-mr.top+dr.height/2, mx=(cx+nx)/2;
+    const key=e.from+'>'+e.to;
+    const on = (hoverPath&&hoverPath.has(key)) || (focusPath&&focusPath.has(key));
+    const dash=(e.rel==='lateral'||e.rel==='related')?' stroke-dasharray="5 6"':'';
     p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
-      + `stroke="${node.dataset.color}" stroke-width="${on?3:1.5}" stroke-opacity="${on?0.9:0.35}"${dash}/>`;
+      + `stroke="${e.color}" stroke-width="${on?3:1.4}" stroke-opacity="${on?0.95:0.28}"${dash}/>`;
   });
   svg.setAttribute('viewBox',`0 0 ${mr.width} ${mr.height}`);
   svg.setAttribute('width',mr.width); svg.setAttribute('height',mr.height); svg.innerHTML=p;
 }
+function render(){
+  levelButtons();
+  titleEl.textContent = L.title.replace('{r}', OCC.name);
+  drawCenter();
+  mapEl.querySelectorAll('.cpnode').forEach(x=>x.remove()); nodeEls={};
+  shownIds().forEach(id=> createNode(nodeObj(id)));
+  layoutNodes();
+  if(focus!==null && !nodeEls[focus]){ focus=null; focusPath=null; }
+  drawWires(); markActive(); renderDetail();
+}
 function renderDetail(){
   if(focus===null){ detailEl.innerHTML = `<div class="dhint">${esc(L.pick)}</div>`; return; }
-  let d;
-  if(focus===center){ const tl=trail[trail.length-1]||{};
-    d = Object.assign({}, R[focus], {id:focus, diff:tl.diff, gaps:tl.gaps||[], rel:tl.rel, same_ssyk:tl.same, color:tl.color, has_next:hasNext(focus)}); }
-  else { d = NODES.find(n=>n.id===focus) || Object.assign({id:focus, has_next:hasNext(focus)}, R[focus]); }
+  const d = nodeObj(focus);
   const skills=(d.skills||[]).filter(Boolean).slice(0,8).map(s=>`<span class="chip" style="background:rgba(192,69,58,.08);color:#C0453A">${esc(s)}</span>`).join('');
   const gaps=(d.gaps||[]).filter(Boolean).map(s=>`<span class="chip" style="background:rgba(10,99,166,.08);color:#0A63A6">${esc(s)}</span>`).join('');
   let ads = d.ad_count ? (`<div class="mtiles">`
@@ -355,17 +342,16 @@ function renderDetail(){
       + `</div>` + (skills?`<div class="mskills"><div class="mtl">${esc(L.skills)}</div><div style="margin-top:7px;">${skills}</div></div>`:''))
       : `<div class="noads">${esc(L.no_ads)}</div>`;
   detailEl.innerHTML =
-    (d.rel?`<div class="drel"><span class="cpdot" style="background:${d.color||'#0A63A6'}"></span> ${esc(RL[d.rel]||'')}</div>`:'')
+    (d.rel?`<div class="drel"><span class="cpdot" style="background:${d.color}"></span> ${esc(RL[d.rel]||'')}</div>`:'')
     + `<div class="dname">${d.subcode?esc(d.subcode)+' · ':''}${esc(d.name)}</div>`
     + `<div class="dmeta">${esc(d.level)} · ${d.same_ssyk?esc(L.same_ssyk):('→ SSYK '+esc(d.ssyk))} · ${esc(d.conf)}</div>`
     + `<div class="drow"><div><div class="dlabel">${esc(L.range)}</div><div class="dval">${money(d.lo)}–${money(d.hi)}</div></div>`
     + (d.diff!=null?`<div><div class="dlabel">${esc(L.vs)}</div><div class="dval" style="color:${d.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(d.diff)}<span style="font-size:12px;font-weight:400;color:#8A919D"> /mo</span></div></div>`:'')
     + `</div>`
     + (gaps?`<div class="dlabel" style="margin-top:4px;">${esc(L.gaps)}</div><div style="margin-top:3px;">${gaps}</div>`:'')
-    + (d.has_next?`<div class="cphint" style="margin-top:8px;">↳ ${esc(L.expand_hint)}</div>`:'')
     + ads;
 }
-window.addEventListener('resize', ()=>{ positionNodes(); drawWires(); });
+window.addEventListener('resize', ()=>{ layoutNodes(); drawWires(); });
 requestAnimationFrame(render);
 </script>
 """
@@ -429,13 +415,48 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
     from_ids = [t["title_id"] for t in titles
                 if str(t["primary_ssyk"]) == primary and t["title_id"] in roles]
 
-    occ_dests = {e["to"] for e in edges if e["from"] in set(from_ids)}
-    if not occ_dests:
+    # ── Longest-path layering over the forward sub-graph from the occupation's
+    # roles → each role gets a level (min hops), so the component can show N
+    # levels at once instead of click-drilling. Entry roles = layer 0 (the centre). ──
+    from collections import deque, Counter
+    adj = {}
+    for e in edges:
+        adj.setdefault(e["from"], []).append(e["to"])
+    inset = set(from_ids)
+    stack = list(from_ids)
+    while stack:
+        u = stack.pop()
+        for v in adj.get(u, []):
+            if v in roles and v not in inset:
+                inset.add(v); stack.append(v)
+    indeg = {n: 0 for n in inset}
+    for e in edges:
+        if e["from"] in inset and e["to"] in inset:
+            indeg[e["to"]] += 1
+    dq = deque([n for n in inset if indeg[n] == 0])
+    indeg2 = dict(indeg); topo = []
+    while dq:
+        u = dq.popleft(); topo.append(u)
+        for v in adj.get(u, []):
+            if v in inset:
+                indeg2[v] -= 1
+                if indeg2[v] == 0:
+                    dq.append(v)
+    layer = {n: 0 for n in inset}; parent = {}
+    for u in topo:
+        for v in adj.get(u, []):
+            if v in inset and layer[u] + 1 > layer[v]:
+                layer[v] = layer[u] + 1; parent[v] = u
+    center_ids = [n for n in inset if layer[n] == 0]
+    node_ids = [n for n in inset if layer[n] >= 1]
+    if not node_ids:
         st.markdown(f"#### {i18n.t(cfg, 'cp_map_h', lang, 'Where can this role lead?')}")
         st.caption(i18n.t(cfg, "cp_no_moves", lang, "No mapped moves for this occupation yet."))
         return
+    max_layer = max(layer[n] for n in node_ids)
+    max_layer_width = max(Counter(layer[n] for n in node_ids).values())
 
-    present = {e["rel"] for e in edges}
+    present = {e["rel"] for e in edges if e["to"] in set(node_ids)}
     legend, _seen = [], set()
     for _rt in ["progression", "specialist", "management", "leadership", "lateral", "entry", "related"]:
         _lbl = _leg_lbl.get(_rt)
@@ -444,26 +465,22 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
                            "dashed": _rt in ("lateral", "related")})
             _seen.add(_lbl)
 
-    # tallest fan across every possible centre → fixed iframe height (no clipping)
-    dist = {}
-    for e in edges:
-        dist.setdefault(e["from"], set()).add(e["to"])
-    max_fan = max([len(occ_dests)] + [len(v) for v in dist.values()])
-
     payload = {
-        "occupation": {"name": occ_name, "ssyk": str(primary), "from_ids": from_ids,
+        "occupation": {"name": occ_name, "ssyk": str(primary),
                        "base_mid": (round(base_mid) if base_mid else None),
                        "lo": (round(c_lo) if c_lo else None), "hi": (round(c_hi) if c_hi else None)},
         "roles": roles, "edges": edges, "legend": legend, "rellabels": _leg_lbl,
+        "layer": layer, "parent": parent, "center_ids": center_ids, "max_layer": max_layer,
         "labels": {
             "eyebrow": "CAREER PATHS · " + i18n.t(cfg, "cp_map_h", lang, "Where can this role lead?").upper(),
             "title": i18n.t(cfg, "cp_map_from", lang, "Paths from {r}"),
             "subtitle": f"{occ_name} · SSYK {primary} · "
                         + i18n.t(cfg, "cp_map_axis", lang, "positions reflect estimated salary midpoints"),
             "you_here": i18n.t(cfg, "cp_you_here", lang, "YOU ARE HERE"),
+            "levels_lbl": i18n.t(cfg, "cp_map_levels", lang, "Steps to show:"),
             "ads": i18n.t(cfg, "cp_ads", lang, "ads"),
             "range": i18n.t(cfg, "cp_ms_range", lang, "Estimated range"),
-            "vs": i18n.t(cfg, "cp_vs_short", lang, "vs current (indicative)"),
+            "vs": i18n.t(cfg, "cp_vs", lang, "vs occupation median (indicative)"),
             "gaps": i18n.t(cfg, "cp_gaps", lang, "Typical gaps to close"),
             "same_ssyk": i18n.t(cfg, "cp_same_ssyk", lang, "↔ same SSYK"),
             "ads_header": i18n.t(cfg, "cp_ms_fromads", lang, "FROM JOB ADS"),
@@ -471,17 +488,14 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
             "education": i18n.t(cfg, "cp_ms_edu", lang, "Top education req."),
             "skills": i18n.t(cfg, "cp_skills", lang, "Skills"),
             "no_ads": i18n.t(cfg, "cp_ms_none", lang, "No live job-ad signal for this role yet."),
-            "hint": i18n.t(cfg, "cp_map_hint2", lang,
-                           "Click a role to step into it and explore where it leads next; "
-                           "use the breadcrumb to go back."),
-            "pick": i18n.t(cfg, "cp_map_pick", lang,
-                           "Select a role below to step into it and see where it leads."),
-            "expand_hint": i18n.t(cfg, "cp_map_expand", lang,
-                                  "Has onward moves — click to explore further."),
+            "hint": i18n.t(cfg, "cp_map_hint3", lang,
+                           "Pick how many steps to show, hover a role to trace its path, "
+                           "and click one for its live job-ad requirements."),
+            "pick": i18n.t(cfg, "cp_map_pick", lang, "Click a role to see its detail and job-ad requirements."),
         },
     }
     html = _MAP_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
-    map_h = max(max_fan * 54 + 52, 240)
+    map_h = max(max_layer_width * 54 + 44, 220)
     components.html(html, height=150 + map_h + 320, scrolling=True)
 
 
