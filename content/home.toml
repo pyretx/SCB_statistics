@@ -304,7 +304,7 @@ cy = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU s
 mt = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2006–2022 trend", "Gross monthly earnings · Eurostat SES"]
 rs = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2014–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
 mk = ["Mean earnings & gender split · 9 ISCO-08 major groups", "Harmonised EU survey · 2010–2022 trend", "Gross monthly earnings (EUR) · Eurostat SES"]
-jp = ["Mean earnings & gender split · 11 JSCO major groups", "Basic Survey on Wage Structure · 2020–2023 trend", "Scheduled monthly cash earnings · e-Stat · 2023"]
+jp = ["Mean earnings & gender split · 144 detailed occupations (JSCO 2020)", "Basic Survey on Wage Structure · 2020–2023 trend", "Scheduled monthly cash earnings · e-Stat · 2023"]
 
 [footer]
 note = "Data sourced directly from national statistics agencies · SCB (Sweden) · INSEE (France) · SSB (Norway) · BLS (United States)"

@@ -13,7 +13,7 @@ from .provider import JapanProvider, _load
 _prov = JapanProvider()
 _YEARS = _load().get("years") or [latest_year()]
 _YR = max(_YEARS)
-_CAPTION = "e-Stat · Mean earnings by occupation (JSCO major groups) · monthly, JPY"
+_CAPTION = "e-Stat · Mean earnings by occupation (JSCO 2020) · monthly, JPY"
 
 _GUIDE_EN = {
     "title": "How to use the Japanese Salary Explorer",
@@ -25,7 +25,8 @@ _GUIDE_EN = {
                         "press the blue Search button."),
               ("Read the results", "Explore the tabs — the 2020→ trend and By gender.")],
     "find_title": "Finding the right occupation",
-    "find": [("Occupations", "The data covers the 11 JSCO-2020 major occupation groups.")],
+    "find": [("Drill down", "Pick a major group, then a detailed occupation (144 in all)."),
+             ("Search box", "Type in the “Search occupations…” box — matches EN and JA names.")],
     "charts_title": "Reading the figures",
     "charts_intro": "Figures are the MEAN scheduled monthly cash earnings per group:",
     "pcts": [("MEAN", 52, "average monthly earnings")],
@@ -55,7 +56,7 @@ CONFIG = CountryConfig(
     caption=_CAPTION,
     currency="JPY", currency_suffix="¥", money_prefix=True, period="monthly",
     capabilities=Capabilities(
-        has_occupation_hierarchy=False,
+        has_occupation_hierarchy=True,          # JSCO major → detailed (2 levels)
         has_mean=True, has_median=False, has_sex=True,
         has_trend=True,
         has_leaderboard=True, leaderboard_scope=1,
@@ -66,18 +67,24 @@ CONFIG = CountryConfig(
     access="restricted",
     fetch_mode="search",
     landing=True,
-    classification="JSCO 2020 (major groups)",
+    classification="JSCO 2020",
     bullets=(
-        "Mean earnings & gender split · 11 JSCO major groups",
+        "Mean earnings & gender split · 144 detailed occupations (JSCO 2020)",
         "Basic Survey on Wage Structure · 2020–2023 trend",
         f"Scheduled monthly cash earnings · e-Stat · {_YR}",
     ),
     labels={"badge": "Beta", "source_short": "e-Stat · official"},
     languages=(("EN", "English"), ("JA", "日本語")),
     i18n={
-        "EN": {"title": "Japanese Salary Explorer", "caption": _CAPTION},
+        "EN": {"title": "Japanese Salary Explorer", "caption": _CAPTION,
+               "grp_1": "Major group", "grp_2": "Occupation",
+               "all_grp_1": "— All major groups —", "all_grp_2": "— All occupations —",
+               "brlvl_1": "Major group", "brlvl_2": "Occupation"},
         "JA": {"title": "日本の給与エクスプローラー",
-               "caption": "e-Stat · 職種別 所定内給与額 · 月額, 円"},
+               "caption": "e-Stat · 職種別 所定内給与額 · 月額, 円",
+               "grp_1": "大分類", "grp_2": "職種",
+               "all_grp_1": "— すべての大分類 —", "all_grp_2": "— すべての職種 —",
+               "brlvl_1": "大分類", "brlvl_2": "職種"},
     },
     guide={"EN": _GUIDE_EN},
     provider=_prov,

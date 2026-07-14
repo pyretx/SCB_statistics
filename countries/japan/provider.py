@@ -32,8 +32,10 @@ def _codes(lang="EN") -> dict:
     return codes.get(lang) or codes.get("EN", {})
 
 
-def _leaves(lang="EN") -> dict:                 # admin card
-    return _codes(lang)
+def _leaves(lang="EN") -> dict:
+    codes = _codes(lang)
+    return {c: n for c, n in codes.items()
+            if not any(o != c and o.startswith(c) for o in codes)}
 
 
 def _slice(year: int, sex: str) -> dict:
@@ -48,7 +50,7 @@ class JapanProvider(CountryProvider):
         return int(_load()["year"])
 
     def occupations(self, lang="EN"):
-        return dict(_codes(lang))
+        return _leaves(lang)
 
     def occupation_tree(self, lang="EN"):
         return dict(_codes(lang))
@@ -68,7 +70,7 @@ class JapanProvider(CountryProvider):
                 continue
             rows.append({
                 "country": "japan", "year": yr, "occ_code": occ,
-                "occ_name": labels.get(occ, occ), "occ_group": occ, "dimension": "total",
+                "occ_name": labels.get(occ, occ), "occ_group": occ[:2], "dimension": "total",
                 "dim_value": "total", "currency": "JPY", "period": "monthly",
                 "mean": v.get("mean"), "median": None, "p10": None, "p25": None,
                 "p75": None, "p90": None, "count": None,
