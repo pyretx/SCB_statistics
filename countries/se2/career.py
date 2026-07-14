@@ -108,6 +108,15 @@ def _ev_skills(e, k=3):
     return [s.get("skill") for s in (e.get("common_skills") or [])[:k] if s.get("skill")]
 
 
+def _subcode(t):
+    """Human-readable {SSYK}-{n} sub-code (e.g. 4112-1) for a role that has one;
+    "" for the older curated roles that use a slug id. The official SSYK is never
+    changed — this is an additive sub-index off the official code."""
+    tid = str(t.get("title_id", ""))
+    a, sep, b = tid.partition("-")
+    return tid if (sep and len(a) == 4 and a.isdigit() and b.isdigit()) else ""
+
+
 def render(cfg, stats, query):
     import careerpaths as cp
     lang = query.get("lang", "EN")
@@ -251,11 +260,13 @@ def render(cfg, stats, query):
         import pandas as pd
         rows = []
         has_ev = any(evidence.get(t["title_id"]) for t in titles)
+        has_code = any(_subcode(t) for t in titles)
         for t in sorted(titles, key=lambda x: (mid_salary(x) or 0)):
             b = t.get("_band")
             e = evidence.get(t["title_id"])
             row = {
                 i18n.t(cfg, "cp_c_title", lang, "Role"): _tname(t, lang),
+                **({i18n.t(cfg, "cp_c_code", lang, "Code"): (_subcode(t) or "—")} if has_code else {}),
                 i18n.t(cfg, "cp_c_level", lang, "Level"): _level(t["level_label"], lang),
                 i18n.t(cfg, "cp_c_track", lang, "Track"): _track(cfg, lang, t["track"]),
                 "SSYK": t["primary_ssyk"],
@@ -391,13 +402,15 @@ def render(cfg, stats, query):
                 ev_html = (
                     f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
                     f'color:#1B8A5A;margin-top:8px;">{_esc(_ev_ads(cfg, lang, ev))}</div>' + sk_html)
+            sc = _subcode(to)
+            code_badge = (f'<span style="color:#0A63A6;font-weight:600;">{_esc(sc)}</span> · ' if sc else "")
             with cols[i % len(cols)]:
                 st.markdown(
                     f'<div style="border:1px solid #E7E9ED;border-radius:12px;padding:13px 15px;'
                     f'margin-bottom:10px;background:#fff;">'
                     f'<div style="font-weight:700;font-size:14.5px;color:#0C1119;">{_esc(_tname(to, lang))}</div>'
                     f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10.5px;color:#98A0AC;'
-                    f'margin:3px 0 8px;">{_esc(_level(to["level_label"], lang))} · {_esc(ssyk_badge)} · '
+                    f'margin:3px 0 8px;">{code_badge}{_esc(_level(to["level_label"], lang))} · {_esc(ssyk_badge)} · '
                     f'{_esc(_conf(cfg, lang, to["confidence"]))}</div>'
                     f'<div style="font-size:13px;color:#26303C;">{sal}</div>'
                     f'{diff_html}'

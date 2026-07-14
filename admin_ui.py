@@ -2057,19 +2057,40 @@ _CP_REV = ["draft", "reviewed", "approved"]
 _CP_RTYPES = ["progression", "leadership", "specialist", "lateral", "entry", "related"]
 
 
+def _is_subcode(tid) -> bool:
+    """True for a {4-digit-SSYK}-{n} sub-code id (e.g. 4112-1)."""
+    a, sep, b = str(tid).partition("-")
+    return bool(sep) and len(a) == 4 and a.isdigit() and b.isdigit()
+
+
+def _next_subcode(cp, ssyk: str) -> str:
+    """Next free {SSYK}-{n} sub-code for a role hanging off an official SSYK
+    (e.g. 4112-1). The official code is never changed — this is an additive
+    sub-index that reads as 'official 4112, sub-role 1'."""
+    ssyk = str(ssyk)
+    used = set()
+    for t in (cp.titles()[0] or []):
+        tid = str(t.get("title_id", ""))
+        if tid.startswith(ssyk + "-") and tid[len(ssyk) + 1:].isdigit():
+            used.add(int(tid[len(ssyk) + 1:]))
+    n = 1
+    while n in used:
+        n += 1
+    return f"{ssyk}-{n}"
+
+
 def _cp_apply_suggestion(s: dict, cp, v1, admin: str) -> bool:
     """Approve one v1 suggestion. A `new_title` becomes a DRAFT, unpublished
-    canonical role (the admin then calibrates its band + publishes above); other
-    kinds are just marked approved. Returns True on success."""
-    import re as _re
+    canonical role with a {SSYK}-{n} sub-code (the admin then calibrates its band
+    + publishes above); other kinds are just marked approved. Returns True on OK."""
     if s.get("kind") == "new_title":
         p = s.get("payload") or {}
         nt = (p.get("norm_title") or "").strip()
         ssyk = str(p.get("ssyk") or "")
         if not nt or not ssyk:
             return False
-        slug = "ai_" + _re.sub(r"[^a-z0-9]+", "_", nt.lower()).strip("_") + "_" + ssyk
-        err = cp.create_title(slug, s.get("family_id"), nt, nt, ssyk)
+        code = _next_subcode(cp, ssyk)
+        err = cp.create_title(code, s.get("family_id"), nt, nt, ssyk)
         if err:
             return False
     if v1.set_suggestion(s["id"], "approved", admin):
@@ -2162,6 +2183,7 @@ def career_section():
                 torig = {t["title_id"]: t for t in ftitles}
                 tdf = pd.DataFrame([{
                     C["col_role"]: t["name_en"], "SSYK": t["primary_ssyk"],
+                    C.get("col_code", "Code"): (t["title_id"] if _is_subcode(t["title_id"]) else ""),
                     C["col_track"]: t["track"], C["col_level"]: t["level_label"],
                     C["col_idx"]: int(t.get("level_index") or 1),
                     C["col_lo"]: float(t["lo_pct"]), C["col_mid"]: float(t["mid_pct"]),
@@ -2174,6 +2196,7 @@ def career_section():
                     column_config={
                         C["col_role"]: st.column_config.TextColumn(C["col_role"], disabled=True),
                         "SSYK": st.column_config.TextColumn("SSYK", disabled=True),
+                        C.get("col_code", "Code"): st.column_config.TextColumn(C.get("col_code", "Code"), disabled=True),
                         C["col_track"]: st.column_config.SelectboxColumn(C["col_track"], options=_CP_TRACKS, required=True),
                         C["col_level"]: st.column_config.TextColumn(C["col_level"]),
                         C["col_idx"]: st.column_config.NumberColumn(C["col_idx"], min_value=1, max_value=9, step=1),
