@@ -699,7 +699,10 @@ def _check_netherlands_labels() -> SourceStatus:
             data = json.load(f)
     except Exception:
         data = {}
-    cached = (data.get("codes") or {}).get("EN", {})
+    # _parse() returns CBS's live *Dutch* names, so diff against the cached NL
+    # column — not EN (our own translations), which would flag every translated
+    # code as "renamed" forever. CBS publishes no English for this table.
+    cached = (data.get("codes") or {}).get("NL", {})
     s = SourceStatus("netherlands_labels", "Netherlands", "CBS · BRC labels",
                      current=f"{len(cached)} codes · {data.get('built_at', '—')}")
     live, _ = _parse()
