@@ -111,6 +111,29 @@ def set_title(title_id: str, **changes) -> str | None:
         return "Could not save title."
 
 
+def create_title(title_id: str, family_id: str, name_en: str, name_sv: str,
+                 primary_ssyk: str, *, track: str = "ic", level_index: int = 2,
+                 level_label: str = "Professional", lo_pct: float = 25,
+                 mid_pct: float = 45, hi_pct: float = 62,
+                 confidence: str = "limited") -> str | None:
+    """Insert a DRAFT, unpublished canonical title (used when approving an AI
+    new-title suggestion). The admin then calibrates its band + publishes."""
+    try:
+        (auth._client(service=True).table(_T_TITLE).insert({
+            "title_id": title_id, "family_id": family_id, "name_en": name_en,
+            "name_sv": name_sv or name_en, "primary_ssyk": str(primary_ssyk),
+            "track": track, "level_index": level_index, "level_label": level_label,
+            "lo_pct": lo_pct, "mid_pct": mid_pct, "hi_pct": hi_pct,
+            "confidence": confidence, "evidence": "ai_estimate",
+            "review_status": "draft", "published": False,
+            "raw_variants": [], "skills": []}).execute())
+        _clear_cache()
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"[careerpaths] create_title failed: {e}")
+        return "Could not create title."
+
+
 def set_relationship(rel_id: str, **changes) -> str | None:
     allowed = {"rel_type", "confidence", "review_status", "published", "explanation", "same_ssyk"}
     changes = {k: v for k, v in changes.items() if k in allowed}

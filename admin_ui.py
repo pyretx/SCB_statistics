@@ -2057,6 +2057,28 @@ _CP_REV = ["draft", "reviewed", "approved"]
 _CP_RTYPES = ["progression", "leadership", "specialist", "lateral", "entry", "related"]
 
 
+def _cp_apply_suggestion(s: dict, cp, v1, admin: str) -> bool:
+    """Approve one v1 suggestion. A `new_title` becomes a DRAFT, unpublished
+    canonical role (the admin then calibrates its band + publishes above); other
+    kinds are just marked approved. Returns True on success."""
+    import re as _re
+    if s.get("kind") == "new_title":
+        p = s.get("payload") or {}
+        nt = (p.get("norm_title") or "").strip()
+        ssyk = str(p.get("ssyk") or "")
+        if not nt or not ssyk:
+            return False
+        slug = "ai_" + _re.sub(r"[^a-z0-9]+", "_", nt.lower()).strip("_") + "_" + ssyk
+        err = cp.create_title(slug, s.get("family_id"), nt, nt, ssyk)
+        if err:
+            return False
+    if v1.set_suggestion(s["id"], "approved", admin):
+        return False
+    cp.log_change("cp_suggestion", str(s["id"]), "approve", admin,
+                  {"kind": s.get("kind"), "payload": s.get("payload")})
+    return True
+
+
 def career_section():
     """Calibrate the curated Career Paths estimates (edit bands/tracks/confidence/
     publish; audit-logged). Guarded so a missing table shows a message, not a crash."""
@@ -2299,6 +2321,94 @@ def career_section():
                     st.rerun()
                 elif not n_err:
                     st.info(C["saved_none"])
+
+    # ── Job-ad evidence & review (v1 — offline, admin only) ──────────────────
+    st.write("")
+    with st.expander(C.get("v1_h", "Job-ad evidence & review (v1)")):
+        import careerpaths_v1 as v1
+        vconf = v1.config()
+        en = st.toggle(C.get("v1_enable", "Enable job-ad evidence pipeline"),
+                       value=bool(vconf.get("enabled")), key="cp_v1_en")
+        if en != bool(vconf.get("enabled")):
+            err = v1.set_config(enabled=en)
+            if err:
+                st.error(C.get("v1_missing", err))
+            else:
+                cp.log_change("cp_v1_config", "1", "enable" if en else "disable", _admin,
+                              {"enabled": en})
+                st.rerun()
+
+        runs = v1.recent_runs(1)
+        if runs:
+            r0 = runs[0]
+            st.caption(C.get("v1_lastrun", "Last run: {t} · {status} · {ads} ads · {sug} suggestions")
+                       .format(t=str(r0.get("started_at", ""))[:16], status=r0.get("status", ""),
+                               ads=r0.get("ads_processed", 0), sug=r0.get("suggestions", 0)))
+        else:
+            st.caption(C.get("v1_norun", "No refresh run yet."))
+
+        if en:
+            if v1.due_for_refresh(30):
+                st.caption(C.get("v1_due", "Due for refresh."))
+            st.caption(C.get("v1_run_note", ""))
+            fam_opts = [f["family_id"] for f in fams]
+            fam_lab = {f["family_id"]: f.get("name_en", f["family_id"]) for f in fams}
+            pick = st.multiselect(C.get("v1_run_scope", "Families to refresh"), fam_opts,
+                                  format_func=lambda x: fam_lab.get(x, x), key="cp_v1_scope")
+            if st.button(C.get("v1_run", "Run refresh now"), key="cp_v1_run"):
+                import career_pipeline as _pipe
+                with st.status(C.get("v1_running", "Running…"), expanded=True) as box:
+                    res = _pipe.run(families=(pick or None), actor=_admin)
+                    box.write(res)
+                    box.update(state="complete" if res.get("ok") else "error")
+                st.rerun()
+        else:
+            st.caption(C.get("v1_off", "Turn on to enable the refresh + evidence."))
+
+        # Review queue
+        st.markdown(f"**{C.get('v1_queue', 'Review queue')}**")
+        sugg = v1.suggestions("pending")
+        if not sugg:
+            st.caption(C.get("v1_empty_queue", "No pending suggestions."))
+        else:
+            fams_in = sorted({s.get("family_id") for s in sugg if s.get("family_id")})
+            confs = ["strong", "moderate", "limited", "experimental"]
+            cf1, cf2 = st.columns(2)
+            ff = cf1.multiselect(C.get("v1_flt_fam", "Family"), fams_in,
+                                 format_func=lambda x: {f["family_id"]: f.get("name_en", x)
+                                                        for f in fams}.get(x, x), key="cp_v1_ff")
+            fc = cf2.multiselect(C.get("v1_flt_conf", "Confidence"), confs, key="cp_v1_fc")
+            shown_s = [s for s in sugg
+                       if (not ff or s.get("family_id") in ff)
+                       and (not fc or s.get("confidence") in fc)]
+            st.caption(C.get("v1_shown", "{n} of {total} shown").format(n=len(shown_s), total=len(sugg)))
+            if shown_s and st.button(C.get("v1_approve_all", "Approve all (filtered)"), key="cp_v1_appall"):
+                n = sum(1 for s in shown_s if _cp_apply_suggestion(s, cp, v1, _admin))
+                cp._clear_cache()
+                st.success(C.get("v1_approved", "Approved {n}.").format(n=n))
+                st.rerun()
+            for s in shown_s[:60]:
+                with st.container(border=True):
+                    st.markdown(f"**{s.get('summary', '')}**")
+                    st.caption(f"{s.get('confidence', '')} · support {s.get('ad_support', 0)} · "
+                               f"{fam_lab_all(fams, s.get('family_id'))}")
+                    b1, b2, _sp = st.columns([1, 1, 4])
+                    if b1.button(C.get("v1_approve", "Approve"), key=f"cp_v1_ok_{s['id']}"):
+                        if _cp_apply_suggestion(s, cp, v1, _admin):
+                            cp._clear_cache()
+                            st.success(C.get("v1_approved", "Approved {n}.").format(n=1))
+                        st.rerun()
+                    if b2.button(C.get("v1_reject", "Reject"), key=f"cp_v1_no_{s['id']}"):
+                        v1.set_suggestion(s["id"], "rejected", _admin)
+                        cp.log_change("cp_suggestion", str(s["id"]), "reject", _admin, {})
+                        st.rerun()
+
+
+def fam_lab_all(fams, fid):
+    for f in fams:
+        if f["family_id"] == fid:
+            return f.get("name_en", fid)
+    return fid or ""
 
 
 SECTIONS = {"overview": overview_section, "data": data_section,
