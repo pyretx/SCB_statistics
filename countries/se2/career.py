@@ -159,7 +159,7 @@ _MAP_TEMPLATE = r"""
  .cpmap { position:relative; width:100%; border:1px solid #E7E9ED; border-radius:14px; background:#fff;
    overflow:hidden; }
  .cpwires { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
- .cpcenter { position:absolute; left:14px; top:50%; transform:translateY(-50%); background:#0A63A6;
+ .cpcenter { position:absolute; left:60px; top:50%; transform:translateY(-50%); background:#0A63A6;
    color:#fff; border-radius:12px; padding:10px 14px; max-width:210px; box-shadow:0 3px 10px rgba(10,99,166,.28); z-index:2; }
  .cpcenter .lbl { font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.06em; opacity:.85; }
  .cpcenter .cname { font-weight:700; font-size:14px; margin-top:2px; }
@@ -190,6 +190,12 @@ _MAP_TEMPLATE = r"""
  .adslist a { color:#0A63A6; text-decoration:none; font-weight:600; font-size:13px; }
  .admeta { font-size:11px; color:#98A0AC; }
  .noads { font-size:12.5px; color:#98A0AC; margin-top:12px; font-style:italic; }
+ .mtiles { display:flex; gap:10px; flex-wrap:wrap; margin-top:13px; }
+ .mtile { border:1px solid #E7E9ED; border-radius:12px; background:#fff; padding:10px 14px; min-width:118px; box-shadow:0 1px 2px rgba(16,21,31,.04); }
+ .mtile.red { border-left:3px solid #C0453A; }
+ .mtl { font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:#98A0AC; }
+ .mtv { font-size:16px; font-weight:700; margin-top:4px; }
+ .mskills { border:1px solid #E7E9ED; border-radius:12px; background:#fff; padding:11px 14px; margin-top:10px; box-shadow:0 1px 2px rgba(16,21,31,.04); }
  .cphint { font-size:11px; color:#98A0AC; margin-top:8px; }
 </style>
 <div class="cpwrap">
@@ -268,19 +274,12 @@ function renderDetail(n){
     .map(s=>`<span class="chip" style="background:rgba(10,99,166,.08);color:#0A63A6">${esc(s)}</span>`).join('');
   let ads;
   if(n.ad_count){
-    const ex = (n.examples||[]).slice(0,5).map(a=>{
-      const meta = [a.employer, a.region, (a.deadline?L.apply_by.replace('{d}',a.deadline):null), L.ref+' '+a.ref]
-        .filter(Boolean).map(esc).join(' · ');
-      return `<li><a href="${esc(a.url||'#')}" target="_blank" rel="noopener">${esc(a.headline||a.url)}</a>`
-        + `<div class="admeta">${meta}</div></li>`;
-    }).join('');
-    ads = `<div class="adsblk"><div class="adshdr">${esc(L.ads_header)} · ${n.ad_count} ${esc(L.ads)}</div>`
-      + (n.experience? `<div class="adsline"><b>${esc(L.experience)}:</b> ${esc(n.experience)}</div>`:'')
-      + (n.education? `<div class="adsline"><b>${esc(L.education)}:</b> ${esc(n.education)}</div>`:'')
-      + (skills? `<div class="adsline" style="margin-top:8px;">${skills}</div>`:'')
-      + `<div class="adsline" style="margin-top:8px;font-weight:600;">${esc(L.examples)}</div>`
-      + `<ul class="adslist">${ex}</ul>`
-      + `<div class="admeta">${esc(L.expire)}</div></div>`;
+    ads = `<div class="mtiles">`
+      + `<div class="mtile red"><div class="mtl" style="color:#C0453A">${esc(L.ads_header)}</div><div class="mtv">${n.ad_count} ${esc(L.ads)}</div></div>`
+      + (n.experience? `<div class="mtile"><div class="mtl">${esc(L.experience)}</div><div class="mtv">${esc(n.experience)}</div></div>`:'')
+      + (n.education? `<div class="mtile"><div class="mtl">${esc(L.education)}</div><div class="mtv">${esc(n.education)}</div></div>`:'')
+      + `</div>`
+      + (skills? `<div class="mskills"><div class="mtl">${esc(L.skills)}</div><div style="margin-top:7px;">${skills}</div></div>`:'');
   } else {
     ads = `<div class="noads">${esc(L.no_ads)}</div>`;
   }
@@ -294,15 +293,27 @@ function renderDetail(n){
     + ads;
 }
 
+function positionNodes(){
+  const W = mapEl.clientWidth;
+  center.style.left = Math.max(56, W*0.13) + 'px';
+  const maxD = Math.max(1, ...D.nodes.map(n=>Math.abs(n.diff||0)));
+  const pull = Math.min(W*0.40, 440);           // horizontal spread by leap size
+  mapEl.querySelectorAll('.cpnode').forEach(nd=>{
+    const i=+nd.dataset.i, n=D.nodes[i];
+    nd.style.top = (padY + i*rowH) + 'px';
+    const ratio = Math.abs(n.diff||0)/maxD;      // 1 = biggest leap → furthest right
+    nd.style.right = (16 + (1-ratio)*pull) + 'px';
+  });
+}
 function select(i){
   sel = i;
   mapEl.querySelectorAll('.cpnode').forEach(nd=> nd.classList.toggle('active', +nd.dataset.i===i));
   renderDetail(D.nodes[i]);
-  drawWires();
+  positionNodes(); drawWires();
 }
-function relayout(){ mapEl.querySelectorAll('.cpnode').forEach(nd=>{ nd.style.top=(padY + (+nd.dataset.i)*rowH)+'px'; }); drawWires(); }
+function relayout(){ positionNodes(); drawWires(); }
 window.addEventListener('resize', relayout);
-requestAnimationFrame(()=>{ select(sel); });
+requestAnimationFrame(()=>{ positionNodes(); select(sel); });
 </script>
 """
 
@@ -385,6 +396,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
             "ads_header": i18n.t(cfg, "cp_ms_fromads", lang, "FROM JOB ADS"),
             "experience": i18n.t(cfg, "cp_ms_exp", lang, "Typical experience"),
             "education": i18n.t(cfg, "cp_ms_edu", lang, "Top education req."),
+            "skills": i18n.t(cfg, "cp_skills", lang, "Skills"),
             "examples": i18n.t(cfg, "cp_ms_ex", lang, "Example ads · Platsbanken references"),
             "apply_by": i18n.t(cfg, "cp_ms_dl", lang, "apply by {d}"),
             "ref": i18n.t(cfg, "cp_ms_ref", lang, "ref"),
@@ -397,7 +409,71 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
     }
     html = _MAP_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
     map_h = max(len(nodes) * 54 + 52, 300)
-    components.html(html, height=150 + map_h + 400, scrolling=True)
+    components.html(html, height=140 + map_h + 300, scrolling=True)
+
+
+def _render_role_cards(cfg, lang, primary, titles, rels, by_id, curves, evidence):
+    """Grouped role cards (Advance within / Specialist / Leadership / Lateral) —
+    the classic list view, kept just above the compare section for a scannable
+    text breakdown alongside the interactive map above."""
+    st.markdown(f"#### {i18n.t(cfg, 'cp_cards_h', lang, 'Roles this can lead to')}")
+    from_ids = {t["title_id"] for t in titles if str(t["primary_ssyk"]) == primary}
+    out_rels = [r for r in rels if r["from_title"] in from_ids] or \
+               [r for r in rels if r["rel_type"] == "progression"]
+    _bc = curves.get(primary)
+    base_mid = _bc.value_at(50).value if _bc and _bc.ok else None
+    shown_any = False
+    for rtype, heading in _REL_GROUPS:
+        group = [r for r in out_rels if r["rel_type"] == rtype]
+        if not group:
+            continue
+        shown_any = True
+        st.markdown(f"**{i18n.t(cfg, f'cp_rel_{rtype}', lang, heading)}**")
+        cols = st.columns(min(3, len(group)))
+        for i, r in enumerate(group):
+            to = by_id.get(r["to_title"])
+            if not to:
+                continue
+            b = to.get("_band")
+            diff = (b["mid_salary"] - base_mid) if (b and base_mid is not None) else None
+            ssyk_badge = (i18n.t(cfg, "cp_same_ssyk", lang, "↔ same SSYK") if r["same_ssyk"]
+                          else f"→ SSYK {to['primary_ssyk']}")
+            sal = (f"{charts.fmt_value(b['lo_salary'], cfg)}–{charts.fmt_value(b['hi_salary'], cfg)}"
+                   if b else "—")
+            diff_html = ""
+            if diff is not None:
+                sign = "+" if diff >= 0 else "−"
+                color = "#1B8A5A" if diff >= 0 else "#C0453A"
+                diff_html = (f'<div style="font-size:12px;color:{color};font-weight:600;margin-top:4px;">'
+                             f'{sign}{charts.fmt_value(abs(diff), cfg)} '
+                             f'{i18n.t(cfg,"cp_vs",lang,"vs occupation median (indicative)")}</div>')
+            gaps = ", ".join((r.get("skill_gaps") or [])[:3])
+            ev = evidence.get(to["title_id"])
+            ev_html = ""
+            if ev:
+                sk = _ev_skills(ev, 3)
+                sk_html = (f'<div style="font-size:12px;color:#5B6472;margin-top:4px;">'
+                           f'{i18n.t(cfg,"cp_ev_skills",lang,"In-demand skills")}: '
+                           f'{_esc(", ".join(sk))}</div>' if sk else "")
+                ev_html = (f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
+                           f'color:#1B8A5A;margin-top:8px;">{_esc(_ev_ads(cfg, lang, ev))}</div>' + sk_html)
+            sc = _subcode(to)
+            code_badge = (f'<span style="color:#0A63A6;font-weight:600;">{_esc(sc)}</span> · ' if sc else "")
+            with cols[i % len(cols)]:
+                st.markdown(
+                    f'<div style="border:1px solid #E7E9ED;border-radius:12px;padding:13px 15px;'
+                    f'margin-bottom:10px;background:#fff;">'
+                    f'<div style="font-weight:700;font-size:14.5px;color:#0C1119;">{_esc(_tname(to, lang))}</div>'
+                    f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10.5px;color:#98A0AC;'
+                    f'margin:3px 0 8px;">{code_badge}{_esc(_level(to["level_label"], lang))} · {_esc(ssyk_badge)} · '
+                    f'{_esc(_conf(cfg, lang, to["confidence"]))}</div>'
+                    f'<div style="font-size:13px;color:#26303C;">{sal}</div>'
+                    f'{diff_html}'
+                    + (f'<div style="font-size:12px;color:#5B6472;margin-top:6px;">'
+                       f'{i18n.t(cfg,"cp_gaps",lang,"Typical gaps")}: {_esc(gaps)}</div>' if gaps else "")
+                    + ev_html + '</div>', unsafe_allow_html=True)
+    if not shown_any:
+        st.caption(i18n.t(cfg, "cp_no_moves", lang, "No mapped moves for this occupation yet."))
 
 
 def _render_market_signal_section(cfg, lang, titles, evidence, primary):
@@ -727,6 +803,9 @@ def render(cfg, stats, query):
 
     # ═══ 3 · Interactive career map from the viewed occupation ═══════════════
     _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves, evidence)
+
+    # ═══ 3b · Grouped role cards (classic view) — just above compare ═════════
+    _render_role_cards(cfg, lang, primary, titles, rels, by_id, curves, evidence)
 
     # ═══ 4 · Compare two roles ═══════════════════════════════════════════════
     with st.expander(i18n.t(cfg, "cp_compare_h", lang, "Compare two roles")):
