@@ -43,6 +43,11 @@ st.markdown("""
 _pages = [
     st.Page("landing.py",      title="Home",   default=True),
     st.Page("admin.py",        title="Admin",  url_path="admin"),
+    # Public "About" pages (About dropdown in the nav) — data-source transparency,
+    # generated from the compliance register; see docs/compliance-framework.md.
+    st.Page("methodology.py",  title="Data sources & methodology", url_path="methodology"),
+    st.Page("about.py",        title="About Salary Explorer", url_path="about"),
+    st.Page("disclaimers.py",  title="Disclaimers & terms", url_path="disclaimers"),
     # Legacy builds (SE_OLD / FR_OLD) — admin-only, reachable from the Admin
     # panel. The public Sweden/France pages are the framework builds below
     # (countries/se2 + countries/fr2, serving /sweden and /france).

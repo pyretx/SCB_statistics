@@ -1,0 +1,98 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  PUBLIC "ABOUT" PAGES CONTENT — Data Sources & Methodology · About · Disclaimers
+#  Edit the text here; no code changes needed. See docs/compliance-framework.md.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[nav]
+menu          = "About"
+home          = "Home"
+methodology   = "Data sources & methodology"
+about         = "About Salary Explorer"
+disclaimers   = "Disclaimers & terms"
+
+# ── Data Sources & Methodology ───────────────────────────────────────────────
+[methodology]
+eyebrow   = "TRANSPARENCY"
+title     = "Data sources & methodology"
+intro     = "Every figure in Salary Explorer comes from an official statistics provider. This page shows, for each country, exactly which dataset we use, the terms it is published under, and any calculation Salary Explorer applies on top of the source figures."
+principle = "Salary Explorer preserves original source values and identifies them separately from calculations, conversions, classifications, projections and other derived outputs created by Salary Explorer."
+pick      = "Select a country"
+pick_ph   = "Search countries…"
+empty     = "No published source records yet. Check back soon."
+one_empty = "No published source record for this country yet."
+
+# Field labels
+f_provider     = "Official provider"
+f_dataset      = "Dataset / table"
+f_link         = "Official source"
+f_period       = "Reference period"
+f_licence      = "Licence / reuse terms"
+f_attribution  = "Required attribution"
+f_original     = "Original values shown"
+f_transforms   = "Salary Explorer calculations"
+f_none_transf  = "None — figures are shown exactly as published by the source."
+f_limitations  = "Limitations & comparability"
+open_link      = "Open official source ↗"
+
+# Legend + badges
+legend_title = "How to read the labels"
+badge_official = "Official"
+badge_derived  = "Salary Explorer calculation"
+legend_official = "A value exactly as published by the source provider."
+legend_derived  = "A value Salary Explorer computed — the method is stated next to it."
+
+# Transformation type → friendly name (matches the register's transform_type)
+[methodology.transform_names]
+currency_conversion          = "Currency conversion"
+period_conversion            = "Monthly / annual conversion"
+inflation_adjustment         = "Inflation adjustment"
+aggregation                  = "Aggregation"
+ranking                      = "Ranking"
+projection                   = "Projection"
+reclassification             = "Reclassification"
+cross_country_standardisation = "Cross-country standardisation"
+
+# Default comparability caveat shown on every country (source-specific notes add to it)
+[methodology.limitations]
+default = "Figures reflect each provider's own survey design, reference period and occupation classification. Cross-country comparisons should be made with care — definitions, coverage and timing differ between national sources."
+
+# ── About Salary Explorer ────────────────────────────────────────────────────
+[about]
+eyebrow = "ABOUT"
+title   = "About Salary Explorer"
+[about.purpose]
+heading = "What Salary Explorer is"
+body    = "Salary Explorer is a free tool for looking up pay by occupation across countries, built entirely on official government statistics. It brings dozens of national statistical sources into one consistent interface so you can find and compare occupational earnings without hunting through each agency's data portal."
+[about.data]
+heading = "Built on official statistics"
+body    = "Every country page draws on data published by that country's official statistics provider — national statistical offices, Eurostat, and equivalent bodies. We do not survey anyone or estimate our own wages; we surface what the official sources publish, and clearly mark anything Salary Explorer calculates on top (see Data sources & methodology)."
+[about.coverage]
+heading = "Coverage"
+body    = "Coverage grows continuously. Countries are marked Live or Beta on the home page; Beta countries are newer additions still being validated. The Data sources & methodology page lists the exact dataset behind each country."
+[about.methodology]
+heading = "How it works"
+body    = "Each country feeds a shared model through a data provider module: the source's figures are normalised into a common shape (occupation, period, currency) and rendered through the same charts and tables. Original source values are always preserved and labelled separately from any Salary Explorer calculation."
+[about.limitations]
+heading = "Limitations"
+body    = "Occupational pay statistics differ between countries in survey method, reference period, coverage and classification. Salary Explorer aligns presentation, not underlying definitions — so figures are best read within a country, and cross-country comparisons treated as indicative. Official statistics can also be revised by the provider after publication."
+[about.contact]
+heading = "Contact"
+body    = "Questions or corrections are welcome — get in touch via the Qvistin website."
+[about.qvistin]
+line     = "Salary Explorer is a Qvistin product."
+link_url = "https://qvist.in"
+link     = "Visit qvist.in ↗"
+
+# ── Disclaimers & Terms ──────────────────────────────────────────────────────
+[disclaimers]
+eyebrow = "LEGAL"
+title   = "Disclaimers & terms"
+intro   = "Please read these points about how to interpret the figures in Salary Explorer."
+items = [
+  ["Independent product", "Salary Explorer is an independent Qvistin product. It is not affiliated with, endorsed by, or operated by any of the statistical providers whose data it displays."],
+  ["No implied endorsement", "Reference to an official source does not imply that the source endorses Salary Explorer or its presentation of the data."],
+  ["Official figures may be revised", "Statistics shown are as published by each provider at the time of retrieval. Providers may revise figures after publication; always consult the official source for the definitive value."],
+  ["Derived values are ours", "Any conversion, aggregation, ranking, projection, reclassification or cross-country alignment is produced by Salary Explorer and labelled as such — it is not an official figure."],
+  ["Comparability", "Figures for different countries come from different surveys with different methods, coverage and timing, and may not be directly comparable."],
+  ["Not individual advice", "Salary Explorer provides general statistical information only. It does not provide individual salary, employment, legal or financial advice, and should not be relied on as such."],
+]

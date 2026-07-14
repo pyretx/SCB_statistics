@@ -1045,4 +1045,17 @@ components.html("""
 
 st.write("")
 st.divider()
-st.caption(C["footer"]["note"])
+# Footer: the copyright/source note + a small "About" dropdown linking the public
+# transparency pages (Data sources & methodology · About · Disclaimers).
+_ft_l, _ft_r = st.columns([3, 1], vertical_alignment="center")
+with _ft_l:
+    st.caption(C["footer"]["note"])
+with _ft_r:
+    try:
+        _AB = content.load("about")["nav"]
+        with st.popover(_AB["menu"], use_container_width=True):
+            st.page_link("methodology.py", label=_AB["methodology"])
+            st.page_link("about.py", label=_AB["about"])
+            st.page_link("disclaimers.py", label=_AB["disclaimers"])
+    except Exception as _e:  # never let the footer break the landing
+        print(f"[landing] About nav unavailable: {_e}")

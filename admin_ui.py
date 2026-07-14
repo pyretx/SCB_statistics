@@ -270,6 +270,18 @@ def _kpi(col, key, icon, color, tint, num, label):
             unsafe_allow_html=True)
 
 
+def _country_name(slug: str) -> str:
+    """Display name for a registry slug (fallback: Title-cased slug)."""
+    try:
+        from core import registry
+        c = registry.get(slug)
+        if c:
+            return c.name
+    except Exception:
+        pass
+    return slug.replace("_", " ").title()
+
+
 def _country_links() -> list[tuple[str, str, str, str]]:
     """[(slug, name, iso, page)] — framework countries, registry order (the
     public Sweden/France first)."""
@@ -426,6 +438,16 @@ def overview_section():
                    else O["upd_never"])
     if uerr:
         st.caption(O["users_error"].format(err=uerr))
+
+    # Compliance review reminder (framework §10) — guarded so a register/DB issue
+    # can never break the Overview.
+    try:
+        import compliance as comp
+        rc = comp.review_counts()
+        if rc["overdue"] or rc["due_soon"]:
+            st.warning(O["review_due"].format(overdue=rc["overdue"], soon=rc["due_soon"]))
+    except Exception as _e:  # noqa: BLE001
+        print(f"[overview] compliance reminder unavailable: {_e}")
 
     st.write("")
     flag_css = ""
@@ -1692,7 +1714,88 @@ def wp_section():
 # ── Orchestrator ─────────────────────────────────────────────────────────────
 # (The Work-permit editor is not a top-level section — it's Sweden's
 # country-specific action, opened from the Sweden data-source card.)
+# ── Section: Compliance register (read-only view of the Supabase register) ────
+def compliance_section():
+    """Admin view of the compliance register (docs/compliance-framework.md).
+    Read-only for now — records are edited in Supabase; inline editing is a later
+    phase. Guarded throughout so a missing table / DB error shows a message, never
+    a crash."""
+    import pandas as pd
+    import compliance as comp
+    C = _A().get("compliance", {})
+    st.caption(C.get("caption", ""))
+
+    impls, ierr = comp.country_impls()
+    if ierr:
+        st.info(C.get("unavailable", "{err}").format(err=ierr))
+        return
+    datasets, _ = comp.datasets()
+    assessments, _ = comp.assessments()
+    overdue, oerr = comp.overdue_reviews(30)
+    rc = comp.review_counts()
+    n_public = sum(1 for r in impls if r.get("public_publishable"))
+
+    k1, k2, k3, k4, k5 = st.columns(5)
+    _kpi(k1, "c_overdue", _IC_ALERT, "#C0453A", "rgba(192,69,58,.12)", rc["overdue"], C["kpi_overdue"])
+    _kpi(k2, "c_soon", _IC_ALERT, "#B26A00", "rgba(178,106,0,.13)", rc["due_soon"], C["kpi_soon"])
+    _kpi(k3, "c_countries", _IC_GLOBE, "#0A63A6", "rgba(10,99,166,.10)", len(impls), C["kpi_countries"])
+    _kpi(k4, "c_datasets", _IC_GLOBE, "#0A63A6", "rgba(10,99,166,.10)", len(datasets), C["kpi_datasets"])
+    _kpi(k5, "c_public", _IC_ZAP, "#1B8A5A", "rgba(27,138,90,.12)", n_public, C["kpi_public"])
+
+    st.write("")
+    st.caption(C.get("note_readonly", ""))
+
+    if not impls:
+        st.info(C.get("empty", ""))
+        return
+
+    # Country records
+    st.markdown(f"#### {C['h_countries']}")
+    st.dataframe(pd.DataFrame([{
+        C["col_country"]: _country_name(r["country_slug"]),
+        C["col_dataset"]: r.get("dataset_id", ""),
+        C["col_clearance"]: r.get("clearance_overall", ""),
+        C["col_release"]: r.get("release_status", ""),
+        C["col_grand"]: "✓" if r.get("grandfathered") else "",
+        C["col_public"]: "✓" if r.get("public_publishable") else "",
+    } for r in impls]), hide_index=True, use_container_width=True)
+
+    # Datasets + their per-dimension assessments
+    if datasets:
+        by_subject: dict = {}
+        for a in assessments:
+            by_subject.setdefault((a["subject_type"], a["subject_id"]), []).append(a)
+        st.markdown(f"#### {C['h_datasets']}")
+        for d in datasets:
+            with st.expander(f"{d.get('title', '')} · {d.get('dataset_id', '')}"):
+                lic = d.get("licence_name") or "—"
+                st.markdown(f"**{C['col_licence']}:** "
+                            + (f"[{lic}]({d['licence_url']})" if d.get("licence_url") else lic))
+                if d.get("licence_summary_plain"):
+                    st.caption(d["licence_summary_plain"])
+                das = by_subject.get(("dataset", d["dataset_id"]), [])
+                if das:
+                    st.dataframe(pd.DataFrame([{
+                        C["col_dim"]: a["dimension"], C["col_status"]: a["status"],
+                        C["col_next"]: a.get("next_review_date", "")} for a in das]),
+                        hide_index=True, use_container_width=True)
+
+    # Reviews due (overdue or within 30 days)
+    st.markdown(f"#### {C['h_overdue']}")
+    if oerr:
+        st.caption("—")
+    elif not overdue:
+        st.success(C["overdue_none"])
+    else:
+        st.dataframe(pd.DataFrame([{
+            C["col_subject"]: f"{a['subject_type']}:{a['subject_id']}",
+            C["col_dim"]: a["dimension"], C["col_status"]: a["status"],
+            C["col_next"]: a.get("next_review_date", "")} for a in overdue]),
+            hide_index=True, use_container_width=True)
+
+
 SECTIONS = {"overview": overview_section, "data": data_section,
+            "compliance": compliance_section,
             "users": users_section, "feedback": feedback_section,
             "messages": qvistin_messages_section}
 
