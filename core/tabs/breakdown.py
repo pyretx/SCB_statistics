@@ -76,11 +76,13 @@ def _render(cfg, stats, query, dim: str):
         st.caption(i18n.no_data(cfg, lang))
         return
 
-    # % of national total (region only) — baseline is each occupation's overall
-    # figure (dimension="total") for the sex slice shown, keyed to the final
-    # occ_name so split/aggregate views line up.
-    pct_base = None
-    if pct and dim == "region":
+    # Region only: add the national total as its own (highlighted) reference bar,
+    # and — when the % toggle is on — label every bar as a % of it (the national
+    # bar is thus the 100% baseline). Baseline = each occupation's overall figure
+    # (dimension="total") for the sex slice shown, keyed to the final occ_name so
+    # split/aggregate views line up.
+    pct_base = highlight = None
+    if dim == "region":
         def base_map(sx):
             b = cfg.provider.occupation_stats(
                 sector=query.get("sector", ""), occ_codes=occ, sex=sx,
@@ -94,18 +96,29 @@ def _render(cfg, stats, query, dim: str):
                 bt = agg.collapse_stats(bt, name)
             return dict(zip(bt["occ_code"], bt[val]))
 
-        pairs = d[["occ_name", "occ_code"]].drop_duplicates().itertuples(index=False, name=None)
+        pairs = list(d[["occ_name", "occ_code"]].drop_duplicates().itertuples(index=False, name=None))
         if split:
             bw, bm, wlab = base_map("women"), base_map("men"), i18n.t(cfg, "women", lang)
-            pct_base = {nm: (bw if str(nm).endswith(wlab) else bm).get(cd) for nm, cd in pairs}
+            nat = {nm: (bw if str(nm).endswith(wlab) else bm).get(cd) for nm, cd in pairs}
         else:
             base = base_map(query.get("sex", "total"))
-            pct_base = {nm: base.get(cd) for nm, cd in pairs}
+            nat = {nm: base.get(cd) for nm, cd in pairs}
+
+        # Prepend a "National total" row per occupation (top of the chart).
+        natlabel = i18n.t(cfg, "region_national", lang, "National total")
+        extra = [dict({c: None for c in d.columns},
+                      occ_name=nm, occ_code=cd, dimension=dim, dim_value=natlabel, **{val: nat.get(nm)})
+                 for nm, cd in pairs if nat.get(nm) is not None]
+        if extra:
+            d = pd.concat([pd.DataFrame(extra), d], ignore_index=True)
+            highlight = natlabel
+        if pct:
+            pct_base = nat
 
     heading = i18n.t(cfg, "avg_salary" if val == "mean" else "median_salary", lang)
     fig = charts.category_bar(d, cfg, val,
                               title=f"{heading} · {cfg.currency_suffix}{cfg.per_label}",
-                              pct_base=pct_base)
+                              pct_base=pct_base, highlight=highlight)
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
         if pct_base:

@@ -387,6 +387,7 @@ CONFIG = CountryConfig(
             "title": "Swedish Salary Explorer",
             "caption": f"SCB salary structure statistics · monthly SEK · 2014–{latest_year()}",
             "show_region_pct": "Show as % of national total",
+            "region_national": "National total (Sweden)",
             "region_pct_note": "Each bar is labelled with its salary as a % of the national "
                                "total for that occupation (100% = national average).",
             **{f"sector_{c}": n for c, n in SECTORS["EN"].items()},
@@ -396,6 +397,7 @@ CONFIG = CountryConfig(
             "title": "Svensk löneutforskare",
             "caption": f"SCB:s lönestrukturstatistik · månadslön SEK · 2014–{latest_year()}",
             "show_region_pct": "Visa som % av rikstotal",
+            "region_national": "Hela riket (Sverige)",
             "region_pct_note": "Varje stapel visar lönen som % av rikstotalen för yrket "
                                "(100 % = rikssnittet).",
             **{f"sector_{c}": n for c, n in SECTORS["SV"].items()},

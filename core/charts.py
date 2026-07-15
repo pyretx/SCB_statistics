@@ -175,7 +175,7 @@ def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,
 
 
 def category_bar(df: pd.DataFrame, cfg, value_col: str, *, title: str | None = None,
-                 pct_base: dict | None = None):
+                 pct_base: dict | None = None, highlight: str | None = None):
     """Grouped horizontal bars of ``value_col`` per category (dim_value) — the
     shared chart behind the By age / By education / By region tabs. One trace
     per occupation, categories in the order the provider returned them (age
@@ -184,7 +184,9 @@ def category_bar(df: pd.DataFrame, cfg, value_col: str, *, title: str | None = N
     When ``pct_base`` (occ_name → baseline value, e.g. the national total) is
     given, each bar is labelled with its value as a % of that occupation's
     baseline — the Swedish "% of national total" region view. Bars stay in the
-    salary unit; only the annotation is relative."""
+    salary unit; only the annotation is relative. ``highlight`` names one
+    category (e.g. the "National total" reference row) to paint in the mean
+    colour so it stands apart from the ordinary category bars."""
     d = df.dropna(subset=[value_col]).copy()
     if d.empty:
         return None
@@ -194,11 +196,13 @@ def category_bar(df: pd.DataFrame, cfg, value_col: str, *, title: str | None = N
         col = theme.SERIES[i % len(theme.SERIES)]
         by_cat = dict(zip(g["dim_value"], g[value_col]))
         xs = [by_cat.get(c) for c in cats]
+        marker = ([theme.MEAN if c == highlight else col for c in cats]
+                  if highlight and highlight in cats else col)
         base = (pct_base or {}).get(name)
         text = ([f"{v / base * 100:.0f}%" if v is not None and pd.notna(v) else ""
                  for v in xs] if base else None)
         fig.add_trace(go.Bar(
-            y=cats, x=xs, orientation="h", name=str(name), marker_color=col,
+            y=cats, x=xs, orientation="h", name=str(name), marker_color=marker,
             text=text, textposition="outside" if text else "none",
             textfont=dict(family="JetBrains Mono, monospace", size=11, color=theme.MEAN),
             cliponaxis=False,
