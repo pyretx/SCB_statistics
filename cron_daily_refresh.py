@@ -5,7 +5,7 @@ Run INSIDE the prod container from the HOST crontab (survives deploys because
 the host crontab isn't in the repo and `--force-recreate` keeps the container
 name `scb-prod` stable):
 
-    docker exec scb-prod python deploy/cron_daily_refresh.py
+    docker exec scb-prod python cron_daily_refresh.py
 
 What it does: fetch only ads published since the last run (JobTech
 `published-after` — a free, open API), classify just that small daily delta on
@@ -25,9 +25,10 @@ the log file flag it.
 import os
 import sys
 
-# This script lives in deploy/; put the repo root (its parent) on the path so the
-# app modules import whether launched from /app or anywhere else.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Lives at the repo root (which IS /app in the image; deploy/ is .dockerignored,
+# so the script must sit at root to be baked into the container). Put its own
+# dir on the path so the app modules import regardless of the launch cwd.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import net_fix  # noqa: E402,F401 — force IPv4 before any HTTP client loads (entry-point convention)
 
