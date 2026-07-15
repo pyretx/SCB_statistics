@@ -44,6 +44,13 @@ label    = "Feature Tour"
 duration = "0:57"
 file     = "assets/video/Feature Tour low.mp4"
 
+# Third pitch button (right of the row) — Career Paths sneak peek. Styled with the
+# amber "beta" accent (matches the country-tile beta pill) since the feature is beta.
+[hero.video3]
+label    = "Career path (beta)"
+duration = "1:19"
+file     = "assets/video/Career Path low.mp4"
+
 # The live-preview card (right of the hero). Each slide previews one occupation.
 # occ_code/year: leave occ_code = "" to skip the live fetch and just show the
 # fallback figures (used for the France slide). fallback = the numbers shown if

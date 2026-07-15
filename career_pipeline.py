@@ -41,6 +41,13 @@ def _norm(s: str) -> str:
     return (s or "").strip().lower()
 
 
+def _open(deadline, today: str) -> bool:
+    """An ad is still 'live' if it has no application deadline or the deadline
+    hasn't passed. Expired ads are retained in the store (history) but drop out
+    of the live market signal so users never see a dead Platsbanken link."""
+    return not deadline or str(deadline)[:10] >= today
+
+
 def _record(c: dict, s: dict | None) -> dict:
     """Flatten one classified ad (c) + its scrubbed source (s) into a single
     aggregate-ready record — also the exact shape of a cp_ad_class row."""
@@ -62,7 +69,8 @@ def _record(c: dict, s: dict | None) -> dict:
 def _title_evidence(t: dict, records: list[dict], today: str) -> dict | None:
     """Aggregate the records that match a canonical title's seniority bucket."""
     bucket = _bucket(t)
-    matched = [r for r in records if r.get("seniority") in bucket]
+    matched = [r for r in records
+               if r.get("seniority") in bucket and _open(r.get("deadline"), today)]
     if not matched:
         return None
     skills = Counter(x for r in matched for x in (r.get("skills") or []))

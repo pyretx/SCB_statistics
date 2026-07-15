@@ -164,11 +164,12 @@ def ad_class_for_ssyk(ssyk: str) -> list[dict]:
 
 
 def prune_ad_class(max_days: int = 120) -> None:
-    """Drop expired ads (deadline passed) and stale classifications (older than
-    the rolling window) so evidence reflects the current market."""
-    today = _dt.date.today().isoformat()
+    """Drop only STALE classifications (older than the rolling window) so the
+    store doesn't grow unbounded. Expired ads (application deadline passed) are
+    KEPT — we retain them in the database for history; the live signal simply
+    stops counting them (aggregation + UI filter out ads whose deadline passed).
+    A stale-by-classified_at prune still clears out ads we haven't re-seen in
+    `max_days`, which naturally sweeps long-expired rows."""
     cutoff = (_dt.date.today() - _dt.timedelta(days=max_days)).isoformat()
-    _safe(lambda: auth._client(service=True).table(_T_ADCLASS)
-          .delete().lt("deadline", today).execute(), "prune deadline")
     _safe(lambda: auth._client(service=True).table(_T_ADCLASS)
           .delete().lt("classified_at", cutoff).execute(), "prune stale")

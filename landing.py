@@ -284,22 +284,26 @@ st.markdown("""
                 object-fit:cover !important; display:block; border:1px solid rgba(0,0,0,.08); }
   /* ── "Watch the demo" pitch-video button (design tokens from the export):
      white pill, blue 30px play circle (::before), mono duration chip (::after). */
-  :is(.st-key-hero_video,.st-key-hero_tour) button { display:inline-flex; align-items:center; gap:11px;
+  :is(.st-key-hero_video,.st-key-hero_tour,.st-key-hero_cp) button { display:inline-flex; align-items:center; gap:11px;
      margin-top:10px; font-size:14.5px; font-weight:600; color:#0C1119 !important;
      background:#fff !important; border:1px solid #DDE1E6 !important;
      padding:10px 18px 10px 12px !important; border-radius:12px !important;
      box-shadow:0 2px 8px rgba(16,21,31,.06); width:auto; }
-  :is(.st-key-hero_video,.st-key-hero_tour) button:hover { border-color:#C9CFD8 !important;
+  :is(.st-key-hero_video,.st-key-hero_tour,.st-key-hero_cp) button:hover { border-color:#C9CFD8 !important;
      box-shadow:0 4px 12px rgba(16,21,31,.10); }
-  :is(.st-key-hero_video,.st-key-hero_tour) button::before { content:''; width:30px; height:30px;
+  :is(.st-key-hero_video,.st-key-hero_tour,.st-key-hero_cp) button::before { content:''; width:30px; height:30px;
      border-radius:50%; flex:0 0 auto; background:#0A63A6
      url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'><path d='M7 4.5v15l13-7.5z'/></svg>")
      center/12px 12px no-repeat; }
-  :is(.st-key-hero_video,.st-key-hero_tour) button::after { content:'';
+  :is(.st-key-hero_video,.st-key-hero_tour,.st-key-hero_cp) button::after { content:'';
      font-family:'JetBrains Mono',monospace; font-size:11px; font-weight:500;
      color:#98A0AC; }  /* content set dynamically from home.toml at render */
-  :is(.st-key-hero_video,.st-key-hero_tour) button p { font-size:14.5px !important; font-weight:600 !important;
+  :is(.st-key-hero_video,.st-key-hero_tour,.st-key-hero_cp) button p { font-size:14.5px !important; font-weight:600 !important;
      color:#0C1119 !important; white-space:nowrap; }
+  /* Third button = Career Paths (beta): amber accent matching the country-tile
+     beta pill (#B26A00) — play circle + label tinted so it reads as a beta link. */
+  .st-key-hero_cp button::before { background-color:#B26A00 !important; }
+  .st-key-hero_cp button p { color:#B26A00 !important; }
   /* Lay the two pitch buttons in a tight, LEFT-aligned row (no column gutter) with
      only a small gap between them — flush with the paragraph's left edge above.
      .st-key-hero_vids IS the vertical flex block, so flip it to row directly. */
@@ -741,7 +745,8 @@ with hc1:
     """, unsafe_allow_html=True)
     # ── Pitch-video buttons (content/home.toml → [hero.video] + [hero.video2]);
     #    each opens the SAME pop-up player, side by side.
-    _vids = [(_hero.get("video", {}), "hero_video"), (_hero.get("video2", {}), "hero_tour")]
+    _vids = [(_hero.get("video", {}), "hero_video"), (_hero.get("video2", {}), "hero_tour"),
+             (_hero.get("video3", {}), "hero_cp")]
     _vids = [(v, k) for v, k in _vids if v.get("file") and os.path.exists(v["file"])]
     # Duration chips injected BEFORE the row so the row holds only the two buttons
     # (the CSS below lays them left-aligned with a small gap — see .st-key-hero_vids).

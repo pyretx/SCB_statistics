@@ -15,6 +15,7 @@ Beta-gated + Sweden-only (registered in config + core/tabs._BETA_TABS).
 """
 from __future__ import annotations
 
+import datetime as _dt
 import html
 
 import plotly.graph_objects as go
@@ -615,7 +616,12 @@ def _render_market_signal_section(cfg, lang, titles, evidence, primary):
         key=f"{cfg.slug}_cp_ms_role")
     t = ev_titles[sel_i]
     e = evidence.get(t["title_id"], {})
-    exa = e.get("example_ads") or []
+    # Show only still-open ads: once the application deadline passes the
+    # Platsbanken link dies, so we hide the ad from users (it stays in our own
+    # store for history). Ads without a deadline are treated as open.
+    _today = _dt.date.today().isoformat()
+    exa = [a for a in (e.get("example_ads") or [])
+           if (not a.get("deadline")) or str(a.get("deadline"))[:10] >= _today]
 
     # regional slicer — options from this role's example ads (region mix)
     reg_counts = Counter(a.get("region") for a in exa if a.get("region"))
@@ -662,7 +668,7 @@ def _render_market_signal_section(cfg, lang, titles, evidence, primary):
         chips([s.get("name") for s in (e.get("top_employers") or [])[:8]], "#5B6472", "rgba(91,100,114,.08)")),
         unsafe_allow_html=True)
 
-    # ── Example ads (region-filtered) ──
+    # ── Example ads (region-filtered; `exa` is already open-only) ──
     shown = [a for a in exa if reg_sel == all_reg or a.get("region") == reg_sel]
     reg_mix = " · ".join(f"{r} ({n})" for r, n in reg_counts.most_common()) if reg_counts else ""
     li = ""
