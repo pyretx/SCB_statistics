@@ -29,15 +29,19 @@ _URL = re.compile(r"https?://\S+")
 _PHONE = re.compile(r"(?:\+46|0)[\d\s\-()]{7,}\d")
 
 
-def fetch_ads(ssyk: str, limit: int = 60) -> list[dict]:
-    """Raw ads for one SSYK-2012 occupation (paginated up to ``limit``)."""
+def fetch_ads(ssyk: str, limit: int = 60, published_after: str | None = None) -> list[dict]:
+    """Raw ads for one SSYK-2012 occupation (paginated up to ``limit``).
+    ``published_after`` (ISO datetime) → only ads published since then, for the
+    incremental refresh (JobTech ``published-after``)."""
     out: list[dict] = []
     offset = 0
     while len(out) < limit:
         n = min(100, limit - len(out))
+        params = {"occupation-group": str(ssyk), "limit": n, "offset": offset}
+        if published_after:
+            params["published-after"] = str(published_after)[:19]
         try:
-            r = requests.get(_BASE, params={"occupation-group": str(ssyk),
-                                            "limit": n, "offset": offset},
+            r = requests.get(_BASE, params=params,
                              timeout=30, headers={"accept": "application/json"})
         except Exception as e:  # noqa: BLE001
             print(f"[career_jobtech] fetch {ssyk} failed: {e}")
@@ -99,5 +103,5 @@ def scrub(ad: dict) -> dict:
     }
 
 
-def fetch_scrubbed(ssyk: str, limit: int = 60) -> list[dict]:
-    return [scrub(a) for a in fetch_ads(ssyk, limit)]
+def fetch_scrubbed(ssyk: str, limit: int = 60, published_after: str | None = None) -> list[dict]:
+    return [scrub(a) for a in fetch_ads(ssyk, limit, published_after=published_after)]

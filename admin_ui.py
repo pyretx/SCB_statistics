@@ -2395,10 +2395,12 @@ def _cp_v1_page(C, cp, fams, _admin):
         fam_lab = {f["family_id"]: f.get("name_en", f["family_id"]) for f in fams}
         pick = st.multiselect(C.get("v1_run_scope", "Families to refresh"), fam_opts,
                               format_func=lambda x: fam_lab.get(x, x), key="cp_v1_scope")
+        inc = st.checkbox(C.get("v1_incremental", "Only new ads since last run (incremental — faster/cheaper)"),
+                          value=True, key="cp_v1_inc")
         if st.button(C.get("v1_run", "Run refresh now"), key="cp_v1_run"):
             import career_pipeline as _pipe
             with st.status(C.get("v1_running", "Running…"), expanded=True) as box:
-                res = _pipe.run(families=(pick or None), actor=_admin)
+                res = _pipe.run(families=(pick or None), actor=_admin, incremental=inc)
                 box.write(res)
                 box.update(state="complete" if res.get("ok") else "error")
             st.rerun()

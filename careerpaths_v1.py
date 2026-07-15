@@ -19,6 +19,7 @@ _T_RUN = "cp_run_log"
 _T_RTM = "cp_raw_title_map"
 _T_EVID = "cp_title_evidence"
 _T_SUG = "cp_suggestion"
+_T_ADCLASS = "cp_ad_class"
 
 
 def _safe(fn, what, default=None):
@@ -147,3 +148,27 @@ def add_suggestions(rows: list[dict]) -> None:
     if rows:
         _safe(lambda: auth._client(service=True).table(_T_SUG).insert(rows).execute(),
               "add_suggestions")
+
+
+# ── Rolling per-ad classification store (incremental refresh) ────────────────
+def upsert_ad_class(rows: list[dict]) -> None:
+    if rows:
+        _safe(lambda: auth._client(service=True).table(_T_ADCLASS)
+              .upsert(rows, on_conflict="ad_id").execute(), "upsert_ad_class")
+
+
+def ad_class_for_ssyk(ssyk: str) -> list[dict]:
+    return _safe(lambda: list(
+        (auth._client(service=True).table(_T_ADCLASS).select("*")
+         .eq("ssyk", str(ssyk)).execute()).data or []), "ad_class", []) or []
+
+
+def prune_ad_class(max_days: int = 120) -> None:
+    """Drop expired ads (deadline passed) and stale classifications (older than
+    the rolling window) so evidence reflects the current market."""
+    today = _dt.date.today().isoformat()
+    cutoff = (_dt.date.today() - _dt.timedelta(days=max_days)).isoformat()
+    _safe(lambda: auth._client(service=True).table(_T_ADCLASS)
+          .delete().lt("deadline", today).execute(), "prune deadline")
+    _safe(lambda: auth._client(service=True).table(_T_ADCLASS)
+          .delete().lt("classified_at", cutoff).execute(), "prune stale")
