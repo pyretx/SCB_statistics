@@ -174,11 +174,17 @@ def grouped_sex_bar(women: pd.DataFrame, men: pd.DataFrame, cfg, value_col: str,
     return theme.style_fig(fig, horizontal=True)
 
 
-def category_bar(df: pd.DataFrame, cfg, value_col: str, *, title: str | None = None):
+def category_bar(df: pd.DataFrame, cfg, value_col: str, *, title: str | None = None,
+                 pct_base: dict | None = None):
     """Grouped horizontal bars of ``value_col`` per category (dim_value) — the
     shared chart behind the By age / By education / By region tabs. One trace
     per occupation, categories in the order the provider returned them (age
-    bands ascending, education levels 1→7, regions north→south…)."""
+    bands ascending, education levels 1→7, regions north→south…).
+
+    When ``pct_base`` (occ_name → baseline value, e.g. the national total) is
+    given, each bar is labelled with its value as a % of that occupation's
+    baseline — the Swedish "% of national total" region view. Bars stay in the
+    salary unit; only the annotation is relative."""
     d = df.dropna(subset=[value_col]).copy()
     if d.empty:
         return None
@@ -187,9 +193,15 @@ def category_bar(df: pd.DataFrame, cfg, value_col: str, *, title: str | None = N
     for i, (name, g) in enumerate(d.groupby("occ_name", sort=False)):
         col = theme.SERIES[i % len(theme.SERIES)]
         by_cat = dict(zip(g["dim_value"], g[value_col]))
+        xs = [by_cat.get(c) for c in cats]
+        base = (pct_base or {}).get(name)
+        text = ([f"{v / base * 100:.0f}%" if v is not None and pd.notna(v) else ""
+                 for v in xs] if base else None)
         fig.add_trace(go.Bar(
-            y=cats, x=[by_cat.get(c) for c in cats], orientation="h",
-            name=str(name), marker_color=col,
+            y=cats, x=xs, orientation="h", name=str(name), marker_color=col,
+            text=text, textposition="outside" if text else "none",
+            textfont=dict(family="JetBrains Mono, monospace", size=11, color=theme.MEAN),
+            cliponaxis=False,
             hovertemplate="%{y}<br>%{x:,.0f} " + cfg.currency_suffix + "<extra></extra>"))
     if not fig.data:
         return None

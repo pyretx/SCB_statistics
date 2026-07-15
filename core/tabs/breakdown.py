@@ -27,7 +27,7 @@ def _render(cfg, stats, query, dim: str):
     aggregate = bool(query.get("aggregate"))
 
     # Chart year — only the years in the active selection (like Distribution).
-    c1, c2 = st.columns([1, 2.4], vertical_alignment="bottom")
+    c1, c2, c3 = st.columns([1, 1.5, 1.5], vertical_alignment="bottom")
     with c1:
         yr = st.selectbox(i18n.t(cfg, "chart_year", lang, "Chart year"),
                           sorted(set(years), reverse=True), key=f"{slug}_{dim}_year")
@@ -38,6 +38,13 @@ def _render(cfg, stats, query, dim: str):
         with c2:
             split = st.toggle(i18n.t(cfg, "split_sex", lang, "Split by sex"),
                               key=f"{slug}_{dim}_split")
+    # By region: compare each region to the national total (the legacy Swedish
+    # "% of Sweden total" view). Each bar gets a "% of national" annotation.
+    pct = False
+    if dim == "region":
+        with c3:
+            pct = st.toggle(i18n.t(cfg, "show_region_pct", lang, "Show as % of national total"),
+                            key=f"{slug}_region_pct")
 
     def fetch(sx):
         return cfg.provider.occupation_stats(
@@ -69,11 +76,42 @@ def _render(cfg, stats, query, dim: str):
         st.caption(i18n.no_data(cfg, lang))
         return
 
+    # % of national total (region only) — baseline is each occupation's overall
+    # figure (dimension="total") for the sex slice shown, keyed to the final
+    # occ_name so split/aggregate views line up.
+    pct_base = None
+    if pct and dim == "region":
+        def base_map(sx):
+            b = cfg.provider.occupation_stats(
+                sector=query.get("sector", ""), occ_codes=occ, sex=sx,
+                years=tuple(query.get("years", ())), year=yr, lang=lang)
+            if b is None or b.empty:
+                return {}
+            bt = b[b["dimension"] == "total"].copy()
+            if bt.empty:
+                return {}
+            if aggregate:
+                bt = agg.collapse_stats(bt, name)
+            return dict(zip(bt["occ_code"], bt[val]))
+
+        pairs = d[["occ_name", "occ_code"]].drop_duplicates().itertuples(index=False, name=None)
+        if split:
+            bw, bm, wlab = base_map("women"), base_map("men"), i18n.t(cfg, "women", lang)
+            pct_base = {nm: (bw if str(nm).endswith(wlab) else bm).get(cd) for nm, cd in pairs}
+        else:
+            base = base_map(query.get("sex", "total"))
+            pct_base = {nm: base.get(cd) for nm, cd in pairs}
+
     heading = i18n.t(cfg, "avg_salary" if val == "mean" else "median_salary", lang)
     fig = charts.category_bar(d, cfg, val,
-                              title=f"{heading} · {cfg.currency_suffix}{cfg.per_label}")
+                              title=f"{heading} · {cfg.currency_suffix}{cfg.per_label}",
+                              pct_base=pct_base)
     if fig is not None:
         st.plotly_chart(fig, use_container_width=True)
+        if pct_base:
+            st.caption(i18n.t(cfg, "region_pct_note", lang,
+                              "Each bar is labelled with its salary as a % of the national "
+                              "total for that occupation (100% = national average)."))
 
     with st.expander(i18n.t(cfg, "raw_data", lang, "Raw data")):
         col_occ = i18n.t(cfg, "col_occupation", lang)
