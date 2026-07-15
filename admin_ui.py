@@ -2146,6 +2146,9 @@ def _cp_log_page(C, pd):
         C.get("log_c_err", "Error"): (r.get("error") or ""),
     } for r in runs]
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+
+
+def career_section():
     """Career Paths admin — three sub-pages (segmented nav): percentile bands
     (the curated families/titles/relationships editor), the internal performance
     overlay, and the offline job-ad evidence + review queue (v1)."""
