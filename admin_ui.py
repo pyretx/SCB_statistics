@@ -2100,7 +2100,52 @@ def _cp_apply_suggestion(s: dict, cp, v1, admin: str) -> bool:
     return True
 
 
-def career_section():
+def _cp_log_page(C, pd):
+    """Sub-page 4 · refresh run history — every refresh (manual or the daily cron)
+    is logged to cp_v1_runs; this shows them newest-first with status + counts."""
+    import careerpaths_v1 as v1
+    import datetime as _dt
+    st.markdown(f"#### {C.get('log_h', 'Refresh run log')}")
+    st.caption(C.get("log_note", "Every refresh — manual or the automated daily cron — is "
+                     "recorded here. Incremental runs only fetch ads published since the "
+                     "previous run."))
+
+    runs = v1.recent_runs(50)
+    if not runs:
+        st.info(C.get("log_empty", "No refresh has run yet."))
+        return
+
+    def _mode(m):
+        return "incremental" if str(m or "").endswith("+inc") else "full"
+
+    def _dur(a, b):
+        try:
+            d = (_dt.datetime.fromisoformat(b) - _dt.datetime.fromisoformat(a)).total_seconds()
+            return f"{int(d // 60)}m {int(d % 60)}s" if d >= 60 else f"{int(d)}s"
+        except Exception:  # noqa: BLE001
+            return "—"
+
+    ok = sum(1 for r in runs if r.get("status") == "done")
+    last = runs[0]
+    k1, k2, k3 = st.columns(3)
+    k1.metric(C.get("log_k_last", "Last run (UTC)"), str(last.get("started_at", ""))[:16] or "—")
+    k2.metric(C.get("log_k_status", "Last status"), last.get("status", "—"))
+    k3.metric(C.get("log_k_ok", "Succeeded (shown)"), f"{ok}/{len(runs)}")
+
+    rows = [{
+        C.get("log_c_started", "Started (UTC)"): str(r.get("started_at", ""))[:19],
+        C.get("log_c_status", "Status"): r.get("status", ""),
+        C.get("log_c_mode", "Mode"): _mode(r.get("model")),
+        C.get("log_c_model", "Model"): str(r.get("model", "")).replace("+inc", ""),
+        C.get("log_c_fam", "Families"): len(r.get("families") or []),
+        C.get("log_c_fetched", "Ads fetched"): r.get("ads_fetched", 0),
+        C.get("log_c_classified", "Classified"): r.get("ads_processed", 0),
+        C.get("log_c_sug", "Suggestions"): r.get("suggestions", 0),
+        C.get("log_c_dur", "Duration"): _dur(r.get("started_at"), r.get("finished_at")),
+        C.get("log_c_actor", "Triggered by"): r.get("actor", ""),
+        C.get("log_c_err", "Error"): (r.get("error") or ""),
+    } for r in runs]
+    st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
     """Career Paths admin — three sub-pages (segmented nav): percentile bands
     (the curated families/titles/relationships editor), the internal performance
     overlay, and the offline job-ad evidence + review queue (v1)."""
@@ -2121,7 +2166,8 @@ def career_section():
 
     subs = {"bands": C.get("sub_bands", "Percentile bands"),
             "perf": C.get("sub_perf", "Performance overlay"),
-            "v1": C.get("sub_v1", "Job-ad evidence")}
+            "v1": C.get("sub_v1", "Job-ad evidence"),
+            "log": C.get("sub_log", "Run log")}
     page = st.segmented_control("cp_sub", list(subs), default="bands",
                                 format_func=lambda s: subs[s], key="_cp_sub",
                                 label_visibility="collapsed") or "bands"
@@ -2130,6 +2176,9 @@ def career_section():
         return
     if page == "v1":
         _cp_v1_page(C, cp, fams, _admin)
+        return
+    if page == "log":
+        _cp_log_page(C, pd)
         return
 
     # ── Page 1 · Percentile bands (families / titles / relationships) ────────
