@@ -38,15 +38,19 @@ import career_pipeline as pipe  # noqa: E402
 import careerpaths_v1 as v1  # noqa: E402
 
 
+def _now() -> str:
+    return _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
 def main() -> int:
-    started = _dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    started = _now()
     if not v1.enabled():
         print(f"[{started} UTC] career v1 pipeline disabled — skipping.", flush=True)
         return 0
 
     print(f"[{started} UTC] daily incremental refresh starting (all families)…", flush=True)
     res = pipe.run(incremental=True, actor="cron-daily")
-    done = _dt.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    done = _now()
 
     if res.get("ok"):
         print(f"[{done} UTC] OK · mode={res.get('mode')} "
