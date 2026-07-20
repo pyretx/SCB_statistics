@@ -23,6 +23,9 @@ import net_fix  # noqa: F401 — force IPv4 before HTTP
 import requests
 
 _BASE = "https://jobsearch.api.jobtechdev.se/search"
+# JobTech rejects offset > ~2000 with a 400, and `limit` > 100 likewise. Stop
+# cleanly at the ceiling instead of walking into an error response.
+_MAX_OFFSET = 2000
 _EMAIL = re.compile(r"[\w.+-]+@[\w-]+\.[\w.-]+")
 _URL = re.compile(r"https?://\S+")
 # Swedish phone numbers: start +46 or 0, then 7+ phone chars. Won't match salaries.
@@ -35,8 +38,8 @@ def fetch_ads(ssyk: str, limit: int = 60, published_after: str | None = None) ->
     incremental refresh (JobTech ``published-after``)."""
     out: list[dict] = []
     offset = 0
-    while len(out) < limit:
-        n = min(100, limit - len(out))
+    while len(out) < limit and offset < _MAX_OFFSET:
+        n = min(100, limit - len(out), _MAX_OFFSET - offset)
         params = {"occupation-group": str(ssyk), "limit": n, "offset": offset}
         if published_after:
             params["published-after"] = str(published_after)[:19]

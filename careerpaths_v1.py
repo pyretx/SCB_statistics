@@ -167,8 +167,8 @@ def ads_for_titles(pairs) -> dict:
     """The stored ads behind a set of (ssyk, norm_title) suggestions, keyed by
     that pair. One batched query over the indexed `ssyk` column — the review
     queue renders up to 60 suggestions, so a per-card lookup would be 60 round
-    trips. Newest ad first. A missing/empty entry is normal: cp_ad_class is only
-    written by INCREMENTAL runs and is pruned after the rolling window."""
+    trips. Newest ad first. A missing/empty entry is normal: cp_ad_class is
+    pruned after the rolling window, so older ads drop out."""
     ssyks = sorted({str(s) for s, _ in pairs if s})
     if not ssyks:
         return {}

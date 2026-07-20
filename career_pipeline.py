@@ -1,13 +1,18 @@
 """Career Paths v1 — refresh orchestrator + aggregation (offline / admin-triggered).
 
-Two modes, same aggregation:
+Two modes, same aggregation. BOTH store every ad they classify in cp_ad_class:
   • FULL (default)       — fetch up to max_ads_per_ssyk ads, (re)classify all,
-    aggregate + overwrite that SSYK's evidence. Rebuilds from scratch.
+    aggregate + overwrite that SSYK's evidence from those ads. Rebuilds from
+    scratch. Pass a large `max_ads` to backfill an occupation's full live set
+    (one-time catch-up per family; see the JobTech paging ceiling below).
   • INCREMENTAL          — fetch only ads published AFTER the last run
-    (JobTech published-after), classify only those NEW ads, upsert them into the
-    rolling per-ad store (cp_ad_class), prune expired/stale rows, and re-aggregate
-    evidence from the rolling window. Each refresh only touches the delta → fast +
-    cheap for ongoing monthly updates.
+    (JobTech published-after), classify only those NEW ads, prune expired/stale
+    rows, and re-aggregate evidence from the rolling window. Each refresh only
+    touches the delta → fast + cheap for the nightly update.
+
+JobTech caps paging at offset ~2000, so a single SSYK backfill tops out around
+2000 ads. Occupations above that need the fetch split (by region or by
+publication window) — not currently implemented.
 
 Writes only AGGREGATE facts + public ad references (no ad body text, no PII).
 Gated by cp_v1_config.enabled; never raises; logs the run. Attribution:
@@ -48,12 +53,19 @@ def _open(deadline, today: str) -> bool:
     return not deadline or str(deadline)[:10] >= today
 
 
-def _record(c: dict, s: dict | None) -> dict:
+def _record(c: dict, s: dict | None, ssyk: str) -> dict:
     """Flatten one classified ad (c) + its scrubbed source (s) into a single
-    aggregate-ready record — also the exact shape of a cp_ad_class row."""
+    aggregate-ready record — also the exact shape of a cp_ad_class row.
+
+    `ssyk` is the code we QUERIED, not the ad's self-declared
+    ``occupation_group``. ~3% of ads come back under a neighbouring code (a
+    2421 search returns ads declaring 2422/3339), and everything downstream —
+    evidence aggregation, the incremental rolling window, the family mapping —
+    keys on the queried code. Storing the ad's own code instead files those
+    rows where nothing reads them, and can leak them into another family."""
     s = s or {}
     return {
-        "ad_id": c.get("id"), "ssyk": str(c.get("ssyk") or s.get("ssyk") or ""),
+        "ad_id": c.get("id"), "ssyk": str(ssyk),
         "seniority": c.get("seniority"), "mgmt": bool(c.get("mgmt")),
         "years": c.get("years") if isinstance(c.get("years"), int) else None,
         "norm_title": c.get("norm_title"),
@@ -143,14 +155,17 @@ def run(families: list[str] | None = None, actor: str = "admin", max_ads: int | 
             scrub_by_id = {a.get("id"): a for a in scrubbed}
             classified = classify(scrubbed) if scrubbed else []
             ads_proc += len(classified)
-            new_records = [_record(c, scrub_by_id.get(c.get("id"))) for c in classified if c.get("id")]
+            new_records = [_record(c, scrub_by_id.get(c.get("id")), ssyk)
+                           for c in classified if c.get("id")]
 
-            if incremental:
-                if new_records:
-                    v1.upsert_ad_class([dict(r, classified_at=now) for r in new_records])
-                records = v1.ad_class_for_ssyk(ssyk)          # rolling window (all)
-            else:
-                records = new_records
+            # Every classified ad is stored, in both modes — a FULL run's
+            # classifications are no less valid than an incremental one's, and
+            # keeping them is what lets a later run re-aggregate without paying
+            # the model again. FULL still aggregates from THIS run's ads only
+            # (a deliberate rebuild); incremental aggregates the rolling window.
+            if new_records:
+                v1.upsert_ad_class([dict(r, classified_at=now) for r in new_records])
+            records = v1.ad_class_for_ssyk(ssyk) if incremental else new_records
             if not records:
                 continue
 
