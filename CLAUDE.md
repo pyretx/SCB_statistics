@@ -58,6 +58,13 @@ a chart/tab. Sweden/France legacy pages are separate code and not affected.
   `cd /srv/scb-<env>/deploy && ./deploy.sh <env>` for `dev` / `test` / `prod`.
   `deploy.sh` = `git pull --ff-only` + docker compose rebuild
   (`--force-recreate`, container names `scb-<env>` stay stable).
+- **Always verify after deploying** (the script's log tail is usually empty —
+  the container just started). Wait a few seconds, then:
+  `ssh scb "docker inspect --format {{.State.Health.Status}} scb-<env>; docker logs --tail 15 scb-<env>"`
+  Expect `healthy` (healthcheck pings Streamlit `/_stcore/health`) and a log
+  free of tracebacks. `starting` = check again; `unhealthy` = investigate
+  before moving on. PowerShell note: single-quote or avoid `$(...)` in the
+  remote command, or PowerShell expands it locally instead of on the server.
 - **All three environments share ONE Supabase.** SQL migrations
   (`deploy/sql/*.sql`) run ONCE — the user pastes them into the Supabase SQL
   editor (Claude has only the REST service key, no DDL access). Data written
