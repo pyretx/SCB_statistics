@@ -58,6 +58,12 @@ a chart/tab. Sweden/France legacy pages are separate code and not affected.
   `cd /srv/scb-<env>/deploy && ./deploy.sh <env>` for `dev` / `test` / `prod`.
   `deploy.sh` = `git pull --ff-only` + docker compose rebuild
   (`--force-recreate`, container names `scb-<env>` stay stable).
+- **Every server command gets verified, not just deploys:** check the exit
+  code, read the full output against expectations, and for side-effectful
+  commands (crontab, file edits, restarts) run a read-back check of the new
+  state (`crontab -l`, `ls -la`, `docker ps`, …). If the result doesn't match
+  expectations, stop and report — don't continue. Use `-o BatchMode=yes` so
+  anything interactive fails fast instead of hanging.
 - **Always verify after deploying** (the script's log tail is usually empty —
   the container just started). Wait a few seconds, then:
   `ssh scb "docker inspect --format {{.State.Health.Status}} scb-<env>; docker logs --tail 15 scb-<env>"`
