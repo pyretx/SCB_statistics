@@ -34,7 +34,10 @@ a chart/tab. Sweden/France legacy pages are separate code and not affected.
 ## Workflow rules
 
 - **Branches:** work on `dev`. Commit + push to `dev` after every change with
-  a descriptive message (confirm wording with the user when asked).
+  a descriptive message (confirm wording with the user when asked), then
+  **deploy the dev environment** (`ssh scb "cd /srv/scb-dev/deploy &&
+  ./deploy.sh dev"`) — once per batch of work, not per commit, when several
+  commits land together.
   **Never merge/push `test` or `main` without explicit approval.** Promotion
   is local: `dev → test → main` (fast-forward merges), always run on the dev
   machine — never git operations on the server.
