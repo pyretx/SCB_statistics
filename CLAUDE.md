@@ -72,8 +72,11 @@ a chart/tab. Sweden/France legacy pages are separate code and not affected.
   before moving on. PowerShell note: single-quote or avoid `$(...)` in the
   remote command, or PowerShell expands it locally instead of on the server.
 - **All three environments share ONE Supabase.** SQL migrations
-  (`deploy/sql/*.sql`) run ONCE — the user pastes them into the Supabase SQL
-  editor (Claude has only the REST service key, no DDL access). Data written
+  (`deploy/sql/*.sql`) run ONCE. Claude runs them via the Supabase MCP server
+  (`.mcp.json`; token in the `SUPABASE_ACCESS_TOKEN` user env var, never in
+  the repo): show the full SQL, wait for the permission prompt, execute, then
+  read back the new schema state to verify. Flag destructive statements
+  (DROP/DELETE/ALTER…DROP) explicitly before running. Data written
   by one env is visible in all.
 - Secrets: `.streamlit/secrets.toml` locally (git-ignored),
   `/root/scb-<env>-secrets.toml` on the server (bind-mounted). Never commit,
