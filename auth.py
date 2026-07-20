@@ -173,6 +173,9 @@ def sidebar_identity():
     </div>
     """, unsafe_allow_html=True)
     if st.button("Log out", use_container_width=True, key="sb_logout"):
+        import auth_cookie  # local import — auth_cookie imports auth (no cycle)
+        revoke_refresh(st.context.cookies.get(auth_cookie.COOKIE_NAME))
+        auth_cookie.queue_clear()
         st.session_state.pop("auth_user", None)
         st.rerun()
 
@@ -183,23 +186,66 @@ def _countries_of(meta: dict) -> list:
     return list(meta["countries"]) if "countries" in (meta or {}) else list(DEFAULT_COUNTRIES)
 
 
+def _profile(u) -> dict:
+    """Normalize a gotrue User into the auth_user dict the app keeps in
+    session_state: {id, email, name, role, countries, beta_requested}."""
+    meta = u.app_metadata or {}
+    umeta = u.user_metadata or {}
+    return {"id": u.id, "email": u.email,
+            "name": umeta.get("full_name") or umeta.get("name") or "",
+            "role": meta.get("role", "standard"),
+            "countries": _countries_of(meta),
+            "beta_requested": meta.get("beta_requested")}
+
+
 def sign_in(email: str, password: str):
     """Return (user_dict, error). user_dict = {id, email, name, role, countries,
     beta_requested} — beta_requested is the ISO date the user asked to join the
     beta program (from their profile dialog), or None."""
+    user, _rt, err = sign_in_with_session(email, password)
+    return user, err
+
+
+def sign_in_with_session(email: str, password: str):
+    """Like sign_in, but also returns the session's refresh token so the caller
+    can persist the login in a browser cookie (auth_cookie.queue_save).
+    Returns (user_dict, refresh_token, error)."""
     try:
         res = _client(service=False).auth.sign_in_with_password(
             {"email": email, "password": password})
-        u = res.user
-        meta = u.app_metadata or {}
-        umeta = u.user_metadata or {}
-        return {"id": u.id, "email": u.email,
-                "name": umeta.get("full_name") or umeta.get("name") or "",
-                "role": meta.get("role", "standard"),
-                "countries": _countries_of(meta),
-                "beta_requested": meta.get("beta_requested")}, None
+        rt = res.session.refresh_token if res.session else None
+        return _profile(res.user), rt, None
     except Exception as e:
-        return None, str(e)
+        return None, None, str(e)
+
+
+def restore_from_refresh(refresh_token: str):
+    """Rebuild a login from the sb_refresh cookie (auth_cookie.restore).
+    Returns (user_dict, new_refresh_token) — Supabase ROTATES refresh tokens,
+    so the caller must store the returned one. (None, None) on any failure
+    (expired/revoked/garbage token). Never log the token value."""
+    try:
+        res = _client(service=False).auth.refresh_session(refresh_token)
+        if res.user is None or res.session is None:
+            return None, None
+        return _profile(res.user), res.session.refresh_token
+    except Exception:
+        return None, None
+
+
+def revoke_refresh(refresh_token) -> None:
+    """Best-effort server-side revoke at logout: rehydrate a throwaway client
+    from the refresh token, then sign_out() to kill that session chain. We
+    hold no access token, so this is the only revoke path available. Failures
+    are swallowed — logout must always succeed locally, even offline."""
+    if not refresh_token:
+        return
+    try:
+        c = _client(service=False)
+        c.auth.refresh_session(refresh_token)
+        c.auth.sign_out()
+    except Exception:
+        pass
 
 
 def confirm_email_token(token_hash: str):
@@ -208,6 +254,13 @@ def confirm_email_token(token_hash: str):
     and verification only runs when the user presses the Confirm button —
     prefetchers never press buttons). On success the user is signed in.
     Returns (user_dict, error)."""
+    user, _rt, err = confirm_email_token_with_session(token_hash)
+    return user, err
+
+
+def confirm_email_token_with_session(token_hash: str):
+    """Like confirm_email_token, but also returns the session's refresh token
+    for the login cookie. Returns (user_dict, refresh_token, error)."""
     last_err = None
     for otp_type in ("email", "signup"):     # gotrue naming varies by version
         try:
@@ -217,16 +270,11 @@ def confirm_email_token(token_hash: str):
             if u is None:
                 last_err = "verification returned no user"
                 continue
-            meta = u.app_metadata or {}
-            umeta = u.user_metadata or {}
-            return {"id": u.id, "email": u.email,
-                    "name": umeta.get("full_name") or umeta.get("name") or "",
-                    "role": meta.get("role", "standard"),
-                    "countries": _countries_of(meta),
-                    "beta_requested": meta.get("beta_requested")}, None
+            rt = res.session.refresh_token if res.session else None
+            return _profile(u), rt, None
         except Exception as e:  # noqa: BLE001
             last_err = str(e)
-    return None, last_err
+    return None, None, last_err
 
 
 def resend_confirmation(email: str, redirect_to: str | None = None):

@@ -76,5 +76,14 @@ try:
 except Exception as _e:
     print(f"[registry] country registry unavailable: {_e}")
 
+# Login persistence across F5 (auth_cookie.py): rebuild auth_user from the
+# sb_refresh session cookie, then write any queued cookie change from last
+# run's login/logout. Must run BEFORE st.navigation so every page gate
+# (core/access, admin, legacy France) sees the restored login.
+import auth_cookie  # noqa: E402 — after net_fix/set_page_config by design
+
+auth_cookie.restore()
+auth_cookie.flush()
+
 pg = st.navigation(_pages, position="hidden")
 pg.run()

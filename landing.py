@@ -20,6 +20,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 import auth
+import auth_cookie
 import content
 
 # Optional: the country framework (registry + access gate) — for the admin "Dev"
@@ -427,9 +428,10 @@ def _auth_dialog():
                 type="primary", use_container_width=True)
 
         if _submitted and not _is_create:
-            user, err = auth.sign_in(email.strip(), pw)
+            user, _rt, err = auth.sign_in_with_session(email.strip(), pw)
             if user:
                 st.session_state["auth_user"] = user
+                auth_cookie.queue_save(_rt)
                 st.session_state.pop("_auth_pw", None)
                 st.session_state.pop("_confirmed_msg", None)
                 st.session_state.pop("_resend_for", None)
@@ -459,9 +461,10 @@ def _auth_dialog():
                     # If the project doesn't require email confirmation the
                     # account is usable immediately — sign them straight in. If
                     # it does, sign-in fails cleanly → "check your inbox".
-                    signed, _ = auth.sign_in(email.strip(), pw)
+                    signed, _su_rt, _ = auth.sign_in_with_session(email.strip(), pw)
                     if signed:
                         st.session_state["auth_user"] = signed
+                        auth_cookie.queue_save(_su_rt)
                         st.session_state.pop("_auth_pw", None)
                         st.session_state["_show_auth"] = False
                         st.rerun()
@@ -498,9 +501,10 @@ def _confirm_dialog():
     tok = st.session_state.get("_confirm_token")
     if st.button(Cq["button"], type="primary", use_container_width=True,
                  key="_confirm_go"):
-        user, err = auth.confirm_email_token(tok)
+        user, _rt, err = auth.confirm_email_token_with_session(tok)
         if user:
             st.session_state["auth_user"] = user
+            auth_cookie.queue_save(_rt)
             st.session_state.pop("_confirm_token", None)
             st.session_state["_confirm_done"] = True
             st.rerun()
@@ -648,6 +652,8 @@ with h_right:
                 st.rerun()
         with _out:
             if st.button(C["header"]["log_out"], use_container_width=True, key="hdr_logout"):
+                auth.revoke_refresh(st.context.cookies.get(auth_cookie.COOKIE_NAME))
+                auth_cookie.queue_clear()
                 st.session_state.pop("auth_user", None)
                 st.rerun()
         # Beta feedback entry (beta users + admins only; hidden otherwise).
