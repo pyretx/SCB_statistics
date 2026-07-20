@@ -2079,10 +2079,12 @@ def _next_subcode(cp, ssyk: str) -> str:
     return f"{ssyk}-{n}"
 
 
-def _cp_apply_suggestion(s: dict, cp, v1, admin: str) -> bool:
-    """Approve one v1 suggestion. A `new_title` becomes a DRAFT, unpublished
-    canonical role with a {SSYK}-{n} sub-code (the admin then calibrates its band
-    + publishes above); other kinds are just marked approved. Returns True on OK."""
+def _cp_apply_suggestion(s: dict, cp, v1, admin: str, publish: bool = False) -> bool:
+    """Approve one v1 suggestion. A `new_title` becomes a DRAFT canonical role
+    with a {SSYK}-{n} sub-code — published straight away when `publish` is set
+    (the queue's default), otherwise left unpublished for the admin to calibrate
+    + publish above. Either way the band starts as the placeholder. Other kinds
+    are just marked approved. Returns True on OK."""
     if s.get("kind") == "new_title":
         p = s.get("payload") or {}
         nt = (p.get("norm_title") or "").strip()
@@ -2090,14 +2092,47 @@ def _cp_apply_suggestion(s: dict, cp, v1, admin: str) -> bool:
         if not nt or not ssyk:
             return False
         code = _next_subcode(cp, ssyk)
-        err = cp.create_title(code, s.get("family_id"), nt, nt, ssyk)
+        err = cp.create_title(code, s.get("family_id"), nt, nt, ssyk, published=publish)
         if err:
             return False
     if v1.set_suggestion(s["id"], "approved", admin):
         return False
     cp.log_change("cp_suggestion", str(s["id"]), "approve", admin,
-                  {"kind": s.get("kind"), "payload": s.get("payload")})
+                  {"kind": s.get("kind"), "payload": s.get("payload"), "published": bool(publish)})
     return True
+
+
+def _cp_sugg_ads(C, s: dict, ads_by_title: dict) -> None:
+    """Expandable list of the stored job ads behind one suggestion's support
+    count — the evidence for approving it. Ads whose deadline has passed are
+    kept: the support count doesn't exclude them either, so dropping them here
+    would make the list disagree with the number on the card."""
+    p = s.get("payload") or {}
+    key = (str(p.get("ssyk") or ""), (p.get("norm_title") or "").strip().casefold())
+    ads = ads_by_title.get(key) or []
+    with st.expander(C.get("v1_ads_exp", "Supporting ads ({n})").format(n=len(ads))):
+        if not ads:
+            st.caption(C.get("v1_ads_none",
+                             "No stored ads for this title — the suggestion predates the "
+                             "per-ad store, or the ads have aged out of the rolling window."))
+            return
+        esc = html.escape
+        li = ""
+        for a in ads:
+            meta = " · ".join(x for x in [
+                esc(str(a.get("employer"))) if a.get("employer") else None,
+                esc(str(a.get("region"))) if a.get("region") else None,
+                (C.get("v1_ads_pub", "posted {d}").format(d=esc(str(a.get("publication_date"))[:10]))
+                 if a.get("publication_date") else None),
+                (C.get("v1_ads_dl", "apply by {d}").format(d=esc(str(a.get("deadline"))[:10]))
+                 if a.get("deadline") else None)] if x)
+            href = esc(str(a.get("url") or "#"))
+            label = esc(str(a.get("headline") or a.get("norm_title") or a.get("ad_id") or "—"))
+            li += (f'<li style="margin-bottom:8px;"><a href="{href}" target="_blank" '
+                   f'style="color:#0A63A6;text-decoration:none;font-weight:600;">{label}</a>'
+                   f'<div style="font-size:11px;color:#98A0AC;">{meta}</div></li>')
+        st.markdown(f'<ul style="margin:2px 0 0;padding-left:18px;">{li}</ul>',
+                    unsafe_allow_html=True)
 
 
 def _cp_log_page(C, pd):
@@ -2498,6 +2533,13 @@ def _cp_v1_page(C, cp, fams, _admin):
     if not sugg:
         st.caption(C.get("v1_empty_queue", "No pending suggestions."))
         return
+    pub_on_ok = st.checkbox(
+        C.get("v1_pub_on_approve", "Publish approved roles immediately"), value=True,
+        key="cp_v1_pubapprove",
+        help=C.get("v1_pub_on_approve_help",
+                   "On: an approved role goes live on the public beta tab at once, still "
+                   "carrying the placeholder band (25/45/62) until you calibrate it in "
+                   "Percentile bands. Off: it lands as an unpublished draft."))
     fams_in = sorted({s.get("family_id") for s in sugg if s.get("family_id")})
     confs = ["strong", "moderate", "limited", "experimental"]
     cf1, cf2 = st.columns(2)
@@ -2509,18 +2551,25 @@ def _cp_v1_page(C, cp, fams, _admin):
                and (not fc or s.get("confidence") in fc)]
     st.caption(C.get("v1_shown", "{n} of {total} shown").format(n=len(shown_s), total=len(sugg)))
     if shown_s and st.button(C.get("v1_approve_all", "Approve all (filtered)"), key="cp_v1_appall"):
-        n = sum(1 for s in shown_s if _cp_apply_suggestion(s, cp, v1, _admin))
+        n = sum(1 for s in shown_s if _cp_apply_suggestion(s, cp, v1, _admin, pub_on_ok))
         cp._clear_cache()
         st.success(C.get("v1_approved", "Approved {n}.").format(n=n))
         st.rerun()
-    for s in shown_s[:60]:
+    page_s = shown_s[:60]
+    # One batched lookup of the ads behind every card on this page (see
+    # v1.ads_for_titles) — a per-card query would be 60 round trips.
+    ads_by_title = v1.ads_for_titles(
+        [(str((s.get("payload") or {}).get("ssyk") or ""),
+          (s.get("payload") or {}).get("norm_title") or "") for s in page_s])
+    for s in page_s:
         with st.container(border=True):
             st.markdown(f"**{s.get('summary', '')}**")
             st.caption(f"{s.get('confidence', '')} · support {s.get('ad_support', 0)} · "
                        f"{fam_lab_all(fams, s.get('family_id'))}")
+            _cp_sugg_ads(C, s, ads_by_title)
             b1, b2, _sp = st.columns([1, 1, 4])
             if b1.button(C.get("v1_approve", "Approve"), key=f"cp_v1_ok_{s['id']}"):
-                if _cp_apply_suggestion(s, cp, v1, _admin):
+                if _cp_apply_suggestion(s, cp, v1, _admin, pub_on_ok):
                     cp._clear_cache()
                     st.success(C.get("v1_approved", "Approved {n}.").format(n=1))
                 st.rerun()

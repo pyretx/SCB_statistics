@@ -163,6 +163,29 @@ def ad_class_for_ssyk(ssyk: str) -> list[dict]:
          .eq("ssyk", str(ssyk)).execute()).data or []), "ad_class", []) or []
 
 
+def ads_for_titles(pairs) -> dict:
+    """The stored ads behind a set of (ssyk, norm_title) suggestions, keyed by
+    that pair. One batched query over the indexed `ssyk` column — the review
+    queue renders up to 60 suggestions, so a per-card lookup would be 60 round
+    trips. Newest ad first. A missing/empty entry is normal: cp_ad_class is only
+    written by INCREMENTAL runs and is pruned after the rolling window."""
+    ssyks = sorted({str(s) for s, _ in pairs if s})
+    if not ssyks:
+        return {}
+    rows = _safe(lambda: list(
+        (auth._client(service=True).table(_T_ADCLASS).select("*")
+         .in_("ssyk", ssyks).execute()).data or []), "ads_for_titles", []) or []
+    want = {(str(s), (t or "").strip().casefold()) for s, t in pairs}
+    out: dict = {}
+    for r in rows:
+        key = (str(r.get("ssyk") or ""), (r.get("norm_title") or "").strip().casefold())
+        if key in want:
+            out.setdefault(key, []).append(r)
+    for v in out.values():
+        v.sort(key=lambda r: str(r.get("publication_date") or ""), reverse=True)
+    return out
+
+
 def prune_ad_class(max_days: int = 120) -> None:
     """Drop only STALE classifications (older than the rolling window) so the
     store doesn't grow unbounded. Expired ads (application deadline passed) are
