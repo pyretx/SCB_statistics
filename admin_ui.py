@@ -2079,6 +2079,19 @@ def _next_subcode(cp, ssyk: str) -> str:
     return f"{ssyk}-{n}"
 
 
+def _cp_existing_title(cp, ssyk: str, name: str) -> dict | None:
+    """An already-created role with the same SSYK + name (case-insensitive), if
+    any. Approving must never mint a second {SSYK}-{n} sub-code for a role that
+    already exists — duplicate pending suggestions for one title are normal
+    (each refresh can raise it again), so the check belongs at approve time."""
+    want = (name or "").strip().casefold()
+    for t in (cp.titles()[0] or []):
+        if str(t.get("primary_ssyk") or "") == str(ssyk) \
+                and str(t.get("name_en") or "").strip().casefold() == want:
+            return t
+    return None
+
+
 def _cp_apply_suggestion(s: dict, cp, v1, admin: str, publish: bool = False) -> bool:
     """Approve one v1 suggestion. A `new_title` becomes a DRAFT canonical role
     with a {SSYK}-{n} sub-code — published straight away when `publish` is set
@@ -2091,6 +2104,15 @@ def _cp_apply_suggestion(s: dict, cp, v1, admin: str, publish: bool = False) -> 
         ssyk = str(p.get("ssyk") or "")
         if not nt or not ssyk:
             return False
+        dup = _cp_existing_title(cp, ssyk, nt)
+        if dup:
+            # Already a canonical role — just retire the suggestion, don't clone it.
+            if v1.set_suggestion(s["id"], "approved", admin):
+                return False
+            cp.log_change("cp_suggestion", str(s["id"]), "approve", admin,
+                          {"kind": s.get("kind"), "payload": s.get("payload"),
+                           "duplicate_of": dup.get("title_id")})
+            return True
         code = _next_subcode(cp, ssyk)
         err = cp.create_title(code, s.get("family_id"), nt, nt, ssyk, published=publish)
         if err:
@@ -2533,8 +2555,13 @@ def _cp_v1_page(C, cp, fams, _admin):
     if not sugg:
         st.caption(C.get("v1_empty_queue", "No pending suggestions."))
         return
+    # setdefault (not value=) so an unticked box STAYS unticked: Streamlit drops
+    # widget state for anything not rendered on the previous run, and this page
+    # returns early when the queue empties — a plain value=True would silently
+    # spring back to checked.
+    st.session_state.setdefault("cp_v1_pubapprove", True)
     pub_on_ok = st.checkbox(
-        C.get("v1_pub_on_approve", "Publish approved roles immediately"), value=True,
+        C.get("v1_pub_on_approve", "Publish approved roles immediately"),
         key="cp_v1_pubapprove",
         help=C.get("v1_pub_on_approve_help",
                    "On: an approved role goes live on the public beta tab at once, still "
@@ -2550,11 +2577,22 @@ def _cp_v1_page(C, cp, fams, _admin):
                if (not ff or s.get("family_id") in ff)
                and (not fc or s.get("confidence") in fc)]
     st.caption(C.get("v1_shown", "{n} of {total} shown").format(n=len(shown_s), total=len(sugg)))
-    if shown_s and st.button(C.get("v1_approve_all", "Approve all (filtered)"), key="cp_v1_appall"):
-        n = sum(1 for s in shown_s if _cp_apply_suggestion(s, cp, v1, _admin, pub_on_ok))
-        cp._clear_cache()
-        st.success(C.get("v1_approved", "Approved {n}.").format(n=n))
-        st.rerun()
+    # Mass approve is deliberately two-step and sits BELOW the per-card list's
+    # controls: a single stray click here creates a role per suggestion, so it
+    # must not be reachable by one click next to the publish toggle.
+    if shown_s:
+        with st.expander(C.get("v1_approve_all_exp", "Approve all (filtered) — {n} suggestions")
+                         .format(n=len(shown_s))):
+            arm = st.checkbox(C.get("v1_approve_all_arm",
+                                    "Yes, approve all {n} filtered suggestions").format(n=len(shown_s)),
+                              key="cp_v1_appall_arm")
+            if st.button(C.get("v1_approve_all", "Approve all (filtered)"),
+                         key="cp_v1_appall", disabled=not arm):
+                n = sum(1 for s in shown_s if _cp_apply_suggestion(s, cp, v1, _admin, pub_on_ok))
+                cp._clear_cache()
+                st.session_state["cp_v1_appall_arm"] = False
+                st.success(C.get("v1_approved", "Approved {n}.").format(n=n))
+                st.rerun()
     page_s = shown_s[:60]
     # One batched lookup of the ads behind every card on this page (see
     # v1.ads_for_titles) — a per-card query would be 60 round trips.
