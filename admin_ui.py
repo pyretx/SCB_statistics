@@ -2555,6 +2555,41 @@ def _cp_v1_page(C, cp, fams, _admin):
     if not sugg:
         st.caption(C.get("v1_empty_queue", "No pending suggestions."))
         return
+    # A suggestion whose role already exists is not actionable — approving it
+    # would be a no-op (see _cp_existing_title). Keep those OUT of the queue,
+    # but visible as a group: they stay 'pending' in the table until retired,
+    # so silently hiding them would just let them pile up unseen.
+    have = {(str(t.get("primary_ssyk") or ""), str(t.get("name_en") or "").strip().casefold())
+            for t in (cp.titles()[0] or [])}
+
+    def _covered(s):
+        p = s.get("payload") or {}
+        return (str(p.get("ssyk") or ""),
+                (p.get("norm_title") or "").strip().casefold()) in have
+
+    covered = [s for s in sugg if _covered(s)]
+    sugg = [s for s in sugg if not _covered(s)]
+    if covered:
+        with st.expander(C.get("v1_covered", "Already covered by an existing role ({n})")
+                         .format(n=len(covered))):
+            st.caption(C.get("v1_covered_note",
+                             "These name a role that already exists, so there is nothing to "
+                             "create. Dismiss them to clear the queue."))
+            for s in covered:
+                p = s.get("payload") or {}
+                ex = _cp_existing_title(cp, p.get("ssyk"), p.get("norm_title"))
+                st.write(f"· {p.get('norm_title', '')} (SSYK {p.get('ssyk', '')}) → "
+                         f"{ex.get('title_id') if ex else '?'}")
+            if st.button(C.get("v1_covered_dismiss", "Dismiss all"), key="cp_v1_cov_dismiss"):
+                # publish is irrelevant here: the duplicate branch retires the
+                # suggestion and never reaches create_title.
+                n = sum(1 for s in covered if _cp_apply_suggestion(s, cp, v1, _admin, False))
+                st.success(C.get("v1_covered_done", "Dismissed {n}.").format(n=n))
+                st.rerun()
+    if not sugg:
+        st.caption(C.get("v1_empty_queue", "No pending suggestions."))
+        return
+
     # setdefault (not value=) so an unticked box STAYS unticked: Streamlit drops
     # widget state for anything not rendered on the previous run, and this page
     # returns early when the queue empties — a plain value=True would silently
