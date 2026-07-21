@@ -132,9 +132,18 @@ def top(active: str):
         # Right-aligned, non-truncating nav (small leading spacer pushes links
         # right; short labels from content/about.toml + generous columns keep each
         # on one line — a too-narrow column made "Home" truncate to "H").
-        st.markdown("<style>[data-testid='stPageLink'] a p{white-space:nowrap;}</style>",
+        # overflow:visible lets a label spill a few px into the column gap
+        # instead of ellipsizing when the ratio is a hair too tight for the
+        # viewport (ratios alone can't be right at every width).
+        st.markdown("<style>[data-testid='stPageLink'] a p{white-space:nowrap;"
+                    "overflow:visible;text-overflow:clip;max-width:none;}"
+                    "[data-testid='stPageLink'] a{overflow:visible;}"
+                    # the label sits in a span with overflow:hidden + ellipsis
+                    # (Streamlit internal) — that's what actually cuts the text
+                    "[data-testid='stPageLink'] a span{overflow:visible;"
+                    "text-overflow:clip;}</style>",
                     unsafe_allow_html=True)
-        cols = st.columns([0.1, 1.0, 1.5, 1.0, 1.0, 1.3, 1.0])
+        cols = st.columns([0.05, 1.2, 1.6, 0.95, 1.0, 1.4, 0.95])
         cols[1].page_link("landing.py", label=N["home"], icon=":material/home:")
         cols[2].page_link("methodology.py", label=N.get("methodology_short", N["methodology"]))
         cols[3].page_link("about.py", label=N.get("about_short", N["about"]))
