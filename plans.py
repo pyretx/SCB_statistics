@@ -55,15 +55,21 @@ def _names(names: list[str]) -> str:
     return html.escape(" · ".join(sorted(names)))
 
 
+def _country_note(intro: str, names: list[str]) -> str:
+    """One intro sentence + the country names behind a 'Show all N' toggle."""
+    return (f'{intro}<details class="pl-more">'
+            f'<summary>{_R["show_all"].format(n=len(names))}</summary>'
+            f'{_names(names)}</details>')
+
+
 _pub_title = " & ".join(sorted(_pub, reverse=True)) or "Sweden & France"
 _rows = "".join([
     _sec(_S["countries"]),
     _row(_pub_title, _R["public_note"], (True, True, True)),
-    _row(_R["live_title"].format(n=len(_live)), _names(_live), (False, True, True)),
+    _row(_R["live_title"].format(n=len(_live)),
+         _country_note(_R["live_extra"], _live), (False, True, True)),
     _row(_R["beta_title"].format(n=len(_beta)),
-         f'{_R["beta_extra"]}<details class="pl-more">'
-         f'<summary>{_R["beta_toggle"].format(n=len(_beta))}</summary>'
-         f'{_names(_beta)}</details>', (False, False, True)),
+         _country_note(_R["beta_extra"], _beta), (False, False, True)),
     _sec(_S["features"]),
     _row(_R["tabs_title"], _R["tabs_note"], (True, True, True)),
     _row(_R["lang_title"], _R["lang_note"], (True, True, True)),
