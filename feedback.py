@@ -1,6 +1,6 @@
-"""Beta-user feedback — the in-app "Report an issue or suggest an improvement"
-form and its Supabase persistence (table: beta_feedback, see
-deploy/sql/2026-07-12_beta_feedback.sql).
+"""User feedback — the in-app "Report an issue or suggest an improvement"
+form (any signed-in user) and its Supabase persistence (table: beta_feedback,
+see deploy/sql/2026-07-12_beta_feedback.sql).
 
 Layering: the DB functions (submit / list_feedback / update_feedback) are plain
 and UI-free so the admin panel and the dialog share one implementation; the
@@ -125,20 +125,14 @@ def update_feedback(feedback_id: str, *, status: str | None = None,
 
 # ── UI: entry-point button + dialog ──────────────────────────────────────────
 def _can_report(cfg=None) -> bool:
-    """Beta users and administrators only (spec). On country pages the
-    framework's beta gate also admits per-country testers."""
+    """Any signed-in user (opened up from beta/admin-only 2026-07-21 to
+    lower the reporting barrier). Signed-out visitors still get nothing:
+    accountability per submission is a deliberate part of the security
+    model — the RLS insert policy stays stricter than this gate on purpose
+    (the app inserts via the service key; direct PostgREST needs no wider
+    access)."""
     u = st.session_state.get("auth_user")
-    if not u:
-        return False
-    if u.get("role") in ("beta", "admin", "master"):
-        return True
-    if cfg is not None:
-        try:
-            from core import access
-            return access.is_beta_or_admin(cfg)
-        except Exception:
-            return False
-    return False
+    return bool(u and u.get("id"))
 
 
 def _dialog_body():
