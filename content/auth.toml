@@ -59,6 +59,19 @@ beta_admin   = "Admin accounts already include every beta feature."
 beta_failed  = "Could not send the request: {err}"
 close        = "Close"
 
+# Danger zone — self-service account deletion (GDPR). Hidden for the master
+# account and the dev test logins; auth.delete_own_account enforces the same.
+del_heading  = "Delete account"
+del_caption  = "Permanently deletes your account and signs you out. Feedback you have submitted is kept for product history but unlinked from your identity. This cannot be undone."
+del_button   = "Delete my account…"
+del_confirm  = "This is permanent. Type your email address to confirm."
+del_email_ph = "you@example.com"
+del_go       = "Permanently delete my account"
+del_cancel   = "Cancel"
+del_mismatch = "That doesn't match your account email."
+del_failed   = "Could not delete the account: {err}"
+del_done     = "Your account has been deleted."
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  CONFIRM-EMAIL DIALOG — the email's button links here with a one-time token;
 #  verification runs only when the user presses the button (scanner-proof).

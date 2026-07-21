@@ -487,3 +487,38 @@ def set_password(user_id: str, new_password: str):
 
 def delete_user(user_id: str):
     _client(service=True).auth.admin.delete_user(user_id)
+
+
+# Sentinel written into beta_feedback.user_id (NOT NULL) when the author
+# deletes their account: keeps the report text for product history while
+# unlinking it from any real user — exactly what the privacy policy promises.
+ANON_USER_ID = "00000000-0000-0000-0000-000000000000"
+
+
+def delete_own_account(user_id: str) -> str | None:
+    """Self-service account deletion (profile dialog on the landing page).
+
+    Order matters: first anonymise the user's beta_feedback rows (user_id →
+    ANON_USER_ID, email + contact permission cleared), then delete the auth
+    user. Refuses the bootstrap 'master' account and the seeded passwordless
+    test users (the bug-hunter agent signs in as those — a self-service
+    delete must never be able to remove shared fixtures). The UI hides the
+    control in the same cases; this is the server-side backstop.
+    Returns an error string, or None on success."""
+    try:
+        cur = _client(service=True).auth.admin.get_user_by_id(user_id)
+        u = getattr(cur, "user", None)
+        if u is None:
+            return "Account not found."
+        if (u.email or "").endswith("@" + TEST_LOGIN_DOMAIN):
+            return "Shared test accounts cannot be deleted."
+        if (u.app_metadata or {}).get("role") == "master":
+            return "The master account cannot be deleted from the profile."
+        _client(service=True).table("beta_feedback").update(
+            {"user_id": ANON_USER_ID, "user_email": None,
+             "permission_to_contact": False}
+        ).eq("user_id", user_id).execute()
+        _client(service=True).auth.admin.delete_user(user_id)
+        return None
+    except Exception as e:  # noqa: BLE001
+        return str(e)

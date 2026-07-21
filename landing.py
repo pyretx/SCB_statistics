@@ -611,8 +611,54 @@ def _profile_dialog():
                 st.rerun()
             except Exception as e:  # noqa: BLE001
                 st.error(P["beta_failed"].format(err=e))
+
+    # ── Danger zone: self-service account deletion (the privacy policy
+    # promises this). Two-step: arm, then type your email to confirm. Hidden
+    # for master + the seeded dev test users — auth.delete_own_account()
+    # refuses those server-side too. Arm/cancel flip session state via
+    # on_click so the confirm UI appears/disappears in a single dialog rerun.
+    _deletable = (role != "master"
+                  and not email.endswith("@" + auth.TEST_LOGIN_DOMAIN))
+    if _deletable:
+        st.markdown(f'<div class="se-plbl" style="margin:16px 0 2px;color:#C0453A;">'
+                    f'{P["del_heading"]}</div>', unsafe_allow_html=True)
+        st.caption(P["del_caption"])
+        if not st.session_state.get("_del_arm"):
+            st.button(P["del_button"], key="_prof_del_open",
+                      on_click=lambda: st.session_state.update(_del_arm=True))
+        else:
+            st.warning(P["del_confirm"])
+            # A FORM, for the same reason as the auth form above: a bare
+            # text_input only commits on Enter/blur, so type-then-click could
+            # read the confirmation email as empty. The form commits the field
+            # together with the submit click.
+            with st.form("_del_confirm_form", border=False):
+                typed = st.text_input(P["del_heading"], key="_del_email_typed",
+                                      placeholder=P["del_email_ph"],
+                                      label_visibility="collapsed")
+                _del_go = st.form_submit_button(P["del_go"], type="primary",
+                                                use_container_width=True)
+            if _del_go:
+                if typed.strip().lower() != (email or "").lower():
+                    st.error(P["del_mismatch"])
+                else:
+                    _derr = auth.delete_own_account(u.get("id", ""))
+                    if _derr:
+                        st.error(P["del_failed"].format(err=_derr))
+                    else:
+                        auth_cookie.queue_clear()
+                        for _k in ("auth_user", "_del_arm", "_del_email_typed",
+                                   "_show_profile"):
+                            st.session_state.pop(_k, None)
+                        st.session_state["_acct_deleted"] = True
+                        st.rerun()
+            st.button(P["del_cancel"], use_container_width=True,
+                      key="_prof_del_cxl",
+                      on_click=lambda: st.session_state.update(_del_arm=False))
+
     if st.button(P["close"], key="_prof_close"):
         st.session_state["_show_profile"] = False
+        st.session_state.pop("_del_arm", None)   # disarm for the next open
         st.rerun()
 
 
@@ -721,6 +767,9 @@ elif st.session_state.get("_show_auth"):
 
 if st.session_state.pop("_confirm_done", False):
     st.toast(A["confirm"]["success"])
+
+if st.session_state.pop("_acct_deleted", False):
+    st.toast(A["profile"]["del_done"], icon="✅")
 
 if st.session_state.get("_show_profile"):
     _profile_dialog()
