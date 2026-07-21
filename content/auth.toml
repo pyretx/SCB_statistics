@@ -29,9 +29,11 @@ password_label  = "Password"
 password_ph     = "••••••••"
 sign_in_button  = "Sign in"
 create_button   = "Create account"
-# Sign-in mode only — create mode carries the links in the checkbox instead.
-terms           = "By continuing you agree to the <a href='terms' target='_blank'>Terms</a> and acknowledge the <a href='terms' target='_blank'>Privacy Policy</a>."
-accept_label    = "I agree to the [Terms](terms) and acknowledge the [Privacy Policy](terms)"
+# Sign-in mode only — create mode carries the link in the checkbox instead.
+# One link ("Terms & Privacy Policy" is a single page); the legal framing stays
+# agree-to-Terms / acknowledge-Policy.
+terms           = "By continuing you agree to the Terms and acknowledge the Privacy Policy (<a href='terms' target='_blank'>read them here</a>)."
+accept_label    = "I agree to the Terms and acknowledge the Privacy Policy ([read them here](terms))"
 whats_included  = "See what's included with a free account →"
 close           = "Close"
 
