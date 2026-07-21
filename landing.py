@@ -520,7 +520,10 @@ def _auth_dialog():
         # so people can see what a free account unlocks before signing up.
         if _is_create and _f.get("whats_included"):
             st.page_link("plans.py", label=_f["whats_included"])
-        st.caption(_f["terms"], unsafe_allow_html=True)
+        # Sign-in mode: agree-by-continuing line with links. Create mode says
+        # nothing here — the required checkbox above carries the same links.
+        if not _is_create:
+            st.caption(_f["terms"], unsafe_allow_html=True)
         if st.button(_f["close"], key="_auth_close"):
             st.session_state["_show_auth"] = False
             st.session_state.pop("_resend_for", None)

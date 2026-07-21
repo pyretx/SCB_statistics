@@ -10,6 +10,11 @@
 [meta]
 version = "2026-07-21"
 
+# Signed-out CTA at the bottom (same pattern as the What-you-get page): most
+# signed-out readers arrive from the create-account dialog and need a way back.
+[cta]
+create_account = "Create a free account"
+
 [page]
 eyebrow = "LEGAL"
 title   = "Terms & Privacy Policy"

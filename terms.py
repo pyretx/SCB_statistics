@@ -37,3 +37,14 @@ _card(T["privacy"], anchor="privacy")
 
 st.markdown(f'<div class="pp-foot">{P["updated"].format(version=T["meta"]["version"])}</div>',
             unsafe_allow_html=True)
+
+# CTA — signed-out readers (usually here from the create-account dialog) get a
+# button back to registration: reopens the dialog on the landing page (same
+# session keys the landing header buttons set; pattern copied from plans.py).
+if st.session_state.get("auth_user") is None:
+    st.write("")
+    if st.button(T["cta"]["create_account"], type="primary"):
+        _AF = content.load("auth")["form"]
+        st.session_state["_auth_mode"] = _AF["mode_create"]
+        st.session_state["_show_auth"] = True
+        st.switch_page("landing.py")
