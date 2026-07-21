@@ -8,10 +8,12 @@ menu          = "About"
 home          = "Home"
 methodology   = "Data sources & methodology"
 about         = "About Salary Explorer"
+plans         = "What you get"
 disclaimers   = "Disclaimers & terms"
 # Short labels for the compact top nav bar (the footer dropdown + page H1 use the full ones)
 methodology_short = "Data sources"
 about_short       = "About"
+plans_short       = "Access"
 disclaimers_short = "Disclaimers"
 
 # ── Data Sources & Methodology ───────────────────────────────────────────────

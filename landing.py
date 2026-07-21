@@ -483,6 +483,10 @@ def _auth_dialog():
                 else:
                     st.success(_m["resent"].format(email=st.session_state.pop("_resend_for")))
 
+        # Create-account mode: link the access-level comparison page (/access)
+        # so people can see what a free account unlocks before signing up.
+        if _is_create and _f.get("whats_included"):
+            st.page_link("plans.py", label=_f["whats_included"])
         st.caption(_f["terms"])
         if st.button(_f["close"], key="_auth_close"):
             st.session_state["_show_auth"] = False
@@ -1092,6 +1096,7 @@ with _ft_r:
         with st.popover(_AB["menu"], use_container_width=True):
             st.page_link("methodology.py", label=_AB["methodology"])
             st.page_link("about.py", label=_AB["about"])
+            st.page_link("plans.py", label=_AB.get("plans", "What you get"))
             st.page_link("disclaimers.py", label=_AB["disclaimers"])
     except Exception as _e:  # never let the footer break the landing
         print(f"[landing] About nav unavailable: {_e}")

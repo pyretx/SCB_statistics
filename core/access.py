@@ -61,5 +61,11 @@ def require_access(cfg) -> bool:
     else:
         st.info(f"🔒 **{cfg.name}** isn't available on your account yet — "
                 "it's still in development.")
+    # Highest-intent moment for the access-level page: the user just hit the
+    # boundary it explains. Guarded — the gate must never break on a nav issue.
+    try:
+        st.page_link("plans.py", label="See what each access level includes →")
+    except Exception:
+        pass
     st.stop()
     return False

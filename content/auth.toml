@@ -30,6 +30,7 @@ password_ph     = "••••••••"
 sign_in_button  = "Sign in"
 create_button   = "Create account"
 terms           = "By continuing you agree to the Terms and acknowledge the Privacy Policy."
+whats_included  = "See what's included with a free account →"
 close           = "Close"
 
 # ─────────────────────────────────────────────────────────────────────────────

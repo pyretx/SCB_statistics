@@ -1,0 +1,51 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  "WHAT YOU GET" PAGE CONTENT — the access-level comparison (/access).
+#  Edit the text here; no code changes needed. The country NAMES and COUNTS in
+#  the table are generated live from the country registry (cfg.access), so
+#  promoting a Beta country to Live updates the page automatically.
+# ─────────────────────────────────────────────────────────────────────────────
+
+[plans]
+eyebrow = "ACCESS"
+title   = "What you get"
+intro   = "Salary Explorer is free at every level — there is no paid tier. Sweden and France are open to everyone, most countries just need a free account, and the newest additions run as an invite-only beta while we validate them."
+
+[plans.tiers]
+visitor_name = "Visitor"
+visitor_sub  = "no account"
+account_name = "Free account"
+account_sub  = "free sign-up"
+beta_name    = "Beta tester"
+beta_sub     = "by invitation"
+badge_free   = "FREE"
+badge_invite = "INVITE"
+
+[plans.sections]
+countries = "Countries"
+features  = "Features"
+price     = "Price"
+
+[plans.rows]
+public_note  = "The full salary explorer for both countries — no account needed."
+live_title   = "All {n} Live countries"
+beta_title   = "All {n} Beta countries"
+beta_extra   = "…and every new country while it is in beta."
+tabs_title   = "All analysis tabs"
+tabs_note    = "Occupation search, salary distribution, gender comparison, multi-year trends, age, education and region breakdowns, leaderboards."
+lang_title   = "English and local-language interface"
+lang_note    = "Countries with a local translation can be explored in either language."
+career_title = "Career Paths — Sweden (beta)"
+career_note  = "Curated career routes with a live market signal built from real job ads."
+early_title  = "Early access to new features"
+early_note   = "Try new tools while they are being built, and help shape them."
+price_free   = "Free"
+included     = "Included"
+not_included = "Not included"
+
+[plans.beta]
+heading = "How beta access works"
+body    = "Beta access is granted by invitation. Create a free account, then ask to join the beta program from your profile — an administrator reviews every request. Beta countries are complete and safe to use; they simply have not finished validation yet, which is also why we keep the group small."
+
+[plans.cta]
+create_account = "Create a free account"
+signed_in_note = "You are signed in — every Live country is already open to you."
