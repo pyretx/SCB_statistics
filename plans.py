@@ -61,7 +61,9 @@ _rows = "".join([
     _row(_pub_title, _R["public_note"], (True, True, True)),
     _row(_R["live_title"].format(n=len(_live)), _names(_live), (False, True, True)),
     _row(_R["beta_title"].format(n=len(_beta)),
-         f'{_names(_beta)}<br>{_R["beta_extra"]}', (False, False, True)),
+         f'{_R["beta_extra"]}<details class="pl-more">'
+         f'<summary>{_R["beta_toggle"].format(n=len(_beta))}</summary>'
+         f'{_names(_beta)}</details>', (False, False, True)),
     _sec(_S["features"]),
     _row(_R["tabs_title"], _R["tabs_note"], (True, True, True)),
     _row(_R["lang_title"], _R["lang_note"], (True, True, True)),
@@ -104,6 +106,12 @@ st.markdown(f"""
   .pl-chk{{font-size:16px;font-weight:700;color:#0A63A6;}}
   .pl-dash{{font-size:14px;color:#C2C8D0;}}
   .pl-price{{font-size:13.5px;font-weight:600;color:#26303C;}}
+  .pl-more{{margin-top:4px;}}
+  .pl-more summary{{cursor:pointer;font-size:12px;font-weight:600;color:#0A63A6;
+    list-style:none;user-select:none;}}
+  .pl-more summary::-webkit-details-marker{{display:none;}}
+  .pl-more summary::after{{content:" ▾";}}
+  .pl-more[open] summary::after{{content:" ▴";}}
 </style>
 <div class="pp-card">
   <table class="pl-table">
