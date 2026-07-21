@@ -1409,6 +1409,7 @@ def users_section():
 _FB_STATUS_COLORS = {"New": ("#0A63A6", "rgba(10,99,166,.10)"),
                      "Reviewing": ("#B26A00", "rgba(178,106,0,.14)"),
                      "Planned": ("#6B4FA0", "rgba(107,79,160,.12)"),
+                     "Build pending review": ("#0E7C86", "rgba(14,124,134,.12)"),
                      "Resolved": ("#1B8A5A", "rgba(27,138,90,.12)"),
                      "Closed": ("#8A919D", "#F1F3F6")}
 _IC_CHAT = ('<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" '
@@ -1431,12 +1432,12 @@ def feedback_section():
         st.error(err)
         return
     # ── Status KPIs (like the other admin sections): total + one per status ──
-    kc = st.columns(6)
+    kc = st.columns(1 + len(fb.STATUSES))
     _kpi(kc[0], "fb_total", _IC_CHAT, "#0A63A6", "rgba(10,99,166,.10)",
          len(rows), FB["kpi_total"])
     for i, s in enumerate(fb.STATUSES, start=1):
         fg, bg = _FB_STATUS_COLORS[s]
-        _kpi(kc[i], f"fb_{s.lower()}", _IC_CHAT, fg, bg,
+        _kpi(kc[i], f"fb_{s.lower().replace(' ', '_')}", _IC_CHAT, fg, bg,
              sum(1 for r in rows if r.get("status") == s), s)
     st.write("")
 
@@ -1524,6 +1525,20 @@ def feedback_section():
                         f'<div style="font-size:13px;color:#3A4250;white-space:pre-wrap;">'
                         f'{r["ai_triage"]}</div></div>',
                         unsafe_allow_html=True)
+                # One-click confirmation for AI-delivered fixes: the AI may set
+                # 'Build pending review' only after the fix is committed and
+                # deployed to dev (procedure in CLAUDE.md); Resolved stays a
+                # human action — this button.
+                if r.get("status") == "Build pending review":
+                    if st.button(FB["btn_resolve"], key=f"fbres_{fid}",
+                                 type="primary", icon=":material/task_alt:"):
+                        rerr = fb.update_feedback(fid, status="Resolved")
+                        if rerr:
+                            st.error(rerr)
+                        else:
+                            st.session_state["_fb_admin_msg"] = FB["resolved_msg"]
+                            st.rerun()
+                    st.caption(FB["resolve_hint"])
                 e1, e2 = st.columns([1, 2.4])
                 nstat = e1.selectbox(
                     FB["f_status"], fb.STATUSES,

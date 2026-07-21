@@ -115,7 +115,12 @@ touches the queue:
 - Triage browser passes run as **beta/standard role only** — never admin
   (see the allowlist rules in `.claude/agents/bug-hunter.md`).
 - Triage writes go through `feedback.update_feedback(ai_triage=...)` ONLY;
-  status changes ("Planned" etc.) are the owner's decision, not the AI's.
+  status changes ("Planned" etc.) are the owner's decision, not the AI's —
+  with ONE exception: after a fix for an item is committed AND deployed to
+  dev, the session appends the commit hash + deploy date to `ai_triage` and
+  sets status to `Build pending review` (never any other value). The owner
+  verifies and presses Mark-resolved in the admin panel; Resolved/Closed
+  are never AI-written.
 
 ## Things NOT to touch without asking
 

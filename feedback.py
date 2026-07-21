@@ -26,7 +26,12 @@ import content
 # Dropdown values — must match the CHECK constraints in the SQL migration.
 TYPES = ["Bug", "Incorrect data", "Usability issue", "Suggestion", "Other"]
 IMPACTS = ["Minor", "Significant", "Blocking"]
-STATUSES = ["New", "Reviewing", "Planned", "Resolved", "Closed"]
+# 'Build pending review' is the ONE status the AI session may set — only after
+# the fix is committed and deployed to dev (triage procedure in CLAUDE.md).
+# The owner then confirms via the admin panel's Mark-resolved button;
+# Resolved/Closed stay human-only.
+STATUSES = ["New", "Reviewing", "Planned", "Build pending review",
+            "Resolved", "Closed"]
 TITLE_MAX = 150
 DESC_MAX = 5000
 GENERAL = "General application"
