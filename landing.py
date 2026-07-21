@@ -462,7 +462,7 @@ def _auth_dialog():
                 _redir = f"{_base}/?confirmed=1" if _base else None
                 # Record WHICH terms version was accepted (content/terms.toml
                 # [meta]) — stored in user_metadata for provable acceptance.
-                _tv = content.load("terms").get("meta", {}).get("version", "")
+                _tv = content.load("terms").get("meta", {}).get("terms_version", "")
                 user, err = auth.sign_up(email.strip(), pw, name.strip(),
                                          redirect_to=_redir, terms_version=_tv)
                 if not user:

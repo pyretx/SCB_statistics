@@ -307,7 +307,7 @@ def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | N
     user. Returns (user_dict_or_None, error_str_or_None).
 
     The name is REQUIRED and stored in Supabase user_metadata.full_name.
-    ``terms_version`` (content/terms.toml [meta] version, passed by the
+    ``terms_version`` (content/terms.toml [meta] terms_version, passed by the
     create-account dialog after its required checkbox) is recorded in
     user_metadata so acceptance is provable and re-promptable on change."""
     if not (full_name or "").strip():

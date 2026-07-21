@@ -1,14 +1,21 @@
 # ─────────────────────────────────────────────────────────────────────────────
-#  TERMS & PRIVACY PAGE CONTENT - edit the text here; no code changes needed.
+#  TERMS & PRIVACY PAGE CONTENT — edit the text here; no code changes needed.
 #  Rendered by terms.py (/terms). The Create-account dialog links here and
-#  auth.sign_up() stamps [meta] version onto every new account
+#  auth.sign_up() stamps [meta] terms_version onto every new account
 #  (user_metadata.accepted_terms_version / accepted_terms_at).
-#  ⚠ Bump [meta] version whenever the SUBSTANCE of the terms changes - that is
-#  what makes acceptance records meaningful.
+#  ⚠ The Terms and the Privacy Policy are versioned SEPARATELY (a policy is a
+#  transparency notice, not a contract). Bump terms_version whenever the
+#  SUBSTANCE of the Terms changes — that is what makes acceptance records
+#  meaningful. Bump privacy_version when the processing described changes.
+#  Items are [heading, body] or [heading, body, anchor-id] (anchor-id makes the
+#  row linkable as /terms#anchor-id).
 # ─────────────────────────────────────────────────────────────────────────────
 
 [meta]
-version = "2026-07-21"
+terms_version     = "2026-07-21"
+terms_effective   = "2026-07-21"
+privacy_version   = "2026-07-21"
+privacy_effective = "2026-07-21"
 
 # Signed-out CTA at the bottom (same pattern as the What-you-get page): most
 # signed-out readers arrive from the create-account dialog and need a way back.
@@ -18,39 +25,47 @@ create_account = "Create a free account"
 [page]
 eyebrow = "LEGAL"
 title   = "Terms & Privacy Policy"
-intro   = "The short version: Salary Explorer is a free tool built on official statistics. We collect the minimum needed to run accounts, we don't track you, and we never sell your data. The full terms and privacy policy are below."
-updated = "Version {version}. If we make material changes we will announce them in the app; continued use after a change means you accept the updated terms."
+intro   = "The short version: Salary Explorer is a free tool built on official statistics. We collect only the information needed to provide accounts, secure the service and process feedback. We do not use advertising or behavioural tracking, and we never sell personal data. Limited information is processed by the service providers described below."
+verline = "Version {version} · effective {effective}"
+footer_note = "Questions about these documents: email <a href='mailto:privacy@qvist.in'>privacy@qvist.in</a>."
 
 # ── Terms of Service ─────────────────────────────────────────────────────────
 [terms]
-heading = "Terms of Service"
+heading   = "Terms of Service"
+anchor    = "terms"
+version   = "2026-07-21"
+effective = "2026-07-21"
 items = [
   ["Who we are", "Salary Explorer (salaryexplorer.qvist.in) is an independent product operated by Qvistin, Sweden (<a href='https://qvist.in' target='_blank'>qvist.in</a>). Questions about these terms or your data: email <a href='mailto:privacy@qvist.in'>privacy@qvist.in</a>."],
   ["The service", "Salary Explorer lets you browse occupational salary statistics published by official statistics providers. The service is currently in <b>beta</b>: features may change, be added or be removed, and availability is not guaranteed. Browsing core salary data is free and does not require an account; an account unlocks additional countries and features. The service is free while in beta - we may introduce paid plans for some features in the future, and will announce any such change in advance. Features that are free to browse today are intended to stay that way."],
   ["Your account", "You must be at least 16 years old to create an account. Provide accurate information, keep your password secure, and don't share your account. You are responsible for activity under your account. You can stop using the service at any time and request deletion of your account (see the Privacy Policy below)."],
-  ["Acceptable use", "Don't misuse the service: no scraping or bulk downloading beyond normal personal use, no attempting to bypass access controls or role gates, no abusing the feedback form, and no unlawful use. We may suspend or close accounts that violate these terms."],
+  ["Acceptable use", "Do not attempt to bypass authentication, subscription, beta-access or other technical access restrictions; do not abuse the feedback form; do not use the service unlawfully. Automated access, scraping or bulk downloading is permitted only through an API or another method expressly made available by Salary Explorer. These restrictions apply to Salary Explorer's service and infrastructure - they do not limit rights granted to you directly by an official statistics provider in relation to the underlying public data. We may suspend or close accounts that violate these terms."],
+  ["Intellectual property", "Salary Explorer's software, design, branding, explanatory text and original functionality belong to Qvistin or its licensors. You may use the service for personal and internal professional purposes, but may not copy, reproduce, resell or create a competing service from Salary Explorer's proprietary content or systems without permission. These restrictions do not limit any rights granted directly by an official statistics provider in relation to the underlying public data."],
   ["Data, not advice", "All figures come from official statistics providers, and anything Salary Explorer calculates on top is labelled as such (see <a href='methodology' target='_blank'>Data sources & methodology</a>). The service provides general statistical information only - it is not salary, career, employment, legal or financial advice. Career-path salary ranges are statistical estimates, not guarantees. Providers may revise figures after publication; the official source is always definitive. See also <a href='disclaimers' target='_blank'>Disclaimers</a>."],
   ["Feedback", "If you send us feedback, bug reports or suggestions, we may use them to operate and improve the service without any obligation to you."],
   ["Third-party data", "The underlying statistics remain subject to each provider's own licence and attribution terms, listed per country on the <a href='methodology' target='_blank'>Data sources & methodology</a> page. Salary Explorer is not affiliated with or endorsed by any statistical provider."],
-  ["No warranty & liability", "The service is provided \"as is\", without warranties of any kind, including accuracy, completeness or fitness for a particular purpose. To the extent permitted by law, Qvistin is not liable for decisions made, or losses incurred, in reliance on the service."],
-  ["Changes & termination", "We may update these terms - the current version and date are always shown on this page, and material changes will be announced in the app. We may change or discontinue features, or discontinue the service, at any time during the beta."],
-  ["Governing law", "These terms are governed by Swedish law."],
+  ["No warranty & liability", "The service is provided on an \"as is\" and \"as available\" basis. We do not guarantee that all information will always be complete, current or error-free. You remain responsible for independently evaluating information before making decisions. To the extent permitted by applicable law, Qvistin is not responsible for indirect or consequential losses arising from reliance on the service. Nothing in these terms excludes or limits liability that cannot legally be excluded or limited, including mandatory consumer rights."],
+  ["Changes & termination", "We may update these Terms from time to time. Material changes will be announced before they take effect. By continuing to use the service after the effective date, you agree to the updated Terms. If you do not agree, you must stop using the service and may delete your account. We may change or discontinue features, or discontinue the service, at any time during the beta. Ending the beta or the service does not affect your privacy rights or any pending deletion request."],
+  ["Governing law", "These terms are governed by Swedish law. If you are a consumer residing in another country, this choice of law does not remove any mandatory consumer protections that apply to you under the law of your country of residence."],
 ]
 
 # ── Privacy Policy ───────────────────────────────────────────────────────────
 [privacy]
-heading = "Privacy Policy"
+heading   = "Privacy Policy"
+anchor    = "privacy"
+version   = "2026-07-21"
+effective = "2026-07-21"
 items = [
   ["Who is responsible", "Qvistin, Sweden (<a href='https://qvist.in' target='_blank'>qvist.in</a>) is the data controller for personal data processed by Salary Explorer. Contact <a href='mailto:privacy@qvist.in'>privacy@qvist.in</a> for any privacy request."],
-  ["What we collect", "If you create an account: your name, email address and password. The password is handled by our authentication provider and stored only in securely hashed form - we never store it in plain text. We also store your account's access level (e.g. beta membership). If you submit feedback or a bug report, the report is stored together with your account id and email so we can follow up. Our servers keep standard technical logs (IP addresses, timestamps) for security and troubleshooting."],
-  ["What we never do", "No advertising, no selling or sharing of personal data, no analytics or tracking cookies, no profiling. Browsing salary data requires no account and sends us no personal data beyond standard server logs."],
-  ["Cookies", "Salary Explorer sets exactly one cookie: a strictly necessary session cookie that keeps you signed in. It expires when you close your browser. There are no tracking or third-party cookies, which is why you don't see a cookie banner."],
+  ["What we collect", "If you create an account: your name, email address and authentication credentials. Authentication is provided by Supabase; Salary Explorer does not receive or store your password in readable form. We also store your account's access level (e.g. beta membership). If you submit feedback or a bug report, the report is stored together with your account id and email so we can follow up. Our servers keep standard technical logs (IP addresses, timestamps) for security and troubleshooting."],
+  ["What we never do", "We never sell your personal data or share it for advertising, and we do not use advertising trackers or analytics that follow your activity across websites. We disclose limited personal data only to the service providers needed to operate Salary Explorer, as described under <a href='#processors'>Where your data lives</a>. Browsing salary data requires no account."],
+  ["Cookies & local storage", "Salary Explorer uses only cookies and similar browser storage that are strictly necessary for authentication, security and operation of the service. We do not use advertising or analytics cookies, and because no optional cookies are used we do not show a cookie-consent banner. Currently in use:<br>• <b>sb_refresh</b> (cookie) · set by Salary Explorer for Supabase authentication · keeps you signed in · session-only, deleted when you close your browser.<br>• <b>stActiveTheme-*</b> (local storage) · Streamlit, the framework the app runs on · remembers your light/dark theme choice · kept until you clear your browser storage.<br>The framework may store similar interface-state entries in local storage; none of them identify you or track you. If we introduce optional analytics or tracking technologies, we will request consent before activating them.", "cookies"],
   ["Why we process it", "We process account data to provide the service you signed up for (contract), send transactional emails such as confirmation and password emails (contract), keep the service secure and prevent abuse (legitimate interest), and review feedback to fix bugs and improve the product (legitimate interest)."],
-  ["AI-assisted processing", "Text you submit through the feedback form may be processed with AI tools (provided by Anthropic) to help us triage and reproduce reported issues. Please don't include passwords or confidential information in feedback - the form reminds you of this too."],
-  ["Where your data lives", "Account data and feedback are stored with Supabase on Amazon Web Services in Dublin, Ireland (EU). The application itself runs on servers in Frankfurt, Germany (EU). Two providers process limited data outside the EU/EEA: Resend (United States) delivers our transactional emails and therefore processes your email address, and Anthropic (United States) may process feedback text as described above. Where data leaves the EU/EEA, transfers rely on recognised safeguards such as the EU standard contractual clauses."],
-  ["How long we keep it", "Account data is kept until you delete your account. Feedback reports are kept while they remain relevant for product development. Server logs are kept briefly for security and troubleshooting and then discarded."],
-  ["Your rights", "Under the GDPR you can request access to, correction of, or deletion of your personal data, ask for a copy in a portable format, and object to processing based on legitimate interest. Email <a href='mailto:privacy@qvist.in'>privacy@qvist.in</a> and we will respond without undue delay. You also have the right to complain to a supervisory authority - in Sweden, the Swedish Authority for Privacy Protection (<a href='https://www.imy.se' target='_blank'>IMY</a>) - or to the authority in your own country."],
-  ["Deleting your account", "You can delete your account at any time from your profile: click your name in the top right, then Delete account. This permanently removes your account data. Feedback reports you have submitted are kept for product history but unlinked from your identity - if you want the report text removed as well, or prefer deletion by email, contact <a href='mailto:privacy@qvist.in'>privacy@qvist.in</a> from your registered address."],
+  ["AI-assisted processing", "Text you submit through the feedback form may be processed with AI tools (provided by Anthropic, acting as our processor) to help us categorise and investigate reports. Submitted text may be retained temporarily by Anthropic under its API terms. AI output only assists triage: it does not automatically determine whether your account is suspended, whether a report is accepted, or any other decision with legal or similarly significant effects - Salary Explorer does not use your personal data for automated decision-making of that kind at all. Please do not include passwords, personal identification numbers, health information, confidential company data or other sensitive information in feedback."],
+  ["Where your data lives", "Account data and feedback are stored with Supabase on Amazon Web Services in Dublin, Ireland (EU). The application itself runs on servers in Frankfurt, Germany (EU). Two providers process limited data outside the EU/EEA: Resend (United States) delivers our transactional emails and therefore processes your email address, and Anthropic (United States) may process feedback text as described above. Where data leaves the EU/EEA, transfers rely on recognised safeguards such as the EU standard contractual clauses.", "processors"],
+  ["How long we keep it", "Account data is kept until you delete your account. Feedback reports are kept while they remain relevant for product development. Server logs are kept briefly for security and troubleshooting and then discarded. Residual copies of deleted data may persist temporarily in encrypted backups and technical logs kept by our providers until they are overwritten on their standard rotation schedules."],
+  ["Your rights", "Depending on the circumstances and the legal basis of the processing, you have the right under the GDPR to access, correct or delete your personal data, restrict its processing, receive certain data in a portable format, and object to processing based on legitimate interests. These rights are not absolute and may not apply in every situation. Email <a href='mailto:privacy@qvist.in'>privacy@qvist.in</a> and we will respond without undue delay. You also have the right to complain to a supervisory authority - in Sweden, the Swedish Authority for Privacy Protection (<a href='https://www.imy.se' target='_blank'>IMY</a>) - or to the authority in your own country."],
+  ["Deleting your account", "You can delete your account at any time from your profile: click your name in the top right, then Delete account. This removes your account from Salary Explorer's active systems; residual copies may remain temporarily in encrypted backups and technical logs until they are overwritten in accordance with the retention periods above. Feedback reports may be retained for product and issue history after the direct links to your account (account id, email address) have been removed - the report text may still contain information that you entered yourself, and you may request deletion of the report text by contacting <a href='mailto:privacy@qvist.in'>privacy@qvist.in</a>. You can also request account deletion by email from your registered address."],
   ["Children", "Salary Explorer is not directed at children. Accounts require a minimum age of 16."],
-  ["Changes to this policy", "We will post any changes on this page and update the version above. If a change is material - for example a new category of data or a new provider - we will announce it in the app."],
+  ["Changes to this policy", "We may update this Privacy Policy when our processing changes. The version and effective date are shown at the top of this section, and we will provide additional notice where required. Where a change requires consent or another action under applicable law, we will request it separately."],
 ]
