@@ -1496,6 +1496,21 @@ def feedback_section():
                 if r.get("app_version"):
                     meta.append(f'{FB["m_version"]}: {r["app_version"]}')
                 st.caption(" · ".join(meta))
+                # AI triage verdict (bug-hunter replication run) — read-only
+                # here; written server-side after a triage session. Escaped:
+                # the verdict may quote untrusted user report text.
+                if r.get("ai_triage"):
+                    import html as _html
+                    r = {**r, "ai_triage": _html.escape(r["ai_triage"])}
+                    st.markdown(
+                        f'<div style="border-left:3px solid #0A63A6;border-radius:0;'
+                        f'background:rgba(10,99,166,.06);padding:8px 12px;margin:6px 0;">'
+                        f'<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
+                        f'font-weight:600;letter-spacing:.1em;color:#0A63A6;'
+                        f'margin-bottom:4px;">{FB["ai_triage"]}</div>'
+                        f'<div style="font-size:13px;color:#3A4250;white-space:pre-wrap;">'
+                        f'{r["ai_triage"]}</div></div>',
+                        unsafe_allow_html=True)
                 e1, e2 = st.columns([1, 2.4])
                 nstat = e1.selectbox(
                     FB["f_status"], fb.STATUSES,

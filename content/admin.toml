@@ -598,6 +598,7 @@ no          = "no"
 f_status    = "Status"
 f_notes     = "Admin notes (private)"
 notes_ph    = "Internal notes — the submitter never sees these."
+ai_triage   = "AI TRIAGE"
 btn_save    = "💾 Save"
 saved       = "Saved."
 

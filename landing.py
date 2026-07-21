@@ -483,6 +483,29 @@ def _auth_dialog():
                 else:
                     st.success(_m["resent"].format(email=st.session_state.pop("_resend_for")))
 
+        # Dev-only test logins (bug-hunter agent / manual role testing).
+        # Rendered only where secrets set [test_login] enabled = true (local +
+        # dev server, never test/prod). Dev tooling, not product UI — labels
+        # deliberately hardcoded rather than in content/*.toml.
+        if auth.test_login_enabled():
+            st.markdown(
+                '<div style="font-family:\'JetBrains Mono\',monospace;font-size:10px;'
+                'font-weight:600;letter-spacing:.12em;color:#8A9199;'
+                'margin:10px 0 4px;">TEST LOGIN (DEV ONLY)</div>',
+                unsafe_allow_html=True)
+            _tcols = st.columns(3)
+            for _col, _role in zip(_tcols, auth.TEST_LOGIN_ROLES):
+                if _col.button(f"Enter as {_role}", key=f"_tl_{_role}",
+                               use_container_width=True):
+                    _tu, _terr = auth.test_sign_in(_role)
+                    if _tu:
+                        st.session_state["auth_user"] = _tu
+                        st.session_state.pop("_auth_pw", None)
+                        st.session_state["_show_auth"] = False
+                        st.rerun()
+                    else:
+                        st.error(_terr)
+
         # Create-account mode: link the access-level comparison page (/access)
         # so people can see what a free account unlocks before signing up.
         if _is_create and _f.get("whats_included"):

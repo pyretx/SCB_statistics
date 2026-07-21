@@ -324,6 +324,57 @@ def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | N
         return None, str(e)
 
 
+# ── Dev-only test login ──────────────────────────────────────────────────────
+# Impersonation of the three seeded, PASSWORDLESS test users (one per role,
+# deploy/seed_test_users.py) so the bug-hunter agent and manual role testing
+# can enter the app without any credential entry. Rendered/reachable ONLY
+# where secrets contain [test_login] enabled = true — set locally and in the
+# DEV server secrets, never in test/prod: where the flag is absent the code
+# path is dead, so the accounts cannot be entered on prod even though the
+# shared Supabase knows them.
+TEST_LOGIN_ROLES = ("admin", "beta", "standard")
+TEST_LOGIN_DOMAIN = "salary-explorer.invalid"   # RFC-reserved TLD: undeliverable
+
+
+def test_login_email(role: str) -> str:
+    return f"test-{role}@{TEST_LOGIN_DOMAIN}"
+
+
+def test_login_enabled() -> bool:
+    """True only where [test_login] enabled = true exists in secrets."""
+    try:
+        return bool(st.secrets["test_login"]["enabled"])
+    except Exception:
+        pass
+    try:
+        with open(_SECRETS_PATH, "rb") as f:
+            return bool(tomllib.load(f).get("test_login", {}).get("enabled"))
+    except Exception:
+        return False
+
+
+def test_sign_in(role: str):
+    """Sign the session in as the seeded test user for ``role`` — no password,
+    no Supabase session, no cookie: the user is looked up server-side with the
+    service key and its profile dict (same shape _profile() builds) goes into
+    session_state. The login therefore lasts one browser session and cannot be
+    replayed anywhere the flag is off. Returns (user_dict, error)."""
+    if not test_login_enabled():
+        return None, "Test login is disabled."
+    if role not in TEST_LOGIN_ROLES:
+        return None, f"role must be one of {TEST_LOGIN_ROLES}"
+    email = test_login_email(role)
+    try:
+        for u in list_users():
+            if u["email"] == email:
+                return {"id": u["id"], "email": u["email"], "name": u["name"],
+                        "role": u["role"], "countries": u["countries"],
+                        "beta_requested": u.get("beta_requested")}, None
+        return None, f"{email} not found — run deploy/seed_test_users.py first."
+    except Exception as e:  # noqa: BLE001
+        return None, str(e)
+
+
 def list_users(retries: int = 1) -> list[dict]:
     # The service client now runs with a 30s timeout (see _client); one retry
     # covers transient drops without stacking long waits.

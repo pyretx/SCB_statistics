@@ -98,8 +98,11 @@ def list_feedback() -> tuple[list[dict], str | None]:
 
 
 def update_feedback(feedback_id: str, *, status: str | None = None,
-                    admin_notes: str | None = None) -> str | None:
-    """Admin update of status and/or private notes. None on success."""
+                    admin_notes: str | None = None,
+                    ai_triage: str | None = None) -> str | None:
+    """Admin update of status and/or private notes. ``ai_triage`` is the
+    bug-hunter agent's replication verdict, recorded server-side after a
+    triage run (shown read-only in the admin panel). None on success."""
     changes: dict = {}
     if status is not None:
         if status not in STATUSES:
@@ -107,6 +110,8 @@ def update_feedback(feedback_id: str, *, status: str | None = None,
         changes["status"] = status
     if admin_notes is not None:
         changes["admin_notes"] = admin_notes
+    if ai_triage is not None:
+        changes["ai_triage"] = ai_triage
     if not changes:
         return None
     try:
