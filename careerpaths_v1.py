@@ -163,6 +163,45 @@ def ad_class_for_ssyk(ssyk: str) -> list[dict]:
          .eq("ssyk", str(ssyk)).execute()).data or []), "ad_class", []) or []
 
 
+_SEN_ORD = {"junior": 0.0, "mid": 0.5, "senior": 1.0, "lead": 1.0, "principal": 1.0}
+
+
+def calibrate_band(ssyk, names, records=None):
+    """Seniority-anchored percentile band (lo, mid, hi) for a role, estimated from
+    the job ads whose normalised title matches ``names`` in this SSYK. Returns
+    ``None`` when there is no ad signal — the caller then keeps whatever band it
+    already has (the placeholder for a fresh title).
+
+    We can't observe pay in the ads, so this places a role on its SSYK's official
+    curve by SENIORITY, not by measured salary:
+      • average ad seniority (junior 0 / mid .5 / senior 1) → base score s
+      • + small management nudge (share of mgmt ads) and experience nudge (median
+        years vs 3), clamped
+      • mid_pct = 32 + 40·s  (solidly-mid ≈ P50, junior lower, all-senior ≈ P72)
+      • asymmetric width −12 / +16 (salary tails run long on the high side)
+      • shrink toward P50 by evidence weight min(1, n/10) so thin samples stay
+        conservative instead of extrapolating from a handful of ads.
+    All knobs live here so the batch backfill, the pipeline and admin approval
+    stay in sync."""
+    want = {str(n).strip().lower() for n in (names or []) if n and str(n).strip()}
+    if not want:
+        return None
+    rows = records if records is not None else ad_class_for_ssyk(str(ssyk))
+    m = [r for r in rows if (r.get("norm_title") or "").strip().lower() in want]
+    if not m:
+        return None
+    s = sum(_SEN_ORD.get(r.get("seniority"), 0.5) for r in m) / len(m)
+    s += 0.15 * (sum(1 for r in m if r.get("mgmt")) / len(m))
+    yrs = sorted(r["years"] for r in m if isinstance(r.get("years"), int))
+    if yrs:
+        s += max(-0.1, min(0.1, 0.03 * (yrs[len(yrs) // 2] - 3)))
+    s = max(0.0, min(1.0, s))
+    mid = 32 + 40 * s
+    mid = 50 + min(1.0, len(m) / 10) * (mid - 50)   # shrink to P50 on thin evidence
+    _clamp = lambda x: int(round(max(8, min(92, x))))
+    return _clamp(mid - 12), _clamp(mid), _clamp(mid + 16)
+
+
 def ads_for_titles(pairs) -> dict:
     """The stored ads behind a set of (ssyk, norm_title) suggestions, keyed by
     that pair. One batched query over the indexed `ssyk` column — the review

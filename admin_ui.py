@@ -2114,7 +2114,14 @@ def _cp_apply_suggestion(s: dict, cp, v1, admin: str, publish: bool = False) -> 
                            "duplicate_of": dup.get("title_id")})
             return True
         code = _next_subcode(cp, ssyk)
-        err = cp.create_title(code, s.get("family_id"), nt, nt, ssyk, published=publish)
+        # First band is seniority-anchored from this role's ad evidence (same
+        # method as the batch calibration), not the flat 25/45/62 placeholder.
+        # Falls back to create_title's default when there is no ad signal yet.
+        band = v1.calibrate_band(ssyk, [nt])
+        kw = {"published": publish}
+        if band:
+            kw.update(lo_pct=band[0], mid_pct=band[1], hi_pct=band[2])
+        err = cp.create_title(code, s.get("family_id"), nt, nt, ssyk, **kw)
         if err:
             return False
     if v1.set_suggestion(s["id"], "approved", admin):
