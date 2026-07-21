@@ -49,3 +49,15 @@ def update_message(message_id: str, *, status: str | None = None,
     except Exception as e:  # noqa: BLE001
         print(f"[qvistin_messages] update failed: {e}")
         return "Could not save."
+
+
+def delete_message(message_id: str) -> str | None:
+    """Admin delete of one message (e.g. a test submission). Service-key only —
+    the table's RLS is insert-only for the anon key. None on success."""
+    try:
+        (auth._client(service=True).table(_TABLE)
+         .delete().eq("id", message_id).execute())
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"[qvistin_messages] delete failed: {e}")
+        return "Could not delete."

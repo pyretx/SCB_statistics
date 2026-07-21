@@ -128,6 +128,19 @@ def update_feedback(feedback_id: str, *, status: str | None = None,
         return _T()["admin"]["save_failed"]
 
 
+def delete_feedback(feedback_id: str) -> str | None:
+    """Admin delete of one submission (e.g. a test entry). Service-key only:
+    the table deliberately has NO DELETE policy, so PostgREST callers cannot
+    do this — the admin panel is the single path. None on success."""
+    try:
+        (auth._client(service=True).table("beta_feedback")
+         .delete().eq("id", feedback_id).execute())
+        return None
+    except Exception as e:  # noqa: BLE001
+        print(f"[feedback] delete failed: {e}")
+        return _T()["admin"]["delete_failed"]
+
+
 # ── UI: entry-point button + dialog ──────────────────────────────────────────
 def _can_report(cfg=None) -> bool:
     """Any signed-in user (opened up from beta/admin-only 2026-07-21 to

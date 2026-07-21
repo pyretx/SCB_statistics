@@ -1431,29 +1431,39 @@ def feedback_section():
     if err:
         st.error(err)
         return
-    # ── Status KPIs (like the other admin sections): total + one per status ──
-    kc = st.columns(1 + len(fb.STATUSES))
-    _kpi(kc[0], "fb_total", _IC_CHAT, "#0A63A6", "rgba(10,99,166,.10)",
-         len(rows), FB["kpi_total"])
-    for i, s in enumerate(fb.STATUSES, start=1):
-        fg, bg = _FB_STATUS_COLORS[s]
-        _kpi(kc[i], f"fb_{s.lower().replace(' ', '_')}", _IC_CHAT, fg, bg,
-             sum(1 for r in rows if r.get("status") == s), s)
+    # ── Status KPIs: rendered into a placeholder ABOVE the filters but filled
+    # AFTER them, so the tiles always reflect the current filter selection.
+    tiles = st.container()
     st.write("")
 
     open_n = sum(1 for r in rows if r.get("status") in ("New", "Reviewing"))
     st.caption(FB["caption"].format(total=len(rows), open=open_n))
 
+    # Multi-select pill filters — everything on by default, deselect to narrow
+    # (e.g. drop Resolved/Closed and keep only Bug).
+    ftypes = st.pills(FB["flt_type"], fb.TYPES, selection_mode="multi",
+                      default=fb.TYPES, key="fb_f_types")
+    fstats = st.pills(FB["flt_status"], fb.STATUSES, selection_mode="multi",
+                      default=fb.STATUSES, key="fb_f_stats")
     allv = FB["flt_all"]
-    f1, f2, f3 = st.columns(3)
-    fstat = f1.selectbox(FB["flt_status"], [allv] + fb.STATUSES, key="fb_f_status")
-    ftype = f2.selectbox(FB["flt_type"], [allv] + fb.TYPES, key="fb_f_type")
+    f1, f2 = st.columns([2.4, 1])
     ctry_opts = sorted({r.get("country") or fb.GENERAL for r in rows})
-    fctry = f3.selectbox(FB["flt_country"], [allv] + ctry_opts, key="fb_f_country")
+    fctry = f1.selectbox(FB["flt_country"], [allv] + ctry_opts, key="fb_f_country")
+    limit = f2.selectbox(FB["flt_limit"], [10, 20, 50, 100, 200], index=1,
+                         key="fb_f_limit")
     shown = [r for r in rows
-             if (fstat == allv or r.get("status") == fstat)
-             and (ftype == allv or r.get("feedback_type") == ftype)
+             if r.get("feedback_type") in (ftypes or ())
+             and r.get("status") in (fstats or ())
              and (fctry == allv or (r.get("country") or fb.GENERAL) == fctry)]
+
+    with tiles:
+        kc = st.columns(1 + len(fb.STATUSES))
+        _kpi(kc[0], "fb_total", _IC_CHAT, "#0A63A6", "rgba(10,99,166,.10)",
+             len(shown), FB["kpi_total"])
+        for i, s in enumerate(fb.STATUSES, start=1):
+            fg, bg = _FB_STATUS_COLORS[s]
+            _kpi(kc[i], f"fb_{s.lower().replace(' ', '_')}", _IC_CHAT, fg, bg,
+                 sum(1 for r in shown if r.get("status") == s), s)
 
     st.write("")
     with st.container(border=True, key="adcard_feedback"):
@@ -1463,6 +1473,9 @@ def feedback_section():
         if not shown:
             st.caption(FB["empty"])
             return
+        if len(shown) > limit:
+            st.caption(FB["list_capped"].format(n=limit, total=len(shown)))
+            shown = shown[:limit]
         _W = [1.5, 1.4, 1.3, 3.2, 1.2, 2.2, 1.2]
         head = st.columns(_W)
         for col, cap in zip(head, (FB["col_date"], FB["col_type"], FB["col_country"],
@@ -1548,13 +1561,24 @@ def feedback_section():
                 nnotes = e2.text_area(FB["f_notes"], value=r.get("admin_notes") or "",
                                       height=80, key=f"fbn_{fid}",
                                       placeholder=FB["notes_ph"])
-                if st.button(FB["btn_save"], key=f"fbsave_{fid}", type="primary"):
+                a1, a2 = st.columns([1, 5])
+                if a1.button(FB["btn_save"], key=f"fbsave_{fid}", type="primary"):
                     uerr = fb.update_feedback(fid, status=nstat, admin_notes=nnotes)
                     if uerr:
                         st.error(uerr)
                     else:
                         st.session_state["_fb_admin_msg"] = FB["saved"]
                         st.rerun()
+                # Permanent delete (e.g. test entries) behind a confirm popover.
+                with a2.popover(FB["btn_delete"], icon=":material/delete:"):
+                    st.caption(FB["delete_confirm"])
+                    if st.button(FB["btn_delete_confirm"], key=f"fbdel_{fid}"):
+                        derr = fb.delete_feedback(fid)
+                        if derr:
+                            st.error(derr)
+                        else:
+                            st.session_state["_fb_admin_msg"] = FB["deleted_msg"]
+                            st.rerun()
 
 
 # ── Section: Qvistin messages (TEMPORARY — contact form from qvist.in) ───────
@@ -1644,13 +1668,25 @@ def qvistin_messages_section():
                     if r.get("status") in qm.STATUSES else 0, key=f"qms_{mid}")
                 nnotes = e2.text_area("Private notes", value=r.get("admin_notes") or "",
                                       height=80, key=f"qmn_{mid}")
-                if st.button("Save", key=f"qmsave_{mid}", type="primary"):
+                a1, a2 = st.columns([1, 5])
+                if a1.button("Save", key=f"qmsave_{mid}", type="primary"):
                     uerr = qm.update_message(mid, status=nstat, admin_notes=nnotes)
                     if uerr:
                         st.error(uerr)
                     else:
                         st.session_state["_qm_admin_msg"] = "Saved."
                         st.rerun()
+                # Permanent delete (e.g. test messages) behind a confirm popover.
+                with a2.popover("Delete", icon=":material/delete:"):
+                    st.caption("This permanently removes the message — "
+                               "it cannot be undone.")
+                    if st.button("Delete permanently", key=f"qmdel_{mid}"):
+                        derr = qm.delete_message(mid)
+                        if derr:
+                            st.error(derr)
+                        else:
+                            st.session_state["_qm_admin_msg"] = "Message deleted."
+                            st.rerun()
 
 
 # ── Section: Work-permit rules (Sweden) ──────────────────────────────────────

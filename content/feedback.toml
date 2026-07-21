@@ -30,5 +30,6 @@ invalid       = "Please pick a feedback type and an impact."
 not_signed_in = "You need to be signed in to send feedback."
 
 [admin]
-load_failed = "Could not load the feedback list. Please try again."
-save_failed = "Could not save. Please try again."
+load_failed   = "Could not load the feedback list. Please try again."
+save_failed   = "Could not save. Please try again."
+delete_failed = "Could not delete. Please try again."

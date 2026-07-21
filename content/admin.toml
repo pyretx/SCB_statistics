@@ -605,6 +605,12 @@ saved       = "Saved."
 btn_resolve  = "Mark resolved"
 resolve_hint = "The AI set this to Build pending review after committing the fix and deploying it to dev — check the AI-triage note for the commit, verify, then confirm here."
 resolved_msg = "Marked as resolved."
+flt_limit          = "Rows"
+list_capped        = "Showing the newest {n} of {total} matching submissions."
+btn_delete         = "Delete"
+delete_confirm     = "This permanently removes the submission — it cannot be undone."
+btn_delete_confirm = "Delete permanently"
+deleted_msg        = "Deleted."
 
 # ── Global update check (Overview) — the results table + selected updates ─────
 [updates]
