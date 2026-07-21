@@ -136,6 +136,24 @@ def _occupation_picker(cfg, k, lang) -> tuple[tuple[str, ...], str]:
     return tuple(opt_to_code[p] for p in picked), scope
 
 
+def _clear_all(slug: str) -> None:
+    """Clear-all for the Search/Clear row (on_click, so it runs before the
+    next script run). Drops the committed query and any open panel, then bumps
+    the filter-widget GENERATION: the gen-suffixed keys change, so every
+    filter widget REMOUNTS with its default. Merely popping a mounted widget's
+    key does not reset it — the browser still holds the widget's state and
+    resends the old value on the next interaction (verified). The language
+    toggle keeps a plain key on purpose and survives the clear."""
+    st.session_state.pop(f"{slug}_committed", None)
+    st.session_state.pop(f"{slug}_view", None)
+    gen = st.session_state.get(f"{slug}_fltgen", 0)
+    st.session_state[f"{slug}_fltgen"] = gen + 1
+    for key in [key for key in st.session_state
+                if str(key).startswith(f"{slug}_")
+                and str(key).endswith(f"_g{gen}")]:
+        st.session_state.pop(key, None)      # orphaned old-generation state
+
+
 def render_sidebar(cfg) -> dict:
     """Render the sidebar and return the ACTIVE query dict:
         {lang, sector, sex, years, occ_codes}
@@ -146,6 +164,14 @@ def render_sidebar(cfg) -> dict:
     caps = cfg.capabilities
     def k(name):                       # namespaced widget key
         return f"{cfg.slug}_{name}"
+
+    # Filter widgets use a GENERATION-suffixed key: Clear-all resets them by
+    # bumping the generation (see _clear_all), which changes the keys and
+    # remounts the widgets with their defaults. Non-filter state (lang, view,
+    # committed, apply, activetab, the buttons) keeps plain k() keys.
+    gen = st.session_state.get(k("fltgen"), 0)
+    def fk(name):                      # generation-scoped filter-widget key
+        return f"{cfg.slug}_{name}_g{gen}"
 
     live = {"lang": "EN", "sector": (caps.sectors[0] if caps.sectors else ""),
             "sex": "total", "years": (), "occ_codes": (), "scope": ""}
@@ -158,17 +184,17 @@ def render_sidebar(cfg) -> dict:
     _apply = st.session_state.pop(k("apply"), None)
     if _apply:
         st.session_state[k("committed")] = _apply["query"]
-        st.session_state[k("occ")] = [_apply["occ_label"]]
+        st.session_state[fk("occ")] = [_apply["occ_label"]]
         if _apply.get("sector_label") is not None:
-            st.session_state[k("sector")] = _apply["sector_label"]
+            st.session_state[fk("sector")] = _apply["sector_label"]
         if _apply.get("sex") is not None:
-            st.session_state[k("sex")] = _apply["sex"]
+            st.session_state[fk("sex")] = _apply["sex"]
         if _apply.get("years_value") is not None:
-            st.session_state[k("years")] = _apply["years_value"]
+            st.session_state[fk("years")] = _apply["years_value"]
         for gkey in [key for key in st.session_state
                      if str(key).startswith(f"{cfg.slug}_grp")]:
             st.session_state.pop(gkey, None)     # clear the drill-down
-        st.session_state.pop(k("occsearch"), None)
+        st.session_state.pop(fk("occsearch"), None)
         st.session_state.pop(_apply.get("vk") or k("view"), None)   # close the view
         if _apply.get("activetab"):              # land on a specific tab (quick access)
             st.session_state[k("activetab")] = _apply["activetab"]
@@ -206,16 +232,16 @@ def render_sidebar(cfg) -> dict:
             # the Swedish page's approach (selection resets to default on switch).
             sec_labels = [i18n.t(cfg, f"sector_{s}", lang, s.capitalize())
                           for s in caps.sectors]
-            chosen = st.selectbox(i18n.t(cfg, "sector", lang), sec_labels, key=k("sector"))
+            chosen = st.selectbox(i18n.t(cfg, "sector", lang), sec_labels, key=fk("sector"))
             live["sector"] = caps.sectors[sec_labels.index(chosen)]
 
         if caps.has_sex:
             # Pass default= only on the first render; once the key exists (incl.
             # a value staged by the confirm dialog) omit it, else Streamlit warns
             # about "default value + Session State API" on every run.
-            _sex_kw = {} if k("sex") in st.session_state else {"default": "total"}
+            _sex_kw = {} if fk("sex") in st.session_state else {"default": "total"}
             _sex = st.segmented_control(
-                i18n.t(cfg, "sex", lang), ["total", "women", "men"], key=k("sex"),
+                i18n.t(cfg, "sex", lang), ["total", "women", "men"], key=fk("sex"),
                 format_func=lambda s: i18n.t(cfg, s, lang, s.capitalize()), **_sex_kw)
             live["sex"] = _sex or "total"
 
@@ -231,16 +257,18 @@ def render_sidebar(cfg) -> dict:
                 # Seeding from the key's current state keeps a confirm-dialog
                 # staged value winning; value never affects the widget identity
                 # (select_slider registers with key_as_main_identity).
-                _cur = st.session_state.get(k("years"))
+                _cur = st.session_state.get(fk("years"))
                 _val = (tuple(_cur) if isinstance(_cur, (list, tuple)) and len(_cur) == 2
                         else (max(y0, y1 - 2), y1))
                 a, b = st.select_slider(i18n.t(cfg, "year_range", lang), options=years,
-                                        value=_val, key=k("years"))
+                                        value=_val, key=fk("years"))
                 live["years"] = tuple(y for y in years if a <= y <= b)
             else:
                 live["years"] = (y1,)
 
-        live["occ_codes"], live["scope"] = _occupation_picker(cfg, k, lang)
+        # fk, not k: the picker's widgets (drill-down, search text, multiselect)
+        # are all filter widgets and must remount on Clear-all.
+        live["occ_codes"], live["scope"] = _occupation_picker(cfg, fk, lang)
 
         if cfg.fetch_mode == "search":
             b1, b2 = st.columns(2)
@@ -251,10 +279,9 @@ def render_sidebar(cfg) -> dict:
                 # the results render instead of the panel swallowing the run —
                 # the legacy Swedish page's behaviour.
                 st.session_state.pop(k("view"), None)
-            if b2.button("✕ " + i18n.t(cfg, "clear", lang),
-                         use_container_width=True, key=k("clear")):
-                st.session_state.pop(k("committed"), None)
-                st.session_state.pop(k("view"), None)
+            b2.button("✕ " + i18n.t(cfg, "clear", lang),
+                      use_container_width=True, key=k("clear"),
+                      on_click=_clear_all, args=(cfg.slug,))
 
     if cfg.fetch_mode == "search":
         committed = st.session_state.get(k("committed"))
