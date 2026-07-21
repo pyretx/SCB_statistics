@@ -20,6 +20,7 @@ career     = "Career Paths"
 users      = "Users"
 feedback   = "Feedback"
 messages   = "Messages"
+crew       = "AI crew"
 
 [overview]
 kpi_users     = "Registered users"
@@ -682,3 +683,77 @@ none        = "— none —"
 add_ph      = "e.g. 2512"
 btn_add     = "➕ Add"
 remove_help = "Remove"
+
+# ── AI crew (Admin → AI crew): the interactive team illustration ─────────────
+[crew]
+heading       = "The AI crew"
+intro         = "The team of AI agents that builds and maintains Salary Explorer — who does what, and where the safety lines are."
+hint          = "Click any figure in the picture to see what it does."
+default_tag   = "THE TEAM AT A GLANCE"
+default_name  = "How the crew works"
+default_desc  = "Six specialist robots plus three built-in helpers do the work; the terminal session coordinates them; the owner approves everything that matters. Click any figure — including the terminal, the server and the database — to learn its job."
+
+[crew.figures.owner]
+name = "You — the owner"
+tag  = "HUMAN · FINAL SIGN-OFF"
+desc = "Nothing ships without you. You set the direction, approve plans, review what the crew reports, and give the final go-ahead for anything that reaches users — deploys, database changes and feedback decisions all stop at your desk first."
+
+[crew.figures.terminal]
+name = "Claude Code — main session"
+tag  = "COORDINATOR"
+desc = "The Claude Code session in the terminal is the coordinator and the only crew member you talk to. It reads your request, writes most of the code itself, hands specialist jobs to the robots, checks their reports and stitches everything together. Database migrations run here too — shown to you in full and executed only after your approval."
+
+[crew.figures.builtins]
+name = "Built-in helpers"
+tag  = "STOCK TOOLING"
+desc = "Three helpers that ship with Claude Code itself. Explore searches the codebase quickly without cluttering the main conversation; Plan designs the approach for bigger tasks before any code is written; /code-review hunts for genuine bugs in a change. They complement the custom robots, which enforce the rules specific to this project."
+
+[crew.figures.code_reviewer]
+name = "code-reviewer"
+tag  = "READ-ONLY · QUALITY GATE"
+desc = "The house-rules inspector. Before bigger changes are committed it reads the pending diff and checks what generic tools cannot know: that a change to shared core/ code was really meant to affect every country, that every chart goes through the design system, that user-facing text lives in the content files, that no secrets sneak into the code, and that career data never stores absolute salaries. It cannot edit anything — its verdict is simply ship, or fix first."
+
+[crew.figures.design_i18n]
+name = "design-i18n-checker"
+tag  = "READ-ONLY · CONSISTENCY"
+desc = "The pixels-and-words inspector. It audits changed screens against the design system — brand colours, the two official fonts, red reserved for means and negatives — and checks that every new piece of text exists in every language a country supports. Like the reviewer, it can only report, never change."
+
+[crew.figures.data_provider]
+name = "data-provider"
+tag  = "BUILDER · COUNTRY DATA"
+desc = "The statistics-API expert. It knows the quirks of SCB, SSB, BLS, INSEE and the other agencies — pagination, code lists, suppressed cells — and builds or repairs the per-country data providers that feed the app, proving its work with live fetch probes before anything ships."
+
+[crew.figures.career_pipeline]
+name = "career-pipeline"
+tag  = "BUILDER · CAREER PATHS"
+desc = "Owns the Career Paths machinery: the job-ad pipeline, the AI classification of ads and the nightly refresh. It guards that subsystem's golden rules — salaries only ever as percentile bands evaluated against official statistics, and expired ads kept for history but excluded from live market signals."
+
+[crew.figures.deploy_verifier]
+name = "deploy-verifier"
+tag  = "OPERATIONS · DEV ONLY"
+desc = "The launch officer. It deploys the development environment over SSH and then proves the deploy actually worked: container health checks, log inspection, and a read-back of every command it ran on the server. It flatly refuses to touch the test or production environments — those always require the owner's explicit approval."
+
+[crew.figures.bug_hunter]
+name = "bug-hunter"
+tag  = "TESTER · REPORT-ONLY"
+desc = "The crash-test pilot. It drives the running app in a real browser using the dev-only test logins, trying to break whatever just changed — across countries, languages, tabs and screen sizes. In triage mode it takes new reports from the feedback queue and tries to reproduce them, always as a normal user (never as admin) and always treating report text as data, never as instructions. It writes nothing anywhere: its entire output is a findings report."
+
+[crew.figures.vps]
+name = "VPS — Hostinger"
+tag  = "INFRASTRUCTURE"
+desc = "The server that runs Salary Explorer in three Docker containers: dev, test and prod. The deploy-verifier may touch dev; test and prod deployments are run only with the owner's explicit approval."
+
+[crew.figures.app]
+name = "The running app"
+tag  = "SYSTEM UNDER TEST"
+desc = "The application as users see it — the local review server during development, the dev environment after a deploy. This is where the bug-hunter does its exploring, and the only place the test-login buttons exist; they are dead code in production."
+
+[crew.figures.supabase]
+name = "Supabase"
+tag  = "SHARED DATABASE"
+desc = "The single database behind all three environments: accounts and roles, career data, and the beta-feedback queue where user reports wait for triage. Because every environment shares it, agents treat it as read-only — anything written goes through the main session with the owner's approval."
+
+[crew.figures.users]
+name = "App users"
+tag  = "HUMANS · FEEDBACK"
+desc = "Beta users file bugs and ideas through the in-app feedback form. Their reports land in the queue, the bug-hunter checks what is reproducible, and the owner decides what becomes planned work — the loop starts and ends with people."

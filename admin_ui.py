@@ -2694,10 +2694,17 @@ def fam_lab_all(fams, fid):
     return fid or ""
 
 
+def crew_section():
+    """Admin → AI crew: interactive illustration of the AI agent team.
+    Lives in admin_crew.py (local import, like the other heavy sections)."""
+    import admin_crew
+    admin_crew.render()
+
+
 SECTIONS = {"overview": overview_section, "data": data_section,
             "compliance": compliance_section, "career": career_section,
             "users": users_section, "feedback": feedback_section,
-            "messages": qvistin_messages_section}
+            "messages": qvistin_messages_section, "crew": crew_section}
 
 
 def section_selector() -> str:
