@@ -507,9 +507,21 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
                           "color": rel_color.get(r["rel_type"], "#5B6472")})
     # ── Specialisation sub-clusters: family titles flagged with a sub_track are
     # collapsed into one card per group (and hidden from the graph above) so the
-    # promotion spine stays clean. The headline ad count is the DISTINCT ads at
-    # that SSYK+seniority (shared across members), taken as max — never a sum,
-    # which would multiply the same ads by the member count. ──
+    # promotion spine stays clean. Each member's ad count is the PER-TITLE count
+    # from cp_raw_title_map (ads whose normalised title matched that role) — NOT
+    # the SSYK+seniority bucket count, which is identical across every title at
+    # that level and would show e.g. "240 ads" six times. The group headline is
+    # then a real sum of distinct per-title counts. ──
+    try:
+        import careerpaths_v1 as _cpv1
+        _raw = _cpv1.raw_title_map()
+    except Exception:
+        _raw = []
+    _raw_by: dict[tuple, int] = {}
+    for _r in _raw:
+        _k = (str(_r.get("ssyk")), (_r.get("raw_title") or "").strip().lower())
+        _raw_by[_k] = _raw_by.get(_k, 0) + int(_r.get("ad_count") or 0)
+
     _groups: dict[str, list] = {}
     for t in titles:
         st_ = t.get("sub_track")
@@ -520,14 +532,19 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         exp = (ev.get("common_experience") or [])
         ym = exp[0].get("years_median") if exp else None
         edu = (ev.get("common_education") or [])
+        _ssyk = str(t["primary_ssyk"])
+        _names = {(t.get("name_en") or "").strip().lower()}
+        for _v in (t.get("raw_variants") or []):
+            _names.add((_v or "").strip().lower())
+        _rc = sum(_raw_by.get((_ssyk, nm), 0) for nm in _names if nm)
         _groups.setdefault(st_, []).append({
             "name": _tname(t, lang), "subcode": _subcode(t),
             "level": _level(t["level_label"], lang), "conf": _conf(cfg, lang, t["confidence"]),
-            "ssyk": str(t["primary_ssyk"]),
-            "same_ssyk": str(t["primary_ssyk"]) == str(primary),
+            "ssyk": _ssyk,
+            "same_ssyk": _ssyk == str(primary),
             "lo": round(b["lo_salary"]), "mid": round(b["mid_salary"]), "hi": round(b["hi_salary"]),
             "diff": (round(b["mid_salary"] - base_mid) if base_mid is not None else None),
-            "ad_count": int(ev.get("ad_count") or 0),
+            "ad_count": _rc,
             "skills": [s.get("skill") for s in (ev.get("common_skills") or [])[:8]],
             "education": (edu[0]["label"] if edu else None),
             "experience": (f"{ym}+ {yrs}" if ym is not None else None),
@@ -536,7 +553,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
     for label, members in _groups.items():
         members.sort(key=lambda m: -(m["mid"] or 0))
         subgroups.append({"label": label, "count": len(members),
-                          "ad_count": max((m["ad_count"] for m in members), default=0),
+                          "ad_count": sum(m["ad_count"] for m in members),
                           "members": members})
     subgroups.sort(key=lambda g: -(g["members"][0]["mid"] if g["members"] else 0))
 
