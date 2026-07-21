@@ -4,7 +4,8 @@
 #   git clone -b dev https://github.com/pyretx/SCB_statistics.git /srv/scb-dev
 #   cd /srv/scb-dev/deploy
 #   docker compose --env-file /root/.env -f docker-compose.scb-dev.yml up -d --build
-# URL: https://scb-dev.srv950186.hstgr.cloud
+# URL: https://dev.qvist.in
+# (the old https://scb-dev.srv950186.hstgr.cloud now 301-redirects to prod)
 
 name: scb-dev
 
@@ -29,11 +30,22 @@ services:
       - traefik
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.scb-dev.rule=Host(`scb-dev.${DOMAIN_NAME}`) || Host(`dev.qvist.in`)"
+      - "traefik.http.routers.scb-dev.rule=Host(`dev.qvist.in`)"
       - "traefik.http.routers.scb-dev.entrypoints=web,websecure"
       - "traefik.http.routers.scb-dev.tls=true"
       - "traefik.http.routers.scb-dev.tls.certresolver=mytlschallenge"
       - "traefik.http.services.scb-dev.loadbalancer.server.port=8501"
+      # Early beta users got the Hostinger hostname before the real domain
+      # existed. Permanently redirect it (path + query preserved) to prod.
+      # The dev environment itself stays reachable on dev.qvist.in only.
+      - "traefik.http.routers.scb-dev-moved.rule=Host(`scb-dev.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.scb-dev-moved.entrypoints=web,websecure"
+      - "traefik.http.routers.scb-dev-moved.tls=true"
+      - "traefik.http.routers.scb-dev-moved.tls.certresolver=mytlschallenge"
+      - "traefik.http.routers.scb-dev-moved.middlewares=scb-dev-moved-redirect"
+      - "traefik.http.middlewares.scb-dev-moved-redirect.redirectregex.regex=^https?://[^/]+/(.*)"
+      - "traefik.http.middlewares.scb-dev-moved-redirect.redirectregex.replacement=https://salaryexplorer.qvist.in/$${1}"
+      - "traefik.http.middlewares.scb-dev-moved-redirect.redirectregex.permanent=true"
 
 networks:
   traefik:
