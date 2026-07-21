@@ -790,7 +790,9 @@ def _play_video_dialog():
 # One player for either pitch video — the title follows whichever button opened it
 # (dynamic-title dialog: st.dialog(title)(fn)()).
 _vp = st.session_state.get("_video_play")
-if _vp:
+# The email-confirmation dialog outranks the video (never sacrifice a pending
+# confirm token); the auth/profile flags are popped by the video buttons.
+if _vp and not st.session_state.get("_confirm_token"):
     st.dialog(_vp.get("label") or "Video", width="large")(_play_video_dialog)()
 
 st.divider()
@@ -853,6 +855,12 @@ with hc1:
         with st.container(key="hero_vids"):
             for v, k in _vids:
                 if st.button(v.get("label", "Watch"), key=k):
+                    # Latest click wins: dismissing the auth/profile dialog by
+                    # clicking OUTSIDE it leaves its open-flag set (only the
+                    # in-dialog close paths clear it), and Streamlit raises if
+                    # two dialogs open in one run — so drop those flags here.
+                    st.session_state.pop("_show_auth", None)
+                    st.session_state.pop("_show_profile", None)
                     st.session_state["_video_play"] = {"file": v["file"], "label": v.get("label", "")}
                     st.rerun()
     st.markdown(f"""
