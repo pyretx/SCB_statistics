@@ -209,6 +209,18 @@ _MAP_TEMPLATE = r"""
  .cplevels button:hover { border-color:#0A63A6; }
  .cplevels button.on { background:#0A63A6; color:#fff; border-color:#0A63A6; }
  .dhint { font-size:13px; color:#5B6472; }
+ .cpsub-card { position:absolute; width:230px; background:#fff; border:1px dashed #C7CCD4; border-radius:14px;
+   padding:9px 13px; z-index:2; box-shadow:0 1px 2px rgba(16,21,31,.04); }
+ .cpsub-card .sh { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; cursor:pointer; }
+ .cpsub-title { font-weight:700; font-size:12.5px; color:#26303C; line-height:1.25; }
+ .cpsub-meta { font-family:'JetBrains Mono',monospace; font-size:10px; color:#98A0AC; margin-top:3px; }
+ .cpsub-chev { color:#98A0AC; font-size:12px; flex:0 0 auto; }
+ .cpsub-members { margin-top:8px; border-top:1px solid #EEF0F3; padding-top:5px; }
+ .cpsub-member { display:flex; justify-content:space-between; gap:8px; padding:4px 6px; border-radius:8px;
+   font-size:12px; cursor:pointer; }
+ .cpsub-member:hover { background:#F4F7FA; }
+ .cpsub-member.active { background:rgba(10,99,166,.10); }
+ .cpsub-member .mm-ads { font-family:'JetBrains Mono',monospace; font-size:10px; color:#98A0AC; flex:0 0 auto; }
 </style>
 <div class="cpwrap">
   <div class="cpeyebrow" id="cpeyebrow"></div>
@@ -242,6 +254,10 @@ const titleEl = document.getElementById('cptitle');
 const levelsEl = document.getElementById('cplevels');
 const detailEl = document.getElementById('cpdetail');
 const NODEW = 214;
+const SUBGROUPS = D.subgroups || [];
+const subCardEls = [];
+let memberFocus = null;
+const expanded = {};
 
 const center0 = document.createElement('div');
 center0.className = 'cpcenter';
@@ -274,7 +290,35 @@ function drawCenter(){
   center0.innerHTML = `<div class="lbl">${esc(L.you_here)}</div><div class="cname">${esc(OCC.name)}</div>`
     + (OCC.lo!=null? `<div class="crange">${money(OCC.lo)}–${money(OCC.hi)}</div>`:'');
 }
-function markActive(){ Object.entries(nodeEls).forEach(([id,el])=> el.classList.toggle('active', id===focus)); }
+function markActive(){ Object.entries(nodeEls).forEach(([id,el])=> el.classList.toggle('active', id===focus));
+  subCardEls.forEach(card=> card.querySelectorAll('.cpsub-member').forEach(mel=>{
+    const m = SUBGROUPS[+mel.dataset.gi].members[+mel.dataset.mi];
+    mel.classList.toggle('active', !!memberFocus && memberFocus.name===m.name && String(memberFocus.mid)===String(m.mid));
+  })); }
+function buildSubCards(){
+  subCardEls.forEach(e=>e.remove()); subCardEls.length=0;
+  SUBGROUPS.forEach((g, gi)=>{
+    const card = document.createElement('div');
+    card.className='cpsub-card';
+    let body='';
+    if(expanded[gi]){
+      body = '<div class="cpsub-members">' + g.members.map((m,mi)=>
+        `<div class="cpsub-member" data-gi="${gi}" data-mi="${mi}"><span>${esc(m.name)}</span>`
+        + `<span class="mm-ads">${m.diff!=null?diffStr(m.diff)+' · ':''}${m.ad_count} ${esc(L.ads)}</span></div>`).join('') + '</div>';
+    }
+    card.innerHTML = `<div class="sh"><div><div class="cpsub-title">${esc(g.label)}</div>`
+      + `<div class="cpsub-meta">${g.count} ${esc(L.sub_roles)} · ${g.ad_count} ${esc(L.ads)}</div></div>`
+      + `<span class="cpsub-chev">${expanded[gi]?'▾':'▸'}</span></div>` + body;
+    card.querySelector('.sh').onclick = ev=>{ ev.stopPropagation(); expanded[gi]=!expanded[gi]; buildSubCards(); layoutNodes(); drawWires(); markActive(); };
+    card.querySelectorAll('.cpsub-member').forEach(mel=>{
+      mel.onclick = ev=>{ ev.stopPropagation();
+        const m = SUBGROUPS[+mel.dataset.gi].members[+mel.dataset.mi];
+        memberFocus = Object.assign({}, m, {rel:null, gaps:[], color:'#5B6472'});
+        focus=null; focusPath=null; renderDetail(); drawWires(); markActive(); };
+    });
+    canvas.appendChild(card); subCardEls.push(card);
+  });
+}
 function createNode(n){
   const d = document.createElement('div');
   d.className='cpnode'; d.dataset.id=n.id; d.dataset.rel=n.rel||'';
@@ -284,7 +328,7 @@ function createNode(n){
     + (n.diff!=null? `<span class="ndiff" style="color:${n.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(n.diff)}</span>`:'')
     + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'')
     + `</div>`;
-  d.onclick = ()=>{ focus=n.id; focusPath=pathTo(n.id); renderDetail(); drawWires(); markActive(); };
+  d.onclick = ()=>{ memberFocus=null; focus=n.id; focusPath=pathTo(n.id); renderDetail(); drawWires(); markActive(); };
   d.onmouseenter = ()=>{ hoverPath=pathTo(n.id); drawWires(); };
   d.onmouseleave = ()=>{ hoverPath=null; drawWires(); };
   canvas.appendChild(d); nodeEls[n.id]=d;
@@ -310,7 +354,11 @@ function layoutNodes(){
   });
   let maxCount = 1; layersSorted.forEach(Lr=> maxCount=Math.max(maxCount, byL[Lr].length));
   const rowH = 84;   // fixed row pitch > pill height → generous gaps, no overlap
-  const mapH = Math.max(maxCount*rowH + 16, 200);
+  const centerH = center0.offsetHeight;
+  let cardsBlockH = 0;
+  subCardEls.forEach(el=> cardsBlockH += el.offsetHeight + 10);
+  const leftH = centerH + (cardsBlockH ? 14 + cardsBlockH : 0);
+  const mapH = Math.max(maxCount*rowH + 16, 200, leftH + 20);
   const contentW = x0 + (sel-1)*colStep + NODEW + 26;
   canvas.style.width = Math.max(contentW, availW) + 'px';
   canvas.style.height = mapH + 'px';
@@ -323,6 +371,11 @@ function layoutNodes(){
       el.style.top = (startY + idx*rowH - el.offsetHeight/2) + 'px';
     });
   });
+  // centre the (occupation + sub-cluster cards) block vertically in the left column
+  const leftTop = Math.max(12, (mapH - leftH)/2);
+  center0.style.top = leftTop + 'px'; center0.style.transform = 'none';
+  let cy = leftTop + centerH + 14;
+  subCardEls.forEach(el=>{ el.style.left = '16px'; el.style.top = cy + 'px'; cy += el.offsetHeight + 10; });
 }
 function drawWires(){
   const cr0 = canvas.getBoundingClientRect();
@@ -344,6 +397,15 @@ function drawWires(){
     p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
       + `stroke="${e.color}" stroke-width="${on?3:1.4}" stroke-opacity="${on?0.95:0.28}"${dash}/>`;
   });
+  if(subCardEls.length){
+    const cb = center0.getBoundingClientRect();
+    const bx = cb.left - cr0.left + 22, by = cb.bottom - cr0.top;
+    subCardEls.forEach(el=>{
+      const rb = el.getBoundingClientRect();
+      const tx = rb.left - cr0.left + 22, ty = rb.top - cr0.top, my=(by+ty)/2;
+      p += `<path d="M ${bx} ${by} C ${bx} ${my}, ${tx} ${my}, ${tx} ${ty}" fill="none" stroke="#C7CCD4" stroke-width="1.4" stroke-dasharray="4 5" stroke-opacity="0.9"/>`;
+    });
+  }
   const w = canvas.offsetWidth, h = canvas.offsetHeight;
   svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
   svg.setAttribute('width',w); svg.setAttribute('height',h); svg.innerHTML=p;
@@ -354,13 +416,14 @@ function render(){
   drawCenter();
   canvas.querySelectorAll('.cpnode').forEach(x=>x.remove()); nodeEls={};
   shownIds().forEach(id=> createNode(nodeObj(id)));
+  buildSubCards();
   layoutNodes();
   if(focus!==null && !nodeEls[focus]){ focus=null; focusPath=null; }
   drawWires(); markActive(); renderDetail();
 }
 function renderDetail(){
-  if(focus===null){ detailEl.innerHTML = `<div class="dhint">${esc(L.pick)}</div>`; return; }
-  const d = nodeObj(focus);
+  const d = memberFocus ? memberFocus : (focus!==null ? nodeObj(focus) : null);
+  if(!d){ detailEl.innerHTML = `<div class="dhint">${esc(L.pick)}</div>`; return; }
   const skills=(d.skills||[]).filter(Boolean).slice(0,8).map(s=>`<span class="chip" style="background:rgba(192,69,58,.08);color:#C0453A">${esc(s)}</span>`).join('');
   const gaps=(d.gaps||[]).filter(Boolean).map(s=>`<span class="chip" style="background:rgba(10,99,166,.08);color:#0A63A6">${esc(s)}</span>`).join('');
   let ads = d.ad_count ? (`<div class="mtiles">`
@@ -420,6 +483,8 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         b = t.get("_band")
         if not b:
             continue
+        if t.get("sub_track"):
+            continue  # rendered as a sub-cluster card below, not a graph node
         ev = evidence.get(t["title_id"]) or {}
         exp = (ev.get("common_experience") or [])
         ym = exp[0].get("years_median") if exp else None
@@ -440,6 +505,41 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
             edges.append({"from": r["from_title"], "to": r["to_title"], "rel": r["rel_type"],
                           "same_ssyk": bool(r.get("same_ssyk")), "gaps": (r.get("skill_gaps") or [])[:4],
                           "color": rel_color.get(r["rel_type"], "#5B6472")})
+    # ── Specialisation sub-clusters: family titles flagged with a sub_track are
+    # collapsed into one card per group (and hidden from the graph above) so the
+    # promotion spine stays clean. The headline ad count is the DISTINCT ads at
+    # that SSYK+seniority (shared across members), taken as max — never a sum,
+    # which would multiply the same ads by the member count. ──
+    _groups: dict[str, list] = {}
+    for t in titles:
+        st_ = t.get("sub_track")
+        b = t.get("_band")
+        if not st_ or not b:
+            continue
+        ev = evidence.get(t["title_id"]) or {}
+        exp = (ev.get("common_experience") or [])
+        ym = exp[0].get("years_median") if exp else None
+        edu = (ev.get("common_education") or [])
+        _groups.setdefault(st_, []).append({
+            "name": _tname(t, lang), "subcode": _subcode(t),
+            "level": _level(t["level_label"], lang), "conf": _conf(cfg, lang, t["confidence"]),
+            "ssyk": str(t["primary_ssyk"]),
+            "same_ssyk": str(t["primary_ssyk"]) == str(primary),
+            "lo": round(b["lo_salary"]), "mid": round(b["mid_salary"]), "hi": round(b["hi_salary"]),
+            "diff": (round(b["mid_salary"] - base_mid) if base_mid is not None else None),
+            "ad_count": int(ev.get("ad_count") or 0),
+            "skills": [s.get("skill") for s in (ev.get("common_skills") or [])[:8]],
+            "education": (edu[0]["label"] if edu else None),
+            "experience": (f"{ym}+ {yrs}" if ym is not None else None),
+        })
+    subgroups = []
+    for label, members in _groups.items():
+        members.sort(key=lambda m: -(m["mid"] or 0))
+        subgroups.append({"label": label, "count": len(members),
+                          "ad_count": max((m["ad_count"] for m in members), default=0),
+                          "members": members})
+    subgroups.sort(key=lambda g: -(g["members"][0]["mid"] if g["members"] else 0))
+
     from_ids = [t["title_id"] for t in titles
                 if str(t["primary_ssyk"]) == primary and t["title_id"] in roles]
 
@@ -499,6 +599,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
                        "lo": (round(c_lo) if c_lo else None), "hi": (round(c_hi) if c_hi else None)},
         "roles": roles, "edges": edges, "legend": legend, "rellabels": _leg_lbl,
         "layer": layer, "parent": parent, "center_ids": center_ids, "max_layer": max_layer,
+        "subgroups": subgroups,
         "labels": {
             "eyebrow": "CAREER PATHS · " + i18n.t(cfg, "cp_map_h", lang, "Where can this role lead?").upper(),
             "title": i18n.t(cfg, "cp_map_from", lang, "Paths from {r}"),
@@ -507,6 +608,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
             "you_here": i18n.t(cfg, "cp_you_here", lang, "YOU ARE HERE"),
             "levels_lbl": i18n.t(cfg, "cp_map_levels", lang, "Steps to show:"),
             "ads": i18n.t(cfg, "cp_ads", lang, "ads"),
+            "sub_roles": i18n.t(cfg, "cp_sub_roles", lang, "roles"),
             "range": i18n.t(cfg, "cp_ms_range", lang, "Estimated range"),
             "vs": i18n.t(cfg, "cp_vs", lang, "vs occupation median (indicative)"),
             "gaps": i18n.t(cfg, "cp_gaps", lang, "Typical gaps to close"),
@@ -523,7 +625,8 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         },
     }
     html = _MAP_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
-    map_h = max(max_layer_width * 84 + 30, 200)
+    _sub_h = (70 + 58 * len(subgroups) + 20) if subgroups else 0
+    map_h = max(max_layer_width * 84 + 30, 200, _sub_h)
     components.html(html, height=150 + map_h + 320, scrolling=True)
 
 
