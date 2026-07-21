@@ -48,6 +48,7 @@ _pages = [
     st.Page("methodology.py",  title="Data sources & methodology", url_path="methodology"),
     st.Page("about.py",        title="About Salary Explorer", url_path="about"),
     st.Page("disclaimers.py",  title="Disclaimers & terms", url_path="disclaimers"),
+    st.Page("terms.py",        title="Terms & Privacy Policy", url_path="terms"),
     st.Page("plans.py",        title="What you get", url_path="access"),
     # Legacy builds (SE_OLD / FR_OLD) — admin-only, reachable from the Admin
     # panel. The public Sweden/France pages are the framework builds below

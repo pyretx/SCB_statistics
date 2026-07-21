@@ -25,6 +25,7 @@ _PAGES = {
     "about": ("about.py", "about"),
     "plans": ("plans.py", "plans"),
     "disclaimers": ("disclaimers.py", "disclaimers"),
+    "terms": ("terms.py", "terms"),
 }
 
 
@@ -133,11 +134,12 @@ def top(active: str):
         # on one line — a too-narrow column made "Home" truncate to "H").
         st.markdown("<style>[data-testid='stPageLink'] a p{white-space:nowrap;}</style>",
                     unsafe_allow_html=True)
-        cols = st.columns([0.1, 1.1, 1.5, 1.0, 1.0, 1.4])
+        cols = st.columns([0.1, 1.0, 1.5, 1.0, 1.0, 1.3, 1.0])
         cols[1].page_link("landing.py", label=N["home"], icon=":material/home:")
         cols[2].page_link("methodology.py", label=N.get("methodology_short", N["methodology"]))
         cols[3].page_link("about.py", label=N.get("about_short", N["about"]))
         cols[4].page_link("plans.py", label=N.get("plans_short", N.get("plans", "What you get")))
         cols[5].page_link("disclaimers.py", label=N.get("disclaimers_short", N["disclaimers"]))
+        cols[6].page_link("terms.py", label=N.get("terms_short", N.get("terms", "Terms")))
     st.markdown('<div style="height:1px;background:#E7E9ED;margin:14px 0 22px;"></div>',
                 unsafe_allow_html=True)

@@ -423,6 +423,11 @@ def _auth_dialog():
                                   placeholder=_f["email_ph"])
             pw = st.text_input(_f["password_label"], key="_auth_pw", type="password",
                                placeholder=_f["password_ph"])
+            # Terms acceptance is required to create an account (clickwrap).
+            # Inside the form so it commits together with the fields; the
+            # linked terms/privacy caption below the form carries the links.
+            _accepted = (st.checkbox(_f["accept_label"], key="_su_terms")
+                         if _is_create else True)
             _submitted = st.form_submit_button(
                 _f["create_button"] if _is_create else _f["sign_in_button"],
                 type="primary", use_container_width=True)
@@ -446,6 +451,8 @@ def _auth_dialog():
         elif _submitted and _is_create:
             if not name.strip() or not email.strip() or not pw:
                 st.error(_m["missing_fields"])
+            elif not _accepted:
+                st.error(_m["terms_required"])
             else:
                 # sign_up stores the account in Supabase as a *standard* user
                 # (the public client can't set app_metadata.role, so no
@@ -453,8 +460,11 @@ def _auth_dialog():
                 # the confirmation-email link back here with ?confirmed=1.
                 _base = _app_base_url()
                 _redir = f"{_base}/?confirmed=1" if _base else None
+                # Record WHICH terms version was accepted (content/terms.toml
+                # [meta]) — stored in user_metadata for provable acceptance.
+                _tv = content.load("terms").get("meta", {}).get("version", "")
                 user, err = auth.sign_up(email.strip(), pw, name.strip(),
-                                         redirect_to=_redir)
+                                         redirect_to=_redir, terms_version=_tv)
                 if not user:
                     st.error(_m["create_failed"].format(err=err))
                 else:
@@ -510,7 +520,7 @@ def _auth_dialog():
         # so people can see what a free account unlocks before signing up.
         if _is_create and _f.get("whats_included"):
             st.page_link("plans.py", label=_f["whats_included"])
-        st.caption(_f["terms"])
+        st.caption(_f["terms"], unsafe_allow_html=True)
         if st.button(_f["close"], key="_auth_close"):
             st.session_state["_show_auth"] = False
             st.session_state.pop("_resend_for", None)
@@ -1121,5 +1131,6 @@ with _ft_r:
             st.page_link("about.py", label=_AB["about"])
             st.page_link("plans.py", label=_AB.get("plans", "What you get"))
             st.page_link("disclaimers.py", label=_AB["disclaimers"])
+            st.page_link("terms.py", label=_AB.get("terms", "Terms & Privacy Policy"))
     except Exception as _e:  # never let the footer break the landing
         print(f"[landing] About nav unavailable: {_e}")

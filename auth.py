@@ -293,7 +293,8 @@ def resend_confirmation(email: str, redirect_to: str | None = None):
         return str(e)
 
 
-def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | None = None):
+def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | None = None,
+            terms_version: str | None = None):
     """Public self-service registration (uses the anon/public client, not the
     admin API). New accounts default to role 'standard' (no app_metadata is
     set here — only the service-role client may set it). Depends on the
@@ -305,11 +306,19 @@ def sign_up(email: str, password: str, full_name: str = "", redirect_to: str | N
     the app URL with a marker like ``…/?confirmed=1`` so the app can greet the
     user. Returns (user_dict_or_None, error_str_or_None).
 
-    The name is REQUIRED and stored in Supabase user_metadata.full_name."""
+    The name is REQUIRED and stored in Supabase user_metadata.full_name.
+    ``terms_version`` (content/terms.toml [meta] version, passed by the
+    create-account dialog after its required checkbox) is recorded in
+    user_metadata so acceptance is provable and re-promptable on change."""
     if not (full_name or "").strip():
         return None, "Name is required."
     try:
-        options: dict = {"data": {"full_name": full_name.strip()}}
+        data: dict = {"full_name": full_name.strip()}
+        if terms_version:
+            from datetime import datetime, timezone
+            data["accepted_terms_version"] = terms_version
+            data["accepted_terms_at"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        options: dict = {"data": data}
         if redirect_to:
             options["email_redirect_to"] = redirect_to
         res = _client(service=False).auth.sign_up({
