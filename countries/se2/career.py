@@ -801,8 +801,8 @@ def _render_market_signal_section(cfg, lang, titles, evidence, primary):
     """Bottom-of-page 'Live market signal' — tiled (app card style) with a regional
     slicer on the example ads. Per-role signal is aggregated from the ads whose
     normalised title actually matches that role (see _market_from_ads), so the
-    count and example ads are role-specific. Roles are grouped in the picker by
-    their specialisation cluster."""
+    count and example ads are role-specific. A segmented-control pills row
+    scopes the role dropdown to one specialisation cluster at a time."""
     from collections import Counter, defaultdict
     import careerpaths_v1 as cpv1
 
@@ -822,33 +822,43 @@ def _render_market_signal_section(cfg, lang, titles, evidence, primary):
                       "public ads (Arbetsförmedlingen / JobTech, CC BY-SA) — indicative, not official, "
                       "and it does not change the SCB salary figures above."))
 
-    # Picker order: standalone roles first (by ad volume), then each
-    # specialisation cluster together so its sub-roles read as a group.
+    # ── Group scoping: a pills row (the app's segmented-control style) narrows
+    # the role dropdown to one cluster at a time, so option labels are just
+    # "Role · N ads" — no category prefixes, no internal subcodes. "Main roles"
+    # = the ungrouped spine; each sub_track cluster gets its own pill. Families
+    # without clusters render no pills row at all. ──
     _n = lambda t: mkt[t["title_id"]]["ad_count"]
     ungrouped = sorted([t for t in ev_titles if not t.get("sub_track")], key=lambda t: -_n(t))
     cats: dict = defaultdict(list)
     for t in ev_titles:
         if t.get("sub_track"):
             cats[t["sub_track"]].append(t)
-    ev_titles = list(ungrouped)
+    groups = []
+    if ungrouped:
+        groups.append((i18n.t(cfg, "cp_ms_main", lang, "Main roles"), ungrouped))
     for c in sorted(cats, key=lambda c: -max(_n(x) for x in cats[c])):
-        ev_titles += sorted(cats[c], key=lambda t: -_n(t))
+        groups.append((c, sorted(cats[c], key=lambda t: -_n(t))))
+    by_pill = {f"{lbl} · {len(ts)}": ts for lbl, ts in groups}
+    pills = list(by_pill)
+    if len(pills) > 1:
+        pick = st.segmented_control(
+            i18n.t(cfg, "cp_ms_grp", lang, "Role group"), pills, default=pills[0],
+            key=f"{cfg.slug}_cp_ms_grp", label_visibility="collapsed")
+        pick = pick if pick in by_pill else pills[0]   # deselect → back to default
+    else:
+        pick = pills[0]
+    scoped = by_pill[pick]
 
-    default_i = next((i for i, t in enumerate(ev_titles)
+    default_i = next((i for i, t in enumerate(scoped)
                       if str(t.get("primary_ssyk")) == primary and not t.get("sub_track")), 0)
-
-    def _opt_label(i):
-        tt = ev_titles[i]
-        pre = (tt["sub_track"] + " › ") if tt.get("sub_track") else ""
-        sc = (_subcode(tt) + " · ") if _subcode(tt) else ""
-        return (pre + sc + _tname(tt, lang)
-                + f"  ({mkt[tt['title_id']]['ad_count']} " + i18n.t(cfg, "cp_ads", lang, "ads") + ")")
-
+    ads_word = i18n.t(cfg, "cp_ads", lang, "ads")
     c_role, c_reg = st.columns([2, 1])
+    # per-group widget key → each pill remembers its own role selection
     sel_i = c_role.selectbox(
-        i18n.t(cfg, "cp_ms_role", lang, "Show role"), list(range(len(ev_titles))), index=default_i,
-        format_func=_opt_label, key=f"{cfg.slug}_cp_ms_role")
-    t = ev_titles[sel_i]
+        i18n.t(cfg, "cp_ms_role", lang, "Show role"), list(range(len(scoped))), index=default_i,
+        format_func=lambda i: f"{_tname(scoped[i], lang)} · {_n(scoped[i])} {ads_word}",
+        key=f"{cfg.slug}_cp_ms_role_{pick}")
+    t = scoped[sel_i]
     e = mkt[t["title_id"]]
     # Show only still-open ads: once the application deadline passes the
     # Platsbanken link dies, so we hide the ad from users (it stays in our own
@@ -927,6 +937,60 @@ def _render_market_signal_section(cfg, lang, titles, evidence, primary):
     st.markdown(_chip_card(label, body), unsafe_allow_html=True)
     st.caption(i18n.t(cfg, "cp_ms_expire", lang,
                       "Links open the ad on Platsbanken and expire after the application deadline."))
+
+
+def quick_access(cfg, lang, query):
+    """Quick access to a career path (empty landing + the tab's empty states):
+    pick a published career family, then jump straight into its map via the
+    standard confirm dialog — pre-seeded with the family's core SSYK (changeable,
+    but limited to the family so the landing occupation is always covered), all
+    sectors and both genders. Beta-gated exactly like the tab itself."""
+    import careerpaths as cp
+    from collections import Counter
+    from core import access, panels
+    if not access.is_beta_or_admin(cfg):
+        return
+    titles = cp.public_titles()
+    fam_ids = sorted({t.get("family_id") for t in titles if t.get("family_id")})
+    if not fam_ids:
+        return
+    names = cp.family_names()
+
+    def fname(fid):
+        r = names.get(fid, {})
+        return ((r.get("sv") or r.get("en") or fid) if lang == "SV"
+                else (r.get("en") or r.get("sv") or fid))
+
+    st.markdown(
+        '<div style="margin:2px 0 4px;">'
+        '<span style="font-family:\'JetBrains Mono\',monospace;font-size:10.5px;font-weight:600;'
+        'letter-spacing:.06em;color:#B26A00;background:rgba(178,106,0,.13);padding:2px 8px;'
+        'border-radius:5px;">CAREER PATHS · BETA</span></div>', unsafe_allow_html=True)
+    st.subheader(i18n.t(cfg, "cpqa_h", lang, "Quick access to a career path"))
+    st.caption(i18n.t(cfg, "cpqa_cap", lang,
+                      "Pick a career family and jump straight into its career map — "
+                      "we suggest a typical occupation (changeable), across all "
+                      "sectors and both genders."))
+    c1, c2 = st.columns([2.2, 1], vertical_alignment="bottom")
+    fam = c1.selectbox(i18n.t(cfg, "cpqa_family", lang, "Career path"), fam_ids,
+                       format_func=fname, key=f"{cfg.slug}_cpqa_fam")
+    if c2.button(i18n.t(cfg, "cpqa_btn", lang, "Explore career path"), type="primary",
+                 use_container_width=True, key=f"{cfg.slug}_cpqa_go"):
+        counts = Counter(str(t["primary_ssyk"]) for t in titles
+                         if t.get("family_id") == fam and t.get("primary_ssyk"))
+        if not counts:
+            return
+        try:
+            occ_names = cfg.provider.occupations(lang) or {}
+        except Exception:
+            occ_names = {}
+        options = {c: occ_names.get(c, c) for c in sorted(counts)}
+        suggested = counts.most_common(1)[0][0]     # the family's core SSYK
+        caps = cfg.capabilities
+        qa_query = {**query, "sector": (caps.sectors[0] if caps.sectors else ""),
+                    "sex": "total"}                 # all sectors + both genders
+        panels.open_confirm(cfg, lang, qa_query, suggested, options[suggested],
+                            occ_options=options, target_tab="career")
 
 
 def render(cfg, stats, query):
