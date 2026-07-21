@@ -8,13 +8,20 @@ ALTER TABLE cp_title ADD COLUMN IF NOT EXISTS sub_track text;
 COMMENT ON COLUMN cp_title.sub_track IS
   'Specialisation grouping label. When set, the title renders as a member of a collapsed sub-cluster card in the career map instead of as a graph node.';
 
--- 2. Expose sub_track through the public view the app reads (column appended
---    last so CREATE OR REPLACE stays valid).
+-- 1b. Optional anchor: the spine title_id a specialisation group hangs off in
+--     the career map. NULL = the entry occupation (centre node). Lets a cluster
+--     branch from a downstream rung (e.g. senior recruitment under HR BP).
+ALTER TABLE cp_title ADD COLUMN IF NOT EXISTS sub_track_anchor text;
+COMMENT ON COLUMN cp_title.sub_track_anchor IS
+  'Optional spine title_id this specialisation group hangs off in the career map. NULL = the entry occupation (centre node).';
+
+-- 2. Expose both columns through the public view the app reads (appended last
+--    so CREATE OR REPLACE stays valid).
 CREATE OR REPLACE VIEW v_cp_title_public AS
  SELECT t.title_id, t.family_id, t.name_en, t.name_sv, t.primary_ssyk, t.alt_ssyk,
    t.track, t.level_index, t.level_label, t.lo_pct, t.mid_pct, t.hi_pct,
    t.confidence, t.evidence, t.review_status, t.published, t.raw_variants,
-   t.skills, t.notes, t.created_at, t.updated_at, t.sub_track
+   t.skills, t.notes, t.created_at, t.updated_at, t.sub_track, t.sub_track_anchor
  FROM cp_title t
    JOIN cp_family f ON f.family_id = t.family_id
  WHERE t.published = true AND f.published = true;

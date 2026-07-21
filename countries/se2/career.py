@@ -221,6 +221,12 @@ _MAP_TEMPLATE = r"""
  .cpsub-member:hover { background:#F4F7FA; }
  .cpsub-member.active { background:rgba(10,99,166,.10); }
  .cpsub-member .mm-ads { font-family:'JetBrains Mono',monospace; font-size:10px; color:#98A0AC; flex:0 0 auto; }
+ .cpcenter .cptoggle { margin-top:7px; font-family:'JetBrains Mono',monospace; font-size:10.5px;
+   letter-spacing:.03em; opacity:.95; cursor:pointer; display:inline-block; }
+ .cpcenter .cptoggle:hover { text-decoration:underline; }
+ .cpnode .ntoggle { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#0A63A6;
+   cursor:pointer; margin-left:auto; }
+ .cpnode .ntoggle:hover { text-decoration:underline; }
 </style>
 <div class="cpwrap">
   <div class="cpeyebrow" id="cpeyebrow"></div>
@@ -258,6 +264,12 @@ const SUBGROUPS = D.subgroups || [];
 const subCardEls = [];
 let memberFocus = null;
 const expanded = {};
+// specialisation groups keyed by the node they hang off ('center' or a title id)
+const GBYA = {};
+SUBGROUPS.forEach((g,gi)=>{ const a=g.anchor||'center'; (GBYA[a]=GBYA[a]||[]).push(gi); });
+const nodeOpen = {};   // which anchor nodes have revealed their group cards
+function anchorGroups(id){ return GBYA[id]||[]; }
+function toggleAnchor(id){ nodeOpen[id]=!nodeOpen[id]; buildSubCards(); layoutNodes(); drawWires(); markActive(); }
 
 const center0 = document.createElement('div');
 center0.className = 'cpcenter';
@@ -287,8 +299,12 @@ function nodeObj(id){ const r=R[id], e=edgeInto[id]||{};
     ad_count:r.ad_count, skills:r.skills, education:r.education, experience:r.experience,
     color:e.color||'#5B6472', rel:e.rel, gaps:e.gaps||[], same_ssyk:e.same_ssyk}; }
 function drawCenter(){
+  const gs = anchorGroups('center');
   center0.innerHTML = `<div class="lbl">${esc(L.you_here)}</div><div class="cname">${esc(OCC.name)}</div>`
-    + (OCC.lo!=null? `<div class="crange">${money(OCC.lo)}–${money(OCC.hi)}</div>`:'');
+    + (OCC.lo!=null? `<div class="crange">${money(OCC.lo)}–${money(OCC.hi)}</div>`:'')
+    + (gs.length? `<div class="cptoggle">${nodeOpen['center']?'▾':'▸'} ${gs.length} ${esc(L.specialisations)}</div>`:'');
+  const tg = center0.querySelector('.cptoggle');
+  if(tg) tg.onclick = ev=>{ ev.stopPropagation(); toggleAnchor('center'); };
 }
 function markActive(){ Object.entries(nodeEls).forEach(([id,el])=> el.classList.toggle('active', id===focus));
   subCardEls.forEach(card=> card.querySelectorAll('.cpsub-member').forEach(mel=>{
@@ -297,40 +313,50 @@ function markActive(){ Object.entries(nodeEls).forEach(([id,el])=> el.classList.
   })); }
 function buildSubCards(){
   subCardEls.forEach(e=>e.remove()); subCardEls.length=0;
-  SUBGROUPS.forEach((g, gi)=>{
-    const card = document.createElement('div');
-    card.className='cpsub-card';
-    let body='';
-    if(expanded[gi]){
-      body = '<div class="cpsub-members">' + g.members.map((m,mi)=>
-        `<div class="cpsub-member" data-gi="${gi}" data-mi="${mi}"><span>${esc(m.name)}</span>`
-        + `<span class="mm-ads">${m.diff!=null?diffStr(m.diff)+' · ':''}${m.ad_count} ${esc(L.ads)}</span></div>`).join('') + '</div>';
-    }
-    card.innerHTML = `<div class="sh"><div><div class="cpsub-title">${esc(g.label)}</div>`
-      + `<div class="cpsub-meta">${g.count} ${esc(L.sub_roles)} · ${g.ad_count} ${esc(L.ads)}</div></div>`
-      + `<span class="cpsub-chev">${expanded[gi]?'▾':'▸'}</span></div>` + body;
-    card.querySelector('.sh').onclick = ev=>{ ev.stopPropagation(); expanded[gi]=!expanded[gi]; buildSubCards(); layoutNodes(); drawWires(); markActive(); };
-    card.querySelectorAll('.cpsub-member').forEach(mel=>{
-      mel.onclick = ev=>{ ev.stopPropagation();
-        const m = SUBGROUPS[+mel.dataset.gi].members[+mel.dataset.mi];
-        memberFocus = Object.assign({}, m, {rel:null, gaps:[], color:'#5B6472'});
-        focus=null; focusPath=null; renderDetail(); drawWires(); markActive(); };
+  Object.keys(GBYA).forEach(anchor=>{
+    if(!nodeOpen[anchor]) return;                       // collapsed until its node is toggled
+    const host = anchor==='center'? center0 : nodeEls[anchor];
+    if(!host) return;                                   // anchor not currently on screen
+    GBYA[anchor].forEach(gi=>{
+      const g = SUBGROUPS[gi];
+      const card = document.createElement('div');
+      card.className='cpsub-card'; card._anchor = anchor;
+      let body='';
+      if(expanded[gi]){
+        body = '<div class="cpsub-members">' + g.members.map((m,mi)=>
+          `<div class="cpsub-member" data-gi="${gi}" data-mi="${mi}"><span>${esc(m.name)}</span>`
+          + `<span class="mm-ads">${m.diff!=null?diffStr(m.diff)+' · ':''}${m.ad_count} ${esc(L.ads)}</span></div>`).join('') + '</div>';
+      }
+      card.innerHTML = `<div class="sh"><div><div class="cpsub-title">${esc(g.label)}</div>`
+        + `<div class="cpsub-meta">${g.count} ${esc(L.sub_roles)} · ${g.ad_count} ${esc(L.ads)}</div></div>`
+        + `<span class="cpsub-chev">${expanded[gi]?'▾':'▸'}</span></div>` + body;
+      card.querySelector('.sh').onclick = ev=>{ ev.stopPropagation(); expanded[gi]=!expanded[gi]; buildSubCards(); layoutNodes(); drawWires(); markActive(); };
+      card.querySelectorAll('.cpsub-member').forEach(mel=>{
+        mel.onclick = ev=>{ ev.stopPropagation();
+          const m = SUBGROUPS[+mel.dataset.gi].members[+mel.dataset.mi];
+          memberFocus = Object.assign({}, m, {rel:null, gaps:[], color:'#5B6472'});
+          focus=null; focusPath=null; renderDetail(); drawWires(); markActive(); };
+      });
+      canvas.appendChild(card); subCardEls.push(card);
     });
-    canvas.appendChild(card); subCardEls.push(card);
   });
 }
 function createNode(n){
   const d = document.createElement('div');
   d.className='cpnode'; d.dataset.id=n.id; d.dataset.rel=n.rel||'';
+  const gs = anchorGroups(n.id);
   d.innerHTML = `<div class="nrow"><span class="cpdot" style="background:${n.color}"></span>`
     + `<span class="nname">${esc(n.name)}</span></div>`
     + `<div class="nmeta">`
     + (n.diff!=null? `<span class="ndiff" style="color:${n.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(n.diff)}</span>`:'')
     + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'')
+    + (gs.length? `<span class="ntoggle">${nodeOpen[n.id]?'▾':'▸'} ${gs.length}</span>`:'')
     + `</div>`;
   d.onclick = ()=>{ memberFocus=null; focus=n.id; focusPath=pathTo(n.id); renderDetail(); drawWires(); markActive(); };
   d.onmouseenter = ()=>{ hoverPath=pathTo(n.id); drawWires(); };
   d.onmouseleave = ()=>{ hoverPath=null; drawWires(); };
+  const tg = d.querySelector('.ntoggle');
+  if(tg) tg.onclick = ev=>{ ev.stopPropagation(); toggleAnchor(n.id); };
   canvas.appendChild(d); nodeEls[n.id]=d;
 }
 function layoutNodes(){
@@ -355,10 +381,15 @@ function layoutNodes(){
   let maxCount = 1; layersSorted.forEach(Lr=> maxCount=Math.max(maxCount, byL[Lr].length));
   const rowH = 84;   // fixed row pitch > pill height → generous gaps, no overlap
   const centerH = center0.offsetHeight;
-  let cardsBlockH = 0;
-  subCardEls.forEach(el=> cardsBlockH += el.offsetHeight + 10);
-  const leftH = centerH + (cardsBlockH ? 14 + cardsBlockH : 0);
-  const mapH = Math.max(maxCount*rowH + 16, 200, leftH + 20);
+  const cardsFor = a => subCardEls.filter(el=> el._anchor===a);
+  const blockH = els => els.reduce((h,el)=> h + el.offsetHeight + 10, 0);
+  const centerCards = cardsFor('center');
+  const leftH = centerH + (centerCards.length ? 14 + blockH(centerCards) : 0);
+  // a spine node with open cards makes its own column taller
+  let spineExtra = 0;
+  Object.keys(nodeOpen).forEach(a=>{ if(a!=='center' && nodeOpen[a] && nodeEls[a])
+    spineExtra = Math.max(spineExtra, 14 + blockH(cardsFor(a))); });
+  const mapH = Math.max(maxCount*rowH + 16, 200, leftH + 20, maxCount*rowH + 16 + spineExtra);
   const contentW = x0 + (sel-1)*colStep + NODEW + 26;
   canvas.style.width = Math.max(contentW, availW) + 'px';
   canvas.style.height = mapH + 'px';
@@ -371,11 +402,19 @@ function layoutNodes(){
       el.style.top = (startY + idx*rowH - el.offsetHeight/2) + 'px';
     });
   });
-  // centre the (occupation + sub-cluster cards) block vertically in the left column
+  // centre the (occupation + its open cards) block vertically in the left column
   const leftTop = Math.max(12, (mapH - leftH)/2);
   center0.style.top = leftTop + 'px'; center0.style.transform = 'none';
   let cy = leftTop + centerH + 14;
-  subCardEls.forEach(el=>{ el.style.left = '16px'; el.style.top = cy + 'px'; cy += el.offsetHeight + 10; });
+  centerCards.forEach(el=>{ el.style.left = '16px'; el.style.top = cy + 'px'; cy += el.offsetHeight + 10; });
+  // spine-anchored cards stack directly below their node
+  Object.keys(nodeOpen).forEach(a=>{
+    if(a==='center' || !nodeOpen[a]) return;
+    const host = nodeEls[a]; if(!host) return;
+    let y = host.offsetTop + host.offsetHeight + 12;
+    cardsFor(a).forEach(el=>{ el.style.left = host.offsetLeft + 'px'; el.style.width = NODEW + 'px';
+      el.style.top = y + 'px'; y += el.offsetHeight + 10; });
+  });
 }
 function drawWires(){
   const cr0 = canvas.getBoundingClientRect();
@@ -397,15 +436,15 @@ function drawWires(){
     p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
       + `stroke="${e.color}" stroke-width="${on?3:1.4}" stroke-opacity="${on?0.95:0.28}"${dash}/>`;
   });
-  if(subCardEls.length){
-    const cb = center0.getBoundingClientRect();
-    const bx = cb.left - cr0.left + 22, by = cb.bottom - cr0.top;
-    subCardEls.forEach(el=>{
-      const rb = el.getBoundingClientRect();
-      const tx = rb.left - cr0.left + 22, ty = rb.top - cr0.top, my=(by+ty)/2;
-      p += `<path d="M ${bx} ${by} C ${bx} ${my}, ${tx} ${my}, ${tx} ${ty}" fill="none" stroke="#C7CCD4" stroke-width="1.4" stroke-dasharray="4 5" stroke-opacity="0.9"/>`;
-    });
-  }
+  subCardEls.forEach(el=>{
+    const host = el._anchor==='center'? center0 : nodeEls[el._anchor];
+    if(!host) return;
+    const hb = host.getBoundingClientRect();
+    const bx = hb.left - cr0.left + 22, by = hb.bottom - cr0.top;
+    const rb = el.getBoundingClientRect();
+    const tx = rb.left - cr0.left + 22, ty = rb.top - cr0.top, my=(by+ty)/2;
+    p += `<path d="M ${bx} ${by} C ${bx} ${my}, ${tx} ${my}, ${tx} ${ty}" fill="none" stroke="#C7CCD4" stroke-width="1.4" stroke-dasharray="4 5" stroke-opacity="0.9"/>`;
+  });
   const w = canvas.offsetWidth, h = canvas.offsetHeight;
   svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
   svg.setAttribute('width',w); svg.setAttribute('height',h); svg.innerHTML=p;
@@ -522,7 +561,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         _k = (str(_r.get("ssyk")), (_r.get("raw_title") or "").strip().lower())
         _raw_by[_k] = _raw_by.get(_k, 0) + int(_r.get("ad_count") or 0)
 
-    _groups: dict[str, list] = {}
+    _groups: dict[str, dict] = {}
     for t in titles:
         st_ = t.get("sub_track")
         b = t.get("_band")
@@ -537,7 +576,12 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         for _v in (t.get("raw_variants") or []):
             _names.add((_v or "").strip().lower())
         _rc = sum(_raw_by.get((_ssyk, nm), 0) for nm in _names if nm)
-        _groups.setdefault(st_, []).append({
+        # A group hangs off a spine node (sub_track_anchor = its title_id) or, by
+        # default, off the entry occupation (the centre). An anchor that isn't a
+        # rendered graph node falls back to the centre.
+        _anchor = t.get("sub_track_anchor") or "center"
+        g = _groups.setdefault(st_, {"members": [], "anchor": _anchor})
+        g["members"].append({
             "name": _tname(t, lang), "subcode": _subcode(t),
             "level": _level(t["level_label"], lang), "conf": _conf(cfg, lang, t["confidence"]),
             "ssyk": _ssyk,
@@ -550,9 +594,10 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
             "experience": (f"{ym}+ {yrs}" if ym is not None else None),
         })
     subgroups = []
-    for label, members in _groups.items():
-        members.sort(key=lambda m: -(m["mid"] or 0))
-        subgroups.append({"label": label, "count": len(members),
+    for label, gd in _groups.items():
+        members = sorted(gd["members"], key=lambda m: -(m["mid"] or 0))
+        anchor = gd["anchor"] if gd["anchor"] in roles else "center"
+        subgroups.append({"label": label, "anchor": anchor, "count": len(members),
                           "ad_count": sum(m["ad_count"] for m in members),
                           "members": members})
     subgroups.sort(key=lambda g: -(g["members"][0]["mid"] if g["members"] else 0))
@@ -626,6 +671,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
             "levels_lbl": i18n.t(cfg, "cp_map_levels", lang, "Steps to show:"),
             "ads": i18n.t(cfg, "cp_ads", lang, "ads"),
             "sub_roles": i18n.t(cfg, "cp_sub_roles", lang, "roles"),
+            "specialisations": i18n.t(cfg, "cp_specialisations", lang, "specialisations"),
             "range": i18n.t(cfg, "cp_ms_range", lang, "Estimated range"),
             "vs": i18n.t(cfg, "cp_vs", lang, "vs occupation median (indicative)"),
             "gaps": i18n.t(cfg, "cp_gaps", lang, "Typical gaps to close"),
@@ -642,7 +688,10 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         },
     }
     html = _MAP_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
-    _sub_h = (70 + 58 * len(subgroups) + 20) if subgroups else 0
+    # Groups start collapsed; only reserve room for the centre's cards once its
+    # toggle opens (member-level expansion scrolls the map area if needed).
+    _center_groups = sum(1 for g in subgroups if g.get("anchor") == "center")
+    _sub_h = 56 * _center_groups + 20 if _center_groups else 0
     map_h = max(max_layer_width * 84 + 30, 200, _sub_h)
     components.html(html, height=150 + map_h + 320, scrolling=True)
 
