@@ -140,10 +140,10 @@ def render_country(cfg):
         # so the empty state is useful rather than blank.
         with view.container():
             states.prompt(i18n.t(cfg, "prompt_select", lang))
-            if cfg.landing_extra:
-                cfg.landing_extra(cfg, lang, query)
             if panels.browsable(cfg, lang):
                 panels.default_browser(cfg, lang, query)
+            if cfg.landing_extra:
+                cfg.landing_extra(cfg, lang, query)
         return
 
     with states.loading():
