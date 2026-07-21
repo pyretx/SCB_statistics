@@ -211,6 +211,13 @@ _CAREER_SV = {
     "cp_conf_strong": "Starkt underlag", "cp_conf_moderate": "Måttligt underlag",
     "cp_conf_limited": "Begränsat underlag", "cp_conf_experimental": "Experimentellt",
     "x_percentile": "Percentil",
+    # Quick access (landing + tab empty states)
+    "cpqa_h": "Snabbval till en karriärväg",
+    "cpqa_cap": "Välj en karriärfamilj och hoppa direkt in i dess karriärkarta — "
+                "vi föreslår ett typiskt yrke (kan ändras), över alla sektorer och "
+                "båda könen.",
+    "cpqa_family": "Karriärväg",
+    "cpqa_btn": "Utforska karriärväg",
 }
 
 _SECTOR_CODES = ("0", "1-3", "1", "2", "3", "4-5", "4", "5")
@@ -375,6 +382,8 @@ CONFIG = CountryConfig(
           "sex", "age", "education", "region", "import_overlay"),
     # Sweden-specific extra tabs. "career" is beta-gated (core/tabs._BETA_TABS).
     extra_tabs={"workpermit": workpermit.render, "career": career.render},
+    # Career-Paths quick access on the empty landing (beta-gated inside).
+    landing_extra=career.quick_access,
     access="public",                          # THE public Sweden page
     url_path="sweden",                        # serves /sweden (slug stays "se2")
     fetch_mode="search",

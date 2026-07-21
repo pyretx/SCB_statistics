@@ -946,7 +946,6 @@ def quick_access(cfg, lang, query):
     but limited to the family so the landing occupation is always covered), all
     sectors and both genders. Beta-gated exactly like the tab itself."""
     import careerpaths as cp
-    from collections import Counter
     from core import access, panels
     if not access.is_beta_or_admin(cfg):
         return
@@ -976,16 +975,22 @@ def quick_access(cfg, lang, query):
                        format_func=fname, key=f"{cfg.slug}_cpqa_fam")
     if c2.button(i18n.t(cfg, "cpqa_btn", lang, "Explore career path"), type="primary",
                  use_container_width=True, key=f"{cfg.slug}_cpqa_go"):
-        counts = Counter(str(t["primary_ssyk"]) for t in titles
-                         if t.get("family_id") == fam and t.get("primary_ssyk"))
-        if not counts:
+        ft = sorted([t for t in titles
+                     if t.get("family_id") == fam and t.get("primary_ssyk")],
+                    key=lambda t: t.get("level_index") or 0)
+        if not ft:
             return
         try:
             occ_names = cfg.provider.occupations(lang) or {}
         except Exception:
             occ_names = {}
-        options = {c: occ_names.get(c, c) for c in sorted(counts)}
-        suggested = counts.most_common(1)[0][0]     # the family's core SSYK
+        options = {c: occ_names.get(c, c)
+                   for c in sorted({str(t["primary_ssyk"]) for t in ft})}
+        # Suggested SSYK: the middle rung of the family's IC ladder — a
+        # mid-career "Professional" core occupation, not an entry/aide code
+        # (count-based picks land on aides: one SSYK holds many junior rungs).
+        core = [t for t in ft if t.get("track") == "ic"] or ft
+        suggested = str(core[len(core) // 2]["primary_ssyk"])
         caps = cfg.capabilities
         qa_query = {**query, "sector": (caps.sectors[0] if caps.sectors else ""),
                     "sex": "total"}                 # all sectors + both genders
@@ -1018,6 +1023,7 @@ def render(cfg, stats, query):
     occ_codes = tuple(str(c) for c in query.get("occ_codes", ()))
     if not occ_codes:
         st.info(i18n.t(cfg, "cp_pick", lang, "Select an occupation in the sidebar to see its career paths."))
+        quick_access(cfg, lang, query)           # one-click way in, not a dead end
         return
     primary = occ_codes[0]
     fam = cp.family_for_ssyk(primary)
@@ -1031,6 +1037,7 @@ def render(cfg, stats, query):
                        "Career Paths currently covers {n} professional families: {list}. "
                        "Open an occupation in one of those to explore its career map.")
                 .format(n=len(_covered), list=", ".join(_covered)))
+        quick_access(cfg, lang, query)           # one-click way in, not a dead end
         return
 
     titles = cp.titles_for_family(fam)

@@ -85,8 +85,15 @@ def render_tabs(cfg, stats, query):
     labels = {t: i18n.t(cfg, f"tab_{t}", lang, _FALLBACK.get(t, t)) for t in enabled}
     key = f"{cfg.slug}_activetab"
     st.markdown(_TAB_CSS.format(key=key), unsafe_allow_html=True)
-    active = st.segmented_control(key, enabled, default=enabled[0],
-                                  format_func=lambda t: labels[t],
-                                  key=key, label_visibility="collapsed") or enabled[0]
+    # default= only while the key is absent — once it exists (incl. a value staged
+    # by the quick-access dialog) omit it, else Streamlit warns about
+    # "default value + Session State API" on every run. A stale id that is no
+    # longer visible (role change) is dropped rather than passed to the widget.
+    if key in st.session_state and st.session_state[key] not in enabled:
+        st.session_state.pop(key, None)
+    _kw = {} if key in st.session_state else {"default": enabled[0]}
+    active = st.segmented_control(key, enabled, format_func=lambda t: labels[t],
+                                  key=key, label_visibility="collapsed",
+                                  **_kw) or enabled[0]
     st.markdown("<div style='height:12px;'></div>", unsafe_allow_html=True)
     fns[active](cfg, stats, query)           # render ONLY the open tab (lazy)

@@ -170,6 +170,8 @@ def render_sidebar(cfg) -> dict:
             st.session_state.pop(gkey, None)     # clear the drill-down
         st.session_state.pop(k("occsearch"), None)
         st.session_state.pop(_apply.get("vk") or k("view"), None)   # close the view
+        if _apply.get("activetab"):              # land on a specific tab (quick access)
+            st.session_state[k("activetab")] = _apply["activetab"]
 
     with st.sidebar:
         st.markdown(theme.SIDEBAR_CSS, unsafe_allow_html=True)

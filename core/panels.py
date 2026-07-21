@@ -148,17 +148,30 @@ def browsable(cfg, lang: str = "EN") -> bool:
     return len({len(c) for c in tree}) > 1
 
 
-def _confirm_body(cfg, lang, query, code, name, vk):
+def _confirm_body(cfg, lang, query, code, name, vk, occ_options=None, target_tab=None):
     """The 'Use this occupation' confirm dialog: the picked occupation plus the
     country's remaining filters (sector / gender / year range, each shown only if
     the data supports it), pre-filled from the current selection. Search applies;
     Cancel just closes and returns to the browser. Only styling attributes and
-    capability gates differ per country."""
+    capability gates differ per country.
+
+    ``occ_options`` ({code: name}) swaps the fixed occupation line for a
+    selectbox restricted to those codes (Career-Paths quick access, where any
+    choice stays inside the picked family). ``target_tab`` makes Search land on
+    that tab instead of the first one."""
     caps, slug = cfg.capabilities, cfg.slug
     st.caption(i18n.t(cfg, "confirm_intro", lang,
                       "Check the filters below, then search — or search with the "
                       "current selection."))
-    st.markdown(f"**{i18n.t(cfg, 'confirm_occ', lang, 'Occupation')}:** {name} · {code}")
+    if occ_options:
+        codes = list(occ_options)
+        code = st.selectbox(i18n.t(cfg, "confirm_occ", lang, "Occupation"), codes,
+                            index=codes.index(code) if code in codes else 0,
+                            key=f"{slug}_d_occ",
+                            format_func=lambda c: f"{c} · {occ_options[c]}")
+        name = occ_options[code]
+    else:
+        st.markdown(f"**{i18n.t(cfg, 'confirm_occ', lang, 'Occupation')}:** {name} · {code}")
 
     sector_code = query.get("sector", "") or (caps.sectors[0] if caps.sectors else "")
     sector_label = None
@@ -205,20 +218,31 @@ def _confirm_body(cfg, lang, query, code, name, vk):
                       "years": years_tuple, "occ_codes": (code,), "scope": ""},
             "occ_label": f"{name}  ({code})",
             "sector_label": sector_label, "sex": sex if caps.has_sex else None,
-            "years_value": years_value, "vk": vk}
+            "years_value": years_value, "vk": vk,
+            **({"activetab": target_tab} if target_tab else {})}
         st.rerun()
     if c2.button(i18n.t(cfg, "cancel", lang, "Cancel"), use_container_width=True,
                  key=f"{slug}_d_cancel"):
         st.rerun()                               # close, back to the browser
 
 
-def _open_confirm(cfg, lang, query, code, name, vk):
+def _open_confirm(cfg, lang, query, code, name, vk, occ_options=None, target_tab=None):
     """Open the confirm dialog on the click's OWN run (the proven st.dialog
     pattern — no persistent open flag that would resurrect it after an
     X-dismissal). In-dialog widget edits are fragment reruns, so it stays open;
     Search/Cancel do app-scope reruns, which close it."""
     title = i18n.t(cfg, "confirm_title", lang, "Confirm your search")
-    st.dialog(title)(lambda: _confirm_body(cfg, lang, query, code, name, vk))()
+    st.dialog(title)(lambda: _confirm_body(cfg, lang, query, code, name, vk,
+                                           occ_options, target_tab))()
+
+
+def open_confirm(cfg, lang, query, code, name, vk=None, occ_options=None, target_tab=None):
+    """Public entry for callers outside this module (Career-Paths quick access).
+    Clears the dialog's keyed widgets first so each open reflects the passed
+    selection instead of a previous edit."""
+    for dk in ("d_sector", "d_sex", "d_years", "d_occ"):
+        st.session_state.pop(f"{cfg.slug}_{dk}", None)
+    _open_confirm(cfg, lang, query, code, name, vk, occ_options, target_tab)
 
 
 def _browse_body(cfg, lang, query=None, vk=None):
