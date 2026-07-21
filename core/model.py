@@ -94,10 +94,10 @@ class CountryConfig:
                                      # fn(cfg, lang, row, query) -> html str,
                                      # appended inside each occupation's card block
                                      # (Germany's skill-level strip). Guarded.
-    landing_extra: object = None     # optional empty-landing section:
-                                     # fn(cfg, lang, query), rendered below the
-                                     # inline code browser (Sweden's Career-Paths
-                                     # quick access).
+    landing_extra: object = None     # optional section rendered below the code
+                                     # browser — both the empty landing and the
+                                     # full-page Code-browser view: fn(cfg, lang,
+                                     # query) (Sweden's Career-Paths quick access).
     access: str = "internal"         # "public" | "registered" | "internal" | "restricted"
     url_path: str = ""               # public URL path override (default: the slug) —
                                      # lets e.g. slug "se2" serve at /sweden

@@ -336,13 +336,17 @@ def _browse_body(cfg, lang, query=None, vk=None):
 
 
 def _browser(cfg, lang, vk, query):
-    """Full-page Code-browser view (from the sidebar button): Back + heading."""
+    """Full-page Code-browser view (from the sidebar button): Back + heading.
+    The country's landing_extra section (Career-Paths quick access) renders
+    below the browser here too, same as on the empty landing."""
     _back(cfg, lang, vk)
     heading = i18n.t(cfg, "code_browser", lang)
     if cfg.classification:
         heading += f" · {cfg.classification}"
     st.markdown(f"## {heading}")
     _browse_body(cfg, lang, query, vk)
+    if cfg.landing_extra:
+        cfg.landing_extra(cfg, lang, query or {})
 
 
 def default_browser(cfg, lang, query=None):
