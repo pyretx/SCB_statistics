@@ -1477,7 +1477,8 @@ def feedback_section():
             c1.markdown(f'<span class="ad-access">'
                         f'{str(r.get("created_at", ""))[:16].replace("T", " ")}</span>',
                         unsafe_allow_html=True)
-            c2.markdown(f'<span class="ad-access">{r.get("feedback_type", "—")}</span>',
+            c2.markdown(f'<span class="ad-access">'
+                        f'{html.escape(r.get("feedback_type") or "—")}</span>',
                         unsafe_allow_html=True)
             c3.markdown(f'<span class="ad-access">'
                         f'{html.escape(r.get("country") or fb.GENERAL)}</span>',
@@ -1486,21 +1487,28 @@ def feedback_section():
                         unsafe_allow_html=True)
             ifg, ibg = _FB_IMPACT_COLORS.get(r.get("impact"), ("#5B6472", "#EEF0F3"))
             c5.markdown(f'<span class="ad-badge" style="color:{ifg};background:{ibg};">'
-                        f'{r.get("impact", "—")}</span>', unsafe_allow_html=True)
+                        f'{html.escape(r.get("impact") or "—")}</span>',
+                        unsafe_allow_html=True)
             c6.markdown(f'<span class="ad-email">'
                         f'{html.escape(r.get("user_email") or "—")}</span>',
                         unsafe_allow_html=True)
             sfg, sbg = _FB_STATUS_COLORS.get(r.get("status"), ("#5B6472", "#EEF0F3"))
             c7.markdown(f'<span class="ad-badge" style="color:{sfg};background:{sbg};">'
-                        f'{r.get("status", "—")}</span>', unsafe_allow_html=True)
+                        f'{html.escape(r.get("status") or "—")}</span>',
+                        unsafe_allow_html=True)
 
             with st.expander(FB["open_label"]):
                 st.text(r.get("description", ""))
-                meta = [f'{FB["m_page"]}: {r.get("page") or "—"}',
+                # page/app_version are code-spanned (backticks stripped from the
+                # value first) so pasted markdown — e.g. a [link](…) to a
+                # phishing URL — renders inert in the caption.
+                page_v = (r.get("page") or "—").replace("`", "'")
+                meta = [f'{FB["m_page"]}: `{page_v}`',
                         f'{FB["m_contact"]}: '
                         + (FB["yes"] if r.get("permission_to_contact") else FB["no"])]
                 if r.get("app_version"):
-                    meta.append(f'{FB["m_version"]}: {r["app_version"]}')
+                    ver_v = str(r["app_version"]).replace("`", "'")
+                    meta.append(f'{FB["m_version"]}: `{ver_v}`')
                 st.caption(" · ".join(meta))
                 # AI triage verdict (bug-hunter replication run) — read-only
                 # here; written server-side after a triage session. Escaped:
