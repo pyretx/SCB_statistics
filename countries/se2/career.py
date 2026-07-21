@@ -760,11 +760,59 @@ def _render_role_cards(cfg, lang, primary, titles, rels, by_id, curves, evidence
         st.caption(i18n.t(cfg, "cp_no_moves", lang, "No mapped moves for this occupation yet."))
 
 
+def _market_from_ads(t, ad_rows):
+    """Per-ROLE market-signal aggregate from the ads whose normalised title
+    matches this role (name_en + raw_variants) in its SSYK — NOT the SSYK+
+    seniority bucket, which is identical across every title at that level. This
+    is what makes 'Recruiter' show recruiter ads and a recruiter-specific count.
+    Returns None when no ad matches the role."""
+    from collections import Counter
+    names = {(t.get("name_en") or "").strip().lower()}
+    for v in (t.get("raw_variants") or []):
+        names.add((v or "").strip().lower())
+    m = [a for a in ad_rows if (a.get("norm_title") or "").strip().lower() in names]
+    if not m:
+        return None
+    skills = Counter(x for a in m for x in (a.get("skills") or []))
+    certs = Counter(x for a in m for x in (a.get("certs") or []))
+    langs = Counter(x for a in m for x in (a.get("languages") or []))
+    edu = Counter(a.get("education") for a in m if a.get("education"))
+    emp = Counter(a.get("employer") for a in m if a.get("employer"))
+    yrs = sorted(a["years"] for a in m if isinstance(a.get("years"), int))
+    n = len(m)
+    ex = sorted(m, key=lambda a: (a.get("publication_date") or ""), reverse=True)[:12]
+    return {
+        "ad_count": n,
+        "evidence_strength": "strong" if n >= 20 else "moderate" if n >= 8 else "limited",
+        "mgmt_freq": sum(1 for a in m if a.get("mgmt")) / n,
+        "common_experience": ([{"years_median": yrs[len(yrs) // 2]}] if yrs else []),
+        "common_education": [{"label": l, "freq": c} for l, c in edu.most_common(6)],
+        "common_skills": [{"skill": s, "freq": c} for s, c in skills.most_common(12)],
+        "common_certs": [{"label": l, "freq": c} for l, c in certs.most_common(6)],
+        "common_languages": [{"label": l, "freq": c} for l, c in langs.most_common(6)],
+        "top_employers": [{"name": e, "freq": c} for e, c in emp.most_common(8)],
+        "example_ads": [{"headline": a.get("headline"), "employer": a.get("employer"),
+                         "region": a.get("region"), "deadline": a.get("deadline"),
+                         "url": a.get("url"), "id": a.get("ad_id")} for a in ex],
+    }
+
+
 def _render_market_signal_section(cfg, lang, titles, evidence, primary):
     """Bottom-of-page 'Live market signal' — tiled (app card style) with a regional
-    slicer on the example ads. Nothing shows if no evidence exists."""
-    from collections import Counter
-    ev_titles = [t for t in titles if evidence.get(t["title_id"])]
+    slicer on the example ads. Per-role signal is aggregated from the ads whose
+    normalised title actually matches that role (see _market_from_ads), so the
+    count and example ads are role-specific. Roles are grouped in the picker by
+    their specialisation cluster."""
+    from collections import Counter, defaultdict
+    import careerpaths_v1 as cpv1
+
+    ads_by_ssyk = {s: cpv1.ad_class_for_ssyk(s) for s in {str(t["primary_ssyk"]) for t in titles}}
+    mkt = {}
+    for t in titles:
+        m = _market_from_ads(t, ads_by_ssyk.get(str(t["primary_ssyk"]), []))
+        if m:
+            mkt[t["title_id"]] = m
+    ev_titles = [t for t in titles if mkt.get(t["title_id"])]
     if not ev_titles:
         return
     st.markdown("---")
@@ -774,17 +822,34 @@ def _render_market_signal_section(cfg, lang, titles, evidence, primary):
                       "public ads (Arbetsförmedlingen / JobTech, CC BY-SA) — indicative, not official, "
                       "and it does not change the SCB salary figures above."))
 
-    ev_titles.sort(key=lambda t: -(evidence.get(t["title_id"], {}).get("ad_count") or 0))
-    default_i = next((i for i, t in enumerate(ev_titles) if str(t.get("primary_ssyk")) == primary), 0)
+    # Picker order: standalone roles first (by ad volume), then each
+    # specialisation cluster together so its sub-roles read as a group.
+    _n = lambda t: mkt[t["title_id"]]["ad_count"]
+    ungrouped = sorted([t for t in ev_titles if not t.get("sub_track")], key=lambda t: -_n(t))
+    cats: dict = defaultdict(list)
+    for t in ev_titles:
+        if t.get("sub_track"):
+            cats[t["sub_track"]].append(t)
+    ev_titles = list(ungrouped)
+    for c in sorted(cats, key=lambda c: -max(_n(x) for x in cats[c])):
+        ev_titles += sorted(cats[c], key=lambda t: -_n(t))
+
+    default_i = next((i for i, t in enumerate(ev_titles)
+                      if str(t.get("primary_ssyk")) == primary and not t.get("sub_track")), 0)
+
+    def _opt_label(i):
+        tt = ev_titles[i]
+        pre = (tt["sub_track"] + " › ") if tt.get("sub_track") else ""
+        sc = (_subcode(tt) + " · ") if _subcode(tt) else ""
+        return (pre + sc + _tname(tt, lang)
+                + f"  ({mkt[tt['title_id']]['ad_count']} " + i18n.t(cfg, "cp_ads", lang, "ads") + ")")
+
     c_role, c_reg = st.columns([2, 1])
     sel_i = c_role.selectbox(
         i18n.t(cfg, "cp_ms_role", lang, "Show role"), list(range(len(ev_titles))), index=default_i,
-        format_func=lambda i: ((_subcode(ev_titles[i]) + " · ") if _subcode(ev_titles[i]) else "")
-        + _tname(ev_titles[i], lang) + f"  ({evidence.get(ev_titles[i]['title_id'], {}).get('ad_count', 0)} "
-        + i18n.t(cfg, "cp_ads", lang, "ads") + ")",
-        key=f"{cfg.slug}_cp_ms_role")
+        format_func=_opt_label, key=f"{cfg.slug}_cp_ms_role")
     t = ev_titles[sel_i]
-    e = evidence.get(t["title_id"], {})
+    e = mkt[t["title_id"]]
     # Show only still-open ads: once the application deadline passes the
     # Platsbanken link dies, so we hide the ad from users (it stays in our own
     # store for history). Ads without a deadline are treated as open.
