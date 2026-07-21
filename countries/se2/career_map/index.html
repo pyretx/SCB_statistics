@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<!-- Career map — bidirectional Streamlit component (raw component protocol).
+     Data arrives via the streamlit:render message ({args: {data: …}}); clicks on
+     graph nodes and sub-cluster members post streamlit:setComponentValue back to
+     Python ({title_id, kind}) so the page can sync (e.g. the Live market signal
+     picker). Frame height is self-reported via a ResizeObserver. -->
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+ * { box-sizing: border-box; }
+ body { margin: 0; }
+ .cpwrap { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#0C1119; }
+ .cpeyebrow { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:10.5px; font-weight:600;
+   letter-spacing:.08em; text-transform:uppercase; color:#0A63A6; }
+ .cptitle { font-size:22px; font-weight:800; margin:3px 0 2px; }
+ .cpsub { font-size:12.5px; color:#5B6472; margin-bottom:10px; }
+ .cplegend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:#5B6472; margin-bottom:8px; }
+ .cplegend span { display:inline-flex; align-items:center; gap:6px; }
+ .cpdot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+ .cpmap { position:relative; width:100%; border:1px solid #E7E9ED; border-radius:14px; background:#fff;
+   overflow-x:auto; overflow-y:hidden; }
+ .cpcanvas { position:relative; height:100%; }
+ .cpwires { position:absolute; inset:0; pointer-events:none; }
+ .cpcenter { position:absolute; left:60px; top:50%; transform:translateY(-50%); background:#0A63A6;
+   color:#fff; border-radius:12px; padding:10px 14px; max-width:210px; box-shadow:0 3px 10px rgba(10,99,166,.28); z-index:2; }
+ .cpcenter .lbl { font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.06em; opacity:.85; }
+ .cpcenter .cname { font-weight:700; font-size:14px; margin-top:2px; }
+ .cpcenter .crange { font-size:11.5px; opacity:.9; margin-top:2px; }
+ .cpnode { position:absolute; width:214px; background:#fff; border:1px solid #E7E9ED; border-radius:14px;
+   padding:9px 13px; cursor:pointer; z-index:2; box-shadow:0 1px 2px rgba(16,21,31,.05);
+   transition:box-shadow .12s, border-color .12s; }
+ .cpnode:hover { box-shadow:0 3px 10px rgba(16,21,31,.12); }
+ .cpnode.active { border-color:#0A63A6; box-shadow:0 0 0 3px rgba(10,99,166,.14); }
+ .cpnode .nrow { display:flex; align-items:flex-start; gap:7px; }
+ .cpnode .nrow .cpdot { margin-top:5px; flex:0 0 auto; }
+ .cpnode .nname { font-weight:600; font-size:13px; line-height:1.25; }
+ .cpnode .nmeta { padding-left:16px; margin-top:3px; display:flex; gap:8px; align-items:baseline; }
+ .cpnode .ndiff { font-weight:700; font-size:12px; }
+ .cpnode .nads { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#98A0AC; }
+ .cpdetail { border:1px solid #E7E9ED; border-radius:14px; background:#fff; padding:16px 18px; margin-top:12px;
+   max-height:360px; overflow:auto; }
+ .drel { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:.06em;
+   text-transform:uppercase; color:#5B6472; }
+ .dname { font-size:17px; font-weight:800; margin:2px 0; }
+ .dmeta { font-family:'JetBrains Mono',monospace; font-size:11px; color:#98A0AC; margin-bottom:10px; }
+ .drow { display:flex; gap:34px; flex-wrap:wrap; margin-bottom:8px; }
+ .dlabel { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:#98A0AC; }
+ .dval { font-size:19px; font-weight:700; }
+ .chip { display:inline-block; padding:2px 9px; margin:2px 4px 2px 0; border-radius:20px; font-size:12px; line-height:1.7; }
+ .adsblk { border-left:3px solid #C0453A; background:rgba(192,69,58,.05); border-radius:8px; padding:11px 14px; margin-top:13px; }
+ .adshdr { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; letter-spacing:.06em; color:#C0453A; }
+ .adsline { font-size:12.5px; color:#26303C; margin-top:6px; }
+ .adslist { margin:6px 0 0; padding-left:18px; }
+ .adslist li { margin-bottom:7px; }
+ .adslist a { color:#0A63A6; text-decoration:none; font-weight:600; font-size:13px; }
+ .admeta { font-size:11px; color:#98A0AC; }
+ .noads { font-size:12.5px; color:#98A0AC; margin-top:12px; font-style:italic; }
+ .mtiles { display:flex; gap:10px; flex-wrap:wrap; margin-top:13px; }
+ .mtile { border:1px solid #E7E9ED; border-radius:12px; background:#fff; padding:10px 14px; min-width:118px; box-shadow:0 1px 2px rgba(16,21,31,.04); }
+ .mtile.red { border-left:3px solid #C0453A; }
+ .mtl { font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:#98A0AC; }
+ .mtv { font-size:16px; font-weight:700; margin-top:4px; }
+ .mskills { border:1px solid #E7E9ED; border-radius:12px; background:#fff; padding:11px 14px; margin-top:10px; box-shadow:0 1px 2px rgba(16,21,31,.04); }
+ .cphint { font-size:11px; color:#98A0AC; margin-top:8px; }
+ .cplevels { display:flex; align-items:center; gap:6px; margin-bottom:9px; font-size:12px; flex-wrap:wrap; }
+ .cplevels .lbl { color:#5B6472; margin-right:2px; }
+ .cplevels button { border:1px solid #E7E9ED; background:#fff; color:#26303C; border-radius:8px;
+   padding:3px 11px; cursor:pointer; font-size:12px; font-weight:600; }
+ .cplevels button:hover { border-color:#0A63A6; }
+ .cplevels button.on { background:#0A63A6; color:#fff; border-color:#0A63A6; }
+ .dhint { font-size:13px; color:#5B6472; }
+ .cpsub-card { position:absolute; width:230px; background:#fff; border:1px dashed #C7CCD4; border-radius:14px;
+   padding:9px 13px; z-index:2; box-shadow:0 1px 2px rgba(16,21,31,.04); }
+ .cpsub-card .sh { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; cursor:pointer; }
+ .cpsub-title { font-weight:700; font-size:12.5px; color:#26303C; line-height:1.25; }
+ .cpsub-meta { font-family:'JetBrains Mono',monospace; font-size:10px; color:#98A0AC; margin-top:3px; }
+ .cpsub-chev { color:#98A0AC; font-size:12px; flex:0 0 auto; }
+ .cpsub-members { margin-top:8px; border-top:1px solid #EEF0F3; padding-top:5px; }
+ .cpsub-member { display:flex; justify-content:space-between; gap:8px; padding:4px 6px; border-radius:8px;
+   font-size:12px; cursor:pointer; }
+ .cpsub-member:hover { background:#F4F7FA; }
+ .cpsub-member.active { background:rgba(10,99,166,.10); }
+ .cpsub-member .mm-ads { font-family:'JetBrains Mono',monospace; font-size:10px; color:#98A0AC; flex:0 0 auto; }
+ .cpcenter .cptoggle { margin-top:7px; font-family:'JetBrains Mono',monospace; font-size:10.5px;
+   letter-spacing:.03em; opacity:.95; cursor:pointer; display:inline-block; }
+ .cpcenter .cptoggle:hover { text-decoration:underline; }
+ .cpnode .ntoggle { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#0A63A6;
+   cursor:pointer; margin-left:auto; }
+ .cpnode .ntoggle:hover { text-decoration:underline; }
+</style>
+</head>
+<body>
+<div class="cpwrap">
+  <div class="cpeyebrow" id="cpeyebrow"></div>
+  <div class="cptitle" id="cptitle"></div>
+  <div class="cpsub" id="cpsub"></div>
+  <div class="cplegend" id="cplegend"></div>
+  <div class="cplevels" id="cplevels"></div>
+  <div class="cpmap" id="cpmap"><div class="cpcanvas" id="cpcanvas"><svg class="cpwires" id="cpwires"></svg></div></div>
+  <div class="cpdetail" id="cpdetail"></div>
+  <div class="cphint" id="cphint"></div>
+</div>
+<script>
+// ── Streamlit component protocol (raw, no lib) ──────────────────────────────
+function sendMsg(m){ window.parent.postMessage(Object.assign({isStreamlitMessage:true}, m), '*'); }
+function setValue(v){ sendMsg({type:'streamlit:setComponentValue', dataType:'json', value:v}); }
+function setHeight(){ sendMsg({type:'streamlit:setFrameHeight', height: document.documentElement.scrollHeight}); }
+
+const num = n => (n==null? '—' : Number(n).toLocaleString('sv-SE'));
+const money = n => num(n) + ' kr';
+const diffStr = d => (d==null? '' : (d>=0?'+':'−') + num(Math.abs(d)) + ' kr');
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const mapEl = document.getElementById('cpmap');
+const canvas = document.getElementById('cpcanvas');
+const svg = document.getElementById('cpwires');
+const titleEl = document.getElementById('cptitle');
+const levelsEl = document.getElementById('cplevels');
+const detailEl = document.getElementById('cpdetail');
+const NODEW = 214;
+const center0 = document.createElement('div');
+center0.className = 'cpcenter';
+canvas.appendChild(center0);
+
+// ── Data-dependent state (assigned by init on each streamlit:render) ────────
+let D, L, R, E, OCC, RL, LAYER, PARENT, CENTERIDS, MAXL, SUBGROUPS, GBYA, ALL, edgeInto;
+let sel = 1, focus = null, hoverPath = null, focusPath = null, nodeEls = {};
+let memberFocus = null, expanded = {}, nodeOpen = {};
+const subCardEls = [];
+let lastData = null;
+
+function anchorGroups(id){ return GBYA[id]||[]; }
+function toggleAnchor(id){ nodeOpen[id]=!nodeOpen[id]; drawCenter(); render_soft(); }
+function render_soft(){ buildSubCards(); layoutNodes(); drawWires(); markActive(); }
+
+function pathTo(id){ const s=new Set(); let cur=id, g=0;
+  while(cur!=null && PARENT[cur]!==undefined && g++<60){ s.add(PARENT[cur]+'>'+cur); cur=PARENT[cur]; }
+  return s; }
+function levelButtons(){
+  let h = `<span class="lbl">${esc(L.levels_lbl)}</span>`;
+  for(let l=1;l<=MAXL;l++) h += `<button data-l="${l}" class="${l===sel?'on':''}">${l}</button>`;
+  levelsEl.innerHTML = h;
+  levelsEl.querySelectorAll('button').forEach(b=> b.onclick=()=>{ sel=+b.dataset.l; render(); });
+}
+function shownIds(){ return ALL.filter(id=> LAYER[id]<=sel); }
+function nodeObj(id){ const r=R[id], e=edgeInto[id]||{};
+  return {id, name:r.name, subcode:r.subcode, ssyk:r.ssyk, level:r.level, conf:r.conf,
+    lo:r.lo, mid:r.mid, hi:r.hi, diff:(OCC.base_mid!=null? r.mid-OCC.base_mid : null),
+    ad_count:r.ad_count, skills:r.skills, education:r.education, experience:r.experience,
+    color:e.color||'#5B6472', rel:e.rel, gaps:e.gaps||[], same_ssyk:e.same_ssyk}; }
+function drawCenter(){
+  const gs = anchorGroups('center');
+  center0.innerHTML = `<div class="lbl">${esc(L.you_here)}</div><div class="cname">${esc(OCC.name)}</div>`
+    + (OCC.lo!=null? `<div class="crange">${money(OCC.lo)}–${money(OCC.hi)}</div>`:'')
+    + (gs.length? `<div class="cptoggle">${nodeOpen['center']?'▾':'▸'} ${gs.length} ${esc(L.specialisations)}</div>`:'');
+  const tg = center0.querySelector('.cptoggle');
+  if(tg) tg.onclick = ev=>{ ev.stopPropagation(); toggleAnchor('center'); };
+}
+function markActive(){ Object.entries(nodeEls).forEach(([id,el])=> el.classList.toggle('active', id===focus));
+  subCardEls.forEach(card=> card.querySelectorAll('.cpsub-member').forEach(mel=>{
+    const m = SUBGROUPS[+mel.dataset.gi].members[+mel.dataset.mi];
+    mel.classList.toggle('active', !!memberFocus && memberFocus.name===m.name && String(memberFocus.mid)===String(m.mid));
+  })); }
+function buildSubCards(){
+  subCardEls.forEach(e=>e.remove()); subCardEls.length=0;
+  Object.keys(GBYA).forEach(anchor=>{
+    if(!nodeOpen[anchor]) return;                       // collapsed until its node is toggled
+    const host = anchor==='center'? center0 : nodeEls[anchor];
+    if(!host) return;                                   // anchor not currently on screen
+    GBYA[anchor].forEach(gi=>{
+      const g = SUBGROUPS[gi];
+      const card = document.createElement('div');
+      card.className='cpsub-card'; card._anchor = anchor;
+      let body='';
+      if(expanded[gi]){
+        body = '<div class="cpsub-members">' + g.members.map((m,mi)=>
+          `<div class="cpsub-member" data-gi="${gi}" data-mi="${mi}"><span>${esc(m.name)}</span>`
+          + `<span class="mm-ads">${m.diff!=null?diffStr(m.diff)+' · ':''}${m.ad_count} ${esc(L.ads)}</span></div>`).join('') + '</div>';
+      }
+      card.innerHTML = `<div class="sh"><div><div class="cpsub-title">${esc(g.label)}</div>`
+        + `<div class="cpsub-meta">${g.count} ${esc(L.sub_roles)} · ${g.ad_count} ${esc(L.ads)}</div></div>`
+        + `<span class="cpsub-chev">${expanded[gi]?'▾':'▸'}</span></div>` + body;
+      card.querySelector('.sh').onclick = ev=>{ ev.stopPropagation(); expanded[gi]=!expanded[gi]; render_soft(); };
+      card.querySelectorAll('.cpsub-member').forEach(mel=>{
+        mel.onclick = ev=>{ ev.stopPropagation();
+          const m = SUBGROUPS[+mel.dataset.gi].members[+mel.dataset.mi];
+          memberFocus = Object.assign({}, m, {rel:null, gaps:[], color:'#5B6472'});
+          focus=null; focusPath=null; renderDetail(); drawWires(); markActive();
+          if(m.title_id) setValue({title_id:m.title_id, kind:'member', ts:Date.now()}); };
+      });
+      canvas.appendChild(card); subCardEls.push(card);
+    });
+  });
+}
+function createNode(n){
+  const d = document.createElement('div');
+  d.className='cpnode'; d.dataset.id=n.id; d.dataset.rel=n.rel||'';
+  const gs = anchorGroups(n.id);
+  d.innerHTML = `<div class="nrow"><span class="cpdot" style="background:${n.color}"></span>`
+    + `<span class="nname">${esc(n.name)}</span></div>`
+    + `<div class="nmeta">`
+    + (n.diff!=null? `<span class="ndiff" style="color:${n.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(n.diff)}</span>`:'')
+    + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'')
+    + (gs.length? `<span class="ntoggle">${nodeOpen[n.id]?'▾':'▸'} ${gs.length}</span>`:'')
+    + `</div>`;
+  d.onclick = ()=>{ memberFocus=null; focus=n.id; focusPath=pathTo(n.id); renderDetail(); drawWires(); markActive();
+    setValue({title_id:n.id, kind:'node', ts:Date.now()}); };
+  d.onmouseenter = ()=>{ hoverPath=pathTo(n.id); drawWires(); };
+  d.onmouseleave = ()=>{ hoverPath=null; drawWires(); };
+  const tg = d.querySelector('.ntoggle');
+  if(tg) tg.onclick = ev=>{ ev.stopPropagation(); toggleAnchor(n.id); };
+  canvas.appendChild(d); nodeEls[n.id]=d;
+}
+function layoutNodes(){
+  const availW = mapEl.clientWidth;
+  center0.style.left = '16px';
+  const x0 = 16 + center0.offsetWidth + 30;
+  // fixed comfortable column width so pills never overlap; overflow → horizontal pan
+  const colStep = Math.max(250, (availW - x0 - 24) / sel);
+  const byL = {}; shownIds().forEach(id=> (byL[LAYER[id]]=byL[LAYER[id]]||[]).push(id));
+  const layersSorted = Object.keys(byL).map(Number).sort((a,b)=>a-b);
+  // Order each layer to reduce line crossings: first shown layer by salary,
+  // each deeper layer by its parent's position (barycenter), salary as tie-break.
+  const orderIndex = {};
+  layersSorted.forEach((Lr, li)=>{
+    const arr = byL[Lr];
+    if(li===0){ arr.sort((p,q)=> R[q].mid - R[p].mid); }
+    else { arr.sort((p,q)=>{
+      const pp = orderIndex[PARENT[p]] ?? 1e9, qp = orderIndex[PARENT[q]] ?? 1e9;
+      return pp!==qp ? pp-qp : (R[q].mid - R[p].mid); }); }
+    arr.forEach((id,i)=> orderIndex[id]=i);
+  });
+  let maxCount = 1; layersSorted.forEach(Lr=> maxCount=Math.max(maxCount, byL[Lr].length));
+  const rowH = 84;   // fixed row pitch > pill height → generous gaps, no overlap
+  const centerH = center0.offsetHeight;
+  const cardsFor = a => subCardEls.filter(el=> el._anchor===a);
+  const blockH = els => els.reduce((h,el)=> h + el.offsetHeight + 10, 0);
+  const centerCards = cardsFor('center');
+  const leftH = centerH + (centerCards.length ? 14 + blockH(centerCards) : 0);
+  // a spine node with open cards makes its own column taller
+  let spineExtra = 0;
+  Object.keys(nodeOpen).forEach(a=>{ if(a!=='center' && nodeOpen[a] && nodeEls[a])
+    spineExtra = Math.max(spineExtra, 14 + blockH(cardsFor(a))); });
+  const mapH = Math.max(maxCount*rowH + 16, 200, leftH + 20, maxCount*rowH + 16 + spineExtra);
+  const contentW = x0 + (sel-1)*colStep + NODEW + 26;
+  canvas.style.width = Math.max(contentW, availW) + 'px';
+  canvas.style.height = mapH + 'px';
+  mapEl.style.height = (mapH + (contentW > availW ? 14 : 0)) + 'px';
+  layersSorted.forEach(Lr=>{
+    const arr = byL[Lr], cnt = arr.length;
+    const startY = (mapH - cnt*rowH)/2 + rowH/2;   // vertically centre each column
+    arr.forEach((id, idx)=>{ const el=nodeEls[id]; if(!el) return;
+      el.style.left = (x0 + (Lr-1)*colStep) + 'px';
+      el.style.top = (startY + idx*rowH - el.offsetHeight/2) + 'px';
+    });
+  });
+  // centre the (occupation + its open cards) block vertically in the left column
+  const leftTop = Math.max(12, (mapH - leftH)/2);
+  center0.style.top = leftTop + 'px'; center0.style.transform = 'none';
+  let cy = leftTop + centerH + 14;
+  centerCards.forEach(el=>{ el.style.left = '16px'; el.style.top = cy + 'px'; cy += el.offsetHeight + 10; });
+  // spine-anchored cards stack directly below their node
+  Object.keys(nodeOpen).forEach(a=>{
+    if(a==='center' || !nodeOpen[a]) return;
+    const host = nodeEls[a]; if(!host) return;
+    let y = host.offsetTop + host.offsetHeight + 12;
+    cardsFor(a).forEach(el=>{ el.style.left = host.offsetLeft + 'px'; el.style.width = NODEW + 'px';
+      el.style.top = y + 'px'; y += el.offsetHeight + 10; });
+  });
+}
+function drawWires(){
+  const cr0 = canvas.getBoundingClientRect();
+  const ids = new Set(shownIds());
+  let p='';
+  E.forEach(e=>{
+    if(!ids.has(e.to)) return;
+    const fromCenter = CENTERIDS.has(e.from);
+    if(!fromCenter && !ids.has(e.from)) return;
+    const srcEl = fromCenter? center0 : nodeEls[e.from];
+    const dstEl = nodeEls[e.to];
+    if(!srcEl || !dstEl) return;
+    const sr=srcEl.getBoundingClientRect(), dr=dstEl.getBoundingClientRect();
+    const cx=sr.right-cr0.left, cy=sr.top-cr0.top+sr.height/2;
+    const nx=dr.left-cr0.left, ny=dr.top-cr0.top+dr.height/2, mx=(cx+nx)/2;
+    const key=e.from+'>'+e.to;
+    const on = (hoverPath&&hoverPath.has(key)) || (focusPath&&focusPath.has(key));
+    const dash=(e.rel==='lateral'||e.rel==='related')?' stroke-dasharray="5 6"':'';
+    p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
+      + `stroke="${e.color}" stroke-width="${on?3:1.4}" stroke-opacity="${on?0.95:0.28}"${dash}/>`;
+  });
+  subCardEls.forEach(el=>{
+    const host = el._anchor==='center'? center0 : nodeEls[el._anchor];
+    if(!host) return;
+    const hb = host.getBoundingClientRect();
+    const bx = hb.left - cr0.left + 22, by = hb.bottom - cr0.top;
+    const rb = el.getBoundingClientRect();
+    const tx = rb.left - cr0.left + 22, ty = rb.top - cr0.top, my=(by+ty)/2;
+    p += `<path d="M ${bx} ${by} C ${bx} ${my}, ${tx} ${my}, ${tx} ${ty}" fill="none" stroke="#C7CCD4" stroke-width="1.4" stroke-dasharray="4 5" stroke-opacity="0.9"/>`;
+  });
+  const w = canvas.offsetWidth, h = canvas.offsetHeight;
+  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  svg.setAttribute('width',w); svg.setAttribute('height',h); svg.innerHTML=p;
+}
+function render(){
+  levelButtons();
+  titleEl.textContent = L.title.replace('{r}', OCC.name);
+  drawCenter();
+  canvas.querySelectorAll('.cpnode').forEach(x=>x.remove()); nodeEls={};
+  shownIds().forEach(id=> createNode(nodeObj(id)));
+  buildSubCards();
+  layoutNodes();
+  if(focus!==null && !nodeEls[focus]){ focus=null; focusPath=null; }
+  drawWires(); markActive(); renderDetail();
+}
+function renderDetail(){
+  const d = memberFocus ? memberFocus : (focus!==null ? nodeObj(focus) : null);
+  if(!d){ detailEl.innerHTML = `<div class="dhint">${esc(L.pick)}</div>`; return; }
+  const skills=(d.skills||[]).filter(Boolean).slice(0,8).map(s=>`<span class="chip" style="background:rgba(192,69,58,.08);color:#C0453A">${esc(s)}</span>`).join('');
+  const gaps=(d.gaps||[]).filter(Boolean).map(s=>`<span class="chip" style="background:rgba(10,99,166,.08);color:#0A63A6">${esc(s)}</span>`).join('');
+  let ads = d.ad_count ? (`<div class="mtiles">`
+      + `<div class="mtile red"><div class="mtl" style="color:#C0453A">${esc(L.ads_header)}</div><div class="mtv">${d.ad_count} ${esc(L.ads)}</div></div>`
+      + (d.experience?`<div class="mtile"><div class="mtl">${esc(L.experience)}</div><div class="mtv">${esc(d.experience)}</div></div>`:'')
+      + (d.education?`<div class="mtile"><div class="mtl">${esc(L.education)}</div><div class="mtv">${esc(d.education)}</div></div>`:'')
+      + `</div>` + (skills?`<div class="mskills"><div class="mtl">${esc(L.skills)}</div><div style="margin-top:7px;">${skills}</div></div>`:''))
+      : `<div class="noads">${esc(L.no_ads)}</div>`;
+  detailEl.innerHTML =
+    (d.rel?`<div class="drel"><span class="cpdot" style="background:${d.color}"></span> ${esc(RL[d.rel]||'')}</div>`:'')
+    + `<div class="dname">${d.subcode?esc(d.subcode)+' · ':''}${esc(d.name)}</div>`
+    + `<div class="dmeta">${esc(d.level)} · ${d.same_ssyk?esc(L.same_ssyk):('→ SSYK '+esc(d.ssyk))} · ${esc(d.conf)}</div>`
+    + `<div class="drow"><div><div class="dlabel">${esc(L.range)}</div><div class="dval">${money(d.lo)}–${money(d.hi)}</div></div>`
+    + (d.diff!=null?`<div><div class="dlabel">${esc(L.vs)}</div><div class="dval" style="color:${d.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(d.diff)}<span style="font-size:12px;font-weight:400;color:#8A919D"> /mo</span></div></div>`:'')
+    + `</div>`
+    + (gaps?`<div class="dlabel" style="margin-top:4px;">${esc(L.gaps)}</div><div style="margin-top:3px;">${gaps}</div>`:'')
+    + ads;
+}
+
+function init(data){
+  D = data; L = D.labels;
+  document.getElementById('cpeyebrow').textContent = L.eyebrow;
+  document.getElementById('cpsub').textContent = L.subtitle;
+  document.getElementById('cphint').textContent = L.hint;
+  document.getElementById('cplegend').innerHTML = (D.legend||[])
+    .map(o=>`<span><span class="cpdot" style="background:${o.color}"></span>${esc(o.label)}${o.dashed?' <span style="opacity:.6">- -</span>':''}</span>`).join('');
+  R = D.roles; E = D.edges; OCC = D.occupation; RL = D.rellabels || {};
+  LAYER = D.layer; PARENT = D.parent; CENTERIDS = new Set(D.center_ids||[]); MAXL = D.max_layer||1;
+  SUBGROUPS = D.subgroups || [];
+  GBYA = {};
+  SUBGROUPS.forEach((g,gi)=>{ const a=g.anchor||'center'; (GBYA[a]=GBYA[a]||[]).push(gi); });
+  edgeInto = {};
+  E.forEach(e=>{ if(PARENT[e.to]===e.from) edgeInto[e.to]=e; });
+  ALL = Object.keys(LAYER).filter(id=> LAYER[id]>=1 && R[id]);
+  sel = Math.min(2, MAXL) || 1;
+  focus = null; focusPath = null; hoverPath = null; memberFocus = null;
+  expanded = {}; nodeOpen = {};
+  render();
+}
+
+window.addEventListener('resize', ()=>{ if(D){ layoutNodes(); drawWires(); } });
+window.addEventListener('message', ev=>{
+  const m = ev.data;
+  if(!m || m.type !== 'streamlit:render') return;
+  const s = JSON.stringify(m.args.data);
+  if(s === lastData){ setHeight(); return; }   // rerun with same data → keep client state
+  lastData = s;
+  init(m.args.data);
+  // Streamlit can drop height reports sent in the same tick as the ready
+  // handshake — re-report a few times so the frame never sticks at 0px.
+  setHeight(); setTimeout(setHeight, 150); setTimeout(setHeight, 600);
+});
+new ResizeObserver(()=> setHeight()).observe(document.body);
+sendMsg({type:'streamlit:componentReady', apiVersion:1});
+</script>
+</body>
+</html>

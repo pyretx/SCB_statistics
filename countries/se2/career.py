@@ -145,357 +145,30 @@ def _chip_card(label, chips_html):
             + chips_html + '</div>')
 
 
-# ── Interactive career map (embedded, self-contained SVG/JS component) ────────
-_MAP_TEMPLATE = r"""
-<style>
- * { box-sizing: border-box; }
- .cpwrap { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; color:#0C1119; }
- .cpeyebrow { font-family:'JetBrains Mono',ui-monospace,monospace; font-size:10.5px; font-weight:600;
-   letter-spacing:.08em; text-transform:uppercase; color:#0A63A6; }
- .cptitle { font-size:22px; font-weight:800; margin:3px 0 2px; }
- .cpsub { font-size:12.5px; color:#5B6472; margin-bottom:10px; }
- .cplegend { display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:#5B6472; margin-bottom:8px; }
- .cplegend span { display:inline-flex; align-items:center; gap:6px; }
- .cpdot { width:9px; height:9px; border-radius:50%; display:inline-block; }
- .cpmap { position:relative; width:100%; border:1px solid #E7E9ED; border-radius:14px; background:#fff;
-   overflow-x:auto; overflow-y:hidden; }
- .cpcanvas { position:relative; height:100%; }
- .cpwires { position:absolute; inset:0; pointer-events:none; }
- .cpcenter { position:absolute; left:60px; top:50%; transform:translateY(-50%); background:#0A63A6;
-   color:#fff; border-radius:12px; padding:10px 14px; max-width:210px; box-shadow:0 3px 10px rgba(10,99,166,.28); z-index:2; }
- .cpcenter .lbl { font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.06em; opacity:.85; }
- .cpcenter .cname { font-weight:700; font-size:14px; margin-top:2px; }
- .cpcenter .crange { font-size:11.5px; opacity:.9; margin-top:2px; }
- .cpnode { position:absolute; width:214px; background:#fff; border:1px solid #E7E9ED; border-radius:14px;
-   padding:9px 13px; cursor:pointer; z-index:2; box-shadow:0 1px 2px rgba(16,21,31,.05);
-   transition:box-shadow .12s, border-color .12s; }
- .cpnode:hover { box-shadow:0 3px 10px rgba(16,21,31,.12); }
- .cpnode.active { border-color:#0A63A6; box-shadow:0 0 0 3px rgba(10,99,166,.14); }
- .cpnode .nrow { display:flex; align-items:flex-start; gap:7px; }
- .cpnode .nrow .cpdot { margin-top:5px; flex:0 0 auto; }
- .cpnode .nname { font-weight:600; font-size:13px; line-height:1.25; }
- .cpnode .nmeta { padding-left:16px; margin-top:3px; display:flex; gap:8px; align-items:baseline; }
- .cpnode .ndiff { font-weight:700; font-size:12px; }
- .cpnode .nads { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#98A0AC; }
- .cpdetail { border:1px solid #E7E9ED; border-radius:14px; background:#fff; padding:16px 18px; margin-top:12px;
-   max-height:360px; overflow:auto; }
- .drel { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:600; letter-spacing:.06em;
-   text-transform:uppercase; color:#5B6472; }
- .dname { font-size:17px; font-weight:800; margin:2px 0; }
- .dmeta { font-family:'JetBrains Mono',monospace; font-size:11px; color:#98A0AC; margin-bottom:10px; }
- .drow { display:flex; gap:34px; flex-wrap:wrap; margin-bottom:8px; }
- .dlabel { font-family:'JetBrains Mono',monospace; font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:#98A0AC; }
- .dval { font-size:19px; font-weight:700; }
- .chip { display:inline-block; padding:2px 9px; margin:2px 4px 2px 0; border-radius:20px; font-size:12px; line-height:1.7; }
- .adsblk { border-left:3px solid #C0453A; background:rgba(192,69,58,.05); border-radius:8px; padding:11px 14px; margin-top:13px; }
- .adshdr { font-family:'JetBrains Mono',monospace; font-size:10px; font-weight:700; letter-spacing:.06em; color:#C0453A; }
- .adsline { font-size:12.5px; color:#26303C; margin-top:6px; }
- .adslist { margin:6px 0 0; padding-left:18px; }
- .adslist li { margin-bottom:7px; }
- .adslist a { color:#0A63A6; text-decoration:none; font-weight:600; font-size:13px; }
- .admeta { font-size:11px; color:#98A0AC; }
- .noads { font-size:12.5px; color:#98A0AC; margin-top:12px; font-style:italic; }
- .mtiles { display:flex; gap:10px; flex-wrap:wrap; margin-top:13px; }
- .mtile { border:1px solid #E7E9ED; border-radius:12px; background:#fff; padding:10px 14px; min-width:118px; box-shadow:0 1px 2px rgba(16,21,31,.04); }
- .mtile.red { border-left:3px solid #C0453A; }
- .mtl { font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:#98A0AC; }
- .mtv { font-size:16px; font-weight:700; margin-top:4px; }
- .mskills { border:1px solid #E7E9ED; border-radius:12px; background:#fff; padding:11px 14px; margin-top:10px; box-shadow:0 1px 2px rgba(16,21,31,.04); }
- .cphint { font-size:11px; color:#98A0AC; margin-top:8px; }
- .cplevels { display:flex; align-items:center; gap:6px; margin-bottom:9px; font-size:12px; flex-wrap:wrap; }
- .cplevels .lbl { color:#5B6472; margin-right:2px; }
- .cplevels button { border:1px solid #E7E9ED; background:#fff; color:#26303C; border-radius:8px;
-   padding:3px 11px; cursor:pointer; font-size:12px; font-weight:600; }
- .cplevels button:hover { border-color:#0A63A6; }
- .cplevels button.on { background:#0A63A6; color:#fff; border-color:#0A63A6; }
- .dhint { font-size:13px; color:#5B6472; }
- .cpsub-card { position:absolute; width:230px; background:#fff; border:1px dashed #C7CCD4; border-radius:14px;
-   padding:9px 13px; z-index:2; box-shadow:0 1px 2px rgba(16,21,31,.04); }
- .cpsub-card .sh { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; cursor:pointer; }
- .cpsub-title { font-weight:700; font-size:12.5px; color:#26303C; line-height:1.25; }
- .cpsub-meta { font-family:'JetBrains Mono',monospace; font-size:10px; color:#98A0AC; margin-top:3px; }
- .cpsub-chev { color:#98A0AC; font-size:12px; flex:0 0 auto; }
- .cpsub-members { margin-top:8px; border-top:1px solid #EEF0F3; padding-top:5px; }
- .cpsub-member { display:flex; justify-content:space-between; gap:8px; padding:4px 6px; border-radius:8px;
-   font-size:12px; cursor:pointer; }
- .cpsub-member:hover { background:#F4F7FA; }
- .cpsub-member.active { background:rgba(10,99,166,.10); }
- .cpsub-member .mm-ads { font-family:'JetBrains Mono',monospace; font-size:10px; color:#98A0AC; flex:0 0 auto; }
- .cpcenter .cptoggle { margin-top:7px; font-family:'JetBrains Mono',monospace; font-size:10.5px;
-   letter-spacing:.03em; opacity:.95; cursor:pointer; display:inline-block; }
- .cpcenter .cptoggle:hover { text-decoration:underline; }
- .cpnode .ntoggle { font-family:'JetBrains Mono',monospace; font-size:10.5px; color:#0A63A6;
-   cursor:pointer; margin-left:auto; }
- .cpnode .ntoggle:hover { text-decoration:underline; }
-</style>
-<div class="cpwrap">
-  <div class="cpeyebrow" id="cpeyebrow"></div>
-  <div class="cptitle" id="cptitle"></div>
-  <div class="cpsub" id="cpsub"></div>
-  <div class="cplegend" id="cplegend"></div>
-  <div class="cplevels" id="cplevels"></div>
-  <div class="cpmap" id="cpmap"><div class="cpcanvas" id="cpcanvas"><svg class="cpwires" id="cpwires"></svg></div></div>
-  <div class="cpdetail" id="cpdetail"></div>
-  <div class="cphint" id="cphint"></div>
-</div>
-<script>
-const D = __DATA__;
-const L = D.labels;
-const num = n => (n==null? '—' : Number(n).toLocaleString('sv-SE'));
-const money = n => num(n) + ' kr';
-const diffStr = d => (d==null? '' : (d>=0?'+':'−') + num(Math.abs(d)) + ' kr');
-const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-document.getElementById('cpeyebrow').textContent = L.eyebrow;
-document.getElementById('cpsub').textContent = L.subtitle;
-document.getElementById('cphint').textContent = L.hint;
-document.getElementById('cplegend').innerHTML = (D.legend||[])
-  .map(o=>`<span><span class="cpdot" style="background:${o.color}"></span>${esc(o.label)}${o.dashed?' <span style="opacity:.6">- -</span>':''}</span>`).join('');
+# ── Interactive career map — bidirectional Streamlit component ────────────────
+# The HTML/CSS/JS lives in career_map/index.html and speaks the raw component
+# protocol: payload in via streamlit:render, {title_id, kind} back to Python on
+# node/member clicks (so e.g. the Live market signal picker can follow), frame
+# height self-reported. See tests/career_map_harness.py for a login-free test.
+_MAP_COMPONENT = None
 
-const R = D.roles, E = D.edges, OCC = D.occupation, RL = D.rellabels || {};
-const LAYER = D.layer, PARENT = D.parent, CENTERIDS = new Set(D.center_ids||[]), MAXL = D.max_layer||1;
-const mapEl = document.getElementById('cpmap');
-const canvas = document.getElementById('cpcanvas');
-const svg = document.getElementById('cpwires');
-const titleEl = document.getElementById('cptitle');
-const levelsEl = document.getElementById('cplevels');
-const detailEl = document.getElementById('cpdetail');
-const NODEW = 214;
-const SUBGROUPS = D.subgroups || [];
-const subCardEls = [];
-let memberFocus = null;
-const expanded = {};
-// specialisation groups keyed by the node they hang off ('center' or a title id)
-const GBYA = {};
-SUBGROUPS.forEach((g,gi)=>{ const a=g.anchor||'center'; (GBYA[a]=GBYA[a]||[]).push(gi); });
-const nodeOpen = {};   // which anchor nodes have revealed their group cards
-function anchorGroups(id){ return GBYA[id]||[]; }
-function toggleAnchor(id){ nodeOpen[id]=!nodeOpen[id]; buildSubCards(); layoutNodes(); drawWires(); markActive(); }
 
-const center0 = document.createElement('div');
-center0.className = 'cpcenter';
-canvas.appendChild(center0);
-
-// the edge that leads INTO each node along its longest-path parent (colour/rel/gaps)
-const edgeInto = {};
-E.forEach(e=>{ if(PARENT[e.to]===e.from) edgeInto[e.to]=e; });
-
-const ALL = Object.keys(LAYER).filter(id=> LAYER[id]>=1 && R[id]);
-let sel = Math.min(2, MAXL) || 1;
-let focus = null, hoverPath = null, focusPath = null, nodeEls = {};
-
-function pathTo(id){ const s=new Set(); let cur=id, g=0;
-  while(cur!=null && PARENT[cur]!==undefined && g++<60){ s.add(PARENT[cur]+'>'+cur); cur=PARENT[cur]; }
-  return s; }
-function levelButtons(){
-  let h = `<span class="lbl">${esc(L.levels_lbl)}</span>`;
-  for(let l=1;l<=MAXL;l++) h += `<button data-l="${l}" class="${l===sel?'on':''}">${l}</button>`;
-  levelsEl.innerHTML = h;
-  levelsEl.querySelectorAll('button').forEach(b=> b.onclick=()=>{ sel=+b.dataset.l; render(); });
-}
-function shownIds(){ return ALL.filter(id=> LAYER[id]<=sel); }
-function nodeObj(id){ const r=R[id], e=edgeInto[id]||{};
-  return {id, name:r.name, subcode:r.subcode, ssyk:r.ssyk, level:r.level, conf:r.conf,
-    lo:r.lo, mid:r.mid, hi:r.hi, diff:(OCC.base_mid!=null? r.mid-OCC.base_mid : null),
-    ad_count:r.ad_count, skills:r.skills, education:r.education, experience:r.experience,
-    color:e.color||'#5B6472', rel:e.rel, gaps:e.gaps||[], same_ssyk:e.same_ssyk}; }
-function drawCenter(){
-  const gs = anchorGroups('center');
-  center0.innerHTML = `<div class="lbl">${esc(L.you_here)}</div><div class="cname">${esc(OCC.name)}</div>`
-    + (OCC.lo!=null? `<div class="crange">${money(OCC.lo)}–${money(OCC.hi)}</div>`:'')
-    + (gs.length? `<div class="cptoggle">${nodeOpen['center']?'▾':'▸'} ${gs.length} ${esc(L.specialisations)}</div>`:'');
-  const tg = center0.querySelector('.cptoggle');
-  if(tg) tg.onclick = ev=>{ ev.stopPropagation(); toggleAnchor('center'); };
-}
-function markActive(){ Object.entries(nodeEls).forEach(([id,el])=> el.classList.toggle('active', id===focus));
-  subCardEls.forEach(card=> card.querySelectorAll('.cpsub-member').forEach(mel=>{
-    const m = SUBGROUPS[+mel.dataset.gi].members[+mel.dataset.mi];
-    mel.classList.toggle('active', !!memberFocus && memberFocus.name===m.name && String(memberFocus.mid)===String(m.mid));
-  })); }
-function buildSubCards(){
-  subCardEls.forEach(e=>e.remove()); subCardEls.length=0;
-  Object.keys(GBYA).forEach(anchor=>{
-    if(!nodeOpen[anchor]) return;                       // collapsed until its node is toggled
-    const host = anchor==='center'? center0 : nodeEls[anchor];
-    if(!host) return;                                   // anchor not currently on screen
-    GBYA[anchor].forEach(gi=>{
-      const g = SUBGROUPS[gi];
-      const card = document.createElement('div');
-      card.className='cpsub-card'; card._anchor = anchor;
-      let body='';
-      if(expanded[gi]){
-        body = '<div class="cpsub-members">' + g.members.map((m,mi)=>
-          `<div class="cpsub-member" data-gi="${gi}" data-mi="${mi}"><span>${esc(m.name)}</span>`
-          + `<span class="mm-ads">${m.diff!=null?diffStr(m.diff)+' · ':''}${m.ad_count} ${esc(L.ads)}</span></div>`).join('') + '</div>';
-      }
-      card.innerHTML = `<div class="sh"><div><div class="cpsub-title">${esc(g.label)}</div>`
-        + `<div class="cpsub-meta">${g.count} ${esc(L.sub_roles)} · ${g.ad_count} ${esc(L.ads)}</div></div>`
-        + `<span class="cpsub-chev">${expanded[gi]?'▾':'▸'}</span></div>` + body;
-      card.querySelector('.sh').onclick = ev=>{ ev.stopPropagation(); expanded[gi]=!expanded[gi]; buildSubCards(); layoutNodes(); drawWires(); markActive(); };
-      card.querySelectorAll('.cpsub-member').forEach(mel=>{
-        mel.onclick = ev=>{ ev.stopPropagation();
-          const m = SUBGROUPS[+mel.dataset.gi].members[+mel.dataset.mi];
-          memberFocus = Object.assign({}, m, {rel:null, gaps:[], color:'#5B6472'});
-          focus=null; focusPath=null; renderDetail(); drawWires(); markActive(); };
-      });
-      canvas.appendChild(card); subCardEls.push(card);
-    });
-  });
-}
-function createNode(n){
-  const d = document.createElement('div');
-  d.className='cpnode'; d.dataset.id=n.id; d.dataset.rel=n.rel||'';
-  const gs = anchorGroups(n.id);
-  d.innerHTML = `<div class="nrow"><span class="cpdot" style="background:${n.color}"></span>`
-    + `<span class="nname">${esc(n.name)}</span></div>`
-    + `<div class="nmeta">`
-    + (n.diff!=null? `<span class="ndiff" style="color:${n.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(n.diff)}</span>`:'')
-    + (n.ad_count? `<span class="nads">· ${n.ad_count} ${esc(L.ads)}</span>`:'')
-    + (gs.length? `<span class="ntoggle">${nodeOpen[n.id]?'▾':'▸'} ${gs.length}</span>`:'')
-    + `</div>`;
-  d.onclick = ()=>{ memberFocus=null; focus=n.id; focusPath=pathTo(n.id); renderDetail(); drawWires(); markActive(); };
-  d.onmouseenter = ()=>{ hoverPath=pathTo(n.id); drawWires(); };
-  d.onmouseleave = ()=>{ hoverPath=null; drawWires(); };
-  const tg = d.querySelector('.ntoggle');
-  if(tg) tg.onclick = ev=>{ ev.stopPropagation(); toggleAnchor(n.id); };
-  canvas.appendChild(d); nodeEls[n.id]=d;
-}
-function layoutNodes(){
-  const availW = mapEl.clientWidth;
-  center0.style.left = '16px';
-  const x0 = 16 + center0.offsetWidth + 30;
-  // fixed comfortable column width so pills never overlap; overflow → horizontal pan
-  const colStep = Math.max(250, (availW - x0 - 24) / sel);
-  const byL = {}; shownIds().forEach(id=> (byL[LAYER[id]]=byL[LAYER[id]]||[]).push(id));
-  const layersSorted = Object.keys(byL).map(Number).sort((a,b)=>a-b);
-  // Order each layer to reduce line crossings: first shown layer by salary,
-  // each deeper layer by its parent's position (barycenter), salary as tie-break.
-  const orderIndex = {};
-  layersSorted.forEach((Lr, li)=>{
-    const arr = byL[Lr];
-    if(li===0){ arr.sort((p,q)=> R[q].mid - R[p].mid); }
-    else { arr.sort((p,q)=>{
-      const pp = orderIndex[PARENT[p]] ?? 1e9, qp = orderIndex[PARENT[q]] ?? 1e9;
-      return pp!==qp ? pp-qp : (R[q].mid - R[p].mid); }); }
-    arr.forEach((id,i)=> orderIndex[id]=i);
-  });
-  let maxCount = 1; layersSorted.forEach(Lr=> maxCount=Math.max(maxCount, byL[Lr].length));
-  const rowH = 84;   // fixed row pitch > pill height → generous gaps, no overlap
-  const centerH = center0.offsetHeight;
-  const cardsFor = a => subCardEls.filter(el=> el._anchor===a);
-  const blockH = els => els.reduce((h,el)=> h + el.offsetHeight + 10, 0);
-  const centerCards = cardsFor('center');
-  const leftH = centerH + (centerCards.length ? 14 + blockH(centerCards) : 0);
-  // a spine node with open cards makes its own column taller
-  let spineExtra = 0;
-  Object.keys(nodeOpen).forEach(a=>{ if(a!=='center' && nodeOpen[a] && nodeEls[a])
-    spineExtra = Math.max(spineExtra, 14 + blockH(cardsFor(a))); });
-  const mapH = Math.max(maxCount*rowH + 16, 200, leftH + 20, maxCount*rowH + 16 + spineExtra);
-  const contentW = x0 + (sel-1)*colStep + NODEW + 26;
-  canvas.style.width = Math.max(contentW, availW) + 'px';
-  canvas.style.height = mapH + 'px';
-  mapEl.style.height = (mapH + (contentW > availW ? 14 : 0)) + 'px';
-  layersSorted.forEach(Lr=>{
-    const arr = byL[Lr], cnt = arr.length;
-    const startY = (mapH - cnt*rowH)/2 + rowH/2;   // vertically centre each column
-    arr.forEach((id, idx)=>{ const el=nodeEls[id]; if(!el) return;
-      el.style.left = (x0 + (Lr-1)*colStep) + 'px';
-      el.style.top = (startY + idx*rowH - el.offsetHeight/2) + 'px';
-    });
-  });
-  // centre the (occupation + its open cards) block vertically in the left column
-  const leftTop = Math.max(12, (mapH - leftH)/2);
-  center0.style.top = leftTop + 'px'; center0.style.transform = 'none';
-  let cy = leftTop + centerH + 14;
-  centerCards.forEach(el=>{ el.style.left = '16px'; el.style.top = cy + 'px'; cy += el.offsetHeight + 10; });
-  // spine-anchored cards stack directly below their node
-  Object.keys(nodeOpen).forEach(a=>{
-    if(a==='center' || !nodeOpen[a]) return;
-    const host = nodeEls[a]; if(!host) return;
-    let y = host.offsetTop + host.offsetHeight + 12;
-    cardsFor(a).forEach(el=>{ el.style.left = host.offsetLeft + 'px'; el.style.width = NODEW + 'px';
-      el.style.top = y + 'px'; y += el.offsetHeight + 10; });
-  });
-}
-function drawWires(){
-  const cr0 = canvas.getBoundingClientRect();
-  const ids = new Set(shownIds());
-  let p='';
-  E.forEach(e=>{
-    if(!ids.has(e.to)) return;
-    const fromCenter = CENTERIDS.has(e.from);
-    if(!fromCenter && !ids.has(e.from)) return;
-    const srcEl = fromCenter? center0 : nodeEls[e.from];
-    const dstEl = nodeEls[e.to];
-    if(!srcEl || !dstEl) return;
-    const sr=srcEl.getBoundingClientRect(), dr=dstEl.getBoundingClientRect();
-    const cx=sr.right-cr0.left, cy=sr.top-cr0.top+sr.height/2;
-    const nx=dr.left-cr0.left, ny=dr.top-cr0.top+dr.height/2, mx=(cx+nx)/2;
-    const key=e.from+'>'+e.to;
-    const on = (hoverPath&&hoverPath.has(key)) || (focusPath&&focusPath.has(key));
-    const dash=(e.rel==='lateral'||e.rel==='related')?' stroke-dasharray="5 6"':'';
-    p += `<path d="M ${cx} ${cy} C ${mx} ${cy}, ${mx} ${ny}, ${nx} ${ny}" fill="none" `
-      + `stroke="${e.color}" stroke-width="${on?3:1.4}" stroke-opacity="${on?0.95:0.28}"${dash}/>`;
-  });
-  subCardEls.forEach(el=>{
-    const host = el._anchor==='center'? center0 : nodeEls[el._anchor];
-    if(!host) return;
-    const hb = host.getBoundingClientRect();
-    const bx = hb.left - cr0.left + 22, by = hb.bottom - cr0.top;
-    const rb = el.getBoundingClientRect();
-    const tx = rb.left - cr0.left + 22, ty = rb.top - cr0.top, my=(by+ty)/2;
-    p += `<path d="M ${bx} ${by} C ${bx} ${my}, ${tx} ${my}, ${tx} ${ty}" fill="none" stroke="#C7CCD4" stroke-width="1.4" stroke-dasharray="4 5" stroke-opacity="0.9"/>`;
-  });
-  const w = canvas.offsetWidth, h = canvas.offsetHeight;
-  svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
-  svg.setAttribute('width',w); svg.setAttribute('height',h); svg.innerHTML=p;
-}
-function render(){
-  levelButtons();
-  titleEl.textContent = L.title.replace('{r}', OCC.name);
-  drawCenter();
-  canvas.querySelectorAll('.cpnode').forEach(x=>x.remove()); nodeEls={};
-  shownIds().forEach(id=> createNode(nodeObj(id)));
-  buildSubCards();
-  layoutNodes();
-  if(focus!==null && !nodeEls[focus]){ focus=null; focusPath=null; }
-  drawWires(); markActive(); renderDetail();
-}
-function renderDetail(){
-  const d = memberFocus ? memberFocus : (focus!==null ? nodeObj(focus) : null);
-  if(!d){ detailEl.innerHTML = `<div class="dhint">${esc(L.pick)}</div>`; return; }
-  const skills=(d.skills||[]).filter(Boolean).slice(0,8).map(s=>`<span class="chip" style="background:rgba(192,69,58,.08);color:#C0453A">${esc(s)}</span>`).join('');
-  const gaps=(d.gaps||[]).filter(Boolean).map(s=>`<span class="chip" style="background:rgba(10,99,166,.08);color:#0A63A6">${esc(s)}</span>`).join('');
-  let ads = d.ad_count ? (`<div class="mtiles">`
-      + `<div class="mtile red"><div class="mtl" style="color:#C0453A">${esc(L.ads_header)}</div><div class="mtv">${d.ad_count} ${esc(L.ads)}</div></div>`
-      + (d.experience?`<div class="mtile"><div class="mtl">${esc(L.experience)}</div><div class="mtv">${esc(d.experience)}</div></div>`:'')
-      + (d.education?`<div class="mtile"><div class="mtl">${esc(L.education)}</div><div class="mtv">${esc(d.education)}</div></div>`:'')
-      + `</div>` + (skills?`<div class="mskills"><div class="mtl">${esc(L.skills)}</div><div style="margin-top:7px;">${skills}</div></div>`:''))
-      : `<div class="noads">${esc(L.no_ads)}</div>`;
-  detailEl.innerHTML =
-    (d.rel?`<div class="drel"><span class="cpdot" style="background:${d.color}"></span> ${esc(RL[d.rel]||'')}</div>`:'')
-    + `<div class="dname">${d.subcode?esc(d.subcode)+' · ':''}${esc(d.name)}</div>`
-    + `<div class="dmeta">${esc(d.level)} · ${d.same_ssyk?esc(L.same_ssyk):('→ SSYK '+esc(d.ssyk))} · ${esc(d.conf)}</div>`
-    + `<div class="drow"><div><div class="dlabel">${esc(L.range)}</div><div class="dval">${money(d.lo)}–${money(d.hi)}</div></div>`
-    + (d.diff!=null?`<div><div class="dlabel">${esc(L.vs)}</div><div class="dval" style="color:${d.diff>=0?'#1B8A5A':'#C0453A'}">${diffStr(d.diff)}<span style="font-size:12px;font-weight:400;color:#8A919D"> /mo</span></div></div>`:'')
-    + `</div>`
-    + (gaps?`<div class="dlabel" style="margin-top:4px;">${esc(L.gaps)}</div><div style="margin-top:3px;">${gaps}</div>`:'')
-    + ads;
-}
-window.addEventListener('resize', ()=>{ layoutNodes(); drawWires(); });
-requestAnimationFrame(render);
-</script>
-"""
-
+def _map_component():
+    global _MAP_COMPONENT
+    if _MAP_COMPONENT is None:
+        import os
+        import streamlit.components.v1 as components
+        _MAP_COMPONENT = components.declare_component(
+            "se2_career_map", path=os.path.join(os.path.dirname(__file__), "career_map"))
+    return _MAP_COMPONENT
 
 def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves, evidence):
     """Interactive, data-driven career map (embedded component) — replaces the old
     card list. Node = a role the viewed occupation can lead to, coloured by move
     type, positioned by estimated salary midpoint, badged with its live ad count.
     Clicking a node reveals its range, gaps and (in red) the job-ad requirements +
-    Platsbanken references."""
-    import json
-    import streamlit.components.v1 as components
-
+    Platsbanken references. Returns the last-clicked role's title_id (graph node
+    or sub-cluster member) — None until something is clicked."""
     yrs = i18n.t(cfg, "cp_ms_yrs", lang, "yrs")
     bc = curves.get(primary)
     base_mid = bc.value_at(50).value if bc and bc.ok else None
@@ -582,6 +255,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         _anchor = t.get("sub_track_anchor") or "center"
         g = _groups.setdefault(st_, {"members": [], "anchor": _anchor})
         g["members"].append({
+            "title_id": t["title_id"],
             "name": _tname(t, lang), "subcode": _subcode(t),
             "level": _level(t["level_label"], lang), "conf": _conf(cfg, lang, t["confidence"]),
             "ssyk": _ssyk,
@@ -608,7 +282,7 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
     # ── Longest-path layering over the forward sub-graph from the occupation's
     # roles → each role gets a level (min hops), so the component can show N
     # levels at once instead of click-drilling. Entry roles = layer 0 (the centre). ──
-    from collections import deque, Counter
+    from collections import deque
     adj = {}
     for e in edges:
         adj.setdefault(e["from"], []).append(e["to"])
@@ -644,7 +318,6 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
         st.caption(i18n.t(cfg, "cp_no_moves", lang, "No mapped moves for this occupation yet."))
         return
     max_layer = max(layer[n] for n in node_ids)
-    max_layer_width = max(Counter(layer[n] for n in node_ids).values())
 
     present = {e["rel"] for e in edges if e["to"] in set(node_ids)}
     legend, _seen = [], set()
@@ -687,13 +360,11 @@ def _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves
             "pick": i18n.t(cfg, "cp_map_pick", lang, "Click a role to see its detail and job-ad requirements."),
         },
     }
-    html = _MAP_TEMPLATE.replace("__DATA__", json.dumps(payload, ensure_ascii=False))
-    # Groups start collapsed; only reserve room for the centre's cards once its
-    # toggle opens (member-level expansion scrolls the map area if needed).
-    _center_groups = sum(1 for g in subgroups if g.get("anchor") == "center")
-    _sub_h = 56 * _center_groups + 20 if _center_groups else 0
-    map_h = max(max_layer_width * 84 + 30, 200, _sub_h)
-    components.html(html, height=150 + map_h + 320, scrolling=True)
+    # Bidirectional component: renders the map AND returns the last-clicked
+    # role ({title_id, kind}) so the caller can sync downstream sections.
+    # Frame height is self-reported by the component (ResizeObserver).
+    sel_val = _map_component()(data=payload, key=f"{cfg.slug}_cp_map", default=None)
+    return sel_val.get("title_id") if isinstance(sel_val, dict) else None
 
 
 def _render_role_cards(cfg, lang, primary, titles, rels, by_id, curves, evidence):
@@ -797,7 +468,7 @@ def _market_from_ads(t, ad_rows):
     }
 
 
-def _render_market_signal_section(cfg, lang, titles, evidence, primary):
+def _render_market_signal_section(cfg, lang, titles, evidence, primary, preselect=None):
     """Bottom-of-page 'Live market signal' — tiled (app card style) with a regional
     slicer on the example ads. Per-role signal is aggregated from the ads whose
     normalised title actually matches that role (see _market_from_ads), so the
@@ -840,24 +511,46 @@ def _render_market_signal_section(cfg, lang, titles, evidence, primary):
         groups.append((c, sorted(cats[c], key=lambda t: -_n(t))))
     by_pill = {f"{lbl} · {len(ts)}": ts for lbl, ts in groups}
     pills = list(by_pill)
+    grp_key = f"{cfg.slug}_cp_ms_grp"
+
+    # ── Map-click sync: when the career map above reports a newly clicked role,
+    # point the pill + role dropdown at it ONCE (tracked via _synced) — after
+    # that the user browses freely until the next map click. Widget state is
+    # seeded via session_state before instantiation (no default/index params),
+    # which is the warning-free way to drive Streamlit widgets. ──
+    if preselect and st.session_state.get(f"{grp_key}_synced") != preselect:
+        for pill, ts in by_pill.items():
+            idx = next((i for i, x in enumerate(ts) if x["title_id"] == preselect), None)
+            if idx is not None:
+                st.session_state[f"{grp_key}_synced"] = preselect
+                st.session_state[grp_key] = pill
+                st.session_state[f"{cfg.slug}_cp_ms_role_{pill}"] = idx
+                break
+
     if len(pills) > 1:
+        if st.session_state.get(grp_key) not in by_pill:
+            st.session_state[grp_key] = pills[0]
         pick = st.segmented_control(
-            i18n.t(cfg, "cp_ms_grp", lang, "Role group"), pills, default=pills[0],
-            key=f"{cfg.slug}_cp_ms_grp", label_visibility="collapsed")
+            i18n.t(cfg, "cp_ms_grp", lang, "Role group"), pills,
+            key=grp_key, label_visibility="collapsed")
         pick = pick if pick in by_pill else pills[0]   # deselect → back to default
     else:
         pick = pills[0]
     scoped = by_pill[pick]
 
-    default_i = next((i for i, t in enumerate(scoped)
-                      if str(t.get("primary_ssyk")) == primary and not t.get("sub_track")), 0)
     ads_word = i18n.t(cfg, "cp_ads", lang, "ads")
+    role_key = f"{cfg.slug}_cp_ms_role_{pick}"
+    if st.session_state.get(role_key) not in range(len(scoped)):
+        # first visit to this pill → default to the viewed occupation's own role
+        st.session_state[role_key] = next(
+            (i for i, x in enumerate(scoped)
+             if str(x.get("primary_ssyk")) == primary and not x.get("sub_track")), 0)
     c_role, c_reg = st.columns([2, 1])
     # per-group widget key → each pill remembers its own role selection
     sel_i = c_role.selectbox(
-        i18n.t(cfg, "cp_ms_role", lang, "Show role"), list(range(len(scoped))), index=default_i,
+        i18n.t(cfg, "cp_ms_role", lang, "Show role"), list(range(len(scoped))),
         format_func=lambda i: f"{_tname(scoped[i], lang)} · {_n(scoped[i])} {ads_word}",
-        key=f"{cfg.slug}_cp_ms_role_{pick}")
+        key=role_key)
     t = scoped[sel_i]
     e = mkt[t["title_id"]]
     # Show only still-open ads: once the application deadline passes the
@@ -1231,7 +924,7 @@ def render(cfg, stats, query):
                                   "individual-level, consented compensation evidence we do not have."))
 
     # ═══ 3 · Interactive career map from the viewed occupation ═══════════════
-    _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves, evidence)
+    map_sel = _render_career_map(cfg, lang, primary, occ_name, titles, rels, by_id, curves, evidence)
 
     # ═══ 3b · Grouped role cards (classic view) — just above compare ═════════
     _render_role_cards(cfg, lang, primary, titles, rels, by_id, curves, evidence)
@@ -1269,4 +962,4 @@ def render(cfg, stats, query):
             unsafe_allow_html=True)
 
     # ═══ 5 · Live market signal (tiled) — at the absolute bottom ══════════════
-    _render_market_signal_section(cfg, lang, titles, evidence, primary)
+    _render_market_signal_section(cfg, lang, titles, evidence, primary, preselect=map_sel)
