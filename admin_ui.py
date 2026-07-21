@@ -1159,10 +1159,11 @@ def _delete_dialog():
         f'<div style="border:1px solid #E7E9ED;border-radius:14px;padding:16px 18px;'
         f'display:flex;align-items:center;gap:14px;margin-bottom:6px;">'
         f'<div class="ad-av" style="background:{av};width:44px;height:44px;'
-        f'font-size:15px;">{_initials(u.get("name"), u.get("email", "?"))}</div>'
+        f'font-size:15px;">{html.escape(_initials(u.get("name"), u.get("email", "?")))}</div>'
         f'<div style="min-width:0;">'
-        f'<div class="ad-uname" style="font-size:15px;">{u.get("name") or U["no_name"]}</div>'
-        f'<div class="ad-email">{u.get("email", "—")}</div>'
+        f'<div class="ad-uname" style="font-size:15px;">'
+        f'{html.escape(u.get("name") or U["no_name"])}</div>'
+        f'<div class="ad-email">{html.escape(u.get("email", "—"))}</div>'
         f'<div style="margin-top:6px;"><span class="ad-badge" '
         f'style="color:{fg};background:{bg};">{txt}</span>'
         f'&nbsp;<span class="ad-access">🌐 {acc}</span></div>'
@@ -1226,10 +1227,11 @@ def users_section():
                 [2.6, 3, 1.7, 1.2, 1.2], vertical_alignment="center")
             b_user.markdown(
                 f'<div class="ad-user"><div class="ad-av" style="background:#0A63A6;">'
-                f'{_initials(u.get("name"), u["email"])}</div>'
-                f'<span class="ad-uname">{u.get("name") or U["no_name"]}</span></div>',
+                f'{html.escape(_initials(u.get("name"), u["email"]))}</div>'
+                f'<span class="ad-uname">{html.escape(u.get("name") or U["no_name"])}'
+                f'</span></div>',
                 unsafe_allow_html=True)
-            b_email.markdown(f'<span class="ad-email">{u["email"]}</span>',
+            b_email.markdown(f'<span class="ad-email">{html.escape(u["email"])}</span>',
                              unsafe_allow_html=True)
             b_date.markdown(f'<span class="ad-access">'
                             f'{U["br_requested"].format(date=u["beta_requested"])}</span>',
@@ -1330,9 +1332,11 @@ def users_section():
             nm = u.get("name") or U["no_name"]
             c_user.markdown(
                 f'<div class="ad-user"><div class="ad-av" style="background:{av};">'
-                f'{_initials(u.get("name"), u["email"])}</div>'
-                f'<span class="ad-uname">{nm}</span></div>', unsafe_allow_html=True)
-            c_email.markdown(f'<span class="ad-email">{u["email"]}</span>', unsafe_allow_html=True)
+                f'{html.escape(_initials(u.get("name"), u["email"]))}</div>'
+                f'<span class="ad-uname">{html.escape(nm)}</span></div>',
+                unsafe_allow_html=True)
+            c_email.markdown(f'<span class="ad-email">{html.escape(u["email"])}</span>',
+                             unsafe_allow_html=True)
             txt, fg, bg = role_badges.get(u["role"], (u["role"], "#5B6472", "#EEF0F3"))
             you = U["you"] if u["id"] == me.get("id") else ""
             # Amber marker while a beta request is pending (handled in the card above).
@@ -1475,14 +1479,16 @@ def feedback_section():
                         unsafe_allow_html=True)
             c2.markdown(f'<span class="ad-access">{r.get("feedback_type", "—")}</span>',
                         unsafe_allow_html=True)
-            c3.markdown(f'<span class="ad-access">{r.get("country") or fb.GENERAL}</span>',
+            c3.markdown(f'<span class="ad-access">'
+                        f'{html.escape(r.get("country") or fb.GENERAL)}</span>',
                         unsafe_allow_html=True)
-            c4.markdown(f'<span class="ad-uname">{r.get("title", "")}</span>',
+            c4.markdown(f'<span class="ad-uname">{html.escape(r.get("title", ""))}</span>',
                         unsafe_allow_html=True)
             ifg, ibg = _FB_IMPACT_COLORS.get(r.get("impact"), ("#5B6472", "#EEF0F3"))
             c5.markdown(f'<span class="ad-badge" style="color:{ifg};background:{ibg};">'
                         f'{r.get("impact", "—")}</span>', unsafe_allow_html=True)
-            c6.markdown(f'<span class="ad-email">{r.get("user_email") or "—"}</span>',
+            c6.markdown(f'<span class="ad-email">'
+                        f'{html.escape(r.get("user_email") or "—")}</span>',
                         unsafe_allow_html=True)
             sfg, sbg = _FB_STATUS_COLORS.get(r.get("status"), ("#5B6472", "#EEF0F3"))
             c7.markdown(f'<span class="ad-badge" style="color:{sfg};background:{sbg};">'
@@ -1500,8 +1506,7 @@ def feedback_section():
                 # here; written server-side after a triage session. Escaped:
                 # the verdict may quote untrusted user report text.
                 if r.get("ai_triage"):
-                    import html as _html
-                    r = {**r, "ai_triage": _html.escape(r["ai_triage"])}
+                    r = {**r, "ai_triage": html.escape(r["ai_triage"])}
                     st.markdown(
                         f'<div style="border-left:3px solid #0A63A6;border-radius:0;'
                         f'background:rgba(10,99,166,.06);padding:8px 12px;margin:6px 0;">'
