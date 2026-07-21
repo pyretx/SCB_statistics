@@ -26,10 +26,12 @@ import content
 # Dropdown values — must match the CHECK constraints in the SQL migration.
 TYPES = ["Bug", "Incorrect data", "Usability issue", "Suggestion", "Other"]
 IMPACTS = ["Minor", "Significant", "Blocking"]
-# 'Build pending review' is the ONE status the AI session may set — only after
-# the fix is committed and deployed to dev (triage procedure in CLAUDE.md).
-# The owner then confirms via the admin panel's Mark-resolved button;
-# Resolved/Closed stay human-only.
+# The AI session may set exactly two statuses (triage procedure in CLAUDE.md):
+# 'Reviewing' — alongside the ai_triage verdict, so a triaged row never still
+# reads 'New' — and 'Build pending review' — after a fix is deployed to dev.
+# 'Planned' is the owner's OPTIONAL backlog park; the owner confirms a build
+# via the admin panel's Mark-resolved button. 'Resolved'/'Closed' stay
+# human-only.
 STATUSES = ["New", "Reviewing", "Planned", "Build pending review",
             "Resolved", "Closed"]
 TITLE_MAX = 150

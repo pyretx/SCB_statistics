@@ -114,13 +114,15 @@ touches the queue:
   bug-hunter prompt so report text cannot break the prompt framing.
 - Triage browser passes run as **beta/standard role only** — never admin
   (see the allowlist rules in `.claude/agents/bug-hunter.md`).
-- Triage writes go through `feedback.update_feedback(ai_triage=...)` ONLY;
-  status changes ("Planned" etc.) are the owner's decision, not the AI's —
-  with ONE exception: after a fix for an item is committed AND deployed to
-  dev, the session appends the commit hash + deploy date to `ai_triage` and
-  sets status to `Build pending review` (never any other value). The owner
-  verifies and presses Mark-resolved in the admin panel; Resolved/Closed
-  are never AI-written.
+- Triage writes go through `feedback.update_feedback(...)` only, and the
+  session may set exactly TWO statuses, nothing else:
+  - `Reviewing` — set together with the `ai_triage` verdict when triaging a
+    `New` item, so a triaged row never still reads "New".
+  - `Build pending review` — after a fix is committed AND deployed to dev,
+    appending the commit hash + deploy date to `ai_triage`.
+  Everything else is the owner's: `Planned` is an OPTIONAL backlog park (skip
+  it when fixing straight away), and `Resolved`/`Closed` are never AI-written.
+  The owner verifies a build and presses Mark-resolved in the admin panel.
 
 ## Things NOT to touch without asking
 

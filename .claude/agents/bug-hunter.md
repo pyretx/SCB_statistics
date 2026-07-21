@@ -64,8 +64,10 @@ country, page, impact). For each row:
 - Suggestions / features: no replication — one short feasibility note; the
   decision is the owner's.
 - Propose a priority order for the reproduced items (impact × page
-  centrality). You write NOTHING to the database — the main session records
-  triage results and only the owner approves anything into "Planned".
+  centrality). You write NOTHING to the database yourself — the main session
+  records the verdict and moves the row from `New` to `Reviewing`. `Planned`
+  is the owner's OPTIONAL backlog decision (skipped when a fix goes in
+  straight away); `Resolved`/`Closed` are owner-only.
 
 ## Docs mode
 When asked to verify documentation: follow the named doc's instructions
