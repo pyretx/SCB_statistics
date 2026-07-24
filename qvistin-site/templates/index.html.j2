@@ -75,7 +75,7 @@
           <g transform="translate(500,392)"><circle cx="-1.5" cy="-2" r="6.5" stroke="#FAFAF9" stroke-width="2" fill="none"/><path d="M3 3 L7 7" stroke="#FAFAF9" stroke-width="2" stroke-linecap="round"/></g>
         </g>
         {% for b in branches %}
-        <g class="branch{% if b.live %} is-live{% endif %}{% if b.href %} branch-link{% endif %}" data-i="{{ loop.index0 }}"{% if b.href %} data-href="{{ b.href }}"{% endif %}>
+        <g class="branch{% if b.live %} is-live{% endif %}{% if b.href %} branch-link{% endif %}" data-i="{{ loop.index0 }}"{% if b.href %} data-href="{{ b.href }}"{% endif %}{% if b.new_tab %} data-target="_blank"{% endif %}>
           <path class="branch-base" d="{{ b.path }}" fill="none" stroke="#D8DBDD" stroke-width="2" stroke-dasharray="600" style="animation:growPath 1.4s cubic-bezier(.22,1,.36,1) {{ b.path_delay }}s both"/>
           <path class="branch-glow" d="{{ b.path }}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="600" style="stroke-dashoffset:0"/>
           <circle cx="{{ b.x }}" cy="{{ b.y }}" r="30" fill="transparent"/>
@@ -101,11 +101,12 @@
         <div class="card-top">
           <div class="card-icon icon-{{ p.status }}">{{ icon(p.icon) }}</div>
           {% if p.status == 'live' %}<span class="badge badge-live"><span class="dot"></span>LIVE</span>
+          {% elif p.status == 'beta' %}<span class="badge badge-beta">BETA</span>
           {% elif p.status == 'dev' %}<span class="badge badge-dev">IN&nbsp;DEVELOPMENT</span>{% endif %}
         </div>
         <div class="card-name{% if p.status == 'soon' %} muted{% endif %}">{{ p.name }}</div>
         <p class="card-desc{% if p.status == 'soon' %} muted{% endif %}">{{ p.desc }}</p>
-        {% if p.cta_label %}<a class="card-launch" href="{{ p.cta_href }}">{{ p.cta_label }} {{ icon('arrow') }}</a>{% endif %}
+        {% if p.cta_label %}<a class="card-launch" href="{{ p.cta_href }}"{% if p.cta_new_tab %} target="_blank" rel="noopener"{% endif %}>{{ p.cta_label }} {{ icon('arrow') }}</a>{% endif %}
       </div>
       {% endfor %}
     </div>

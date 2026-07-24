@@ -84,6 +84,8 @@ a:hover { color: var(--accent); }
 .card-icon { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; }
 .card-icon svg { width: 20px; height: 20px; }
 .icon-live { background: #12151A; }
+.icon-beta { background: #12151A; }
+.icon-beta svg { stroke: #FAFAF9; }
 .icon-dev  { background: #F0F1F2; }
 .icon-soon { border: 1.5px dashed #C6CBCF; }
 .icon-soon svg { width: 16px; height: 16px; }
@@ -91,6 +93,7 @@ a:hover { color: var(--accent); }
   font-size: 10px; font-weight: 600; letter-spacing: .08em; padding: 4px 9px; border-radius: 20px; }
 .badge-live { color: var(--accent); background: rgba(35,113,107,.08); border: 1px solid rgba(35,113,107,.22); }
 .badge-live .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+.badge-beta { color: var(--accent); background: rgba(35,113,107,.08); border: 1px solid rgba(35,113,107,.22); }
 .badge-dev { color: #8A9199; background: #F0F1F2; }
 .card-name { font-weight: 800; font-size: 18px; letter-spacing: -.02em; color: #0E1116; }
 .card-desc { margin: 9px 0 0; font-size: 14px; line-height: 1.6; color: #5C646C; }

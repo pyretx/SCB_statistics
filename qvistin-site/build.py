@@ -36,6 +36,7 @@ def _branches(nodes: list[dict]) -> list[dict]:
         out.append({
             "label": n["label"], "x": x, "y": y, "live": live,
             "href": (n.get("href") or "").strip(),
+            "new_tab": bool(n.get("new_tab")),
             "path": path,
             "r": 13 if live else 9,
             "fill": "#12151A" if live else "#FAFAF9",

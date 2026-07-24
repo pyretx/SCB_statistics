@@ -18,7 +18,10 @@
       g.classList.remove("is-hover"); if (lbl) lbl.classList.remove("is-hover");
     });
     if (g.dataset.href) {
-      g.addEventListener("click", function () { window.location.href = g.dataset.href; });
+      g.addEventListener("click", function () {
+        if (g.dataset.target === "_blank") { window.open(g.dataset.href, "_blank", "noopener"); }
+        else { window.location.href = g.dataset.href; }
+      });
     }
   });
 

@@ -55,7 +55,8 @@ label = "SHAPE"
 x = 640
 y = 66
 live = false
-href = ""
+href = "https://shape.qvist.in"
+new_tab = true
 [[diagram.node]]
 label = "FUTURE PRODUCT"
 x = 866
@@ -66,7 +67,8 @@ href = ""
 [products]
 eyebrow = "PRODUCTS"
 heading = "A growing family of focused tools."
-# status: "live" | "dev" | "soon"   ·   icon: globe | chart | blocks | plus
+# status: "live" | "beta" | "dev" | "soon"   ·   icon: globe | chart | blocks | plus
+# cta_new_tab / new_tab: open the link in a new browser tab.
 [[products.item]]
 name   = "Salary Explorer"
 status = "live"
@@ -81,9 +83,12 @@ icon   = "chart"
 desc   = "Build, backtest and deploy AI trading agents."
 [[products.item]]
 name   = "Shape"
-status = "dev"
+status = "beta"
 icon   = "blocks"
 desc   = "Design the organisation before you change it — model structures, compare scenarios, evaluate impact."
+cta_label = "Launch"
+cta_href  = "https://shape.qvist.in"
+cta_new_tab = true
 [[products.item]]
 name   = "Next branch"
 status = "soon"

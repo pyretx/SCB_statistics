@@ -20,6 +20,12 @@
       "port": 8504
     },
     {
+      "name": "qvistin-site",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8721", "-d", "qvistin-site/dist"],
+      "port": 8721
+    },
+    {
       "name": "cp-map-harness",
       "runtimeExecutable": "python",
       "runtimeArgs": ["-m", "streamlit", "run", "tests/career_map_harness.py", "--server.port=8503", "--server.headless=true"],
