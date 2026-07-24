@@ -60,10 +60,12 @@ qvistin-site/
   just edit `content.toml`, commit, and redeploy. Compose file:
   `deploy/docker-compose.qvistin-site.yml`. Full runbook + DNS/TLS: `docs/qvistin-hosting.md`.
 
-  On the server:
+  On the server (`/srv/qvistin-site` is a clone tracking **`main`** — the live
+  homepage ships from main, so changes must be promoted `dev → test → main` first):
   ```bash
-  git clone -b dev https://github.com/pyretx/SCB_statistics.git /srv/qvistin-site
-  cd /srv/qvistin-site/deploy
+  cd /srv/qvistin-site
+  git pull --ff-only
+  cd deploy
   docker compose -f docker-compose.qvistin-site.yml up -d --build --force-recreate
   ```
   (Traefik issues the TLS cert once qvist.in resolves to the server — i.e. after the
