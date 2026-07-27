@@ -107,7 +107,7 @@ eyebrow = "CONTACT"
 heading = "Talk to us."
 blurb   = "Questions about a product, an idea for a new branch, or just curious? We read everything."
 email   = "hello@qvist.in"
-topics  = ["General", "Salary Explorer", "Partnership", "Press"]
+topics  = ["General", "Salary Explorer", "Shape", "Partnership", "Press"]
 form_note = "No newsletters. We only reply."
 # LinkedIn / GitHub links are temporarily hidden. To show them again, re-add
 # [[contact.link]] blocks here (fields: label, href, icon = "linkedin" | "github").
