@@ -135,3 +135,8 @@ Rules for any session that touches either queue:
 - `test`/`main` branches and prod deploys (explicit approval each time).
 - Supabase settings, DNS, email (Resend) config.
 - The host crontab on the server.
+
+## Local service & ports (PortWatch)
+- Locally the app runs as the hidden scheduled task **SCBStatistics** (`run_service.bat` / `run_hidden.vbs` / `install_task.ps1`): `.venv` python, `streamlit run app.py` on **127.0.0.1:8501** (reserved for `scb/app` in `C:\Claude\MonitorServers\registry.json`). 8502/8503/8504/8721 are the optional manual variants from `.claude/launch.json`.
+- Control: `powershell -ExecutionPolicy Bypass -File C:\Claude\MonitorServers\svc.ps1 status|restart|stop|start SCBStatistics` (never bare `Stop-ScheduledTask` — it leaves python running). Log: `logs\svc_app.log`.
+- New port/server here → `node C:\Claude\MonitorServers\portwatch.js check <port>` / `suggest scb`, then `reserve scb <component> <port>`. Runbook: `C:\Claude\MonitorServers\RUNBOOK.md`.
