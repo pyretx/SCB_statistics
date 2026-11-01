@@ -1,15 +1,19 @@
 #!/usr/bin/env python3
 """Supabase keep-alive — cron entry point.
 
-Free-tier Supabase projects get paused after about 7 days without sufficient
-activity. This runs one small real query through the REST API so the project
-keeps seeing traffic even when the site has no visitors and the career refresh
-is off. It only reads; nothing is written.
+Free-tier Supabase projects get paused when they show low database activity
+over 7 days. This runs one small real query through the REST API, so the project
+keeps seeing traffic even when the site has no visitors. It only reads; nothing
+is written.
 
-Run INSIDE the prod container from the HOST crontab (same pattern as
-cron_daily_refresh.py; must stay at repo root because deploy/ is .dockerignored):
+Cadence matters: one read a day is NOT enough. The nightly career job made
+exactly that and the project still got a pause warning (Nov 2026). Supabase's
+docs ask for "a few" requests a day without giving a number, so schedule this
+several times a day from the HOST crontab, inside the prod container (same
+pattern as cron_daily_refresh.py; must stay at repo root because deploy/ is
+.dockerignored):
 
-    docker exec scb-prod python supabase_keepalive.py
+    0 */4 * * * docker exec scb-prod python supabase_keepalive.py >> /var/log/scb-keepalive.log 2>&1
 
 All three environments share ONE Supabase project, so one host is enough.
 Exit code is non-zero on failure so the log file flags it.
