@@ -123,5 +123,5 @@ supabase_anon_key = "sb_publishable_rbSEpzrZMVmdwfOlgwn68A_eYT9_rPG"     # the a
 
 [footer]
 powered   = "POWERED BY QVISTIN"
-location  = "Sweden"
-copyright = "© 2026 Qvistin"
+location  = "Qvistin AB · Org. no. 559610-2649 · Gothenburg, Sweden"
+copyright = "© 2026 Qvistin AB"
