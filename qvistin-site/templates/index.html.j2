@@ -159,12 +159,12 @@
             <span class="form-note">{{ contact.form_note }}</span>
             <button type="submit" class="btn-send" id="f-send" data-email="{{ contact.email }}">Send message {{ icon('arrow') }}</button>
           </div>
-          <div class="form-err" id="form-err" hidden>Couldn't send just now — please email <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>.</div>
+          <div class="form-err" id="form-err" hidden>Couldn't send just now. Please email <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>.</div>
         </div>
         <div class="form-sent" id="form-sent" hidden>
           <div class="sent-check">{{ icon('check') }}</div>
           <div class="sent-title">Message sent.</div>
-          <p class="sent-note">Thanks — we'll get back to you shortly.</p>
+          <p class="sent-note">Thanks, we'll get back to you shortly.</p>
           <button type="button" class="sent-again" id="f-again">Write another</button>
         </div>
       </form>

@@ -8,7 +8,7 @@
 # ─────────────────────────────────────────────────────────────────────────────
 
 [site]
-title       = "Qvistin — Practical software for better decisions"
+title       = "Qvistin - Practical software for better decisions"
 description  = "Qvistin develops focused digital products that transform complex information into clear decisions."
 brand       = "Qvistin"
 accent      = "#23716B"          # brand teal (used across hover/active states)
@@ -85,7 +85,7 @@ desc   = "Build, backtest and deploy AI trading agents."
 name   = "Shape"
 status = "beta"
 icon   = "blocks"
-desc   = "Design the organisation before you change it — model structures, compare scenarios, evaluate impact."
+desc   = "Design the organization before you change it. Model structures, compare scenarios, evaluate impact."
 cta_label = "Launch"
 cta_href  = "https://shape.qvist.in"
 cta_new_tab = true
